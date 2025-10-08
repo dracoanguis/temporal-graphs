@@ -16,29 +16,22 @@ inductive TimePath : V → V → ℕ → Type u
     : TimePath u w t'
   deriving DecidableEq
 
-
-/- inductive TimePath (G : SimpleTemporalGraph V) : Type u
-  | single {v₁ v₂ : V} {t : ℕ} (edge : G.Adj v₁ v₂ t) : TimePath G
-  | cons {v₁ v₂ v₃ : V} {t₁ t₂ : ℕ}
-    (edge : G.Adj v₂ v₃ t₂)
-    (prev : TimePath G)
-    (h : match prev with
-      | single (_ _ u t) => (u = v₂) ∧ (t < t₂)
-      | cons (_ _ u t) _ => (u = v₂) ∧ (t < t₂)
-    )
--/
-
 namespace TimePath
 
---def lastVertex {V} {G : SimpleTemporalGraph V} :
---    ∀ {n}, TimePath G n → V
---  | _, single v _ => v
---  | _, step prev _ => _root_.id prev.lastVertex
---
---def lastTime {V} {G : SimpleTemporalGraph V} :
---    ∀ {n}, TimePath G n → Nat
---  | _, single _ t => t
---  | _, step _ _ _ t₁ _ _ _ _ => t₁
+/-- The length of a TimePath is the number of edges along it. -/
+def length {u v : V} {t : ℕ} : G.TimePath u v t → ℕ
+  | single _ => 1
+  | step _ p _ => 1 + p.length
+
+/-- The `support` of a TimePath is the list of vertices it visits in order. -/
+def support {u v : V} {t : ℕ} : G.TimePath u v t → List V
+  | single _ => v :: [u]
+  | step _ p _ => v :: p.support
+
+/-- The `darts` of a TimePath is the list of darts (edge with a direction) it visits in order. -/
+def darts {u v : V} {t : ℕ} : G.TimePath u v t → List (V × V × ℕ)
+  | @single _ _ u v t _ => [⟨u ,⟨ v, t⟩⟩]
+  | @step _ _ _ v w _ t' _ p _ => ⟨v ,⟨ w, t'⟩⟩ :: p.darts
 
 end TimePath
 

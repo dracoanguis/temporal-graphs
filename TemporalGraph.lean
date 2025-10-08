@@ -23,3 +23,10 @@ def triangle.path' : triangle.TimePath 0 2 1 :=
 def triangle.path'' : triangle.TimePath 0 0 2 :=
   TimePath.step (by simp [triangle])
     <| triangle.path'
+
+def triangle.path2 : triangle.TimePath 0 2 1 :=
+  let e : triangle.Adj 0 1 0 := by simp [triangle]
+  TimePath.single (e)
+    |> TimePath.step (by simp [triangle])
+
+#eval triangle.path''.darts

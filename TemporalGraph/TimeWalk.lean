@@ -8,7 +8,7 @@ variable {G : SimpleTemporalGraph V}
 
 namespace SimpleTemporalGraph
 
-
+/-- We define a strict TimeWalk, meaning only one edge can be crossed at a given time. -/
 inductive TimeWalk : V → V → ℕ → Type u
   | single {u v : V} {t : ℕ} (h: G.Adj u v t) : TimeWalk u v t
   | step {u v w : V} {t t' : ℕ} (h : G.Adj v w t')

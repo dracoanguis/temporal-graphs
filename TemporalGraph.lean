@@ -1,4 +1,4 @@
-import TemporalGraph.TimePath
+import TemporalGraph.TimeWalk
 
 open SimpleTemporalGraph
 
@@ -13,18 +13,18 @@ def triangle : SimpleTemporalGraph (Fin 3) :=
     loopless := by aesop_temporal_graph
   }
 
-def triangle.path : triangle.TimePath 0 1 0 :=
+def triangle.path : triangle.TimeWalk 0 1 0 :=
   TimePath.single (by simp [triangle])
 
-def triangle.path' : triangle.TimePath 0 2 1 :=
+def triangle.path' : triangle.TimeWalk 0 2 1 :=
   TimePath.step (by simp [triangle])
     <| triangle.path
 
-def triangle.path'' : triangle.TimePath 0 0 2 :=
+def triangle.path'' : triangle.TimeWalk 0 0 2 :=
   TimePath.step (by simp [triangle])
     <| triangle.path'
 
-def triangle.path2 : triangle.TimePath 0 2 1 :=
+def triangle.path2 : triangle.TimeWalk 0 2 1 :=
   let e : triangle.Adj 0 1 0 := by simp [triangle]
   TimePath.single (e)
     |> TimePath.step (by simp [triangle])

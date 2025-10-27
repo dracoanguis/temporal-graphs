@@ -19,3 +19,25 @@ structure SimpleTemporalGraph (V : Type u) where
   Adj : V → V → ℕ → Prop
   symm : ∀ t, Symmetric (fun v w => Adj v w t)
   loopless : ∀ t, Irreflexive (fun v w => Adj v w t)
+
+
+
+namespace SimpleTemporalGraph
+
+variable {V : Type u}
+
+/-- The Footprint of a SimpleTemporalGraph is a SimpleGraph representing
+the edges unlabeled by time. -/
+def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V:=
+  {
+    Adj := fun u v => ∃ t, G.Adj u v t
+    symm := by
+      intro v w ⟨t, h⟩
+      exact ⟨t, G.symm t h⟩
+    loopless := by
+      intro v ⟨t, h⟩
+      exact G.loopless t v h
+
+  }
+
+end SimpleTemporalGraph

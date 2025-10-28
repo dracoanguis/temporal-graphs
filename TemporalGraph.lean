@@ -30,3 +30,5 @@ def triangle.path2 : triangle.TimeWalk 0 2 1 :=
     |> TimeWalk.step (by simp [triangle])
 
 #eval triangle.path''.darts
+
+#check triangle.Footprint

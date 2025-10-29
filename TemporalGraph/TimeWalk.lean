@@ -34,13 +34,14 @@ def darts {u v : V} {t : ℕ} : G.TimeWalk u v t → List (V × V × ℕ)
   | @step _ _ _ v w _ t' _ p _ => ⟨v ,⟨ w, t'⟩⟩ :: p.darts
 
 
-theorem subtempgraph_walk_is_graph_walk (G G' : SimpleTemporalGraph V) {u v : V}
-: G' ≤ G → ∀ t : ℕ, (G'.TimeWalk u v t → G.TimeWalk u v t)
-:= by
-  intro h_sub t h_tw
-  induction h_tw with
-  | single h => exact (single (h_sub h))
-  | step h _ h' h_i => exact (step (h_sub h) h_i h')
+def subtempgraph_walk_is_graph_walk (G G' : SimpleTemporalGraph V) (h_sub : G' ≤ G)
+{u v : V} {t : ℕ} :
+G'.TimeWalk u v t → G.TimeWalk u v t
+| single h => single (h_sub h)
+| step h p h' =>
+  step (h_sub h)
+    (subtempgraph_walk_is_graph_walk G G' h_sub p)
+    h'
 
 end TimeWalk
 

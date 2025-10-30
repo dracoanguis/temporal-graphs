@@ -60,4 +60,10 @@ theorem isSubtempgraph_self (G : SimpleTemporalGraph V) : G.IsSubtempgraph G := 
 -- def support :=
   -- SetRel.dom {(u, v, t) : V ⨯ V ⨯ ℕ | G.Adj u v t}
 
+def IsComplete (G : SimpleTemporalGraph V) : Prop :=
+  ∀ u v : V, ∃ t, G.Adj u v t
+
+def IsProper (G : SimpleTemporalGraph V) : Prop :=
+  ∀ u : V, ¬∃ t : ℕ, ∃ v w : V, G.Adj u v t ∧ G.Adj u w t
+
 end SimpleTemporalGraph

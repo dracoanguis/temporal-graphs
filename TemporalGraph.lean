@@ -32,3 +32,9 @@ def triangle.path2 : triangle.TimeWalk 0 2 1 :=
 #eval triangle.path''.darts
 
 #check triangle.Footprint
+
+example : triangle.IsProper
+:= by
+  unfold SimpleTemporalGraph.IsProper
+  intro u
+  admit -- way too long and useless

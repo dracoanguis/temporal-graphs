@@ -8,11 +8,11 @@ variable {G : SimpleTemporalGraph V}
 
 namespace SimpleTemporalGraph
 
-/-- We define a strict TimeWalk, meaning only one edge can be crossed at a given time. -/
+/-- We define a Non-strict TimeWalk, meaning only one edge can be crossed at a given time. -/
 inductive TimeWalk : V → V → ℕ → Type u
   | single {u v : V} {t : ℕ} (h: G.Adj u v t) : TimeWalk u v t
   | step {u v w : V} {t t' : ℕ} (h : G.Adj v w t')
-    (p : TimeWalk u v t) (h' : t < t' := by decide)
+    (p : TimeWalk u v t) (h' : t ≤ t' := by decide)
     : TimeWalk u w t'
   deriving DecidableEq
 
@@ -30,7 +30,7 @@ def support {u v : V} {t : ℕ} : G.TimeWalk u v t → List V
 
 /-- The `darts` of a TimeWalk is the list of darts (edge with a direction) it visits in order. -/
 def darts {u v : V} {t : ℕ} : G.TimeWalk u v t → List (V × V × ℕ)
-  | @single _ _ u v t _ => [⟨u ,⟨ v, t⟩⟩]
+  | @single _ _ u v t _ => [⟨u ,⟨v, t⟩⟩]
   | @step _ _ _ v w _ t' _ p _ => ⟨v ,⟨ w, t'⟩⟩ :: p.darts
 
 

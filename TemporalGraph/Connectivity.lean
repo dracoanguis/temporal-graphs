@@ -34,7 +34,7 @@ def IsTemporalSpanner (G G' : SimpleTemporalGraph V) : Prop := (G' ≤ G) ∧ (G
 /-- A temporal graphe admits a spanner if and only if it is Temporally Connected -/
 @[simp]
 theorem spanner_iff_TC (G : SimpleTemporalGraph V)
-: (∃ G', G.IsTemporalSpanner G') ↔ G.TemporallyConnected
+: (∃ G', IsTemporalSpanner G G') ↔ G.TemporallyConnected
 := by
   unfold IsTemporalSpanner
   apply Iff.intro

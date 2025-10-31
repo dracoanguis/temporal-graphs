@@ -29,14 +29,15 @@ lemma lift_subtempgraph_reachable (G G' : SimpleTemporalGraph V)
 
 def TemporallyConnected (G : SimpleTemporalGraph V) : Prop := ∀ u v , G.Reachable u v
 
-def IsTemporalSpanner (G G' : SimpleTemporalGraph V) : Prop := (G' ≤ G) ∧ (G'.TemporallyConnected)
+-- A difference is made with the general Spanner
+def IsTCSpanner (G G' : SimpleTemporalGraph V) : Prop := (G' ≤ G) ∧ (G'.TemporallyConnected)
 
 /-- A temporal graphe admits a spanner if and only if it is Temporally Connected -/
 @[simp]
-theorem spanner_iff_TC (G : SimpleTemporalGraph V)
-: (∃ G', IsTemporalSpanner G G') ↔ G.TemporallyConnected
+theorem TCspanner_iff_TC (G : SimpleTemporalGraph V)
+: (∃ G', IsTCSpanner G G') ↔ G.TemporallyConnected
 := by
-  unfold IsTemporalSpanner
+  unfold IsTCSpanner
   apply Iff.intro
   · intro ⟨G', ⟨h_sub,h_tc⟩⟩
     unfold TemporallyConnected at h_tc

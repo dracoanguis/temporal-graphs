@@ -46,4 +46,13 @@ theorem spanner_iff_TC (G : SimpleTemporalGraph V)
     exact ⟨G, ⟨G.isSubtempgraph_self, h_tc⟩ ⟩
 
 
+theorem complete_is_TC (G : SimpleTemporalGraph V)
+: G.IsComplete → G.TemporallyConnected
+:= by
+  unfold IsComplete TemporallyConnected
+  intro h u v
+  let ⟨t, h'⟩ := h u v
+  rw [reachable_iff_nonempty_univ]
+  exact ⟨t, ⟨TimeWalk.single h', trivial⟩⟩
+
 end SimpleTemporalGraph

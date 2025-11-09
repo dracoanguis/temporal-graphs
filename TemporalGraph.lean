@@ -33,6 +33,17 @@ def triangle.path2 : triangle.TimeWalk 0 2 1 :=
 
 #check triangle.Footprint
 
+def segmentTG : SimpleTemporalGraph (Set (Fin 3)) :=
+  { Adj := fun v w t =>
+    match t with
+    | 0 => (v=0 ∧ w=1) ∨ (w=0 ∧ v=1)
+    | _ => False
+    symm := by aesop_temporal_graph
+    loopless := by aesop_temporal_graph
+  }
+
+example : triangle.IsSubtempgraph2 segmentTG := by
+
 example : triangle.IsProper
 := by
   unfold SimpleTemporalGraph.IsProper

@@ -40,25 +40,33 @@ def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V:=
       exact G.loopless t v h
   }
 
+
+def IsSubtempgraph {V' : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph V') : Prop :=
+  ∀ {v w : V'} {t : ℕ}, G'.Adj v w t → G.Adj ↑v ↑w t
+
 -- Add trub sub graph
 -- Rename in spanning sub grap
 -- check for rfl
-def IsSubtempgraph (x y : SimpleTemporalGraph V) : Prop :=
-  ∀ {v w : V} {t : ℕ}, x.Adj v w t → y.Adj v w t
+-- def IsSubtempgraph (x y : SimpleTemporalGraph V) : Prop :=
+--   ∀ {v w : V} {t : ℕ}, x.Adj v w t → y.Adj v w t
 
-instance : LE (SimpleTemporalGraph V) :=
-  ⟨IsSubtempgraph⟩
+-- instance : LE (SimpleTemporalGraph V) :=
+--   ⟨IsSubtempgraph⟩
 
-@[simp]
-theorem isSubtempgraph_eq_le :
-  (IsSubtempgraph : SimpleTemporalGraph V -> SimpleTemporalGraph V -> Prop) = (· ≤ ·) :=
-  rfl
+-- lemma le_iff_adj {G H : SimpleTemporalGraph V} :
+-- G ≤ H ↔ ∀ v w t, G.Adj v w t → H.Adj v w t := .rfl
 
-@[simp]
-theorem isSubtempgraph_self (G : SimpleTemporalGraph V) : G.IsSubtempgraph G := by
-  unfold IsSubtempgraph
-  intro _ _ _ h
-  exact h
+-- @[simp]
+-- theorem isSubtempgraph_eq_le
+-- : (IsSubtempgraph : SimpleTemporalGraph V -> SimpleTemporalGraph V -> Prop) = (· ≤ ·)
+-- := rfl
+
+
+-- @[simp]
+-- theorem isSubtempgraph_self (G : SimpleTemporalGraph V) : G.IsSubtempgraph G := by
+--   unfold IsSubtempgraph
+--   intro _ _ _ h
+--   exact h
 
 -- def support :=
   -- SetRel.dom {(u, v, t) : V ⨯ V ⨯ ℕ | G.Adj u v t}

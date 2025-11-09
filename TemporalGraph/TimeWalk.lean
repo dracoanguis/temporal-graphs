@@ -34,15 +34,6 @@ def darts {u v : V} {t : ℕ} : G.TimeWalk u v t → List (V × V × ℕ)
   | @step _ _ _ v w _ t' _ p _ => ⟨v ,⟨ w, t'⟩⟩ :: p.darts
 
 
-def lift_subtempgraph_walk (G G' : SimpleTemporalGraph V) (h_sub : G' ≤ G)
-{u v : V} {t : ℕ} :
-G'.TimeWalk u v t → G.TimeWalk u v t
-| single h => single (h_sub h)
-| step h p h' =>
-  step (h_sub h)
-    (lift_subtempgraph_walk G G' h_sub p)
-    h'
-
 end TimeWalk
 
 end SimpleTemporalGraph

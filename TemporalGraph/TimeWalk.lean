@@ -35,6 +35,19 @@ def darts {u v : V} {s t : ℕ} : G.TimeWalk u s v t → List (V × V × ℕ)
   | @single _ _ u v t _ => [⟨u ,⟨v, t⟩⟩]
   | @step _ _ _ v w _ _ t' _ p _ => ⟨v ,⟨ w, t'⟩⟩ :: p.darts
 
+def extend {u v v' : V} {s t s' t'} (p : G.TimeWalk u s v t) (ext : G.TimeWalk v s' v' t')
+  (h_ord : t ≤ s' := by decide)
+  : G.TimeWalk u s v' t'
+  := match ext with
+  | single h_edge => step h_edge p h_ord
+  | step h_edge p' h_ord' => step h_edge (extend p p' h_ord) h_ord'
+
+def prepend {u v u' : V} {s t s' : ℕ}
+  (h : G.Adj u' u s')
+  (p : G.TimeWalk u s v t)
+  (h' : s' ≤ s := by decide)
+  : G.TimeWalk u' s' v t
+  := extend (single h) p h'
 
 
 end TimeWalk

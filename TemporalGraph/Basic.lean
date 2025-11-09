@@ -76,6 +76,8 @@ def IsComplete (G : SimpleTemporalGraph V) : Prop :=
 
 -- check alt way fo writing
 def IsProper (G : SimpleTemporalGraph V) : Prop :=
-  ∀ u : V, ¬∃ t : ℕ, ∃ v w : V, G.Adj u v t ∧ G.Adj u w t
+  --∀ u : V, ¬∃ t : ℕ, ∃ v w : V, G.Adj u v t ∧ G.Adj u w t
+  ∀ u v w, ∀ t, G.Adj u v t ∧ G.Adj u w t → v = w
+
 
 end SimpleTemporalGraph

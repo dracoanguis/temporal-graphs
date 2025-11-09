@@ -38,9 +38,9 @@ protected lemma subgraph_reachable_is_reachable
 := by
   intro u v h
   rw [reachable_iff_nonempty_univ] at h
-  let ⟨t, ⟨tw, h⟩⟩ := h
+  let ⟨s, ⟨t, ⟨tw, h⟩⟩⟩ := h
   rw [reachable_iff_nonempty_univ]
-  exact ⟨t, ⟨tw, h⟩⟩
+  exact ⟨s, ⟨t, ⟨tw, h⟩⟩⟩
 
 @[simp]
 protected lemma TCspanner_imply_TC (G' : SubTempGraph G)
@@ -54,8 +54,8 @@ protected lemma TCspanner_imply_TC (G' : SubTempGraph G)
   intro u v
   let u' : Subtype G'.verts := ⟨u, h_span u⟩
   let v' : Subtype G'.verts := ⟨v, h_span v⟩
-  let ⟨t, ⟨tw⟩⟩ :=  h_tc u v
-  exact ⟨t, ⟨tw.lift_subtempgraph_walk⟩⟩
+  let ⟨s, ⟨t, ⟨tw⟩⟩⟩ :=  h_tc u v
+  exact ⟨s, ⟨t, ⟨tw.lift_subtempgraph_walk⟩⟩⟩
 
 
 -- /-- A temporal graphe admits a spanner if and only if it is Temporally Connected -/

@@ -129,16 +129,16 @@ variable {V : Type u} --{G : SimpleTemporalGraph V} {G' : SubTempGraph G}
 
 @[coe]
 protected def lift_subtempgraph_walk {G : SimpleTemporalGraph V} {G' : SubTempGraph G}
-{u v : G'.verts} {t : ℕ} :
-G'.coe.TimeWalk u v t → G.TimeWalk ↑u ↑v t
+{u v : G'.verts} {s t : ℕ} :
+G'.coe.TimeWalk u s v t → G.TimeWalk ↑u s ↑v t
 | single h => single (G'.adj_sub h)
 | step h p h' =>
   step (G'.adj_sub h)
     (p.lift_subtempgraph_walk)
     h'
 
-instance {V : Type u} {G : SimpleTemporalGraph V} {G' : SubTempGraph G} {u v : G'.verts} {t : ℕ} :
-Coe (G'.coe.TimeWalk u v t) (G.TimeWalk ↑u ↑v t) where
+instance {V : Type u} {G : SimpleTemporalGraph V} {G' : SubTempGraph G} {u v : G'.verts} {s t : ℕ} :
+Coe (G'.coe.TimeWalk u s v t) (G.TimeWalk ↑u s ↑v t) where
   coe := TimeWalk.lift_subtempgraph_walk
 
 end TimeWalk

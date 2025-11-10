@@ -18,6 +18,10 @@ inductive TimeWalk : V → ℕ → V → ℕ → Type u
     : TimeWalk u s w t'
   deriving DecidableEq
 
+def TimeWalkSet (u v : V)
+  : Set (Σ s t : ℕ, G.TimeWalk u s v t) :=
+  { p | ∃ (s t : ℕ), ∃ (tw : TimeWalk u s v t), p = ⟨s, t, tw⟩ }
+
 namespace TimeWalk
 
 /-- The length of a TimeWalk is the number of edges along it. -/

@@ -17,6 +17,14 @@ G.Reachable u v ↔ ∃ s t, (Set.univ : Set (G.TimeWalk u s v t)).Nonempty := b
     · intro ⟨s, ⟨t,⟨p, _⟩⟩⟩
       exact ⟨s, ⟨t, ⟨p⟩⟩⟩
 
+theorem reachable_iff_nonempty_timewalkset {G : SimpleTemporalGraph V} {u v : V} :
+G.Reachable u v ↔ (G.TimeWalkSet u v).Nonempty := by
+  apply Iff.intro
+  · rintro ⟨s, ⟨t, ⟨tw⟩⟩⟩
+    exact ⟨⟨s, t, tw⟩, ⟨s, t, tw, rfl⟩⟩
+  · rintro ⟨⟨s, t, tw⟩, _⟩
+    exact ⟨s, ⟨t, ⟨tw⟩⟩⟩
+
 def TemporallyConnected (G : SimpleTemporalGraph V) : Prop := ∀ u v , G.Reachable u v
 
 def IsSpanner {V' : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph V') : Prop

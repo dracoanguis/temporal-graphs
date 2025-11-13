@@ -1,4 +1,6 @@
 import TemporalGraph.TimeWalk
+import TemporalGraph.SubTempGraph
+import TemporalGraph.Connectivity.SubTempGraph
 
 open SimpleTemporalGraph
 

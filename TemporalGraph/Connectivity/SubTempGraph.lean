@@ -98,5 +98,19 @@ protected lemma TCspanner_imply_TC (G' : SubTempGraph G)
 
 --     exact ⟨G', ⟨h_span, h_tc⟩⟩
 
+
+def createSpanner {u v w : V} {t t' : ℕ} (G : SimpleTemporalGraph V)
+(h : G.EarliestEdge u v t ∧ G.LatestEdge u w t')
+(G' : SubTempGraph G) (G'' : SubTempGraph G'.coe)
+(h' : G'.verts = {v | v ≠ u} ∧ G''.IsSpanner)
+: SubTempGraph G
+:= sorry
+
+theorem createSpanner_ {u v w : V} {t t' : ℕ} (G : SimpleTemporalGraph V)
+(h : G.EarliestEdge u v t ∧ G.LatestEdge u w t')
+: (createSpanner G h).IsSpanner
+:= sorry
+
+
 end SubTempGraph
 end SimpleTemporalGraph

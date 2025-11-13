@@ -105,7 +105,7 @@ theorem coe_adj_sub (G' : SubTempGraph G) (u v : G'.verts) (t : ℕ) (h : G'.coe
 --: DecidableRel H.coe.Adj
 --:= fun a b ↦ ‹DecidableRel H.Adj› _ _
 
-/-- A subgraph is called a *spanning subgraph* if it contains all the vertices of `G`. -/
+/-- A SubTempGraph is called a *spanning subgraph* if it contains all the vertices of `G`. -/
 def IsSpanning (G' : SubTempGraph G) : Prop :=
   ∀ v : V, v ∈ G'.verts
 

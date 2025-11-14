@@ -1,5 +1,5 @@
 import TemporalGraph.Basic
-import TemporalGraph.TimeWalk
+import TemporalGraph.TemporalWalk
 
 universe u
 
@@ -105,7 +105,7 @@ theorem coe_adj_sub (G' : SubTempGraph G) (u v : G'.verts) (t : ℕ) (h : G'.coe
 --: DecidableRel H.coe.Adj
 --:= fun a b ↦ ‹DecidableRel H.Adj› _ _
 
-/-- A subgraph is called a *spanning subgraph* if it contains all the vertices of `G`. -/
+/-- A SubTempGraph is called a *spanning subgraph* if it contains all the vertices of `G`. -/
 def IsSpanning (G' : SubTempGraph G) : Prop :=
   ∀ v : V, v ∈ G'.verts
 
@@ -137,14 +137,14 @@ def induce (G' : G.SubTempGraph) (s : Set V) : G.SubTempGraph where
 
 end SubTempGraph
 
-namespace TimeWalk
+namespace TemporalWalk
 
 variable {V : Type u} --{G : SimpleTemporalGraph V} {G' : SubTempGraph G}
 
 @[coe]
 protected def lift_subtempgraph_walk {G : SimpleTemporalGraph V} {G' : SubTempGraph G}
 {u v : G'.verts} {s t : ℕ} :
-G'.coe.TimeWalk u s v t → G.TimeWalk ↑u s ↑v t
+G'.coe.TemporalWalk u s v t → G.TemporalWalk ↑u s ↑v t
 | single h => single (G'.adj_sub h)
 | step h p h' =>
   step (G'.adj_sub h)
@@ -152,9 +152,9 @@ G'.coe.TimeWalk u s v t → G.TimeWalk ↑u s ↑v t
     h'
 
 instance {V : Type u} {G : SimpleTemporalGraph V} {G' : SubTempGraph G} {u v : G'.verts} {s t : ℕ} :
-Coe (G'.coe.TimeWalk u s v t) (G.TimeWalk ↑u s ↑v t) where
-  coe := TimeWalk.lift_subtempgraph_walk
+Coe (G'.coe.TemporalWalk u s v t) (G.TemporalWalk ↑u s ↑v t) where
+  coe := TemporalWalk.lift_subtempgraph_walk
 
-end TimeWalk
+end TemporalWalk
 
 end SimpleTemporalGraph

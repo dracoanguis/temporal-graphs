@@ -1,4 +1,4 @@
-import TemporalGraph.TimeWalk
+import TemporalGraph.TemporalWalk
 
 universe u
 variable {V : Type u} {s t : ℕ}
@@ -6,10 +6,10 @@ variable {V : Type u} {s t : ℕ}
 namespace SimpleTemporalGraph
 
 def Reachable (G : SimpleTemporalGraph V) (u v : V) : Prop :=
-∃ s t, Nonempty (G.TimeWalk u s v t)
+∃ s t, Nonempty (G.TemporalWalk u s v t)
 
 theorem reachable_iff_nonempty_univ {G : SimpleTemporalGraph V} {u v : V} :
-G.Reachable u v ↔ ∃ s t, (Set.univ : Set (G.TimeWalk u s v t)).Nonempty := by
+G.Reachable u v ↔ ∃ s t, (Set.univ : Set (G.TemporalWalk u s v t)).Nonempty := by
     unfold Reachable
     apply Iff.intro
     · intro ⟨s, ⟨t,⟨ p⟩⟩⟩
@@ -17,8 +17,8 @@ G.Reachable u v ↔ ∃ s t, (Set.univ : Set (G.TimeWalk u s v t)).Nonempty := b
     · intro ⟨s, ⟨t,⟨p, _⟩⟩⟩
       exact ⟨s, ⟨t, ⟨p⟩⟩⟩
 
-theorem reachable_iff_nonempty_timewalkset {G : SimpleTemporalGraph V} {u v : V} :
-G.Reachable u v ↔ (G.TimeWalkSet u v).Nonempty := by
+theorem reachable_iff_nonempty_TemporalWalkset {G : SimpleTemporalGraph V} {u v : V} :
+G.Reachable u v ↔ (G.TemporalWalkSet u v).Nonempty := by
   apply Iff.intro
   · rintro ⟨s, ⟨t, ⟨tw⟩⟩⟩
     exact ⟨⟨s, t, tw⟩, ⟨s, t, tw, rfl⟩⟩
@@ -46,6 +46,6 @@ theorem complete_is_TC (G : SimpleTemporalGraph V)
   intro h u v
   let ⟨t, h'⟩ := h u v
   rw [reachable_iff_nonempty_univ]
-  exact ⟨t, ⟨t, ⟨TimeWalk.single h', trivial⟩⟩⟩
+  exact ⟨t, ⟨t, ⟨TemporalWalk.single h', trivial⟩⟩⟩
 
 end SimpleTemporalGraph

@@ -72,5 +72,17 @@ lemma latest_edge_reachability {u α : V} {t₁ : ℕ} {G : SimpleTemporalGraph 
   rw [reachable_iff_nonempty_TemporalWalkset]
   exact ⟨⟨s, t₁, tuw⟩, ⟨s, ⟨t₁, ⟨tuw, rfl⟩⟩⟩⟩
 
+lemma earliest_latest_edge_co_reachability {u αₑ αₗ : V} {tₑ tₗ : ℕ} {G : SimpleTemporalGraph V}
+(hee : G.EarliestEdge αₑ u tₑ) (hle : G.LatestEdge αₗ u tₗ) (hr : G.Reachable αₑ αₗ)
+: G.Reachable u u
+:= by
+  rw [EarliestEdge] at hee
+  rw [LatestEdge] at hle
+  rw [reachable_iff_nonempty_TemporalWalkset] at hr
+  rcases hr with ⟨_, s, e, tw, _⟩
+  let tw' := tw.prepend hee.left.symm (TemporalWalk.EarliestEdge.edge_time_bound tw hee)
+  let tw'' := tw'.step hle.left (TemporalWalk.LatestEdge.edge_time_bound tw' hle)
+  rw [reachable_iff_nonempty_TemporalWalkset]
+  exact ⟨⟨tₑ, tₗ, tw''⟩, ⟨tₑ, ⟨tₗ, ⟨tw'', rfl⟩⟩⟩⟩
 
 end SimpleTemporalGraph

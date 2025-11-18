@@ -53,6 +53,32 @@ def prepend {u v u' : V} {s t s' : ℕ}
   : G.TemporalWalk u' s' v t
   := extend (single h) p h'
 
+lemma time_mono {u v : V} {s e : ℕ} (tw : G.TemporalWalk u s v e) : s ≤ e
+:= by
+  induction tw with
+  | single h => rfl
+  | step h p h' ih => exact le_trans ih h'
+
+lemma EarliestEdge.edge_time_bound {u v w : V} {t s e : ℕ}
+(tw : G.TemporalWalk v s w e)
+(hee : G.EarliestEdge v u t)
+: t ≤ s
+:= by
+  rw [EarliestEdge] at hee
+  induction tw with
+  |single h => exact hee.right _ _ h
+  |step _ _ _ hi => exact hi
+
+lemma LatestEdge.edge_time_bound {u v w : V} {t s e : ℕ}
+(tw : G.TemporalWalk v s w e)
+(hle : G.LatestEdge w u t)
+: e ≤ t
+:= by
+  rw [LatestEdge] at hle
+  cases tw with
+  | single h => exact hle.right _ _ h.symm
+  | step h _ _ => exact hle.right _ _ h.symm
+
 
 end TemporalWalk
 

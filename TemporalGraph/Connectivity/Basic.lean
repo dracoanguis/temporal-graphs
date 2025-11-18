@@ -48,4 +48,29 @@ theorem complete_is_TC (G : SimpleTemporalGraph V)
   rw [reachable_iff_nonempty_univ]
   exact ⟨t, ⟨t, ⟨TemporalWalk.single h', trivial⟩⟩⟩
 
+lemma earliest_edge_reachability {u v : V} {t₁ : ℕ} (G : SimpleTemporalGraph V)
+(hee : G.EarliestEdge v u t₁) : ∀ w, G.Reachable v w → G.Reachable u w
+:= by
+  intro w hTw
+  rw [reachable_iff_nonempty_TemporalWalkset] at hTw
+  rw [EarliestEdge] at hee
+  let ⟨_, s, e, tw, _⟩ := hTw
+  have hst : t₁ ≤ s := TemporalWalk.EarliestEdge.edge_time_bound tw hee
+  let twu := tw.prepend hee.left.symm hst
+  rw [reachable_iff_nonempty_TemporalWalkset]
+  exact ⟨⟨t₁, e, twu⟩, ⟨t₁, ⟨e, ⟨twu, rfl⟩⟩⟩⟩
+
+lemma latest_edge_reachability {u v : V} {t₁ : ℕ} (G : SimpleTemporalGraph V)
+(hle : G.LatestEdge v u t₁) : ∀ w, G.Reachable w v → G.Reachable w u
+:= by
+  intro h hTW
+  rw [reachable_iff_nonempty_TemporalWalkset] at hTW
+  rw [LatestEdge] at hle
+  let ⟨_, s, e, tw, _⟩ := hTW
+  have het : e ≤ t₁ := TemporalWalk.LatestEdge.edge_time_bound tw hle
+  let tuw := tw.step hle.left het
+  rw [reachable_iff_nonempty_TemporalWalkset]
+  exact ⟨⟨s, t₁, tuw⟩, ⟨s, ⟨t₁, ⟨tuw, rfl⟩⟩⟩⟩
+
+
 end SimpleTemporalGraph

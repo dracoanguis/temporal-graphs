@@ -33,7 +33,8 @@ def support {u v : V} {s t : ℕ} : G.TemporalWalk u s v t → List V
   | single _ => v :: [u]
   | step _ p _ => v :: p.support
 
-/-- The `darts` of a TemporalWalk is the list of darts (edge with a direction) it visits in order. -/
+/-- The `darts` of a TemporalWalk is the list of darts (edge with a direction) it visits in
+order. -/
 def darts {u v : V} {s t : ℕ} : G.TemporalWalk u s v t → List (V × V × ℕ)
   | @single _ _ u v t _ => [⟨u ,⟨v, t⟩⟩]
   | @step _ _ _ v w _ _ t' _ p _ => ⟨v ,⟨ w, t'⟩⟩ :: p.darts

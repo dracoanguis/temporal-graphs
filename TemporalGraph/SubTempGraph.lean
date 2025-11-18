@@ -121,6 +121,42 @@ protected def spanningCoe (G' : SubTempGraph G) : SimpleTemporalGraph V where
   symm := G'.symm
   loopless := G'.loopless
 
+section Order
+
+instance : Top G.SubTempGraph where
+  top := {
+    verts := Set.univ
+    Adj := G.Adj
+    adj_sub := id
+    symm := G.symm
+    edge_vert := @fun v _ _ _ ↦ Set.mem_univ v
+  }
+
+@[simp]
+theorem top_adj {x y : V} {t : ℕ} : (⊤ : SubTempGraph G).Adj x y t ↔ G.Adj x y t :=
+  Iff.rfl
+
+instance : Bot G.SubTempGraph where
+  bot := {
+    verts := ∅
+    Adj := ⊥
+    adj_sub := False.elim
+    edge_vert := False.elim
+    symm _ _ _ := id
+  }
+
+instance : LE (SubTempGraph G) where
+  le G₁ G₂ :=
+    (G₁.verts ⊆ G₂.verts) ∧
+    (∀ {u v t}, G₁.Adj u v t → G₂.Adj u v t)
+
+instance : BoundedOrder (SubTempGraph G) where
+  top := ⊤
+  bot := ⊥
+  le_top x := ⟨Set.subset_univ _, by intro _ _ _ h ; rw [top_adj] ; exact x.adj_sub h⟩
+  bot_le _ := ⟨Set.empty_subset _, False.elim⟩
+
+end Order
 end SubTempGraph
 
 namespace TemporalWalk

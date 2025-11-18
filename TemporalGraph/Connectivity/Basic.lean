@@ -48,8 +48,8 @@ theorem complete_is_TC (G : SimpleTemporalGraph V)
   rw [reachable_iff_nonempty_univ]
   exact ⟨t, ⟨t, ⟨TemporalWalk.single h', trivial⟩⟩⟩
 
-lemma earliest_edge_reachability {u v : V} {t₁ : ℕ} (G : SimpleTemporalGraph V)
-(hee : G.EarliestEdge v u t₁) : ∀ w, G.Reachable v w → G.Reachable u w
+lemma earliest_edge_reachability {u α : V} {t₁ : ℕ} {G : SimpleTemporalGraph V}
+(hee : G.EarliestEdge α u t₁) : ∀ w, G.Reachable α w → G.Reachable u w
 := by
   intro w hTw
   rw [reachable_iff_nonempty_TemporalWalkset] at hTw
@@ -60,8 +60,8 @@ lemma earliest_edge_reachability {u v : V} {t₁ : ℕ} (G : SimpleTemporalGraph
   rw [reachable_iff_nonempty_TemporalWalkset]
   exact ⟨⟨t₁, e, twu⟩, ⟨t₁, ⟨e, ⟨twu, rfl⟩⟩⟩⟩
 
-lemma latest_edge_reachability {u v : V} {t₁ : ℕ} (G : SimpleTemporalGraph V)
-(hle : G.LatestEdge v u t₁) : ∀ w, G.Reachable w v → G.Reachable w u
+lemma latest_edge_reachability {u α : V} {t₁ : ℕ} {G : SimpleTemporalGraph V}
+(hle : G.LatestEdge α u t₁) : ∀ w, G.Reachable w α → G.Reachable w u
 := by
   intro h hTW
   rw [reachable_iff_nonempty_TemporalWalkset] at hTW

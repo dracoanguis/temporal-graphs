@@ -59,9 +59,9 @@ lemma time_mono {u v : V} {s e : ℕ} (tw : G.TemporalWalk u s v e) : s ≤ e
   | single h => rfl
   | step h p h' ih => exact le_trans ih h'
 
-lemma EarliestEdge.edge_time_bound {u v w : V} {t s e : ℕ}
-(tw : G.TemporalWalk v s w e)
-(hee : G.EarliestEdge v u t)
+lemma EarliestEdge.edge_time_bound {u α w : V} {t s e : ℕ}
+(tw : G.TemporalWalk α s w e)
+(hee : G.EarliestEdge α u t)
 : t ≤ s
 := by
   rw [EarliestEdge] at hee
@@ -69,9 +69,9 @@ lemma EarliestEdge.edge_time_bound {u v w : V} {t s e : ℕ}
   |single h => exact hee.right _ _ h
   |step _ _ _ hi => exact hi
 
-lemma LatestEdge.edge_time_bound {u v w : V} {t s e : ℕ}
-(tw : G.TemporalWalk v s w e)
-(hle : G.LatestEdge w u t)
+lemma LatestEdge.edge_time_bound {u v α : V} {t s e : ℕ}
+(tw : G.TemporalWalk v s α e)
+(hle : G.LatestEdge α u t)
 : e ≤ t
 := by
   rw [LatestEdge] at hle

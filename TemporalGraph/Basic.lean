@@ -105,11 +105,13 @@ def IsProper (G : SimpleTemporalGraph V) : Prop :=
   --∀ u : V, ¬∃ t : ℕ, ∃ v w : V, G.Adj u v t ∧ G.Adj u w t
   ∀ u v w, ∀ t, G.Adj u v t ∧ G.Adj u w t → v = w
 
-def EarliestEdge (G : SimpleTemporalGraph V) (u v : V) (t : ℕ) : Prop :=
-  G.Adj u v t ∧ ∀ w t', G.Adj u w t' → t ≤ t'
+/- The *earliest edge* of *α*, with *β* destination at *t*-/
+def EarliestEdge (G : SimpleTemporalGraph V) (α β : V) (t : ℕ) : Prop :=
+  G.Adj α β t ∧ ∀ w t', G.Adj α w t' → t ≤ t'
 
-def LatestEdge (G : SimpleTemporalGraph V) (u v : V) (t : ℕ) : Prop :=
-  G.Adj u v t ∧ ∀ w t', G.Adj u w t' → t ≥ t'
+/- The *latest edge* of *α*, with *β* destination at *t*-/
+def LatestEdge (G : SimpleTemporalGraph V) (α β : V) (t : ℕ) : Prop :=
+  G.Adj α β t ∧ ∀ w t', G.Adj α w t' → t ≥ t'
 
 
 section Order

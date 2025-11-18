@@ -27,6 +27,36 @@ namespace SimpleTemporalGraph
 
 variable {V : Type u}
 
+@[simp]
+protected theorem irrefl {G : SimpleTemporalGraph V} {v : V} {t : ℕ} : ¬G.Adj v v t :=
+  G.loopless t v
+
+section Adjacency
+
+variable {G : SimpleTemporalGraph V} {u v : V} {t : ℕ}
+
+theorem adj_comm (u v : V) (t : ℕ) : G.Adj u v t ↔ G.Adj v u t :=
+  ⟨fun x => G.symm t x, fun x => G.symm t x⟩
+
+@[symm]
+theorem adj_symm (h : G.Adj u v t) : G.Adj v u t :=
+  G.symm t h
+
+theorem Adj.symm (h : G.Adj u v t) : G.Adj v u t :=
+  G.symm t h
+
+theorem ne_of_adj {a b : V} {t : ℕ} (h : G.Adj a b t) : a ≠ b := by
+  rintro rfl
+  exact G.irrefl h
+
+protected theorem Adj.ne {a b : V} {t : ℕ} (h : G.Adj a b t) : a ≠ b :=
+  G.ne_of_adj h
+
+protected theorem Adj.ne' {a b : V} {t : ℕ} (h : G.Adj a b t) : b ≠ a :=
+  h.ne.symm
+
+end Adjacency
+
 /-- The Footprint of a SimpleTemporalGraph is a SimpleGraph representing
 the edges unlabeled by time. -/
 def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V:=
@@ -39,10 +69,6 @@ def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V:=
       intro v ⟨t, h⟩
       exact G.loopless t v h
   }
-
-
-def IsSubtempgraph {V' : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph V') : Prop :=
-  ∀ {v w : V'} {t : ℕ}, G'.Adj v w t → G.Adj ↑v ↑w t
 
 -- Add trub sub graph
 -- Rename in spanning sub grap
@@ -85,4 +111,22 @@ def EarliestEdge (G : SimpleTemporalGraph V) (u v : V) (t : ℕ) : Prop :=
 def LatestEdge (G : SimpleTemporalGraph V) (u v : V) (t : ℕ) : Prop :=
   G.Adj u v t ∧ ∀ w t', G.Adj u w t' → t ≥ t'
 
+
+section Order
+
+def IsSubtempgraph {V' : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph V') : Prop :=
+  ∀ {v w : V'} {t : ℕ}, G'.Adj v w t → G.Adj ↑v ↑w t
+
+instance : Bot (SimpleTemporalGraph V) where
+  bot := {
+    Adj _ _ _ := False
+    symm := by
+      intro _ _ _ h
+      trivial
+    loopless := by
+      intro _ _ h
+      trivial
+  }
+
+end Order
 end SimpleTemporalGraph

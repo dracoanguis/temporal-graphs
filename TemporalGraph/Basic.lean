@@ -70,10 +70,6 @@ def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V:=
       exact G.loopless t v h
   }
 
-
-def IsSubtempgraph {V' : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph V') : Prop :=
-  ∀ {v w : V'} {t : ℕ}, G'.Adj v w t → G.Adj ↑v ↑w t
-
 -- Add trub sub graph
 -- Rename in spanning sub grap
 -- check for rfl
@@ -115,4 +111,22 @@ def EarliestEdge (G : SimpleTemporalGraph V) (u v : V) (t : ℕ) : Prop :=
 def LatestEdge (G : SimpleTemporalGraph V) (u v : V) (t : ℕ) : Prop :=
   G.Adj u v t ∧ ∀ w t', G.Adj u w t' → t ≥ t'
 
+
+section Order
+
+def IsSubtempgraph {V' : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph V') : Prop :=
+  ∀ {v w : V'} {t : ℕ}, G'.Adj v w t → G.Adj ↑v ↑w t
+
+instance : Bot (SimpleTemporalGraph V) where
+  bot := {
+    Adj _ _ _ := False
+    symm := by
+      intro _ _ _ h
+      trivial
+    loopless := by
+      intro _ _ h
+      trivial
+  }
+
+end Order
 end SimpleTemporalGraph

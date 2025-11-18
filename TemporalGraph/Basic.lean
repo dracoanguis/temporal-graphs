@@ -27,6 +27,36 @@ namespace SimpleTemporalGraph
 
 variable {V : Type u}
 
+@[simp]
+protected theorem irrefl {G : SimpleTemporalGraph V} {v : V} {t : ℕ} : ¬G.Adj v v t :=
+  G.loopless t v
+
+section Adjacency
+
+variable {G : SimpleTemporalGraph V} {u v : V} {t : ℕ}
+
+theorem adj_comm (u v : V) (t : ℕ) : G.Adj u v t ↔ G.Adj v u t :=
+  ⟨fun x => G.symm t x, fun x => G.symm t x⟩
+
+@[symm]
+theorem adj_symm (h : G.Adj u v t) : G.Adj v u t :=
+  G.symm t h
+
+theorem Adj.symm (h : G.Adj u v t) : G.Adj v u t :=
+  G.symm t h
+
+theorem ne_of_adj {a b : V} {t : ℕ} (h : G.Adj a b t) : a ≠ b := by
+  rintro rfl
+  exact G.irrefl h
+
+protected theorem Adj.ne {a b : V} {t : ℕ} (h : G.Adj a b t) : a ≠ b :=
+  G.ne_of_adj h
+
+protected theorem Adj.ne' {a b : V} {t : ℕ} (h : G.Adj a b t) : b ≠ a :=
+  h.ne.symm
+
+end Adjacency
+
 /-- The Footprint of a SimpleTemporalGraph is a SimpleGraph representing
 the edges unlabeled by time. -/
 def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V:=

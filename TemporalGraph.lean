@@ -1,4 +1,7 @@
-import TemporalGraph.TemporalWalk
+import TemporalGraph.TimeWalk
+import TemporalGraph.SubTempGraph
+import TemporalGraph.Connectivity.SubTempGraph
+import TemporalGraph.Maps
 
 open SimpleTemporalGraph
 

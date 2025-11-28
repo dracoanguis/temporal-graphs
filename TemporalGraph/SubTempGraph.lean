@@ -121,7 +121,6 @@ protected def spanningCoe (G' : SubTempGraph G) : SimpleTemporalGraph V where
   symm := G'.symm
   loopless := G'.loopless
 
-
 section Order
 
 instance : Top G.SubTempGraph where

@@ -119,6 +119,21 @@ section Order
 def IsSubtempgraph {V' : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph V') : Prop :=
   ∀ {v w : V'} {t : ℕ}, G'.Adj v w t → G.Adj ↑v ↑w t
 
+/- This is a Subgraph with the same vertex set-/
+def IsSubtempgraphOnV (x y : SimpleTemporalGraph V) : Prop :=
+  ∀ {v w : V} {t : ℕ}, x.Adj v w t → y.Adj v w t
+
+instance : LE (SimpleTemporalGraph V) :=
+  ⟨IsSubtempgraphOnV⟩
+
+lemma le_iff_adj {G H : SimpleTemporalGraph V} :
+G ≤ H ↔ ∀ v w t, G.Adj v w t → H.Adj v w t := .rfl
+
+@[simp]
+theorem isSubtempgraphOnV_eq_le
+: (IsSubtempgraphOnV : SimpleTemporalGraph V -> SimpleTemporalGraph V -> Prop) = (· ≤ ·)
+:= rfl
+
 instance : Bot (SimpleTemporalGraph V) where
   bot := {
     Adj _ _ _ := False

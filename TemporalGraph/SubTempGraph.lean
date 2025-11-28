@@ -121,19 +121,6 @@ protected def spanningCoe (G' : SubTempGraph G) : SimpleTemporalGraph V where
   symm := G'.symm
   loopless := G'.loopless
 
-@[simps]
-def induce (G' : G.SubTempGraph) (s : Set V) : G.SubTempGraph where
-  verts := s
-  Adj u v t := u ∈ s ∧ v ∈ s ∧ G'.Adj u v t
-  adj_sub h := G'.adj_sub h.2.2
-  edge_vert h := h.1
-  symm t _ _ h := ⟨h.2.1, h.1, G'.symm t h.2.2⟩
-
--- theorem _root_.SimpleTemporalGraph.induce_eq_coe_induce_top (s : Set V) :
---     G.induce s = ((⊤ : G.SubTempGraph).induce s).coe := by
---   ext
---   simp
-
 
 section Order
 
@@ -171,6 +158,29 @@ instance : BoundedOrder (SubTempGraph G) where
   bot_le _ := ⟨Set.empty_subset _, False.elim⟩
 
 end Order
+
+section Induce
+
+/-- A SubTempGraph is called an *induced SubTempGraph* if vertices of `G'` are adjacent if
+they are adjacent in `G`. -/
+def IsInduced (G' : SubTempGraph G) : Prop :=
+  ∀ ⦃v⦄, v ∈ G'.verts → ∀ ⦃w⦄, w ∈ G'.verts → ∀ t, G.Adj v w t → G'.Adj v w t
+
+@[simp] lemma IsInduced.top : (⊤ : G.SubTempGraph).IsInduced := fun _ _ _ _ _ ↦ id
+
+
+@[simps]
+def induce (G' : G.SubTempGraph) (s : Set V) : G.SubTempGraph where
+  verts := s
+  Adj u v t := u ∈ s ∧ v ∈ s ∧ G'.Adj u v t
+  adj_sub h := G'.adj_sub h.2.2
+  edge_vert h := h.1
+  symm t _ _ h := ⟨h.2.1, h.1, G'.symm t h.2.2⟩
+
+
+
+end Induce
+
 end SubTempGraph
 
 namespace TemporalWalk

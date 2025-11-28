@@ -101,9 +101,16 @@ theorem coe_adj_sub (G' : SubTempGraph G) (u v : G'.verts) (t : ℕ) (h : G'.coe
 -- protected theorem Adj.coe {H : G.SubTempGraph} {u v : V} {t : ℕ} (h : H.Adj u v t) :
     -- H.coe.Adj ⟨u, H.edge_vert h⟩ ⟨v, H.edge_vert (h.symm t)⟩ := h
 
--- instance (G : SimpleGraph V) (H : SubTemporalGraph G) [DecidableRel H.Adj]
---: DecidableRel H.coe.Adj
---:= fun a b ↦ ‹DecidableRel H.Adj› _ _
+-- instance (G : SimpleGraph V) (H : SubTempGraph G) [DecidableRel H.Adj]
+-- : DecidableRel H.coe.Adj
+-- := fun a b ↦ ‹DecidableRel H.Adj› _ _
+
+theorem coe_sub (G' : SubTempGraph G) : G.IsSubtempgraph G'.coe:= by
+  rw [SimpleTemporalGraph.IsSubtempgraph]
+  intro v w t
+  exact coe_adj_sub G' v w t
+
+section Spanning
 
 /-- A SubTempGraph is called a *spanning subgraph* if it contains all the vertices of `G`. -/
 def IsSpanning (G' : SubTempGraph G) : Prop :=
@@ -120,6 +127,19 @@ protected def spanningCoe (G' : SubTempGraph G) : SimpleTemporalGraph V where
   Adj := G'.Adj
   symm := G'.symm
   loopless := G'.loopless
+
+theorem Adj.of_spanningCoe {G' : SubTempGraph G} {u v : G'.verts} {t : ℕ}
+(h : G'.spanningCoe.Adj u v t) : G.Adj u v t
+:= G'.adj_sub h
+
+lemma spanningcoe_le (G' : SubTempGraph G) : G'.spanningCoe ≤ G := G'.adj_sub
+
+variable {G₁ : SubTempGraph G} {G₂ : SubTempGraph G}
+
+theorem spanningCoe_inj : G₁.spanningCoe = G₂.spanningCoe ↔ G₁.Adj = G₂.Adj := by
+  simp [SubTempGraph.spanningCoe]
+
+end Spanning
 
 section Order
 
@@ -178,5 +198,24 @@ Coe (G'.coe.TemporalWalk u s v t) (G.TemporalWalk ↑u s ↑v t) where
   coe := TemporalWalk.lift_subtempgraph_walk
 
 end TemporalWalk
+
+
+section SubgraphProps
+
+variable {V : Type u} {G : SimpleTemporalGraph V}
+
+@[simps]
+def toSubgraph (H : SimpleTemporalGraph V) (h : H ≤ G) : G.SubTempGraph where
+  verts := Set.univ
+  Adj := H.Adj
+  adj_sub e := h e
+  edge_vert _ := Set.mem_univ _
+  symm _ := H.symm _
+
+theorem toSubgraph.isSpanning (H : SimpleTemporalGraph V) (h : H ≤ G)
+: (toSubgraph H h).IsSpanning
+:= Set.mem_univ
+
+end SubgraphProps
 
 end SimpleTemporalGraph

@@ -38,3 +38,5 @@ example : triangle.IsProper
   unfold SimpleTemporalGraph.IsProper
   intro u
   admit -- way too long and useless
+
+example : SubTempGraph.IsInduced

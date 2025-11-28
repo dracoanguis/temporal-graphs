@@ -97,6 +97,12 @@ def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V:=
 -- def support :=
   -- SetRel.dom {(u, v, t) : V ⨯ V ⨯ ℕ | G.Adj u v t}
 
+
+
+-- instance neighborSet.memDecidable (G : SimpleTemporalGraph V) (v : V) [DecidableRel (λ x y↦ ∃ t, G.Adj x y t)] :
+--     DecidablePred (· ∈ G.neighborSet v) :=
+--   inferInstanceAs <| DecidablePred (Adj G v)
+
 def IsComplete (G : SimpleTemporalGraph V) : Prop :=
   ∀ u v : V, ∃ t, G.Adj u v t
 
@@ -146,4 +152,5 @@ instance : Bot (SimpleTemporalGraph V) where
   }
 
 end Order
+
 end SimpleTemporalGraph

@@ -1,4 +1,7 @@
-import TemporalGraph.TemporalWalk
+import TemporalGraph.TimeWalk
+import TemporalGraph.SubTempGraph
+import TemporalGraph.Connectivity.SubTempGraph
+import TemporalGraph.Maps
 
 open SimpleTemporalGraph
 
@@ -38,3 +41,5 @@ example : triangle.IsProper
   unfold SimpleTemporalGraph.IsProper
   intro u
   admit -- way too long and useless
+
+example : SubTempGraph.IsInduced

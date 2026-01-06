@@ -97,9 +97,9 @@ theorem coe_adj_sub (G' : SubTempGraph G) (u v : G'.verts) (t : ℕ) (h : G'.coe
 : G.Adj u v t
 := G'.adj_sub h
 
--- -- Given `h : H.Adj u v`, then `h.coe : H.coe.Adj ⟨u, _⟩ ⟨v, _⟩`.
--- protected theorem Adj.coe {H : G.SubTempGraph} {u v : V} {t : ℕ} (h : H.Adj u v t) :
-    -- H.coe.Adj ⟨u, H.edge_vert h⟩ ⟨v, H.edge_vert (h.symm t)⟩ := h
+-- Given `h : H.Adj u v t`, then `h.coe : H.coe.Adj ⟨u, _⟩ ⟨v, _⟩ t`.
+protected theorem Adj.coe {H : G.SubTempGraph} {u v : V} {t : ℕ} (h : H.Adj u v t) :
+    H.coe.Adj ⟨u, h.fst_mem⟩ ⟨v, h.snd_mem⟩ t := h
 
 -- instance (G : SimpleGraph V) (H : SubTempGraph G) [DecidableRel H.Adj]
 -- : DecidableRel H.coe.Adj
@@ -156,6 +156,8 @@ instance : Top G.SubTempGraph where
 theorem top_adj {x y : V} {t : ℕ} : (⊤ : SubTempGraph G).Adj x y t ↔ G.Adj x y t :=
   Iff.rfl
 
+theorem top_verts : (⊤ : SubTempGraph G).verts = Set.univ := rfl
+
 instance : Bot G.SubTempGraph where
   bot := {
     verts := ∅
@@ -165,10 +167,12 @@ instance : Bot G.SubTempGraph where
     symm _ _ _ := id
   }
 
-instance : LE (SubTempGraph G) where
-  le G₁ G₂ :=
-    (G₁.verts ⊆ G₂.verts) ∧
-    (∀ {u v t}, G₁.Adj u v t → G₂.Adj u v t)
+def IsSubgraphOf (H : SubTempGraph G) (H' : SubTempGraph G) : Prop
+:= (H.verts ⊆ H'.verts) ∧
+    (∀ {u v t}, H.Adj u v t → H'.Adj u v t)
+
+instance : LE (SubTempGraph G) :=
+  ⟨IsSubgraphOf⟩
 
 instance : BoundedOrder (SubTempGraph G) where
   top := ⊤
@@ -186,7 +190,6 @@ def IsInduced (G' : SubTempGraph G) : Prop :=
   ∀ ⦃v⦄, v ∈ G'.verts → ∀ ⦃w⦄, w ∈ G'.verts → ∀ t, G.Adj v w t → G'.Adj v w t
 
 @[simp] lemma IsInduced.top : (⊤ : G.SubTempGraph).IsInduced := fun _ _ _ _ _ ↦ id
-
 
 @[simps]
 def induce (G' : G.SubTempGraph) (s : Set V) : G.SubTempGraph where
@@ -238,6 +241,8 @@ def toSubgraph (H : SimpleTemporalGraph V) (h : H ≤ G) : G.SubTempGraph where
 theorem toSubgraph.isSpanning (H : SimpleTemporalGraph V) (h : H ≤ G)
 : (toSubgraph H h).IsSpanning
 := Set.mem_univ
+
+def toSubgraphTop : G.SubTempGraph := ⊤
 
 end SubgraphProps
 

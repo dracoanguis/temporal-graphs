@@ -70,24 +70,6 @@ def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V:=
       exact G.loopless t v h
   }
 
--- Add trub sub graph
--- Rename in spanning sub grap
--- check for rfl
--- def IsSubtempgraph (x y : SimpleTemporalGraph V) : Prop :=
---   ∀ {v w : V} {t : ℕ}, x.Adj v w t → y.Adj v w t
-
--- instance : LE (SimpleTemporalGraph V) :=
---   ⟨IsSubtempgraph⟩
-
--- lemma le_iff_adj {G H : SimpleTemporalGraph V} :
--- G ≤ H ↔ ∀ v w t, G.Adj v w t → H.Adj v w t := .rfl
-
--- @[simp]
--- theorem isSubtempgraph_eq_le
--- : (IsSubtempgraph : SimpleTemporalGraph V -> SimpleTemporalGraph V -> Prop) = (· ≤ ·)
--- := rfl
-
-
 -- @[simp]
 -- theorem isSubtempgraph_self (G : SimpleTemporalGraph V) : G.IsSubtempgraph G := by
 --   unfold IsSubtempgraph

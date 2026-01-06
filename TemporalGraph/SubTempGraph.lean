@@ -199,9 +199,79 @@ def induce (G' : G.SubTempGraph) (s : Set V) : G.SubTempGraph where
   edge_vert h := h.1
   symm t _ _ h := ⟨h.2.1, h.1, G'.symm t h.2.2⟩
 
-
-
 end Induce
+
+section DeleteVerts
+
+abbrev deleteVerts (G' : SubTempGraph G) (s : Set V) : G.SubTempGraph
+:= G'.induce (G'.verts \ s)
+
+lemma deleteVerts_verts (G' : SubTempGraph G) (s : Set V) : (G'.deleteVerts s).verts = G'.verts \ s
+:= rfl
+
+theorem deleteVerts_le (G' : SubTempGraph G) (s : Set V) : (G'.deleteVerts s) ≤ G'
+:= by constructor <;> simp [Set.diff_subset]
+
+end DeleteVerts
+
+section AddVerts
+
+abbrev addVerts (G' : SubTempGraph G) (s : Set V) : G.SubTempGraph
+:= G'.induce (G'.verts ∪ s)
+
+lemma addVerts_verts (G' : SubTempGraph G) (s : Set V) : (G'.addVerts s).verts = G'.verts ∪ s
+:= rfl
+
+end AddVerts
+
+section AddEdge
+
+variable {u v : V} {t : ℕ}
+
+def addEdge (G' : SubTempGraph G) (h : G.Adj u v t) (h' : u ∈ G'.verts ∧ v ∈ G'.verts)
+: SubTempGraph G where
+  verts := G'.verts
+  Adj x y z := G'.Adj x y z ∨ (x=u∧y=v∧z=t) ∨ (y=u∧x=v∧z=t)
+
+  symm := by
+    intro t x y h
+    apply h.elim3
+    · intro h ; exact Or.inl <| G'.symm t h
+    · intro h ; exact Or.inr <| Or.inr h
+    · intro h ; exact Or.inr <| Or.inl h
+
+  edge_vert := by
+    intro x v t hadj
+    apply hadj.elim3
+    · intro h ; exact G'.edge_vert h
+    · intro h'' ; rw [h''.left.symm] at h' ; exact h'.left
+    · intro h'' ; rw [h''.right.left.symm] at h' ; exact h'.right
+
+  adj_sub := by
+    intro x y z h''
+    apply h''.elim3
+    · intro h'' ; exact G'.adj_sub h''
+    · intro h'' ; rwa [h''.left.symm, h''.right.left.symm, h''.right.right.symm] at h
+    · intro h'' ; rw [h''.left.symm, h''.right.left.symm, h''.right.right.symm] at h ; exact h.symm
+
+variable {G' : SubTempGraph G} {h : G.Adj u v t} {h' : u ∈ G'.verts ∧ v ∈ G'.verts}
+
+theorem addEdge_le : G' ≤ addEdge G' h h' := by
+  constructor
+  · intro _ hx
+    exact hx
+  · intro _ _ _ hadj
+    exact Or.inl hadj
+
+theorem addEdge_edge : (addEdge G' h h').Adj u v t := by
+  right
+  left
+  exact ⟨rfl, rfl, rfl⟩
+
+theorem addEdge_verts : (addEdge G' h h').verts = G'.verts := rfl
+
+end AddEdge
+
 
 end SubTempGraph
 

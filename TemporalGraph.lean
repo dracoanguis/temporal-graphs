@@ -1,4 +1,4 @@
-import TemporalGraph.TimeWalk
+import TemporalGraph.TemporalWalk
 import TemporalGraph.SubTempGraph
 import TemporalGraph.Connectivity.SubTempGraph
 import TemporalGraph.Maps
@@ -42,4 +42,4 @@ example : triangle.IsProper
   intro u
   admit -- way too long and useless
 
-example : SubTempGraph.IsInduced
+#check (triangle.induce ({u : Fin 3 | u ≠ 3})).Adj

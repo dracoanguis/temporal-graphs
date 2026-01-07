@@ -158,6 +158,8 @@ theorem top_adj {x y : V} {t : ℕ} : (⊤ : SubTempGraph G).Adj x y t ↔ G.Adj
 
 theorem top_verts : (⊤ : SubTempGraph G).verts = Set.univ := rfl
 
+theorem top_spanningCoe : (⊤ : SubTempGraph G).spanningCoe = G := rfl
+
 instance : Bot G.SubTempGraph where
   bot := {
     verts := ∅

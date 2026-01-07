@@ -1,5 +1,6 @@
 import TemporalGraph.Basic
 import TemporalGraph.TemporalWalk
+import TemporalGraph.Maps
 
 universe u
 
@@ -273,6 +274,51 @@ theorem addEdge_edge : (addEdge G' h h').Adj u v t := by
 theorem addEdge_verts : (addEdge G' h h').verts = G'.verts := rfl
 
 end AddEdge
+
+section EdgeProps
+
+variable {α β : V} {t : ℕ}
+
+lemma EarliestEdge_graph_isof_subgraph {H : SubTempGraph G}
+(h : G.EarliestEdge α β t) (h' : H.Adj α β t)
+: H.coe.EarliestEdge ⟨α, H.edge_vert h'⟩ ⟨β, H.edge_vert h'.symm⟩ t
+:= by
+  constructor
+  · exact h'
+  · rw [SimpleTemporalGraph.EarliestEdge] at h
+    rcases h with ⟨hαβ, hmin⟩
+    intro w t' hadj
+    cases w with
+    | mk w hw => exact hmin w t' <| H.adj_sub hadj
+
+lemma LatestEdge_graph_isof_subgraph {H : SubTempGraph G}
+(h : G.LatestEdge α β t) (h' : H.Adj α β t)
+: H.coe.LatestEdge ⟨α, H.edge_vert h'⟩ ⟨β, H.edge_vert h'.symm⟩ t
+:= by
+  constructor
+  · exact h'
+  · rw [SimpleTemporalGraph.LatestEdge] at h
+    rcases h with ⟨hαβ, hmin⟩
+    intro w t' hadj
+    cases w with
+    | mk w hw => exact hmin w t' <| H.adj_sub hadj
+
+end EdgeProps
+
+section Maps
+
+section Iso
+
+variable {V W : Type*} {G : SimpleTemporalGraph V} {H : SimpleTemporalGraph W}
+
+abbrev Iso (G' : SubTempGraph G) (H' : SubTempGraph H)
+:= G'.coe ≃tg H'.coe
+
+@[inherit_doc] infixl:50 " ≃stg " => Iso
+
+end Iso
+
+end Maps
 
 
 end SubTempGraph

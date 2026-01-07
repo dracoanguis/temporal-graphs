@@ -135,4 +135,14 @@ instance : Bot (SimpleTemporalGraph V) where
 
 end Order
 
+section NeighborSet
+
+def neighborSet (G : SimpleTemporalGraph V) (v : V) := {x | ∃ t, G.Adj v x t}
+
+theorem mem_neighborSet (G : SimpleTemporalGraph V) (v w : V)
+: w ∈ G.neighborSet v ↔ ∃ t, G.Adj v w t
+:= Iff.rfl
+
+end NeighborSet
+
 end SimpleTemporalGraph

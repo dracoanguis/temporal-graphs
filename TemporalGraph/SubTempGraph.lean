@@ -320,6 +320,27 @@ end Iso
 
 end Maps
 
+section NeighborSet
+
+def neighborSet (G' : SubTempGraph G) (v : V) := {x | ∃ t, G'.Adj v x t}
+
+theorem mem_neighborSet (G' : SubTempGraph G) (v w : V)
+: w ∈ G'.neighborSet v ↔ ∃ t, G'.Adj v w t
+:= Iff.rfl
+
+theorem neighborSet_top (v : V)
+: (⊤ : G.SubTempGraph).neighborSet v = G.neighborSet v
+:= rfl
+
+theorem neighborSet_subset_verts (G' : SubTempGraph G) (v : V)
+: G'.neighborSet v ⊆ G'.verts
+:= by
+  intro x h
+  rw [mem_neighborSet] at h
+  let ⟨t, h⟩ := h
+  exact G'.edge_vert <| G'.adj_symm h
+
+end NeighborSet
 
 end SubTempGraph
 

@@ -159,34 +159,6 @@ theorem deleteVerts_reachability {s : Set V} {H : SubTempGraph G}
 --     exact ⟨G', ⟨h_span, h_tc⟩⟩
 
 
-lemma tc_construct {u v w : V} {t₁ t₂ : ℕ} (G : SimpleTemporalGraph V) (G' : SubTempGraph G)
-(h : G.EarliestEdge v u t₁ ∧ G.LatestEdge w u t₂)
-(h' : G'.verts = {α:V| α≠u} ∧ G'.TemporallyConnected) : G.TemporallyConnected
-:= by
-  rw [SimpleTemporalGraph.TemporallyConnected]
-  rcases h with ⟨hee, hle⟩
-  rw [SimpleTemporalGraph.EarliestEdge] at hee
-  rw [SimpleTemporalGraph.LatestEdge] at hle
-  rcases h' with ⟨hnu, htc⟩
-  rw [SubTempGraph.TemporallyConnected] at htc
-  have hvin : v∈G'.verts := by rw [hnu] ; exact hee.left.ne
-  have hwin : w∈G'.verts := by rw [hnu] ; exact hle.left.ne
-  have htc' := fun x y : G'.verts ↦ G'.subgraph_reachable_is_reachable x y (htc x y)
-  have hfur := fun x : G'.verts ↦ earliest_edge_reachability hee x (htc' ⟨v, hvin⟩ x)
-  have htur := fun x : G'.verts ↦ latest_edge_reachability hle x (htc' x ⟨w, hwin⟩)
-  have huu := earliest_latest_edge_co_reachability hee hle (htc' ⟨v, hvin⟩ ⟨w, hwin⟩)
-  intro x y
-  by_cases hcase : x=u
-  · rw [hcase]
-    by_cases hcase' : y=u
-    · rw [hcase']
-      exact huu
-    · exact hfur ⟨y, by rwa [hnu]⟩
-  · by_cases hcase' : y=u
-    · rw [hcase']
-      exact htur ⟨x, by rwa [hnu]⟩
-    · exact htc' ⟨x, by rwa [hnu]⟩ ⟨y, by rwa [hnu]⟩
-
 def spanner_from2 {u v w : V} {t₁ t₂ : ℕ} {G}
 (hG : G.EarliestEdge v u t₁ ∧ G.LatestEdge w u t₂)
 (R : SubTempGraph G)

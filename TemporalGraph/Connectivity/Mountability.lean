@@ -112,13 +112,24 @@ theorem V_minus_inter_V_plus_non_empty_imply_mountableon (u : V) (H : SubTempGra
   have hu_nin : u ∉ (H.deleteVerts {u}).verts := by simp
   exact ⟨hu_nin, ⟨α, hα⟩, ⟨β, hβ⟩, hen, hln, hTC⟩
 
+def Mountable2 (H : SubTempGraph G) : Prop
+:= (∃ u α β β' t t', G.EarliestNeigbhor α u ∧ (G.LatestEdge β β' t ∧ G.Adj β' u t' ∧ t ≤ t')
+    ∧ u ∉ H.verts ∧ {α, β, β'} ⊆ H.verts)
+  ∨ (∃ u α α' β s s', G.LatestNeighbor β u ∧ (G.EarliestEdge α α' s ∧ G.Adj α u s' ∧ s' ≤ s)
+    ∧ u ∉ H.verts ∧ {α, α', β} ⊆ H.verts)
+  ∨ (∃ u α α' β β' t t' s s', (G.LatestEdge β β' t ∧ G.Adj β' u t' ∧ t ≤ t')
+    ∧ (G.EarliestEdge α α' s ∧ G.Adj α u s' ∧ s' ≤ s) ∧ u ∉ H.verts ∧ {α, α', β, β'} ⊆ H.verts)
+
+def Mountable2On (u : V) (H : SubTempGraph G) : Prop
+:= u ∉ H.verts ∧ (
+  (∃ α β β' t t', G.EarliestNeigbhor α u ∧ (G.LatestEdge β β' t ∧ G.Adj β' u t' ∧ t ≤ t')
+    ∧ {α, β, β'} ⊆ H.verts)
+  ∨ (∃ u α α' β s s', G.LatestNeighbor β u ∧ (G.EarliestEdge α α' s ∧ G.Adj α u s' ∧ s' ≤ s)
+    ∧ {α, α', β} ⊆ H.verts)
+  ∨ (∃ u α α' β β' t t' s s', (G.LatestEdge β β' t ∧ G.Adj β' u t' ∧ t ≤ t')
+    ∧ (G.EarliestEdge α α' s ∧ G.Adj α u s' ∧ s' ≤ s) ∧ {α, α', β, β'} ⊆ H.verts)
+)
+
 end SubTempGraph
-
-
-def Dismountable_2 {tₑ tₗ tₑ' tₗ' : ℕ} (u : V) : Prop
-:= ∃ αₑ αₑ' αₗ αₗ', ((G.EarliestEdge αₑ αₑ' tₑ ∧ G.Adj αₑ' u tₑ' ∧ tₑ' ≤ tₑ) ∧ G.LatestEdge αₗ u tₗ)
-  ∨ (G.EarliestEdge αₑ u tₑ ∧ (G.LatestEdge αₗ αₗ' tₗ ∧ G.Adj αₗ' u tₗ' ∧ tₗ ≤ tₗ'))
-  ∨ ((G.EarliestEdge αₑ αₑ' tₑ ∧ G.Adj αₑ' u tₑ' ∧ tₑ' ≤ tₑ)
-      ∧ (G.LatestEdge αₗ αₗ' tₗ ∧ G.Adj αₗ' u tₗ' ∧ tₗ ≤ tₗ'))
 
 end SimpleTemporalGraph

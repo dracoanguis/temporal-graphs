@@ -344,6 +344,27 @@ end NeighborSet
 
 end SubTempGraph
 
+namespace NETemporalWalk
+
+variable {V : Type u}
+
+@[coe]
+protected def lift_subtempgraph_walk {G : SimpleTemporalGraph V} {G' : SubTempGraph G}
+{u v : G'.verts} {s t : ℕ} :
+G'.coe.NETemporalWalk u s v t → G.NETemporalWalk ↑u s ↑v t
+| single h => single (G'.adj_sub h)
+| step h p h' =>
+  step (G'.adj_sub h)
+    (p.lift_subtempgraph_walk)
+    h'
+
+instance {V : Type u} {G : SimpleTemporalGraph V} {G' : SubTempGraph G} {u v : G'.verts} {s t : ℕ} :
+Coe (G'.coe.NETemporalWalk u s v t) (G.NETemporalWalk ↑u s ↑v t) where
+  coe := NETemporalWalk.lift_subtempgraph_walk
+
+
+end NETemporalWalk
+
 namespace TemporalWalk
 
 variable {V : Type u} --{G : SimpleTemporalGraph V} {G' : SubTempGraph G}
@@ -352,18 +373,14 @@ variable {V : Type u} --{G : SimpleTemporalGraph V} {G' : SubTempGraph G}
 protected def lift_subtempgraph_walk {G : SimpleTemporalGraph V} {G' : SubTempGraph G}
 {u v : G'.verts} {s t : ℕ} :
 G'.coe.TemporalWalk u s v t → G.TemporalWalk ↑u s ↑v t
-| single h => single (G'.adj_sub h)
-| step h p h' =>
-  step (G'.adj_sub h)
-    (p.lift_subtempgraph_walk)
-    h'
+| empty => empty
+| nonempty p => nonempty ↑p
 
 instance {V : Type u} {G : SimpleTemporalGraph V} {G' : SubTempGraph G} {u v : G'.verts} {s t : ℕ} :
 Coe (G'.coe.TemporalWalk u s v t) (G.TemporalWalk ↑u s ↑v t) where
   coe := TemporalWalk.lift_subtempgraph_walk
 
 end TemporalWalk
-
 
 section SubgraphProps
 

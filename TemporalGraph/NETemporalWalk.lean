@@ -1,0 +1,81 @@
+import TemporalGraph.Basic
+
+universe u
+
+namespace SimpleTemporalGraph
+
+variable {V : Type u} {G : SimpleTemporalGraph V}
+
+/-- This is a Nonempty Non-strict TemporalWalk. -/
+inductive NETemporalWalk : V → ℕ → V → ℕ → Type u
+  | single {u v : V} {s : ℕ} (h: G.Adj u v s) : NETemporalWalk u s v s
+  | step {u v w : V} {s t t' : ℕ}
+    (h : G.Adj v w t')
+    (p : NETemporalWalk u s v t)
+    (h' : t ≤ t' := by decide)
+    : NETemporalWalk u s w t'
+  deriving DecidableEq
+
+namespace NETemporalWalk
+
+/-- The length of a NETemporalWalk is the number of edges along it. -/
+def length {u v : V} {s t : ℕ} : G.NETemporalWalk u s v t → ℕ
+  | single _ => 1
+  | step _ p _ => 1 + p.length
+
+/-- The `support` of a NETemporalWalk is the list of vertices it visits in order. -/
+def support {u v : V} {s t : ℕ} : G.NETemporalWalk u s v t → List V
+  | single _ => v :: [u]
+  | step _ p _ => v :: p.support
+
+/-- The `darts` of a NETemporalWalk is the list of darts (edge with a direction) it visits in
+order. -/
+def darts {u v : V} {s t : ℕ} : G.NETemporalWalk u s v t → List (V × V × ℕ)
+  | @single _ _ u v t _ => [⟨u ,⟨v, t⟩⟩]
+  | @step _ _ _ v w _ _ t' _ p _ => ⟨v ,⟨ w, t'⟩⟩ :: p.darts
+
+def extend {u v v' : V} {s t s' t'} (p : G.NETemporalWalk u s v t)
+(ext : G.NETemporalWalk v s' v' t')
+(h_ord : t ≤ s' := by decide)
+: G.NETemporalWalk u s v' t'
+:= match ext with
+  | single h_edge => step h_edge p h_ord
+  | step h_edge p' h_ord' => step h_edge (extend p p' h_ord) h_ord'
+
+def prepend {u v u' : V} {s t s' : ℕ}
+(h : G.Adj u' u s')
+(p : G.NETemporalWalk u s v t)
+(h' : s' ≤ s := by decide)
+: G.NETemporalWalk u' s' v t
+:= extend (single h) p h'
+
+lemma time_mono {u v : V} {s e : ℕ} (tw : G.NETemporalWalk u s v e) : s ≤ e
+:= by
+  induction tw with
+  | single h => rfl
+  | step h p h' ih => exact le_trans ih h'
+
+lemma EarliestEdge.edge_time_bound {u α w : V} {t s e : ℕ}
+(tw : G.NETemporalWalk α s w e)
+(hee : G.EarliestEdge α u t)
+: t ≤ s
+:= by
+  rw [EarliestEdge] at hee
+  induction tw with
+  |single h => exact hee.right _ _ h
+  |step _ _ _ hi => exact hi
+
+lemma LatestEdge.edge_time_bound {u v α : V} {t s e : ℕ}
+(tw : G.NETemporalWalk v s α e)
+(hle : G.LatestEdge α u t)
+: e ≤ t
+:= by
+  rw [LatestEdge] at hle
+  cases tw with
+  | single h => exact hle.right _ _ h.symm
+  | step h _ _ => exact hle.right _ _ h.symm
+
+
+end NETemporalWalk
+
+end SimpleTemporalGraph

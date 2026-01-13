@@ -8,6 +8,16 @@ namespace SimpleTemporalGraph
 def Reachable (G : SimpleTemporalGraph V) (u v : V) : Prop :=
 ∃ s t, Nonempty (G.TemporalWalk u s v t)
 
+theorem nonempty_NETemporalWalk_imp {G : SimpleTemporalGraph V} {u v : V}
+: (∃ s e, Nonempty (G.NETemporalWalk u s v e)) → G.Reachable u v
+:= by
+  intro ⟨s, t, ⟨h⟩⟩
+  use s, t, TemporalWalk.nonempty h
+
+theorem self_reachable {G : SimpleTemporalGraph V} (u : V)
+: G.Reachable u u
+:= by use 0, 0, TemporalWalk.empty
+
 theorem reachable_iff_nonempty_univ {G : SimpleTemporalGraph V} {u v : V} :
 G.Reachable u v ↔ ∃ s t, (Set.univ : Set (G.TemporalWalk u s v t)).Nonempty := by
     unfold Reachable
@@ -45,44 +55,41 @@ theorem complete_is_TC (G : SimpleTemporalGraph V)
   unfold IsComplete TemporallyConnected
   intro h u v
   let ⟨t, h'⟩ := h u v
-  rw [reachable_iff_nonempty_univ]
-  exact ⟨t, ⟨t, ⟨TemporalWalk.single h', trivial⟩⟩⟩
+  exact nonempty_NETemporalWalk_imp ⟨t, t, ⟨NETemporalWalk.single h'⟩⟩
 
-lemma earliest_edge_reachability {u α : V} {t₁ : ℕ} {G : SimpleTemporalGraph V}
-(hee : G.EarliestEdge α u t₁) : ∀ w, G.Reachable α w → G.Reachable u w
-:= by
-  intro w hTw
-  rw [reachable_iff_nonempty_TemporalWalkset] at hTw
-  rw [EarliestEdge] at hee
-  let ⟨_, s, e, tw, _⟩ := hTw
-  have hst : t₁ ≤ s := TemporalWalk.EarliestEdge.edge_time_bound tw hee
-  let twu := tw.prepend hee.left.symm hst
-  rw [reachable_iff_nonempty_TemporalWalkset]
-  exact ⟨⟨t₁, e, twu⟩, ⟨t₁, ⟨e, ⟨twu, rfl⟩⟩⟩⟩
-
-lemma latest_edge_reachability {u α : V} {t₁ : ℕ} {G : SimpleTemporalGraph V}
-(hle : G.LatestEdge α u t₁) : ∀ w, G.Reachable w α → G.Reachable w u
-:= by
-  intro h hTW
-  rw [reachable_iff_nonempty_TemporalWalkset] at hTW
-  rw [LatestEdge] at hle
-  let ⟨_, s, e, tw, _⟩ := hTW
-  have het : e ≤ t₁ := TemporalWalk.LatestEdge.edge_time_bound tw hle
-  let tuw := tw.step hle.left het
-  rw [reachable_iff_nonempty_TemporalWalkset]
-  exact ⟨⟨s, t₁, tuw⟩, ⟨s, ⟨t₁, ⟨tuw, rfl⟩⟩⟩⟩
-
-lemma earliest_latest_edge_co_reachability {u αₑ αₗ : V} {tₑ tₗ : ℕ} {G : SimpleTemporalGraph V}
-(hee : G.EarliestEdge αₑ u tₑ) (hle : G.LatestEdge αₗ u tₗ) (hr : G.Reachable αₑ αₗ)
-: G.Reachable u u
+lemma earliest_edge_reachability {u α : V} {t : ℕ} {G : SimpleTemporalGraph V}
+(hee : G.EarliestEdge α u t) : ∀ w, G.Reachable α w → G.Reachable u w
 := by
   rw [EarliestEdge] at hee
-  rw [LatestEdge] at hle
-  rw [reachable_iff_nonempty_TemporalWalkset] at hr
-  rcases hr with ⟨_, s, e, tw, _⟩
-  let tw' := tw.prepend hee.left.symm (TemporalWalk.EarliestEdge.edge_time_bound tw hee)
-  let tw'' := tw'.step hle.left (TemporalWalk.LatestEdge.edge_time_bound tw' hle)
-  rw [reachable_iff_nonempty_TemporalWalkset]
-  exact ⟨⟨tₑ, tₗ, tw''⟩, ⟨tₑ, ⟨tₗ, ⟨tw'', rfl⟩⟩⟩⟩
+  intro w ⟨s, e, ⟨tw⟩⟩
+  cases tw with
+  | empty => exact nonempty_NETemporalWalk_imp ⟨t, t, ⟨NETemporalWalk.single hee.left.symm⟩⟩
+  | nonempty p =>
+    have hst : t ≤ s := NETemporalWalk.EarliestEdge.edge_time_bound p hee
+    exact nonempty_NETemporalWalk_imp ⟨_, _, ⟨p.prepend hee.left.symm hst⟩⟩
+
+
+lemma latest_edge_reachability {u α : V} {t : ℕ} {G : SimpleTemporalGraph V}
+(hle : G.LatestEdge α u t) : ∀ w, G.Reachable w α → G.Reachable w u
+:= by
+  intro w ⟨s, e, ⟨tw⟩⟩
+  cases tw with
+  | empty => exact nonempty_NETemporalWalk_imp ⟨t, t, ⟨NETemporalWalk.single hle.left⟩⟩
+  | nonempty p =>
+    have het : e ≤ t := NETemporalWalk.LatestEdge.edge_time_bound p hle
+    exact nonempty_NETemporalWalk_imp ⟨_, _, ⟨p.step hle.left het⟩⟩
+
+-- lemma earliest_latest_edge_co_reachability {u αₑ αₗ : V} {tₑ tₗ : ℕ} {G : SimpleTemporalGraph V}
+-- (hee : G.EarliestEdge αₑ u tₑ) (hle : G.LatestEdge αₗ u tₗ) (hr : G.Reachable αₑ αₗ)
+-- : G.Reachable u u
+-- := by
+--   rw [EarliestEdge] at hee
+--   rw [LatestEdge] at hle
+--   rw [reachable_iff_nonempty_TemporalWalkset] at hr
+--   rcases hr with ⟨_, s, e, tw, _⟩
+--   let tw' := tw.prepend hee.left.symm (TemporalWalk.EarliestEdge.edge_time_bound tw hee)
+--   let tw'' := tw'.step hle.left (TemporalWalk.LatestEdge.edge_time_bound tw' hle)
+--   rw [reachable_iff_nonempty_TemporalWalkset]
+--   exact ⟨⟨tₑ, tₗ, tw''⟩, ⟨tₑ, ⟨tₗ, ⟨tw'', rfl⟩⟩⟩⟩
 
 end SimpleTemporalGraph

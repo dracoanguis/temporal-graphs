@@ -41,11 +41,6 @@ def IsSpanner {V' : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph
 := (∀ v : V, v ∈ V') ∧
   ∀ (u v : V) (hu : u ∈ V') (hv : v ∈ V'), G.Reachable u v → G'.Reachable ⟨u, hu⟩ ⟨v, hv⟩
 
--- theorem spanner_iff_subgraph {V' : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph V')
--- : G.IsSpanner G' ↔ G.IsSubtempgraph G'
--- := by
---   sorry
-
 def IsTCSpanner {V' : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph V') : Prop
 := G.IsSpanner G' ∧ G'.TemporallyConnected
 

@@ -311,6 +311,7 @@ section Iso
 
 variable {V W : Type*} {G : SimpleTemporalGraph V} {H : SimpleTemporalGraph W}
 
+/-- WIP consider removing as it is not used -/
 abbrev Iso (G' : SubTempGraph G) (H' : SubTempGraph H)
 := G'.coe ≃tg H'.coe
 

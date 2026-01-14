@@ -54,7 +54,7 @@ lemma subgraph_reachable_is_reachable' {H : SubTempGraph G} {H' : SubTempGraph G
 : ∀ u v, H.Reachable u v → H'.Reachable ⟨u, Set.mem_of_subset_of_mem h.left u.prop⟩
                                         ⟨v, Set.mem_of_subset_of_mem h.left v.prop⟩
 := by
-  intro x y
+  intro ⟨x, hx⟩ ⟨y, hy⟩ hR
   sorry
 
 @[simp]
@@ -73,21 +73,19 @@ protected lemma TCspanner_imply_TC (G' : SubTempGraph G)
   exact ⟨s, ⟨t, ⟨tw.lift_subtempgraph_walk⟩⟩⟩
 
 @[simp]
-theorem spanningCoe_eq_coe_reachability (H : SubTempGraph G)
-: ∀ x y, H.Reachable x y ↔ H.spanningCoe.Reachable x y
+theorem reachability_imp_spanningCoe_reachability (H : SubTempGraph G)
+: ∀ x y, H.Reachable x y → H.spanningCoe.Reachable x y
 := by
-  intro x y
-  simp
-  constructor
-  · sorry
-  · sorry
+  intro ⟨x, hx⟩ ⟨y, hy⟩
+  sorry
 
 theorem top_reachability : ∀ x y, (⊤ : SubTempGraph G).Reachable x y ↔ G.Reachable x y
 := by
   intro x y
   constructor
-  · exact SubTempGraph.subgraph_reachable_is_reachable x y
-  · intro h ; rw [spanningCoe_eq_coe_reachability] ; rw [top_spanningCoe] ; exact h
+  · exact SubTempGraph.subgraph_reachable_is_reachable _ _
+  · intro h
+    sorry
 
 theorem addVerts_reachability {s : Set V} {H : SubTempGraph G}
 : ∀ x y, H.Reachable x y ↔ (H.addVerts s).Reachable ⟨x, by simp⟩ ⟨y, by simp⟩

@@ -24,7 +24,7 @@ theorem mountable_construct' {u v w : V} {t₁ t₂ : ℕ}
   have htc' := fun x y : G'.verts ↦ G'.subgraph_reachable_is_reachable x y (htc x y)
   have hfur := fun x : G'.verts ↦ earliest_edge_reachability hee x (htc' ⟨v, hvin⟩ x)
   have htur := fun x : G'.verts ↦ latest_edge_reachability hle x (htc' x ⟨w, hwin⟩)
-  have huu := earliest_latest_edge_co_reachability hee hle (htc' ⟨v, hvin⟩ ⟨w, hwin⟩)
+  have huu := G.self_reachable u
   intro x y
   by_cases hcase : x=u
   · rw [hcase]
@@ -112,6 +112,8 @@ theorem V_minus_inter_V_plus_non_empty_imply_mountableon (u : V) (H : SubTempGra
   have hu_nin : u ∉ (H.deleteVerts {u}).verts := by simp
   exact ⟨hu_nin, ⟨α, hα⟩, ⟨β, hβ⟩, hen, hln, hTC⟩
 
+
+-- Changer en 4 cas et prop 1 imp 2 ∧ -dem et +mon
 def Mountable2 (H : SubTempGraph G) : Prop
 := (∃ u α β β' t t', G.EarliestNeigbhor α u ∧ (G.LatestEdge β β' t ∧ G.Adj β' u t' ∧ t ≤ t')
     ∧ u ∉ H.verts ∧ {α, β, β'} ⊆ H.verts)

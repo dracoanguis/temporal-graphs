@@ -212,8 +212,12 @@ abbrev deleteVerts (G' : SubTempGraph G) (s : Set V) : G.SubTempGraph
 lemma deleteVerts_verts (G' : SubTempGraph G) (s : Set V) : (G'.deleteVerts s).verts = G'.verts \ s
 := rfl
 
-theorem deleteVerts_le (G' : SubTempGraph G) (s : Set V) : (G'.deleteVerts s) ≤ G'
+theorem deleteVerts_le {G' : SubTempGraph G} {s : Set V} : (G'.deleteVerts s) ≤ G'
 := by constructor <;> simp [Set.diff_subset]
+
+theorem deleteVerts_le' (G' : SubTempGraph G) (s : Set V) : (G'.deleteVerts s) ≤ G'
+:= by constructor <;> simp [Set.diff_subset]
+
 
 end DeleteVerts
 
@@ -224,6 +228,21 @@ abbrev addVerts (G' : SubTempGraph G) (s : Set V) : G.SubTempGraph
 
 lemma addVerts_verts (G' : SubTempGraph G) (s : Set V) : (G'.addVerts s).verts = G'.verts ∪ s
 := rfl
+
+lemma addVerts_Adj {u v : V} {t : ℕ} {G' : SubTempGraph G} {s : Set V}
+: G'.Adj u v t → (G'.addVerts s).Adj u v t
+:= by
+  have hinc : G'.verts ⊆ (G'.addVerts s).verts := by simp
+  intro h
+  have hin := hinc <| G'.edge_vert h
+  have hin' := hinc <| G'.edge_vert h.symm
+  exact ⟨hin, hin', h⟩
+
+lemma addVerts_le {G' : SubTempGraph G} {s : Set V} : G' ≤ (G'.addVerts s)
+:= by
+  constructor
+  · simp
+  · intro _ _ _ h ; exact addVerts_Adj h
 
 end AddVerts
 
@@ -363,6 +382,16 @@ instance {V : Type u} {G : SimpleTemporalGraph V} {G' : SubTempGraph G} {u v : G
 Coe (G'.coe.NETemporalWalk u s v t) (G.NETemporalWalk ↑u s ↑v t) where
   coe := NETemporalWalk.lift_subtempgraph_walk
 
+@[coe]
+protected def lift_subtempgraph_walk' {G : SimpleTemporalGraph V} {G' : SubTempGraph G}
+{H : SubTempGraph G} {u v : G'.verts} {s t : ℕ} (hle : G' ≤ H)
+: G'.coe.NETemporalWalk u s v t → H.coe.NETemporalWalk ⟨u, Set.mem_of_subset_of_mem hle.left u.prop⟩
+  s ⟨v, Set.mem_of_subset_of_mem hle.left v.prop⟩ t
+| single h => single (hle.right h)
+| step h p hle' =>
+  step (hle.right h).coe
+    (NETemporalWalk.lift_subtempgraph_walk' hle p)
+    hle'
 
 end NETemporalWalk
 
@@ -380,6 +409,14 @@ G'.coe.TemporalWalk u s v t → G.TemporalWalk ↑u s ↑v t
 instance {V : Type u} {G : SimpleTemporalGraph V} {G' : SubTempGraph G} {u v : G'.verts} {s t : ℕ} :
 Coe (G'.coe.TemporalWalk u s v t) (G.TemporalWalk ↑u s ↑v t) where
   coe := TemporalWalk.lift_subtempgraph_walk
+
+@[coe]
+protected def lift_subtempgraph_walk' {G : SimpleTemporalGraph V} {G' : SubTempGraph G}
+{H : SubTempGraph G} {u v : G'.verts} {s t : ℕ} (hle : G' ≤ H) :
+G'.coe.TemporalWalk u s v t → H.coe.TemporalWalk ⟨u, Set.mem_of_subset_of_mem hle.left u.prop⟩
+  s ⟨v, Set.mem_of_subset_of_mem hle.left v.prop⟩ t
+| empty => empty
+| nonempty p => nonempty <| p.lift_subtempgraph_walk' hle
 
 end TemporalWalk
 

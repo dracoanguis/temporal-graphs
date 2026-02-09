@@ -183,6 +183,45 @@ instance : BoundedOrder (SubTempGraph G) where
   le_top x := ⟨Set.subset_univ _, by intro _ _ _ h ; rw [top_adj] ; exact x.adj_sub h⟩
   bot_le _ := ⟨Set.empty_subset _, False.elim⟩
 
+instance : LT (SubTempGraph G) where
+  lt H H' := ((H.verts ⊂ H'.verts)∧(∀ {x y t}, H.Adj x y t → H'.Adj x y t))
+    ∨ ((H.verts = H'.verts)∧(∀ {x y t}, H.Adj x y t → H'.Adj x y t)
+        ∧(∃ x y t, H'.Adj x y t ∧ ¬ H.Adj x y t))
+
+instance : Preorder (SubTempGraph G) where
+  le_refl H := ⟨by simp, by simp⟩
+  le_trans A B C h h' := ⟨h.left.trans h'.left , by
+    intro x y t hadj
+    exact h'.right <| h.right hadj
+  ⟩
+  lt_iff_le_not_ge A B := by
+    constructor
+    · intro h ; constructor
+      · apply h.elim
+        · intro h' ; exact ⟨h'.left.subset, h'.right⟩
+        · intro h' ; exact ⟨h'.left.subset, h'.right.left⟩
+      · apply h.elim
+        · intro h h' ; apply h'.left.not_ssubset ; exact h.left
+        · intro h h' ; have ⟨x, y, t, hB, hnA⟩ := h.right.right ; apply hnA.elim ; exact h'.right hB
+    · intro h ; apply h.left.left.eq_or_ssubset.elim
+      · intro h' ; right ; constructor
+        · assumption
+        · constructor
+          · exact h.left.right
+          · have h := h.right ; dsimp [LE.le, IsSubgraphOf] at h ; push_neg at h
+            exact h h'.symm.subset
+      · intro h' ; left ; constructor
+        · assumption
+        · exact h.left.right
+
+instance : PartialOrder (SubTempGraph G) where
+  le_antisymm A B h h' := by
+    ext x y t
+    · constructor
+      · intro h'' ; apply h.left ; assumption
+      · intro h'' ; apply h'.left ; assumption
+    · exact ⟨h.right, h'.right⟩
+
 end Order
 
 section Induce
@@ -244,6 +283,8 @@ lemma addVerts_le {G' : SubTempGraph G} {s : Set V} : G' ≤ (G'.addVerts s)
   · simp
   · intro _ _ _ h ; exact addVerts_Adj h
 
+lemma addVerts_le' (G' : SubTempGraph G) (s : Set V) : G' ≤ (G'.addVerts s) := addVerts_le
+
 end AddVerts
 
 section AddEdge
@@ -284,6 +325,10 @@ theorem addEdge_le : G' ≤ addEdge G' h h' := by
     exact hx
   · intro _ _ _ hadj
     exact Or.inl hadj
+
+theorem addEdge_le' (G' : SubTempGraph G) (h : G.Adj u v t) (h' : u ∈ G'.verts ∧ v ∈ G'.verts)
+: G' ≤ addEdge G' h h'
+:= addEdge_le
 
 theorem addEdge_edge : (addEdge G' h h').Adj u v t := by
   right

@@ -43,8 +43,8 @@ protected def mk' {V' : Set V} (G' : SimpleTemporalGraph V') (h : G.IsSubtempgra
     exact ⟨hw, hv, G'.symm t h' ⟩
 }
 
-protected theorem loopless (G' : SubTempGraph G) : ∀ t, Irreflexive (fun v w ↦ G'.Adj v w t) :=
-  fun t v h ↦ G.loopless t v (G'.adj_sub h)
+protected theorem loopless (G' : SubTempGraph G) : ∀ t, Std.Irrefl (fun v w ↦ G'.Adj v w t) :=
+  fun _ ↦ ⟨fun _ h ↦ G.irrefl (G'.adj_sub h)⟩
 
 theorem adj_comm (G' : SubTempGraph G) (v w : V) (t : ℕ) : G'.Adj v w t ↔ G'.Adj w v t :=
   ⟨fun x ↦ G'.symm t x, fun x ↦ G'.symm t x⟩
@@ -78,7 +78,7 @@ protected theorem Adj.snd_mem {H : G.SubTempGraph} {u v : V} {t : ℕ} (h : H.Ad
 protected def coe (G' : SubTempGraph G) : SimpleTemporalGraph G'.verts where
   Adj v w t := G'.Adj v w t
   symm t _ _ h := G'.symm t h
-  loopless t v h := loopless G t v (G'.adj_sub h)
+  loopless _ := ⟨fun _ h ↦ G.irrefl (G'.adj_sub h)⟩
 
 -- Seems a bit weird for it to work should check on site
 instance {V : Type u} {G : SimpleTemporalGraph V} {G' : SubTempGraph G}
@@ -86,7 +86,7 @@ instance {V : Type u} {G : SimpleTemporalGraph V} {G' : SubTempGraph G}
   coe H := {
     Adj v w t := H.Adj v w t
     symm t _ _ h := H.symm t h
-    loopless t v h := loopless G t v (H.adj_sub h)
+    loopless _ := ⟨fun _ h ↦ G.irrefl (H.adj_sub h)⟩
   }
 
 @[simp]

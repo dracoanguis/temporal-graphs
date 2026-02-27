@@ -9,10 +9,16 @@ autoImplicit = false
 relaxedAutoImplicit = false
 weak.linter.mathlibStandardSet = true
 maxSynthPendingDepth = 3
+weak.linter.style.emptyline=false
 
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
+
+[[require]]
+name = "paranoia"
+git = "https://github.com/oOo0oOo/LeanParanoia"
+rev = "main"
 
 [[lean_lib]]
 name = "TemporalGraph"

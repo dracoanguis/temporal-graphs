@@ -19,7 +19,7 @@ structure SimpleTemporalGraph (V : Type u) where
   /-- The adjacency labeled by a natural qualifying the time of existance -/
   Adj : V → V → ℕ → Prop
   symm : ∀ t, Symmetric (fun v w => Adj v w t)
-  loopless : ∀ t, Irreflexive (fun v w => Adj v w t)
+  loopless : ∀ t, Std.Irrefl (fun v w => Adj v w t)
 
 
 
@@ -29,7 +29,7 @@ variable {V : Type u}
 
 @[simp]
 protected theorem irrefl {G : SimpleTemporalGraph V} {v : V} {t : ℕ} : ¬G.Adj v v t :=
-  G.loopless t v
+  (G.loopless t).irrefl v
 
 section Adjacency
 
@@ -65,9 +65,7 @@ def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V:=
     symm := by
       intro v w ⟨t, h⟩
       exact ⟨t, G.symm t h⟩
-    loopless := by
-      intro v ⟨t, h⟩
-      exact G.loopless t v h
+    loopless := ⟨fun v ↦ by simp⟩
   }
 
 -- @[simp]
@@ -81,7 +79,8 @@ def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V:=
 
 
 
--- instance neighborSet.memDecidable (G : SimpleTemporalGraph V) (v : V) [DecidableRel (λ x y↦ ∃ t, G.Adj x y t)] :
+-- instance neighborSet.memDecidable (G : SimpleTemporalGraph V) (v : V)
+-- [DecidableRel (λ x y↦ ∃ t, G.Adj x y t)] :
 --     DecidablePred (· ∈ G.neighborSet v) :=
 --   inferInstanceAs <| DecidablePred (Adj G v)
 
@@ -129,8 +128,8 @@ instance : Bot (SimpleTemporalGraph V) where
       intro _ _ _ h
       trivial
     loopless := by
-      intro _ _ h
-      trivial
+      intro _
+      exact ⟨fun v ↦ by simp⟩
   }
 
 end Order

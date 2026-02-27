@@ -13,7 +13,7 @@ protected def map (f : V ↪ W) (G : SimpleTemporalGraph V) : SimpleTemporalGrap
   symm t a b := by
     rintro ⟨v, w, h, _⟩
     aesop (add norm unfold Relation.Map) (add forward safe Adj.symm)
-  loopless t a := by aesop (add norm unfold Relation.Map)
+  loopless t := ⟨fun v ↦ by aesop (add norm unfold Relation.Map)⟩
 
 @[simp]
 theorem map_adj (f : V ↪ W) (G : SimpleTemporalGraph V) (u w : W) (t : ℕ)
@@ -31,7 +31,7 @@ section Comap
 protected def comap (f : V → W) (G : SimpleTemporalGraph W) : SimpleTemporalGraph V where
   Adj u v t := G.Adj (f u) (f v) t
   symm t _ _ h := G.symm t h
-  loopless _ _ := G.loopless _ _
+  loopless _ := ⟨fun v ↦ by simp⟩
 
 @[simp] lemma comap_adj {G : SimpleTemporalGraph W} {f : V → W} {u v : V} {t : ℕ}
 : (G.comap f).Adj u v t ↔ G.Adj (f u) (f v) t

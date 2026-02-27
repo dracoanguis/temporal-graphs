@@ -66,25 +66,25 @@ protected lemma TCspanner_imply_TC (G' : SubTempGraph G)
   unfold TemporallyConnected at h_tc
   rw [SubTempGraph.IsSpanning] at h_span
   rw [SimpleTemporalGraph.TemporallyConnected]
-  simp [h_span] at h_tc
+  simp only [Reachable, Subtype.forall, h_span, forall_true_left] at h_tc
   intro u v
   let u' : Subtype G'.verts := ⟨u, h_span u⟩
   let v' : Subtype G'.verts := ⟨v, h_span v⟩
   let ⟨s, ⟨t, ⟨tw⟩⟩⟩ :=  h_tc u v
   exact ⟨s, ⟨t, ⟨tw.lift_subtempgraph_walk⟩⟩⟩
 
-theorem reachability_imp_spanningCoe_reachability (H : SubTempGraph G)
-: ∀ x y, H.Reachable x y → H.spanningCoe.Reachable x y
-:= by
-  intro ⟨x, hx⟩ ⟨y, hy⟩
-  sorry
+-- theorem reachability_imp_spanningCoe_reachability (H : SubTempGraph G)
+-- : ∀ x y, H.Reachable x y → H.spanningCoe.Reachable x y
+-- := by
+--   intro ⟨x, hx⟩ ⟨y, hy⟩
+--   sorry
 
-theorem top_reachability : ∀ x y, (⊤ : SubTempGraph G).Reachable x y ↔ G.Reachable x y
-:= by
-  intro x y
-  constructor
-  · exact SubTempGraph.subgraph_reachable_is_reachable _ _
-  · sorry
+-- theorem top_reachability : ∀ x y, (⊤ : SubTempGraph G).Reachable x y ↔ G.Reachable x y
+-- := by
+--   intro x y
+--   constructor
+--   · exact SubTempGraph.subgraph_reachable_is_reachable _ _
+--   · sorry
 
 theorem addVerts_reachability {s : Set V} {H : SubTempGraph G}
 : ∀ x y, H.Reachable x y → (H.addVerts s).Reachable ⟨x, by simp⟩ ⟨y, by simp⟩

@@ -31,7 +31,7 @@ theorem EarliestEdge_exists {G' : SubTempGraph G} (u : V) (h : ∃ v t, G'.Adj u
   sorry
 
 def IsClique (G' : SubTempGraph G) : Prop
-:= ∀ u v, u ≠ v → ∃ t, G'.Adj u v t
+:= ∀ (u v : G'.verts), u ≠ v → ∃ t, G'.Adj u v t
 
 def IsProper (G' : SubTempGraph G) : Prop
 := ∀ u v w t, G'.Adj u v t ∧ G'.Adj u w t → v=w

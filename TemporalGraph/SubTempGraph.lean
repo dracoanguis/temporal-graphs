@@ -46,6 +46,10 @@ protected def mk' {V' : Set V} (G' : SimpleTemporalGraph V') (h : G.IsSubtempgra
 protected theorem loopless (G' : SubTempGraph G) : ∀ t, Std.Irrefl (fun v w ↦ G'.Adj v w t) :=
   fun _ ↦ ⟨fun _ h ↦ G.irrefl (G'.adj_sub h)⟩
 
+@[simp]
+protected theorem irrefl {G' : SubTempGraph G} {v : V} {t : ℕ} : ¬G'.Adj v v t :=
+  (G'.loopless t).irrefl v
+
 theorem adj_comm (G' : SubTempGraph G) (v w : V) (t : ℕ) : G'.Adj v w t ↔ G'.Adj w v t :=
   ⟨fun x ↦ G'.symm t x, fun x ↦ G'.symm t x⟩
 

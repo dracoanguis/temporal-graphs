@@ -159,11 +159,48 @@ lemma notDismountable2_neDiff_imp_neigbhorDiff
 
 example {G' : SubTempGraph G} (u : G'.Vplus) (h' : ¬G'.Dismountable2) (h'' : G'.IsClique)
 (h''' : ∃ w, G'.EarliestNeigbhor u w)
-: ¬G'.IsClique
+: True
 := by
   have ⟨w, hee⟩ := h'''
   have h := notDismountable2_neDiff_imp_neigbhorDiff u u h' h'' w w ⟨hee, hee⟩
   contradiction
+
+lemma earliestEdge_exists {G' : SubTempGraph G} {u v : V} {t : ℕ}
+(h' : G'.Adj u v t)
+: ∃ w s, G'.EarliestEdge u w s
+:= by
+  simp only [EarliestEdge]
+
+  by_cases hee : ∀ (w : V) (t' : ℕ), G'.Adj u w t' → t ≤ t'
+  · constructor ; assumption' ; use t
+  · push_neg at hee
+    have ⟨w, s, hee'⟩ := hee
+    use w, s
+    constructor
+    · exact hee'.left
+    · sorry
+
+lemma latestEdge_exists {G' : SubTempGraph G} {u v : V} {t : ℕ}
+(h : G'.Adj u v t)
+: ∃ w s, G'.LatestEdge u w s := by sorry
+
+-- example {G' : SubTempGraph G} {u v : G'.verts}
+-- (h : ¬G'.Dismountable2) (h' : G'.IsClique) (huv : u ≠ v)
+-- : False
+-- := by
+--   rw [Dismountable2, not_and, not_exists] at h
+--   have h'' := h h'
+--   conv at h'' => rhs ; rw [not_and_or] ; lhs ; simp only [not_or, not_exists]
+--   conv at h'' => rhs ; rhs ; simp only [not_or, not_exists]
+--   have ⟨t, hadj⟩ := h' u v huv
+--   have ⟨w, s, hee⟩ := earliestEdge_exists hadj
+--   have ⟨w', s', hle⟩ := latestEdge_exists hadj
+
+--   apply (h'' w).elim
+--   · intro ho ; have hp := ho.left u ; conv at hp => rhs ; rw [EarliestNeigbhor]
+--     absurd hp ; use s ;
+--   · intro ho
+
 
 -- lemma 3.2
 -- lemma notDismountable2_neDiff_imp_neigbhorDiff'

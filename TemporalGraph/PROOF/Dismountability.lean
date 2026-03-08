@@ -126,6 +126,46 @@ lemma notDismountable2_imp_notDismountable
 : ¬ G'.Dismountable
 := by contrapose h ; simp at * ; simp [h, Dismountable_imp_Dismountable2]
 
+private lemma notDismoutable2_and_IsClique {G' : SubTempGraph G} (h : G'.IsClique)
+(h' : ¬G'.Dismountable2)
+: ∀ u, ((∀ α, ¬G'.EarliestNeigbhor α u )
+          ∧ (∀ α α' t t', G'.EarliestEdge α α' t ∧ G'.Adj α' u t' → t < t'))
+      ∨ ((∀ β, ¬G'.LatestNeighbor β u)
+          ∧ (∀ β β' t t', G'.LatestEdge β β' t ∧ G'.Adj β' u t' → t' < t))
+:= by
+  simp only [Dismountable2, h, true_and] at h'
+  rw [not_exists] at h'
+  conv at h' =>
+    rhs ; rw [not_and_or, not_or, not_exists]
+    lhs ; rhs ; simp only [not_exists]
+    rhs ; rhs ; rhs ; rhs ; rewrite [←and_assoc, not_and, not_le]
+  conv at h' =>
+    rhs ; rhs ; rw [not_or, not_exists]
+    rhs ; simp only [not_exists]
+    rhs ; rhs ; rhs ; rhs ; rw [←and_assoc, not_and, not_le]
+  assumption
+
+lemma isClique_notDismountable2_iff {G' : SubTempGraph G} (h : G'.IsClique)
+: ¬G'.Dismountable2 ↔
+  ∀ u, ((∀ α, ¬G'.EarliestNeigbhor α u )
+          ∧ (∀ α α' t t', G'.EarliestEdge α α' t ∧ G'.Adj α' u t' → t < t'))
+      ∨ ((∀ β, ¬G'.LatestNeighbor β u)
+          ∧ (∀ β β' t t', G'.LatestEdge β β' t ∧ G'.Adj β' u t' → t' < t))
+:= by
+  constructor
+  · intro h'
+    apply notDismoutable2_and_IsClique h h'
+  · intro h'
+    simp only [Dismountable2, h, true_and, not_exists, not_and_or]
+    conv =>
+      rhs ; lhs ; rw [not_or] ; simp only [not_exists]
+      rhs ; rhs ; rhs ; rhs ; rhs ; rw [←and_assoc, not_and, not_le]
+    conv =>
+      rhs ; rhs ; rw [not_or] ; simp only [not_exists]
+      rhs ; rhs ; rhs ; rhs ; rhs ; rw [←and_assoc, not_and, not_le]
+    assumption
+
+
 -- lemma 3.2
 lemma notDismountable2_neDiff_imp_neigbhorDiff
 {G' : SubTempGraph G}

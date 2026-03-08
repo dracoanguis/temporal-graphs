@@ -119,7 +119,7 @@ lemma square_not_dis2 : ¬SubSquare.Dismountable2
     | 1, 2, 3 => simp [Square] ; use 3, 4 ; simp
     | 1, 3, 2 => simp [Square] ; use 2, 4 ; simp
     | 2, 0, 2 => simp [Square] ; use 3, 3 ; simp
-    | 2, 1, 3 => simp [Square] ; use 2, 3 ;
+    | 2, 1, 3 => simp [Square] ; use 0, 1 ;
     | 2, 3, 4 => simp [Square] ; use 2, 4 ; sorry
     | 3, 0, 3 => simp [Square] ; use 3, 3 ; sorry
     | 3, 1, 2 => simp [Square] ; use 2, 3 ; simp
@@ -145,10 +145,86 @@ lemma square_not_dis2'' : ¬SubSquare.Dismountable2
   simp only [square_clique, exists_and_left, true_and, not_exists, not_and_or, not_or, not_le]
   intro u
   unfold SubTempGraph.LatestNeighbor SubTempGraph.LatestEdge SubTempGraph.EarliestNeigbhor SubTempGraph.EarliestEdge
-  simp [SubSquare, toSubgraphTop, top_adj]
+  conv => lhs ; simp only [SubSquare, toSubgraphTop, top_adj, not_exists, not_and, not_forall, Classical.not_imp,
+    not_le]
+  conv => rhs ; lhs ; simp only [SubSquare, toSubgraphTop, top_adj, not_exists, not_and, not_forall, Classical.not_imp,
+    not_le]
+  conv => rhs ; rhs ; simp only [SubSquare, toSubgraphTop, top_adj, not_exists, not_and_or, not_forall, not_le, exists_prop, Fin.isValue]
   match u with
-  | 0 => left ; constructor ;
-          · intro v t hadj ;
+  | 0 => right ; constructor ; intro v t hadj ;
+            (match v with
+              | 1 => by_cases h : t=1 ; use 2, 3 ; simp [Square, h] ; absurd h ; simp [Square] at hadj ; aesop
+              | 2 => by_cases h : t=2 ; use 3, 4 ; simp [Square, h] ; absurd h ; simp [Square] at hadj ; aesop
+              | 3 => by_cases h : t=3 ; use 2, 4 ; simp [Square, h] ; absurd h ; simp [Square] at hadj ; aesop
+              | 0 => grind [Square] ) ;
+            ( intro v w t ;
+              match v with
+              | 1 => (match )
+            )
+  | _ => sorry
+
+
+lemma square_not_dis2''' : ¬SubSquare.Dismountable2 := by
+  unfold Dismountable2
+  simp only [square_clique, exists_and_left, true_and, not_exists, not_and_or, not_or, not_le]
+  unfold SubSquare SubTempGraph.LatestNeighbor SubTempGraph.LatestEdge
+    SubTempGraph.EarliestNeigbhor SubTempGraph.EarliestEdge
+  push_neg
+  simp only [toSubgraphTop, top_adj]
+  intro u
+  fin_cases u
+  · right
+    constructor
+    · intro v t hadj
+      fin_cases v <;> simp_all [Square]
+      · by_cases h : t=1 ; use 2, 3 ; simp [h] ; absurd h ; aesop
+      · by_cases h : t=2 ; use 3, 4 ; simp [h] ; absurd h ; aesop
+      · by_cases h : t=3 ; use 2, 4 ; simp [h] ; absurd h ; aesop
+    · intro v v' t
+      fin_cases v <;> simp_all [Square]
+      · -- u=0, v=0 : goal ci-dessus
+        fin_cases v' <;> simp
+        · grind [Square] -- w=0 : pas de match possible
+        · by_cases h : t=1
+          · left ; simp [h] ; use 2, 2 ; simp
+          · left ; grind
+        · -- w=2 : voisin à t=2
+          by_cases h : t=2
+          · left ; simp only [h, Fin.isValue, forall_const] ; use 3, 3 ; simp
+          · left ; grind
+        · -- w=3 : voisin à t=3
+          by_cases h : t=3
+          · right ; intro x ; simp [h] ; omega
+          · left ; grind
+
+lemma square_not_dis2'''' : ¬SubSquare.Dismountable2 := by
+  rw [isClique_notDismountable2_iff square_clique]
+  unfold SubSquare SubTempGraph.LatestNeighbor SubTempGraph.LatestEdge
+    SubTempGraph.EarliestNeigbhor SubTempGraph.EarliestEdge
+  simp only [toSubgraphTop, top_adj]
+  intro u
+  fin_cases u <;> simp only [Fin.zero_eta,Fin.mk_one, Fin.reduceFinMk, Fin.isValue]
+  · right
+    constructor
+    · simp
+      intro v t hadj
+      fin_cases v <;> simp_all
+      · use 2, 3 ; grind [Square]
+      · use 3, 4 ; grind [Square]
+      · use 2, 4 ; grind [Square]
+    · intro β β' t t'
+      fin_cases β <;> simp only [Fin.zero_eta,Fin.mk_one, Fin.reduceFinMk, Fin.isValue]
+      · fin_cases β' <;> simp only [Fin.zero_eta,Fin.mk_one, Fin.reduceFinMk, Fin.isValue]
+        · grind [Square]
+        · by_cases h : t=1∧t'=1 <;> simp [h, Square]
+          · use 2,2 ; simp
+          · grind
+        · by_cases h : t=2∧t'=2 <;> simp [h, Square]
+          · use 3,3 ; simp
+          · grind
+        ·
+
+
 
 lemma square_dis2 : SubSquare.Dismountable2
 := by

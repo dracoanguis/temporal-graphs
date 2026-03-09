@@ -105,9 +105,9 @@ lemma notDismountable_imp_partition
 def Dismountable2 (G' : SubTempGraph G)
 := G'.IsClique ∧ ( ∃ u,
     ((∃ α, G'.EarliestNeigbhor α u)
-      ∨ (∃ α α' t t', G'.EarliestEdge α α' t ∧ G'.Adj α' u t' ∧ t' ≤ t))
+      ∨ (∃ α α' t t', α ≠ u ∧ G'.EarliestEdge α α' t ∧ G'.Adj α' u t' ∧ t' ≤ t))
   ∧ ((∃ β, G'.LatestNeighbor β u)
-      ∨ (∃ β β' t t', G'.LatestEdge β β' t ∧ G'.Adj β' u t' ∧ t ≤ t'))
+      ∨ (∃ β β' t t', β ≠ u ∧ G'.LatestEdge β β' t ∧ G'.Adj β' u t' ∧ t ≤ t'))
   )
 
 lemma Dismountable_imp_Dismountable2 {G' : SubTempGraph G}
@@ -126,50 +126,52 @@ lemma notDismountable2_imp_notDismountable
 : ¬ G'.Dismountable
 := by contrapose h ; simp at * ; simp [h, Dismountable_imp_Dismountable2]
 
-private lemma notDismoutable2_and_IsClique {G' : SubTempGraph G} (h : G'.IsClique)
-(h' : ¬G'.Dismountable2)
-: ∀ u, ((∀ α, ¬G'.EarliestNeigbhor α u )
-          ∧ (∀ α α' t t', G'.EarliestEdge α α' t ∧ G'.Adj α' u t' → t < t'))
-      ∨ ((∀ β, ¬G'.LatestNeighbor β u)
-          ∧ (∀ β β' t t', G'.LatestEdge β β' t ∧ G'.Adj β' u t' → t' < t))
-:= by
-  simp only [Dismountable2, h, true_and] at h'
-  rw [not_exists] at h'
-  conv at h' =>
-    rhs ; rw [not_and_or, not_or, not_exists]
-    lhs ; rhs ; simp only [not_exists]
-    rhs ; rhs ; rhs ; rhs ; rewrite [←and_assoc, not_and, not_le]
-  conv at h' =>
-    rhs ; rhs ; rw [not_or, not_exists]
-    rhs ; simp only [not_exists]
-    rhs ; rhs ; rhs ; rhs ; rw [←and_assoc, not_and, not_le]
-  assumption
 
-lemma isClique_notDismountable2_iff {G' : SubTempGraph G} (h : G'.IsClique)
-: ¬G'.Dismountable2 ↔
-  ∀ u, ((∀ α, ¬G'.EarliestNeigbhor α u )
-          ∧ (∀ α α' t t', G'.EarliestEdge α α' t ∧ G'.Adj α' u t' → t < t'))
-      ∨ ((∀ β, ¬G'.LatestNeighbor β u)
-          ∧ (∀ β β' t t', G'.LatestEdge β β' t ∧ G'.Adj β' u t' → t' < t))
-:= by
-  constructor
-  · intro h'
-    apply notDismoutable2_and_IsClique h h'
-  · intro h'
-    simp only [Dismountable2, h, true_and, not_exists, not_and_or]
-    conv =>
-      rhs ; lhs ; rw [not_or] ; simp only [not_exists]
-      rhs ; rhs ; rhs ; rhs ; rhs ; rw [←and_assoc, not_and, not_le]
-    conv =>
-      rhs ; rhs ; rw [not_or] ; simp only [not_exists]
-      rhs ; rhs ; rhs ; rhs ; rhs ; rw [←and_assoc, not_and, not_le]
-    assumption
+-- False after modification of definition
+-- private lemma notDismoutable2_and_IsClique {G' : SubTempGraph G} (h : G'.IsClique)
+-- (h' : ¬G'.Dismountable2)
+-- : ∀ u, ((∀ α, ¬G'.EarliestNeigbhor α u )
+--           ∧ (∀ α α' t t', G'.EarliestEdge α α' t ∧ G'.Adj α' u t' → t < t'))
+--       ∨ ((∀ β, ¬G'.LatestNeighbor β u)
+--           ∧ (∀ β β' t t', G'.LatestEdge β β' t ∧ G'.Adj β' u t' → t' < t))
+-- := by
+--   simp only [Dismountable2, h, true_and] at h'
+--   rw [not_exists] at h'
+--   conv at h' =>
+--     rhs ; rw [not_and_or, not_or, not_exists]
+--     lhs ; rhs ; simp only [not_exists]
+--     rhs ; rhs ; rhs ; rhs ; rewrite [←and_assoc, not_and, not_le]
+--   conv at h' =>
+--     rhs ; rhs ; rw [not_or, not_exists]
+--     rhs ; simp only [not_exists]
+--     rhs ; rhs ; rhs ; rhs ; rw [←and_assoc, not_and, not_le]
+--   assumption
+
+-- lemma isClique_notDismountable2_iff {G' : SubTempGraph G} (h : G'.IsClique)
+-- : ¬G'.Dismountable2 ↔
+--   ∀ u, ((∀ α, ¬G'.EarliestNeigbhor α u )
+--           ∧ (∀ α α' t t', G'.EarliestEdge α α' t ∧ G'.Adj α' u t' → t < t'))
+--       ∨ ((∀ β, ¬G'.LatestNeighbor β u)
+--           ∧ (∀ β β' t t', G'.LatestEdge β β' t ∧ G'.Adj β' u t' → t' < t))
+-- := by
+--   constructor
+--   · intro h'
+--     apply notDismoutable2_and_IsClique h h'
+--   · intro h'
+--     simp only [Dismountable2, h, true_and, not_exists, not_and_or]
+--     conv =>
+--       rhs ; lhs ; rw [not_or] ; simp only [not_exists]
+--       rhs ; rhs ; rhs ; rhs ; rhs ; rw [←and_assoc, not_and, not_le]
+--     conv =>
+--       rhs ; rhs ; rw [not_or] ; simp only [not_exists]
+--       rhs ; rhs ; rhs ; rhs ; rhs ; rw [←and_assoc, not_and, not_le]
+--     assumption
 
 
 -- lemma 3.2
 lemma notDismountable2_neDiff_imp_neigbhorDiff
 {G' : SubTempGraph G}
-(u v : G'.Vplus) (h : ¬G'.Dismountable2) (h' : G'.IsClique)
+(u v : G'.Vplus) (h : ¬G'.Dismountable2) (h' : G'.IsClique) (h'' : u ≠ v)
 : ∀ w w', G'.EarliestNeigbhor u w ∧ G'.EarliestNeigbhor v w' → w ≠ w'
 := by
   simp only [EarliestNeigbhor, ne_eq, and_imp, forall_exists_index]
@@ -184,45 +186,54 @@ lemma notDismountable2_neDiff_imp_neigbhorDiff
     constructor
     · apply Or.inr
       use u, w, t, t'
-      constructor ; assumption' ; constructor
-      · rw [←hww'] at hee' ; exact hee'.left.symm
-      · assumption
+      constructor
+      · simpa using h''
+      · constructor
+        · assumption
+        · constructor
+          · rw [←hww'] at hee' ; exact hee'.left.symm
+          · assumption
     · apply Or.inl ; assumption
   · use u
     constructor
     · apply Or.inr
       use v, w', t', t
-      constructor ; assumption' ; constructor
-      · rw [hww'] at hee ; exact hee.left.symm
-      · push_neg at ht ; apply ht.le
+      constructor
+      · simpa using h''.symm
+      · constructor
+        · assumption
+        · constructor
+          · rw [hww'] at hee ; exact hee.left.symm
+          · push_neg at ht ; apply ht.le
     · apply Or.inl ; assumption
 
-example {G' : SubTempGraph G} (u : G'.Vplus) (h' : ¬G'.Dismountable2) (h'' : G'.IsClique)
-(h''' : ∃ w, G'.EarliestNeigbhor u w)
-: True
-:= by
-  have ⟨w, hee⟩ := h'''
-  have h := notDismountable2_neDiff_imp_neigbhorDiff u u h' h'' w w ⟨hee, hee⟩
-  contradiction
+-- False after changed def
+-- example {G' : SubTempGraph G} (u : G'.Vplus) (h' : ¬G'.Dismountable2) (h'' : G'.IsClique)
+-- (h''' : ∃ w, G'.EarliestNeigbhor u w)
+-- : True
+-- := by
+  -- have ⟨w, hee⟩ := h'''
+  -- have h := notDismountable2_neDiff_imp_neigbhorDiff u u h' h'' w w ⟨hee, hee⟩
+  -- contradiction
 
-lemma earliestEdge_exists {G' : SubTempGraph G} {u v : V} {t : ℕ}
-(h' : G'.Adj u v t)
-: ∃ w s, G'.EarliestEdge u w s
-:= by
-  simp only [EarliestEdge]
+-- lemma earliestEdge_exists {G' : SubTempGraph G} {u v : V} {t : ℕ}
+-- (h' : G'.Adj u v t)
+-- : ∃ w s, G'.EarliestEdge u w s
+-- := by
+  -- simp only [EarliestEdge]
 
-  by_cases hee : ∀ (w : V) (t' : ℕ), G'.Adj u w t' → t ≤ t'
-  · constructor ; assumption' ; use t
-  · push_neg at hee
-    have ⟨w, s, hee'⟩ := hee
-    use w, s
-    constructor
-    · exact hee'.left
-    · sorry
+  -- by_cases hee : ∀ (w : V) (t' : ℕ), G'.Adj u w t' → t ≤ t'
+  -- · constructor ; assumption' ; use t
+  -- · push_neg at hee
+    -- have ⟨w, s, hee'⟩ := hee
+    -- use w, s
+    -- constructor
+    -- · exact hee'.left
+    -- · sorry
 
-lemma latestEdge_exists {G' : SubTempGraph G} {u v : V} {t : ℕ}
-(h : G'.Adj u v t)
-: ∃ w s, G'.LatestEdge u w s := by sorry
+-- lemma latestEdge_exists {G' : SubTempGraph G} {u v : V} {t : ℕ}
+-- (h : G'.Adj u v t)
+-- : ∃ w s, G'.LatestEdge u w s := by sorry
 
 -- example {G' : SubTempGraph G} {u v : G'.verts}
 -- (h : ¬G'.Dismountable2) (h' : G'.IsClique) (huv : u ≠ v)
@@ -274,6 +285,46 @@ lemma latestEdge_exists {G' : SubTempGraph G} {u v : V} {t : ℕ}
 --       constructor ; assumption' ; constructor
 --       · rw [hww'] at hle ; exact hle.left.symm
 --       · push_neg at ht ; apply ht.le
+
+-- lemma 3.2
+lemma notDismountable2_neDiff_imp_neigbhorDiff'
+{G' : SubTempGraph G}
+(u v : G'.Vminus) (h : ¬G'.Dismountable2) (h' : G'.IsClique) (h'' : u ≠ v)
+: ∀ w w', G'.LatestNeighbor u w ∧ G'.LatestNeighbor v w' → w ≠ w'
+:= by
+  simp only [LatestNeighbor, ne_eq, and_imp, forall_exists_index]
+  intro w w' t hle t' hle' hww'
+  have ⟨u, hu⟩ := u
+  have ⟨v, hv⟩ := v
+  rw [Vminus] at hu hv
+  absurd h
+  constructor ; assumption'
+  by_cases ht : t ≤ t'
+  · use v
+    constructor
+    · apply Or.inl ; assumption
+    · apply Or.inr
+      use u, w, t, t'
+      constructor
+      · simpa using h''
+      · constructor
+        · assumption
+        · constructor
+          · rw [←hww'] at hle' ; exact hle'.left.symm
+          · assumption
+  · use u
+    constructor
+    · apply Or.inl ; assumption
+    · apply Or.inr
+      use v, w', t', t
+      constructor
+      · simpa using h''.symm
+      · constructor
+        · assumption
+        · constructor
+          · rw [hww'] at hle ; exact hle.left.symm
+          · push_neg at ht ; apply ht.le
+
 
 -- -- Corollary 3.3
 -- lemma notDismountable2_imp_PerfectMatching {G' : SubTempGraph G}

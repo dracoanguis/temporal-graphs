@@ -1,4 +1,4 @@
-import TemporalGraph.NETemporalWalk
+import TemporalGraph.NonemptyTemporalWalk
 
 universe u
 
@@ -8,40 +8,46 @@ namespace SimpleTemporalGraph
 
 /-- We define a Non-strict TemporalWalk, meaning multiple edges can be crossed at a given time. -/
 inductive TemporalWalk : V → ℕ → V → ℕ → Type u
-  | empty {u : V} {s : ℕ} : TemporalWalk u s u s
-  | nonempty {u v : V} {s e : ℕ} (p : G.NETemporalWalk u s v e) : TemporalWalk u s v e
+  | Empty {x : V} {n : ℕ} : TemporalWalk x n x n
+  | Nonempty {x y : V} {n m : ℕ} (p : G.NonemptyTemporalWalk x n y m) : TemporalWalk x n y m
   deriving DecidableEq
 
-def TemporalWalkSet (u v : V)
-  : Set (Σ s t : ℕ, G.TemporalWalk u s v t) :=
-  { p | ∃ (s t : ℕ), ∃ (tw : TemporalWalk u s v t), p = ⟨s, t, tw⟩ }
+def TemporalWalkSet (x y : V)
+  : Set (Σ n m : ℕ, G.TemporalWalk x n y m) :=
+  { p | ∃ (n m : ℕ), ∃ (tw : TemporalWalk x n y m), p = ⟨n, m, tw⟩ }
 
 namespace TemporalWalk
 
 /-- The length of a TemporalWalk is the number of edges along it. -/
-def length {u v : V} {s t : ℕ} : G.TemporalWalk u s v t → ℕ
-  | empty => 0
-  | nonempty p => p.length
+def length {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → ℕ
+  | Empty => 0
+  | Nonempty p => p.length
 
 /-- The `support` of a TemporalWalk is the list of vertices it visits in order. -/
-def support {u v : V} {s t : ℕ} : G.TemporalWalk u s v t → List V
-  | @empty _ _ u _ => [u]
-  | nonempty p => p.support
+def support {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List V
+  | Empty => [x]
+  | Nonempty p => p.support
 
 /-- The `darts` of a TemporalWalk is the list of darts (edge with a direction) it visits in
 order. -/
-def darts {u v : V} {s t : ℕ} : G.TemporalWalk u s v t → List (V × V × ℕ)
-  | empty => []
-  | nonempty p => p.darts
+def darts {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List (V × V × ℕ)
+  | Empty => []
+  | Nonempty p => p.darts
 
-lemma time_mono {u v : V} {s e : ℕ} (tw : G.TemporalWalk u s v e) : s ≤ e
+lemma time_monotonicity {x y : V} {n m : ℕ} (tw : G.TemporalWalk x n y m) : n ≤ m
 := by
   cases tw with
-  | empty => trivial
-  | nonempty p => exact p.time_mono
-
-
+  | Empty => trivial
+  | Nonempty p => exact p.time_monotonicity
 
 end TemporalWalk
+
+namespace NonemptyTemporalWalk
+
+-- Auto coercion to a TemporalWalk since they are never empty
+instance {x y : V} {n m : ℕ} : Coe (G.NonemptyTemporalWalk x n y m) (G.TemporalWalk x n y m) where
+  coe  p := TemporalWalk.Nonempty p
+
+end NonemptyTemporalWalk
 
 end SimpleTemporalGraph

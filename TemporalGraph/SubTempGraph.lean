@@ -9,84 +9,83 @@ namespace SimpleTemporalGraph
 
 @[ext]
 structure SubTempGraph {V : Type u} (G : SimpleTemporalGraph V) where
-  verts : Set V
+  Verts : Set V
   Adj : V → V → ℕ → Prop
 
-  adj_sub : ∀ {u v : V} {t : ℕ}, Adj u v t → G.Adj u v t
-  edge_vert : ∀ {v w : V} {t : ℕ}, Adj v w t → v ∈ verts
-  symm : ∀ t, Symmetric (fun v w => Adj v w t)
+  adj_sub : ∀ {x y : V} {n : ℕ}, Adj x y n → G.Adj x y n
+  edge_vert : ∀ {x y : V} {n : ℕ}, Adj x y n → x ∈ Verts
+  symm : ∀ n, Symmetric (fun x y => Adj x y n)
 
 namespace SubTempGraph
 
 variable {V : Type u} {G : SimpleTemporalGraph V}
 
-protected def mk' {V' : Set V} (G' : SimpleTemporalGraph V') (h : G.IsSubtempgraph G')
-: SubTempGraph G
-:= {
-  verts := V'
-  Adj := fun v w t =>
-    ∃ hv : v ∈ V', ∃ hw : w ∈ V', G'.Adj ⟨v, hv⟩ ⟨w, hw⟩ t,
+-- protected def mk' {s : Set V} (G' : SimpleTemporalGraph s) (h : G.IsSubtempgraph G')
+-- : SubTempGraph G
+-- := {
+  -- Verts := s
+  -- Adj := fun x y n => ∃ hx : x ∈ s, ∃ hy : y ∈ s, G'.Adj ⟨x, hx⟩ ⟨y, hy⟩ n,
 
-  adj_sub := by
-    intro u v t h'
-    rcases h' with ⟨hv, hw, h'⟩
-    exact h h'
+  -- adj_sub := by
+    -- intro _ _ _ h'
+    -- rcases h' with ⟨_, _, h'⟩
+    -- exact h h'
 
-  edge_vert := by
-    intro u v t h'
-    rcases h' with ⟨hv, _, _⟩
-    exact hv
+  -- edge_vert := by
+    -- intro _ _ _ h
+    -- rcases h with ⟨h', _, _⟩
+    -- exact h'
 
-  symm := by
-    intro t u v  h'
-    rcases h' with ⟨hv, hw, h'⟩
-    exact ⟨hw, hv, G'.symm t h' ⟩
-}
+  -- symm := by
+    -- intro n _ _ h'
+    -- rcases h' with ⟨hx, hy, h'⟩
+    -- exact ⟨hy, hx, G'.symm n h' ⟩
+-- }
 
-protected theorem loopless (G' : SubTempGraph G) : ∀ t, Std.Irrefl (fun v w ↦ G'.Adj v w t) :=
+protected theorem loopless (G' : SubTempGraph G) : ∀ n, Std.Irrefl (fun x y ↦ G'.Adj x y n) :=
   fun _ ↦ ⟨fun _ h ↦ G.irrefl (G'.adj_sub h)⟩
 
 @[simp]
-protected theorem irrefl {G' : SubTempGraph G} {v : V} {t : ℕ} : ¬G'.Adj v v t :=
-  (G'.loopless t).irrefl v
+protected theorem irrefl {G' : SubTempGraph G} {x : V} {n : ℕ} : ¬G'.Adj x x n :=
+  (G'.loopless n).irrefl x
 
-theorem adj_comm (G' : SubTempGraph G) (v w : V) (t : ℕ) : G'.Adj v w t ↔ G'.Adj w v t :=
-  ⟨fun x ↦ G'.symm t x, fun x ↦ G'.symm t x⟩
+theorem adj_comm (G' : SubTempGraph G) (x y : V) (n : ℕ) : G'.Adj x y n ↔ G'.Adj y x n :=
+  ⟨fun x ↦ G'.symm n x, fun x ↦ G'.symm n x⟩
 
 @[symm]
-theorem adj_symm (G' : SubTempGraph G) {u v : V} {t : ℕ} (h : G'.Adj u v t) : G'.Adj v u t :=
-  G'.symm t h
+theorem adj_symm (G' : SubTempGraph G) {x y : V} {n : ℕ} (h : G'.Adj x y n) : G'.Adj y x n :=
+  G'.symm n h
 
-protected theorem Adj.symm {G' : SubTempGraph G} {u v : V} {t : ℕ} (h : G'.Adj u v t)
-: G'.Adj v u t
-:= G'.symm t h
+protected theorem Adj.symm {H : SubTempGraph G} {x y : V} {n : ℕ} (h : H.Adj x y n)
+: H.Adj y x n
+:= H.symm n h
 
 protected theorem Adj.adj_sub {H : G.SubTempGraph} {u v : V} {t : ℕ} (h : H.Adj u v t)
 : G.Adj u v t
 := H.adj_sub h
 
 protected theorem Adj.fst_mem {H : G.SubTempGraph} {u v : V} {t : ℕ} (h : H.Adj u v t)
-: u ∈ H.verts
+: u ∈ H.Verts
 := H.edge_vert h
 
-protected theorem Adj.snd_mem {H : G.SubTempGraph} {u v : V} {t : ℕ} (h : H.Adj u v t)
-: v ∈ H.verts
+protected theorem Adj.snd_mem {H : G.SubTempGraph} {x y : V} {n : ℕ} (h : H.Adj x y n)
+: y ∈ H.Verts
 := h.symm.fst_mem
 
 -- protected theorem Adj.ne {H : G.SubTemporalGraph} {u v : V} {t : ℕ} (h : H.Adj u v t)
 -- : u ≠ v
 -- := h.adj_sub.ne
 
-/-- Coercion from `G' : SubTemporalGraph G` to a `SimpleTemporalGraph G'.verts`. -/
+/-- Coercion from `H : SubTemporalGraph G` to a `SimpleTemporalGraph H.Verts`. -/
 @[simps, coe]
-protected def coe (G' : SubTempGraph G) : SimpleTemporalGraph G'.verts where
-  Adj v w t := G'.Adj v w t
-  symm t _ _ h := G'.symm t h
-  loopless _ := ⟨fun _ h ↦ G.irrefl (G'.adj_sub h)⟩
+protected def coe (H : SubTempGraph G) : SimpleTemporalGraph H.Verts where
+  Adj x y n := H.Adj x y n
+  symm n _ _ h := H.symm n h
+  loopless _ := ⟨fun _ h ↦ G.irrefl (H.adj_sub h)⟩
 
 -- Seems a bit weird for it to work should check on site
 instance {V : Type u} {G : SimpleTemporalGraph V} {G' : SubTempGraph G}
-: Coe (SubTempGraph G) (SimpleTemporalGraph G'.verts) where
+: Coe (SubTempGraph G) (SimpleTemporalGraph G'.Verts) where
   coe H := {
     Adj v w t := H.Adj v w t
     symm t _ _ h := H.symm t h
@@ -94,54 +93,54 @@ instance {V : Type u} {G : SimpleTemporalGraph V} {G' : SubTempGraph G}
   }
 
 @[simp]
-theorem Adj.adj_sub' (G' : SubTempGraph G) (u v : G'.verts) (t : ℕ) (h : G'.Adj u v t)
-: G.Adj u v t
-:= G'.adj_sub h
+theorem Adj.adj_sub' (H : SubTempGraph G) (x y : H.Verts) (n : ℕ) (h : H.Adj x y n)
+: G.Adj x y n
+:= H.adj_sub h
 
-theorem coe_adj_sub (G' : SubTempGraph G) (u v : G'.verts) (t : ℕ) (h : G'.coe.Adj u v t)
-: G.Adj u v t
-:= G'.adj_sub h
+theorem coe_adj_sub (H : SubTempGraph G) (x y : H.Verts) (n : ℕ) (h : H.coe.Adj x y n)
+: G.Adj x y n
+:= H.adj_sub h
 
 -- Given `h : H.Adj u v t`, then `h.coe : H.coe.Adj ⟨u, _⟩ ⟨v, _⟩ t`.
-protected theorem Adj.coe {H : G.SubTempGraph} {u v : V} {t : ℕ} (h : H.Adj u v t) :
-    H.coe.Adj ⟨u, h.fst_mem⟩ ⟨v, h.snd_mem⟩ t := h
+protected theorem Adj.coe {H : G.SubTempGraph} {x y : V} {n : ℕ} (h : H.Adj x y n) :
+    H.coe.Adj ⟨x, h.fst_mem⟩ ⟨y, h.snd_mem⟩ n := h
 
 -- instance (G : SimpleGraph V) (H : SubTempGraph G) [DecidableRel H.Adj]
 -- : DecidableRel H.coe.Adj
 -- := fun a b ↦ ‹DecidableRel H.Adj› _ _
 
-theorem coe_sub (G' : SubTempGraph G) : G.IsSubtempgraph G'.coe:= by
+theorem coe_sub (H : SubTempGraph G) : G.IsSubtempgraph H.coe:= by
   rw [SimpleTemporalGraph.IsSubtempgraph]
-  intro v w t
-  exact coe_adj_sub G' v w t
+  intro x y n
+  exact coe_adj_sub H x y n
 
 section Spanning
 
 /-- A SubTempGraph is called a *spanning subgraph* if it contains all the vertices of `G`. -/
-def IsSpanning (G' : SubTempGraph G) : Prop :=
-  ∀ v : V, v ∈ G'.verts
+def IsSpanning (H : SubTempGraph G) : Prop :=
+  ∀ x : V, x ∈ H.Verts
 
-theorem isSpanning_iff {G' : SubTempGraph G} : G'.IsSpanning ↔ G'.verts = Set.univ :=
+theorem isSpanning_iff {H : SubTempGraph G} : H.IsSpanning ↔ H.Verts = Set.univ :=
   Set.eq_univ_iff_forall.symm
 
-/-- Coercion from `SubTempGraph G` to `SimpleTemporalGraph V`.  If `G'` is a spanning
-subgraph, then `G'.spanningCoe` yields an isomorphic graph.
+/-- Coercion from `SubTempGraph G` to `SimpleTemporalGraph V`.  If `H` is a spanning
+subgraph, then `H.spanningCoe` yields an isomorphic graph.
 In general, this adds in all vertices from `V` as isolated vertices. -/
 @[simps]
-protected def spanningCoe (G' : SubTempGraph G) : SimpleTemporalGraph V where
-  Adj := G'.Adj
-  symm := G'.symm
-  loopless := G'.loopless
+protected def spanningCoe (H : SubTempGraph G) : SimpleTemporalGraph V where
+  Adj := H.Adj
+  symm := H.symm
+  loopless := H.loopless
 
-theorem Adj.of_spanningCoe {G' : SubTempGraph G} {u v : G'.verts} {t : ℕ}
-(h : G'.spanningCoe.Adj u v t) : G.Adj u v t
-:= G'.adj_sub h
+theorem Adj.of_spanningCoe {H : SubTempGraph G} {x y : H.Verts} {n : ℕ}
+(h : H.spanningCoe.Adj x y n) : G.Adj x y n
+:= H.adj_sub h
 
-lemma spanningcoe_le (G' : SubTempGraph G) : G'.spanningCoe ≤ G := G'.adj_sub
+lemma spanningcoe_le (H : SubTempGraph G) : H.spanningCoe ≤ G := H.adj_sub
 
-variable {G₁ : SubTempGraph G} {G₂ : SubTempGraph G}
+variable {H₁ : SubTempGraph G} {H₂ : SubTempGraph G}
 
-theorem spanningCoe_inj : G₁.spanningCoe = G₂.spanningCoe ↔ G₁.Adj = G₂.Adj := by
+theorem spanningCoe_inj : H₁.spanningCoe = H₂.spanningCoe ↔ H₁.Adj = H₂.Adj := by
   simp [SubTempGraph.spanningCoe]
 
 end Spanning
@@ -150,24 +149,24 @@ section Order
 
 instance : Top G.SubTempGraph where
   top := {
-    verts := Set.univ
+    Verts := Set.univ
     Adj := G.Adj
     adj_sub := id
     symm := G.symm
-    edge_vert := @fun v _ _ _ ↦ Set.mem_univ v
+    edge_vert := @fun x _ _ _ ↦ Set.mem_univ x
   }
 
 @[simp]
-theorem top_adj {x y : V} {t : ℕ} : (⊤ : SubTempGraph G).Adj x y t ↔ G.Adj x y t :=
+theorem top_adj {x y : V} {n : ℕ} : (⊤ : SubTempGraph G).Adj x y n ↔ G.Adj x y n :=
   Iff.rfl
 
-theorem top_verts : (⊤ : SubTempGraph G).verts = Set.univ := rfl
+theorem top_verts : (⊤ : SubTempGraph G).Verts = Set.univ := rfl
 
 theorem top_spanningCoe : (⊤ : SubTempGraph G).spanningCoe = G := rfl
 
 instance : Bot G.SubTempGraph where
   bot := {
-    verts := ∅
+    Verts := ∅
     Adj := ⊥
     adj_sub := False.elim
     edge_vert := False.elim
@@ -175,8 +174,8 @@ instance : Bot G.SubTempGraph where
   }
 
 def IsSubgraphOf (H : SubTempGraph G) (H' : SubTempGraph G) : Prop
-:= (H.verts ⊆ H'.verts) ∧
-    (∀ {u v t}, H.Adj u v t → H'.Adj u v t)
+:= (H.Verts ⊆ H'.Verts) ∧
+    (∀ {x y : V} {n : ℕ}, H.Adj x y n → H'.Adj x y n)
 
 instance : LE (SubTempGraph G) :=
   ⟨IsSubgraphOf⟩
@@ -188,14 +187,15 @@ instance : BoundedOrder (SubTempGraph G) where
   bot_le _ := ⟨Set.empty_subset _, False.elim⟩
 
 instance : LT (SubTempGraph G) where
-  lt H H' := ((H.verts ⊂ H'.verts)∧(∀ {x y t}, H.Adj x y t → H'.Adj x y t))
-    ∨ ((H.verts = H'.verts)∧(∀ {x y t}, H.Adj x y t → H'.Adj x y t)
-        ∧(∃ x y t, H'.Adj x y t ∧ ¬ H.Adj x y t))
+  lt H H' :=
+      ((H.Verts ⊂ H'.Verts) ∧ (∀ {x y : V} {n : ℕ}, H.Adj x y n → H'.Adj x y n))
+    ∨ ((H.Verts = H'.Verts) ∧ (∀ {x y : V} {n : ℕ}, H.Adj x y n → H'.Adj x y n)
+        ∧ (∃ (x y : V) (n : ℕ), H'.Adj x y n ∧ ¬ H.Adj x y n))
 
 instance : Preorder (SubTempGraph G) where
   le_refl H := ⟨by simp, by simp⟩
   le_trans A B C h h' := ⟨h.left.trans h'.left , by
-    intro x y t hadj
+    intro _ _ _ hadj
     exact h'.right <| h.right hadj
   ⟩
   lt_iff_le_not_ge A B := by
@@ -220,7 +220,7 @@ instance : Preorder (SubTempGraph G) where
 
 instance : PartialOrder (SubTempGraph G) where
   le_antisymm A B h h' := by
-    ext x y t
+    ext _ _ _
     · constructor
       · intro h'' ; apply h.left ; assumption
       · intro h'' ; apply h'.left ; assumption
@@ -230,35 +230,35 @@ end Order
 
 section Induce
 
-/-- A SubTempGraph is called an *induced SubTempGraph* if vertices of `G'` are adjacent if
+/-- A SubTempGraph is called an *induced SubTempGraph* if vertices of `H` are adjacent if
 they are adjacent in `G`. -/
-def IsInduced (G' : SubTempGraph G) : Prop :=
-  ∀ ⦃v⦄, v ∈ G'.verts → ∀ ⦃w⦄, w ∈ G'.verts → ∀ t, G.Adj v w t → G'.Adj v w t
+def IsInduced (H : SubTempGraph G) : Prop :=
+  ∀ ⦃x⦄, x ∈ H.Verts → ∀ ⦃y⦄, y ∈ H.Verts → ∀ n : ℕ, G.Adj x y n → H.Adj x y n
 
 @[simp] lemma IsInduced.top : (⊤ : G.SubTempGraph).IsInduced := fun _ _ _ _ _ ↦ id
 
 @[simps]
-def induce (G' : G.SubTempGraph) (s : Set V) : G.SubTempGraph where
-  verts := s
-  Adj u v t := u ∈ s ∧ v ∈ s ∧ G'.Adj u v t
-  adj_sub h := G'.adj_sub h.2.2
+def induce (H : G.SubTempGraph) (s : Set V) : G.SubTempGraph where
+  Verts := s
+  Adj x y n := x ∈ s ∧ y ∈ s ∧ H.Adj x y n
+  adj_sub h := H.adj_sub h.2.2
   edge_vert h := h.1
-  symm t _ _ h := ⟨h.2.1, h.1, G'.symm t h.2.2⟩
+  symm n _ _ h := ⟨h.2.1, h.1, H.symm n h.2.2⟩
 
 end Induce
 
 section DeleteVerts
 
-abbrev deleteVerts (G' : SubTempGraph G) (s : Set V) : G.SubTempGraph
-:= G'.induce (G'.verts \ s)
+abbrev deleteVerts (H : SubTempGraph G) (s : Set V) : G.SubTempGraph
+:= H.induce (H.Verts \ s)
 
-lemma deleteVerts_verts (G' : SubTempGraph G) (s : Set V) : (G'.deleteVerts s).verts = G'.verts \ s
+lemma deleteVerts_verts (H : SubTempGraph G) (s : Set V) : (H.deleteVerts s).Verts = H.Verts \ s
 := rfl
 
-theorem deleteVerts_le {G' : SubTempGraph G} {s : Set V} : (G'.deleteVerts s) ≤ G'
+theorem deleteVerts_le {H : SubTempGraph G} {s : Set V} : (H.deleteVerts s) ≤ H
 := by constructor <;> simp [Set.diff_subset]
 
-theorem deleteVerts_le' (G' : SubTempGraph G) (s : Set V) : (G'.deleteVerts s) ≤ G'
+theorem deleteVerts_le' (H : SubTempGraph G) (s : Set V) : (H.deleteVerts s) ≤ H
 := by constructor <;> simp [Set.diff_subset]
 
 
@@ -266,110 +266,110 @@ end DeleteVerts
 
 section AddVerts
 
-abbrev addVerts (G' : SubTempGraph G) (s : Set V) : G.SubTempGraph
-:= G'.induce (G'.verts ∪ s)
+abbrev addVerts (H : SubTempGraph G) (s : Set V) : G.SubTempGraph
+:= H.induce (H.Verts ∪ s)
 
-lemma addVerts_verts (G' : SubTempGraph G) (s : Set V) : (G'.addVerts s).verts = G'.verts ∪ s
+lemma addVerts_verts (H : SubTempGraph G) (s : Set V) : (H.addVerts s).Verts = H.Verts ∪ s
 := rfl
 
-lemma addVerts_Adj {u v : V} {t : ℕ} {G' : SubTempGraph G} {s : Set V}
-: G'.Adj u v t → (G'.addVerts s).Adj u v t
+lemma addVerts_Adj {x y : V} {n : ℕ} {H : SubTempGraph G} {s : Set V}
+: H.Adj x y n → (H.addVerts s).Adj x y n
 := by
-  have hinc : G'.verts ⊆ (G'.addVerts s).verts := by simp
+  have hinc : H.Verts ⊆ (H.addVerts s).Verts := by simp
   intro h
-  have hin := hinc <| G'.edge_vert h
-  have hin' := hinc <| G'.edge_vert h.symm
+  have hin := hinc <| H.edge_vert h
+  have hin' := hinc <| H.edge_vert h.symm
   exact ⟨hin, hin', h⟩
 
-lemma addVerts_le {G' : SubTempGraph G} {s : Set V} : G' ≤ (G'.addVerts s)
+lemma addVerts_le {H : SubTempGraph G} {s : Set V} : H ≤ (H.addVerts s)
 := by
   constructor
   · simp
   · intro _ _ _ h ; exact addVerts_Adj h
 
-lemma addVerts_le' (G' : SubTempGraph G) (s : Set V) : G' ≤ (G'.addVerts s) := addVerts_le
+lemma addVerts_le' (H : SubTempGraph G) (s : Set V) : H ≤ (H.addVerts s) := addVerts_le
 
 end AddVerts
 
 section AddEdge
 
-variable {u v : V} {t : ℕ}
+variable {x y : V} {n : ℕ}
 
-def addEdge (G' : SubTempGraph G) (h : G.Adj u v t) (h' : u ∈ G'.verts ∧ v ∈ G'.verts)
+def addEdge (H : SubTempGraph G) (h : G.Adj x y n) (h₁ : x ∈ H.Verts ∧ y ∈ H.Verts)
 : SubTempGraph G where
-  verts := G'.verts
-  Adj x y z := G'.Adj x y z ∨ (x=u∧y=v∧z=t) ∨ (y=u∧x=v∧z=t)
+  Verts := H.Verts
+  Adj x' y' n' := H.Adj x' y' n' ∨ (x'=x∧y'=y∧n'=n) ∨ (y'=x∧x'=y∧n'=n)
 
   symm := by
-    intro t x y h
+    intro m _ _ h
     apply h.elim3
-    · intro h ; exact Or.inl <| G'.symm t h
+    · intro h ; exact Or.inl <| H.symm m h
     · intro h ; exact Or.inr <| Or.inr h
     · intro h ; exact Or.inr <| Or.inl h
 
   edge_vert := by
-    intro x v t hadj
+    intro _ _ _ hadj
     apply hadj.elim3
-    · intro h ; exact G'.edge_vert h
-    · intro h'' ; rw [h''.left.symm] at h' ; exact h'.left
-    · intro h'' ; rw [h''.right.left.symm] at h' ; exact h'.right
+    · intro h ; exact H.edge_vert h
+    · intro h'' ; rw [h''.left.symm] at h₁ ; exact h₁.left
+    · intro h'' ; rw [h''.right.left.symm] at h₁ ; exact h₁.right
 
   adj_sub := by
-    intro x y z h''
+    intro _ _ _ h''
     apply h''.elim3
-    · intro h'' ; exact G'.adj_sub h''
+    · intro h'' ; exact H.adj_sub h''
     · intro h'' ; rwa [h''.left.symm, h''.right.left.symm, h''.right.right.symm] at h
     · intro h'' ; rw [h''.left.symm, h''.right.left.symm, h''.right.right.symm] at h ; exact h.symm
 
-variable {G' : SubTempGraph G} {h : G.Adj u v t} {h' : u ∈ G'.verts ∧ v ∈ G'.verts}
+variable {H : SubTempGraph G} {h : G.Adj x y n} {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts}
 
-theorem addEdge_le : G' ≤ addEdge G' h h' := by
+theorem addEdge_le : H ≤ addEdge H h h₁ := by
   constructor
   · intro _ hx
     exact hx
   · intro _ _ _ hadj
     exact Or.inl hadj
 
-theorem addEdge_le' (G' : SubTempGraph G) (h : G.Adj u v t) (h' : u ∈ G'.verts ∧ v ∈ G'.verts)
-: G' ≤ addEdge G' h h'
+theorem addEdge_le' (H : SubTempGraph G) (h : G.Adj x y n) (h₁ : x ∈ H.Verts ∧ y ∈ H.Verts)
+: H ≤ addEdge H h h₁
 := addEdge_le
 
-theorem addEdge_edge : (addEdge G' h h').Adj u v t := by
+theorem addEdge_edge : (addEdge H h h₁).Adj x y n := by
   right
   left
   exact ⟨rfl, rfl, rfl⟩
 
-theorem addEdge_verts : (addEdge G' h h').verts = G'.verts := rfl
+theorem addEdge_verts : (addEdge H h h₁).Verts = H.Verts := rfl
 
 end AddEdge
 
 section EdgeProps
 
-variable {α β : V} {t : ℕ}
+variable {x y : V} {n : ℕ}
 
-lemma EarliestEdge_graph_isof_subgraph {H : SubTempGraph G}
-(h : G.EarliestEdge α β t) (h' : H.Adj α β t)
-: H.coe.EarliestEdge ⟨α, H.edge_vert h'⟩ ⟨β, H.edge_vert h'.symm⟩ t
+lemma subgraph_earliestEdge_of_graph_earliestEdge {H : SubTempGraph G}
+(h : G.EarliestEdge x y n) (h₁ : H.Adj x y n)
+: H.coe.EarliestEdge ⟨x, H.edge_vert h₁⟩ ⟨y, H.edge_vert h₁.symm⟩ n
 := by
   constructor
-  · exact h'
+  · exact h₁
   · rw [SimpleTemporalGraph.EarliestEdge] at h
     rcases h with ⟨hαβ, hmin⟩
-    intro w t' hadj
-    cases w with
-    | mk w hw => exact hmin w t' <| H.adj_sub hadj
+    intro z m hadj
+    cases z with
+    | mk z hz => exact hmin z m <| H.adj_sub hadj
 
-lemma LatestEdge_graph_isof_subgraph {H : SubTempGraph G}
-(h : G.LatestEdge α β t) (h' : H.Adj α β t)
-: H.coe.LatestEdge ⟨α, H.edge_vert h'⟩ ⟨β, H.edge_vert h'.symm⟩ t
+lemma subgraph_latestEdge_of_graph_latestEdge {H : SubTempGraph G}
+(h : G.LatestEdge x y n) (h₁ : H.Adj x y n)
+: H.coe.LatestEdge ⟨x, H.edge_vert h₁⟩ ⟨y, H.edge_vert h₁.symm⟩ n
 := by
   constructor
-  · exact h'
+  · exact h₁
   · rw [SimpleTemporalGraph.LatestEdge] at h
-    rcases h with ⟨hαβ, hmin⟩
-    intro w t' hadj
-    cases w with
-    | mk w hw => exact hmin w t' <| H.adj_sub hadj
+    rcases h with ⟨_, hmin⟩
+    intro z m hadj
+    cases z with
+    | mk z hz => exact hmin z m <| H.adj_sub hadj
 
 end EdgeProps
 
@@ -391,81 +391,80 @@ end Maps
 
 section NeighborSet
 
-def neighborSet (G' : SubTempGraph G) (v : V) := {x | ∃ t, G'.Adj v x t}
+def NeighborSet (H : SubTempGraph G) (x : V) := {y | ∃ n, H.Adj x y n}
 
-theorem mem_neighborSet (G' : SubTempGraph G) (v w : V)
-: w ∈ G'.neighborSet v ↔ ∃ t, G'.Adj v w t
+theorem mem_neighborSet (H : SubTempGraph G) (x y : V)
+: y ∈ H.NeighborSet x ↔ ∃ n, H.Adj x y n
 := Iff.rfl
 
 theorem neighborSet_top (v : V)
-: (⊤ : G.SubTempGraph).neighborSet v = G.neighborSet v
+: (⊤ : G.SubTempGraph).NeighborSet v = G.NeighborSet v
 := rfl
 
-theorem neighborSet_subset_verts (G' : SubTempGraph G) (v : V)
-: G'.neighborSet v ⊆ G'.verts
+theorem neighborSet_subset_verts (H : SubTempGraph G) (x : V)
+: H.NeighborSet x ⊆ H.Verts
 := by
-  intro x h
+  intro _ h
   rw [mem_neighborSet] at h
-  let ⟨t, h⟩ := h
-  exact G'.edge_vert <| G'.adj_symm h
+  let ⟨_, h⟩ := h
+  exact H.edge_vert <| H.adj_symm h
 
 end NeighborSet
 
 end SubTempGraph
 
-namespace NETemporalWalk
+namespace NonemptyTemporalWalk
 
-variable {V : Type u}
+variable {V : Type u} {G : SimpleTemporalGraph V} {H : SubTempGraph G}
 
 @[coe]
-protected def lift_subtempgraph_walk {G : SimpleTemporalGraph V} {G' : SubTempGraph G}
-{u v : G'.verts} {s t : ℕ} :
-G'.coe.NETemporalWalk u s v t → G.NETemporalWalk ↑u s ↑v t
-| single h => single (G'.adj_sub h)
-| step h p h' =>
-  step (G'.adj_sub h)
+protected def lift_subtempgraph_walk
+{x y : H.Verts} {n m : ℕ} :
+H.coe.NonemptyTemporalWalk x n y m → G.NonemptyTemporalWalk ↑x n ↑y m
+| Single h => Single (H.adj_sub h)
+| Step h p h' =>
+  Step (H.adj_sub h)
     (p.lift_subtempgraph_walk)
     h'
 
-instance {V : Type u} {G : SimpleTemporalGraph V} {G' : SubTempGraph G} {u v : G'.verts} {s t : ℕ} :
-Coe (G'.coe.NETemporalWalk u s v t) (G.NETemporalWalk ↑u s ↑v t) where
-  coe := NETemporalWalk.lift_subtempgraph_walk
+instance {x y : H.Verts} {n m : ℕ} :
+Coe (H.coe.NonemptyTemporalWalk x n y m) (G.NonemptyTemporalWalk ↑x n ↑y m) where
+  coe := NonemptyTemporalWalk.lift_subtempgraph_walk
 
 @[coe]
-protected def lift_subtempgraph_walk' {G : SimpleTemporalGraph V} {G' : SubTempGraph G}
-{H : SubTempGraph G} {u v : G'.verts} {s t : ℕ} (hle : G' ≤ H)
-: G'.coe.NETemporalWalk u s v t → H.coe.NETemporalWalk ⟨u, Set.mem_of_subset_of_mem hle.left u.prop⟩
-  s ⟨v, Set.mem_of_subset_of_mem hle.left v.prop⟩ t
-| single h => single (hle.right h)
-| step h p hle' =>
-  step (hle.right h).coe
-    (NETemporalWalk.lift_subtempgraph_walk' hle p)
-    hle'
+protected def lift_subtempgraph_walk' {H' : SubTempGraph G} {x y : H.Verts} {n m : ℕ} (h : H ≤ H')
+: H.coe.NonemptyTemporalWalk x n y m → H'.coe.NonemptyTemporalWalk
+  ⟨x, Set.mem_of_subset_of_mem h.left x.prop⟩ n
+  ⟨y, Set.mem_of_subset_of_mem h.left y.prop⟩ m
+| Single h' => Single (h.right h')
+| Step h' p hle =>
+  Step (h.right h').coe
+    (NonemptyTemporalWalk.lift_subtempgraph_walk' h p)
+    hle
 
-end NETemporalWalk
+end NonemptyTemporalWalk
 
 namespace TemporalWalk
 
-variable {V : Type u} --{G : SimpleTemporalGraph V} {G' : SubTempGraph G}
+variable {V : Type u} {G : SimpleTemporalGraph V} {H : SubTempGraph G}
 
 @[coe]
-protected def lift_subtempgraph_walk {G : SimpleTemporalGraph V} {G' : SubTempGraph G}
-{u v : G'.verts} {s t : ℕ} :
-G'.coe.TemporalWalk u s v t → G.TemporalWalk ↑u s ↑v t
-| empty => empty
-| nonempty p => nonempty ↑p
+protected def lift_subtempgraph_walk {x y : H.Verts} {n m : ℕ} :
+H.coe.TemporalWalk x n y m → G.TemporalWalk ↑x n ↑y m
+| Empty => Empty
+| Nonempty p => Nonempty ↑p
 
-instance {V : Type u} {G : SimpleTemporalGraph V} {G' : SubTempGraph G} {u v : G'.verts} {s t : ℕ} :
-Coe (G'.coe.TemporalWalk u s v t) (G.TemporalWalk ↑u s ↑v t) where
+instance {x y : H.Verts} {n m : ℕ} :
+Coe (H.coe.TemporalWalk x n y m) (G.TemporalWalk ↑x n ↑y m) where
   coe := TemporalWalk.lift_subtempgraph_walk
 
 @[coe]
-protected def lift_subtempgraph_walk' {G : SimpleTemporalGraph V} {G' : SubTempGraph G}
-{H : SubTempGraph G} {u v : G'.verts} {s t : ℕ} (hle : G' ≤ H) :
-G'.coe.TemporalWalk u s v t → H.coe.TemporalWalk ⟨u, Set.mem_of_subset_of_mem hle.left u.prop⟩
-  s ⟨v, Set.mem_of_subset_of_mem hle.left v.prop⟩ t
-| empty => empty
-| nonempty p => nonempty <| p.lift_subtempgraph_walk' hle
+protected def lift_subtempgraph_walk' {H' : SubTempGraph G} {x y : H.Verts} {n m : ℕ} (h : H ≤ H') :
+H.coe.TemporalWalk x n y m → H'.coe.TemporalWalk
+  ⟨x, Set.mem_of_subset_of_mem h.left x.prop⟩ n
+  ⟨y, Set.mem_of_subset_of_mem h.left y.prop⟩ m
+| Empty => Empty
+| Nonempty p => Nonempty <| p.lift_subtempgraph_walk' h
 
 end TemporalWalk
 
@@ -475,7 +474,7 @@ variable {V : Type u} {G : SimpleTemporalGraph V}
 
 @[simps]
 def toSubgraph (H : SimpleTemporalGraph V) (h : H ≤ G) : G.SubTempGraph where
-  verts := Set.univ
+  Verts := Set.univ
   Adj := H.Adj
   adj_sub e := h e
   edge_vert _ := Set.mem_univ _

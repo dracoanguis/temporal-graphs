@@ -54,7 +54,7 @@ universe u
 variable {V : Type u} {G : SimpleTemporalGraph V}
 
 -- example {G' : SubTempGraph G} (u : G'.Vplus) (h' : ¬G'.Dismountable2) (h'' : G'.IsClique)
--- (h''' : ∃ w, G'.EarliestNeigbhor u w)
+-- (h''' : ∃ w, EarliestNeighborhor u w)
 -- : ¬G'.IsClique
 -- := by
   -- have ⟨w, hee⟩ := h'''

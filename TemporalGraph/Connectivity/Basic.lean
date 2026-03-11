@@ -1,78 +1,84 @@
 import TemporalGraph.TemporalWalk
 
 universe u
-variable {V : Type u} {s t : ℕ}
+variable {V : Type u}
 
 namespace SimpleTemporalGraph
 
-def Reachable (G : SimpleTemporalGraph V) (u v : V) : Prop :=
-∃ s t, Nonempty (G.TemporalWalk u s v t)
+def Reachable (G : SimpleTemporalGraph V) (x y : V) : Prop :=
+∃ n m : ℕ, Nonempty (G.TemporalWalk x n y m)
 
-theorem nonempty_NETemporalWalk_imp {G : SimpleTemporalGraph V} {u v : V}
-: (∃ s e, Nonempty (G.NETemporalWalk u s v e)) → G.Reachable u v
+theorem reachable_of_nonempty_NonemptyTemporalWalk {G : SimpleTemporalGraph V} {x y : V}
+: (∃ n m : ℕ, Nonempty (G.NonemptyTemporalWalk x n y m)) → G.Reachable x y
 := by
-  intro ⟨s, t, ⟨h⟩⟩
-  use s, t, TemporalWalk.nonempty h
+  intro ⟨n, m, ⟨h⟩⟩
+  use n, m, ↑h
 
-theorem self_reachable {G : SimpleTemporalGraph V} (u : V)
-: G.Reachable u u
-:= by use 0, 0, TemporalWalk.empty
+theorem self_reachable {G : SimpleTemporalGraph V} (x : V)
+: G.Reachable x x
+:= by use 0, 0, TemporalWalk.Empty
 
-theorem reachable_iff_nonempty_univ {G : SimpleTemporalGraph V} {u v : V} :
-G.Reachable u v ↔ ∃ s t, (Set.univ : Set (G.TemporalWalk u s v t)).Nonempty := by
+theorem reachable_iff_nonempty_univ {G : SimpleTemporalGraph V} {x y : V} :
+G.Reachable x y ↔ ∃ n m : ℕ, (Set.univ : Set (G.TemporalWalk x n y m)).Nonempty := by
     unfold Reachable
     apply Iff.intro
-    · intro ⟨s, ⟨t,⟨ p⟩⟩⟩
-      exact ⟨s, ⟨t, ⟨p, trivial⟩⟩⟩
-    · intro ⟨s, ⟨t,⟨p, _⟩⟩⟩
-      exact ⟨s, ⟨t, ⟨p⟩⟩⟩
+    · intro ⟨n, ⟨m, ⟨p⟩⟩⟩
+      exact ⟨n, ⟨m, ⟨p, trivial⟩⟩⟩
+    · intro ⟨n, ⟨m, ⟨p, _⟩⟩⟩
+      exact ⟨n, ⟨m, ⟨p⟩⟩⟩
 
-theorem reachable_iff_nonempty_TemporalWalkset {G : SimpleTemporalGraph V} {u v : V} :
-G.Reachable u v ↔ (G.TemporalWalkSet u v).Nonempty := by
+theorem reachable_iff_nonempty_temporalWalkSet {G : SimpleTemporalGraph V} {x y : V} :
+G.Reachable x y ↔ (G.TemporalWalkSet x y).Nonempty := by
   apply Iff.intro
-  · rintro ⟨s, ⟨t, ⟨tw⟩⟩⟩
-    exact ⟨⟨s, t, tw⟩, ⟨s, t, tw, rfl⟩⟩
-  · rintro ⟨⟨s, t, tw⟩, _⟩
-    exact ⟨s, ⟨t, ⟨tw⟩⟩⟩
+  · rintro ⟨n, ⟨m, ⟨p⟩⟩⟩
+    exact ⟨⟨n, m, p⟩, ⟨n, m, p, rfl⟩⟩
+  · rintro ⟨⟨n, m, p⟩, _⟩
+    exact ⟨n, ⟨m, ⟨p⟩⟩⟩
 
-def TemporallyConnected (G : SimpleTemporalGraph V) : Prop := ∀ u v , G.Reachable u v
+def TemporallyConnected (G : SimpleTemporalGraph V) : Prop := ∀ x y : V, G.Reachable x y
 
-def IsSpanner {V' : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph V') : Prop
-:= (∀ v : V, v ∈ V') ∧
-  ∀ (u v : V) (hu : u ∈ V') (hv : v ∈ V'), G.Reachable u v → G'.Reachable ⟨u, hu⟩ ⟨v, hv⟩
+def IsSpanner {s : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph s) : Prop
+:=  (∀ x : V, x ∈ s)
+  ∧ ∀ (x y : V) (hx : x ∈ s) (hy : y ∈ s), G.Reachable x y → G'.Reachable ⟨x, hx⟩ ⟨y, hy⟩
 
-def IsTCSpanner {V' : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph V') : Prop
+def IsTCSpanner {s : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph s) : Prop
 := G.IsSpanner G' ∧ G'.TemporallyConnected
 
-theorem complete_is_TC (G : SimpleTemporalGraph V)
+theorem temporallyConnected_of_complete (G : SimpleTemporalGraph V)
 : G.IsComplete → G.TemporallyConnected
 := by
   unfold IsComplete TemporallyConnected
-  intro h u v
-  let ⟨t, h'⟩ := h u v
-  exact nonempty_NETemporalWalk_imp ⟨t, t, ⟨NETemporalWalk.single h'⟩⟩
+  intro h x y
+  have h' := h x y
+  by_cases hdiff : x ≠ y
+  · have ⟨n, h'⟩ := h' hdiff
+    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨NonemptyTemporalWalk.Single h'⟩⟩
+  · simp_all [self_reachable]
 
-lemma earliest_edge_reachability {u α : V} {t : ℕ} {G : SimpleTemporalGraph V}
-(hee : G.EarliestEdge α u t) : ∀ w, G.Reachable α w → G.Reachable u w
+lemma reachable_of_earliestEdge {x y : V} {n : ℕ} {G : SimpleTemporalGraph V}
+(h : G.EarliestEdge x y n) : ∀ z : V, G.Reachable x z → G.Reachable y z
 := by
-  rw [EarliestEdge] at hee
-  intro w ⟨s, e, ⟨tw⟩⟩
-  cases tw with
-  | empty => exact nonempty_NETemporalWalk_imp ⟨t, t, ⟨NETemporalWalk.single hee.left.symm⟩⟩
-  | nonempty p =>
-    have hst : t ≤ s := NETemporalWalk.EarliestEdge.edge_time_bound p hee
-    exact nonempty_NETemporalWalk_imp ⟨_, _, ⟨p.prepend hee.left.symm hst⟩⟩
+  rw [EarliestEdge] at h
+  intro _ ⟨m, _, ⟨p⟩⟩
+  cases p with
+  | Empty =>
+    apply reachable_of_nonempty_NonemptyTemporalWalk ;
+    exact ⟨_, _, ⟨NonemptyTemporalWalk.Single h.left.symm⟩⟩
+  | Nonempty p =>
+    have hst : n ≤ m := NonemptyTemporalWalk.EarliestEdge.time_bound_of_edge p h
+    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.prepend h.left.symm hst⟩⟩
 
 
-lemma latest_edge_reachability {u α : V} {t : ℕ} {G : SimpleTemporalGraph V}
-(hle : G.LatestEdge α u t) : ∀ w, G.Reachable w α → G.Reachable w u
+lemma reachable_of_latestEdge {x y : V} {n : ℕ} {G : SimpleTemporalGraph V}
+(h : G.LatestEdge x y n) : ∀ z : V, G.Reachable z x → G.Reachable z y
 := by
-  intro w ⟨s, e, ⟨tw⟩⟩
-  cases tw with
-  | empty => exact nonempty_NETemporalWalk_imp ⟨t, t, ⟨NETemporalWalk.single hle.left⟩⟩
-  | nonempty p =>
-    have het : e ≤ t := NETemporalWalk.LatestEdge.edge_time_bound p hle
-    exact nonempty_NETemporalWalk_imp ⟨_, _, ⟨p.step hle.left het⟩⟩
+  intro _ ⟨_, m, ⟨p⟩⟩
+  cases p with
+  | Empty =>
+    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨NonemptyTemporalWalk.Single h.left⟩⟩
+  | Nonempty p =>
+    have het : m ≤ n := NonemptyTemporalWalk.LatestEdge.time_bound_of_edge p h
+    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.Step h.left het⟩⟩
 
 -- lemma earliest_latest_edge_co_reachability {u αₑ αₗ : V} {tₑ tₗ : ℕ} {G : SimpleTemporalGraph V}
 -- (hee : G.EarliestEdge αₑ u tₑ) (hle : G.LatestEdge αₗ u tₗ) (hr : G.Reachable αₑ αₗ)

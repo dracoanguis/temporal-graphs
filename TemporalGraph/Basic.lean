@@ -104,6 +104,11 @@ def EarliestEdge (G : SimpleTemporalGraph V) (x y : V) (n : ℕ) : Prop :=
 def LatestEdge (G : SimpleTemporalGraph V) (x y : V) (n : ℕ) : Prop :=
   G.Adj x y n ∧ ∀ z : V, ∀ j : ℕ, G.Adj x z j → j ≤ n
 
+/- *y* is an *earliest neighbor* of *x* -/
+def EarliestNeighbor (G : SimpleTemporalGraph V) (x y : V) : Prop := ∃ n : ℕ, G.EarliestEdge x y n
+
+/- *y* is a *latest neighbor* of *x* -/
+def LatestNeighbor (G : SimpleTemporalGraph V) (x y : V) : Prop := ∃ n : ℕ, G.LatestEdge x y n
 
 section Order
 

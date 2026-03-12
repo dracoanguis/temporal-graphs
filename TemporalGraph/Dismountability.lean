@@ -3,7 +3,8 @@ Copyright (c) 2026 Ethan Bargaud-Arm. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ethan Bargaud-Arm
 -/
-import TemporalGraph.PROOF.Basic
+import TemporalGraph.Basic
+import TemporalGraph.SubTempGraph
 
 universe u
 variable {V : Type u}
@@ -12,7 +13,7 @@ namespace SimpleTemporalGraph
 
 -- Theorem 2.1
 def Dismountable (G : SimpleTemporalGraph V) :=
-  ∃ (x y z : V), G.EarliestNeigbhor y x ∧ G.LatestNeighbor z x
+  ∃ (x y z : V), G.EarliestNeighbor y x ∧ G.LatestNeighbor z x
 
 namespace SubTempGraph
 

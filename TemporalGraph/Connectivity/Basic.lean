@@ -11,29 +11,27 @@ variable {V : Type u}
 namespace SimpleTemporalGraph
 
 def Reachable (G : SimpleTemporalGraph V) (x y : V) : Prop :=
-∃ n m : ℕ, Nonempty (G.TemporalWalk x n y m)
+  ∃ n m : ℕ, Nonempty (G.TemporalWalk x n y m)
 
-theorem reachable_of_nonempty_NonemptyTemporalWalk {G : SimpleTemporalGraph V} {x y : V}
-: (∃ n m : ℕ, Nonempty (G.NonemptyTemporalWalk x n y m)) → G.Reachable x y
-:= by
+theorem reachable_of_nonempty_NonemptyTemporalWalk {G : SimpleTemporalGraph V} {x y : V} :
+    (∃ n m : ℕ, Nonempty (G.NonemptyTemporalWalk x n y m)) → G.Reachable x y := by
   intro ⟨n, m, ⟨h⟩⟩
   use n, m, ↑h
 
-theorem self_reachable {G : SimpleTemporalGraph V} (x : V)
-: G.Reachable x x
-:= by use 0, 0, TemporalWalk.Empty
+theorem self_reachable {G : SimpleTemporalGraph V} (x : V) : G.Reachable x x := by
+  use 0, 0, TemporalWalk.Empty
 
 theorem reachable_iff_nonempty_univ {G : SimpleTemporalGraph V} {x y : V} :
-G.Reachable x y ↔ ∃ n m : ℕ, (Set.univ : Set (G.TemporalWalk x n y m)).Nonempty := by
-    unfold Reachable
-    apply Iff.intro
-    · intro ⟨n, ⟨m, ⟨p⟩⟩⟩
-      exact ⟨n, ⟨m, ⟨p, trivial⟩⟩⟩
-    · intro ⟨n, ⟨m, ⟨p, _⟩⟩⟩
-      exact ⟨n, ⟨m, ⟨p⟩⟩⟩
+    G.Reachable x y ↔ ∃ n m : ℕ, (Set.univ : Set (G.TemporalWalk x n y m)).Nonempty := by
+  unfold Reachable
+  apply Iff.intro
+  · intro ⟨n, ⟨m, ⟨p⟩⟩⟩
+    exact ⟨n, ⟨m, ⟨p, trivial⟩⟩⟩
+  · intro ⟨n, ⟨m, ⟨p, _⟩⟩⟩
+    exact ⟨n, ⟨m, ⟨p⟩⟩⟩
 
 theorem reachable_iff_nonempty_temporalWalkSet {G : SimpleTemporalGraph V} {x y : V} :
-G.Reachable x y ↔ (G.TemporalWalkSet x y).Nonempty := by
+    G.Reachable x y ↔ (G.TemporalWalkSet x y).Nonempty := by
   apply Iff.intro
   · rintro ⟨n, ⟨m, ⟨p⟩⟩⟩
     exact ⟨⟨n, m, p⟩, ⟨n, m, p, rfl⟩⟩
@@ -42,16 +40,16 @@ G.Reachable x y ↔ (G.TemporalWalkSet x y).Nonempty := by
 
 def TemporallyConnected (G : SimpleTemporalGraph V) : Prop := ∀ x y : V, G.Reachable x y
 
-def IsSpanner {s : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph s) : Prop
-:=  (∀ x : V, x ∈ s)
-  ∧ ∀ (x y : V) (hx : x ∈ s) (hy : y ∈ s), G.Reachable x y → G'.Reachable ⟨x, hx⟩ ⟨y, hy⟩
+def IsSpanner {s : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph s) : Prop :=
+  (∀ x : V, x ∈ s)
+  ∧
+  ∀ (x y : V) (hx : x ∈ s) (hy : y ∈ s), G.Reachable x y → G'.Reachable ⟨x, hx⟩ ⟨y, hy⟩
 
-def IsTCSpanner {s : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph s) : Prop
-:= G.IsSpanner G' ∧ G'.TemporallyConnected
+def IsTCSpanner {s : Set V} (G : SimpleTemporalGraph V) (G' : SimpleTemporalGraph s) : Prop :=
+  G.IsSpanner G' ∧ G'.TemporallyConnected
 
-theorem temporallyConnected_of_complete (G : SimpleTemporalGraph V)
-: G.IsComplete → G.TemporallyConnected
-:= by
+theorem temporallyConnected_of_complete (G : SimpleTemporalGraph V) :
+    G.IsComplete → G.TemporallyConnected := by
   unfold IsComplete TemporallyConnected
   intro h x y
   have h' := h x y
@@ -61,8 +59,8 @@ theorem temporallyConnected_of_complete (G : SimpleTemporalGraph V)
   · simp_all [self_reachable]
 
 lemma reachable_of_earliestEdge {x y : V} {n : ℕ} {G : SimpleTemporalGraph V}
-(h : G.EarliestEdge x y n) : ∀ z : V, G.Reachable x z → G.Reachable y z
-:= by
+    (h : G.EarliestEdge x y n) :
+    ∀ z : V, G.Reachable x z → G.Reachable y z := by
   rw [EarliestEdge] at h
   intro _ ⟨m, _, ⟨p⟩⟩
   cases p with
@@ -75,8 +73,8 @@ lemma reachable_of_earliestEdge {x y : V} {n : ℕ} {G : SimpleTemporalGraph V}
 
 
 lemma reachable_of_latestEdge {x y : V} {n : ℕ} {G : SimpleTemporalGraph V}
-(h : G.LatestEdge x y n) : ∀ z : V, G.Reachable z x → G.Reachable z y
-:= by
+    (h : G.LatestEdge x y n) :
+    ∀ z : V, G.Reachable z x → G.Reachable z y := by
   intro _ ⟨_, m, ⟨p⟩⟩
   cases p with
   | Empty =>

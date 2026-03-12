@@ -17,8 +17,8 @@ inductive TemporalWalk : V → ℕ → V → ℕ → Type u
   | Nonempty {x y : V} {n m : ℕ} (p : G.NonemptyTemporalWalk x n y m) : TemporalWalk x n y m
   deriving DecidableEq
 
-def TemporalWalkSet (x y : V)
-  : Set (Σ n m : ℕ, G.TemporalWalk x n y m) :=
+def TemporalWalkSet (x y : V) :
+    Set (Σ n m : ℕ, G.TemporalWalk x n y m) :=
   { p | ∃ (n m : ℕ), ∃ (tw : TemporalWalk x n y m), p = ⟨n, m, tw⟩ }
 
 namespace TemporalWalk
@@ -39,8 +39,7 @@ def darts {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List (V × V × ℕ
   | Empty => []
   | Nonempty p => p.darts
 
-lemma time_monotonicity {x y : V} {n m : ℕ} (tw : G.TemporalWalk x n y m) : n ≤ m
-:= by
+lemma time_monotonicity {x y : V} {n m : ℕ} (tw : G.TemporalWalk x n y m) : n ≤ m := by
   cases tw with
   | Empty => trivial
   | Nonempty p => exact p.time_monotonicity

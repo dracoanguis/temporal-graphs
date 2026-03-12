@@ -14,24 +14,21 @@ namespace SimpleTemporalGraph
 namespace SubTempGraph
 
 @[simp]
-def Reachable (H : SubTempGraph G) (x y : H.Verts) : Prop
-:= H.coe.Reachable x y
+def Reachable (H : SubTempGraph G) (x y : H.Verts) : Prop := H.coe.Reachable x y
 
-def IsSpanner (H : SubTempGraph G) : Prop
-:= H.IsSpanning ∧ ∀ x y : H.Verts, G.Reachable x y → H.Reachable x y
+def IsSpanner (H : SubTempGraph G) : Prop :=
+  H.IsSpanning ∧ ∀ x y : H.Verts, G.Reachable x y → H.Reachable x y
 
-def IsSpannerOf (H : SubTempGraph G) (H' : SubTempGraph G) : Prop
-:= H.Verts = H'.Verts ∧  ∀ u v , H'.Reachable u v → H.spanningCoe.Reachable u v
+def IsSpannerOf (H : SubTempGraph G) (H' : SubTempGraph G) : Prop :=
+  H.Verts = H'.Verts ∧  ∀ u v , H'.Reachable u v → H.spanningCoe.Reachable u v
 
-def TemporallyConnected (H : SubTempGraph G) : Prop
-:= ∀ x y : H.Verts , H.Reachable x y
+def TemporallyConnected (H : SubTempGraph G) : Prop := ∀ x y : H.Verts , H.Reachable x y
 
 def IsTCSpanner (H : SubTempGraph G) : Prop :=
   (H.IsSpanning) ∧ (H.TemporallyConnected)
 
-protected lemma temporallyConnected_iff {H : SubTempGraph G}
-: H.TemporallyConnected ↔ H.coe.TemporallyConnected
-:= by
+protected lemma temporallyConnected_iff {H : SubTempGraph G} :
+    H.TemporallyConnected ↔ H.coe.TemporallyConnected := by
   apply Iff.intro
   · unfold TemporallyConnected
     intro h
@@ -43,9 +40,8 @@ protected lemma temporallyConnected_iff {H : SubTempGraph G}
     trivial
 
 @[simp]
-lemma reachable_of_subTempGraph_reachable {H : SubTempGraph G}
-: ∀ x y : H.Verts, H.Reachable x y → G.Reachable ↑x ↑y
-:= by
+lemma reachable_of_subTempGraph_reachable {H : SubTempGraph G} :
+    ∀ x y : H.Verts, H.Reachable x y → G.Reachable ↑x ↑y := by
   intro _ _ h
   rw [Reachable, reachable_iff_nonempty_univ] at h
   have ⟨n, ⟨m, ⟨p, h⟩⟩⟩ := h
@@ -53,20 +49,17 @@ lemma reachable_of_subTempGraph_reachable {H : SubTempGraph G}
   exact ⟨n, ⟨m, ⟨p, h⟩⟩⟩
 
 @[simp]
-lemma reachable_of_subTempGraph_reachable' {H : SubTempGraph G} {H' : SubTempGraph G}
-(h : H ≤ H')
-: ∀ x y : H.Verts, H.Reachable x y → H'.Reachable
-  ⟨x, Set.mem_of_subset_of_mem h.left x.prop⟩
-  ⟨y, Set.mem_of_subset_of_mem h.left y.prop⟩
-:= by
+lemma reachable_of_subTempGraph_reachable' {H : SubTempGraph G} {H' : SubTempGraph G} (h : H ≤ H') :
+    ∀ x y : H.Verts, H.Reachable x y → H'.Reachable
+      ⟨x, Set.mem_of_subset_of_mem h.left x.prop⟩
+      ⟨y, Set.mem_of_subset_of_mem h.left y.prop⟩ := by
   intro _ _ ⟨n, m, ⟨p⟩⟩
   exact ⟨n, m, ⟨p.lift_subtempgraph_walk' h⟩⟩
 
 
 @[simp]
-protected lemma temporallyConnected_of_TCSpanner (H : SubTempGraph G)
-: H.IsTCSpanner → G.TemporallyConnected
-:= by
+protected lemma temporallyConnected_of_TCSpanner (H : SubTempGraph G) :
+    H.IsTCSpanner → G.TemporallyConnected := by
   intro ⟨h_span, h_tc⟩
   unfold TemporallyConnected at h_tc
   rw [SubTempGraph.IsSpanning] at h_span
@@ -89,22 +82,22 @@ protected lemma temporallyConnected_of_TCSpanner (H : SubTempGraph G)
 --   · exact SubTempGraph.subgraph_reachable_is_reachable _ _
 --   · sorry
 
-theorem addVerts_reachability {s : Set V} {H : SubTempGraph G}
-: ∀ x y : H.Verts, H.Reachable x y → (H.addVerts s).Reachable ⟨x, by simp⟩ ⟨y, by simp⟩
-:= by exact reachable_of_subTempGraph_reachable' addVerts_le
+theorem addVerts_reachability {s : Set V} {H : SubTempGraph G} :
+    ∀ x y : H.Verts, H.Reachable x y → (H.addVerts s).Reachable ⟨x, by simp⟩ ⟨y, by simp⟩ := by
+  exact reachable_of_subTempGraph_reachable' addVerts_le
 
 theorem addEdge_reachability {x y : V} {n : ℕ} {H : SubTempGraph G} {h : G.Adj x y n}
-{h₁ : x ∈ H.Verts ∧ y ∈ H.Verts}
-: ∀ x y : H.Verts, H.Reachable x y → (H.addEdge h h₁).Reachable x y
-:= by exact reachable_of_subTempGraph_reachable' addEdge_le
+    {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts} :
+    ∀ x y : H.Verts, H.Reachable x y → (H.addEdge h h₁).Reachable x y := by
+  exact reachable_of_subTempGraph_reachable' addEdge_le
 
-theorem deleteVerts_reachability {s : Set V} {H : SubTempGraph G}
-: ∀ x y : (H.deleteVerts s).Verts, (H.deleteVerts s).Reachable x y → H.Reachable
-  ⟨x, by have h := (deleteVerts_le' H s).left ; rw [Set.subset_def] at h ; cases x with
-  |mk x hx => exact h x hx⟩
-  ⟨y, by have h := (deleteVerts_le' H s).left ; rw [Set.subset_def] at h ; cases y with
-  |mk y hy => exact h y hy⟩
-:= by exact reachable_of_subTempGraph_reachable' deleteVerts_le
+theorem deleteVerts_reachability {s : Set V} {H : SubTempGraph G} :
+    ∀ x y : (H.deleteVerts s).Verts, (H.deleteVerts s).Reachable x y → H.Reachable
+      ⟨x, by have h := (deleteVerts_le' H s).left ; rw [Set.subset_def] at h ; cases x with
+        |mk x hx => exact h x hx⟩
+      ⟨y, by have h := (deleteVerts_le' H s).left ; rw [Set.subset_def] at h ; cases y with
+        |mk y hy => exact h y hy⟩ := by
+  exact reachable_of_subTempGraph_reachable' deleteVerts_le
 
 -- /-- A temporal graphe admits a spanner if and only if it is Temporally Connected -/
 -- @[simp]

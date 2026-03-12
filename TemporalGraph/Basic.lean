@@ -64,7 +64,7 @@ end Adjacency
 
 /-- The Footprint of a SimpleTemporalGraph is a SimpleGraph representing
 the edges unlabeled by time. -/
-def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V:=
+def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V :=
   {
     Adj := fun x y => ∃ n, G.Adj x y n
     symm := by
@@ -118,12 +118,13 @@ instance : LE (SimpleTemporalGraph V) :=
   ⟨IsSubtempgraphOnV⟩
 
 lemma le_iff_adj {G H : SimpleTemporalGraph V} :
-G ≤ H ↔ ∀ x y : V, ∀ n : ℕ, G.Adj x y n → H.Adj x y n := .rfl
+    G ≤ H ↔ ∀ x y : V, ∀ n : ℕ, G.Adj x y n → H.Adj x y n :=
+  .rfl
 
 @[simp]
-theorem isSubtempgraphOnV_eq_le
-: (IsSubtempgraphOnV : SimpleTemporalGraph V -> SimpleTemporalGraph V -> Prop) = (· ≤ ·)
-:= rfl
+theorem isSubtempgraphOnV_eq_le :
+    (IsSubtempgraphOnV : SimpleTemporalGraph V -> SimpleTemporalGraph V -> Prop) = (· ≤ ·) :=
+  rfl
 
 instance : Bot (SimpleTemporalGraph V) where
   bot := {
@@ -142,9 +143,9 @@ section NeighborSet
 
 def NeighborSet (G : SimpleTemporalGraph V) (x : V) := {y | ∃ n : ℕ, G.Adj x y n}
 
-theorem mem_neighborSet (G : SimpleTemporalGraph V) (x y : V)
-: y ∈ G.NeighborSet x ↔ ∃ n : ℕ, G.Adj x y n
-:= Iff.rfl
+theorem mem_neighborSet (G : SimpleTemporalGraph V) (x y : V) :
+    y ∈ G.NeighborSet x ↔ ∃ n : ℕ, G.Adj x y n :=
+  Iff.rfl
 
 end NeighborSet
 

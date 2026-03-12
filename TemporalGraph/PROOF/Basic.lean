@@ -12,27 +12,23 @@ variable {V : Type u}
 
 namespace SimpleTemporalGraph
 
-def EarliestNeigbhor {G : SimpleTemporalGraph V} (x y : V) : Prop
-:= ∃ n : ℕ, G.EarliestEdge x y n
+def EarliestNeigbhor {G : SimpleTemporalGraph V} (x y : V) : Prop := ∃ n : ℕ, G.EarliestEdge x y n
 
-def LatestNeighbor {G : SimpleTemporalGraph V} (x y : V) : Prop
-:= ∃ n, G.LatestEdge x y n
+def LatestNeighbor {G : SimpleTemporalGraph V} (x y : V) : Prop := ∃ n, G.LatestEdge x y n
 
 namespace SubTempGraph
 
 variable {G : SimpleTemporalGraph V}
 
-def EarliestEdge (H : SubTempGraph G) (x y : V) (n : ℕ) : Prop
-:= H.Adj x y n ∧ ∀ (z : V) (m : ℕ), H.Adj x z m → n ≤ m
+def EarliestEdge (H : SubTempGraph G) (x y : V) (n : ℕ) : Prop :=
+  H.Adj x y n ∧ ∀ (z : V) (m : ℕ), H.Adj x z m → n ≤ m
 
-def LatestEdge (H : SubTempGraph G) (x y : V) (n : ℕ) : Prop
-:= H.Adj x y n ∧ ∀ (z : V) (m : ℕ), H.Adj x z m → m ≤ n
+def LatestEdge (H : SubTempGraph G) (x y : V) (n : ℕ) : Prop :=
+  H.Adj x y n ∧ ∀ (z : V) (m : ℕ), H.Adj x z m → m ≤ n
 
-def EarliestNeighbor {H : SubTempGraph G} (x y : V) : Prop
-:= ∃ n, H.EarliestEdge x y n
+def EarliestNeighbor {H : SubTempGraph G} (x y : V) : Prop := ∃ n, H.EarliestEdge x y n
 
-def LatestNeighbor {H : SubTempGraph G} (x y : V) : Prop
-:= ∃ n, H.LatestEdge x y n
+def LatestNeighbor {H : SubTempGraph G} (x y : V) : Prop := ∃ n, H.LatestEdge x y n
 
 -- lemma earliestEdge_exists {H : SubTempGraph G} {x y : V} {n : ℕ}
 -- (h : H.Adj x y n)
@@ -58,23 +54,19 @@ def LatestNeighbor {H : SubTempGraph G} (x y : V) : Prop
   --   · exact hee'.left
   --   ·
 
-lemma latestEdge_exists {H : SubTempGraph G} {x y : V} {n : ℕ}
-(h : H.Adj x y n)
-: ∃ (z : V) (m : ℕ), H.LatestEdge x z m := by sorry
+lemma latestEdge_exists {H : SubTempGraph G} {x y : V} {n : ℕ} (h : H.Adj x y n) :
+    ∃ (z : V) (m : ℕ), H.LatestEdge x z m := by
+  sorry
 
-def IsClique (H : SubTempGraph G) : Prop
-:= ∀ (x y : H.Verts), x ≠ y → ∃ n, H.Adj x y n
+def IsClique (H : SubTempGraph G) : Prop := ∀ (x y : H.Verts), x ≠ y → ∃ n, H.Adj x y n
 
-def IsProper (H : SubTempGraph G) : Prop
-:= ∀ (x y z : V) (n : ℕ), H.Adj x y n ∧ H.Adj x z n → y=z
+def IsProper (H : SubTempGraph G) : Prop := ∀ (x y z : V) (n : ℕ), H.Adj x y n ∧ H.Adj x z n → y=z
 
 -- From SimpleGraph.Subgraph.IsMatching
-def IsMatching (M : SubTempGraph G) : Prop
-:= ∀ ⦃v : V⦄, v ∈ M.Verts → ∃! w , ∃ t, M.Adj v w t
+def IsMatching (M : SubTempGraph G) : Prop := ∀ ⦃v : V⦄, v ∈ M.Verts → ∃! w , ∃ t, M.Adj v w t
 
 -- From SimpleGraph.Subgraph.IsPerfectMatching
-def IsPerfectMatching (M : SubTempGraph G)
-:= M.IsMatching ∧ M.IsSpanning
+def IsPerfectMatching (M : SubTempGraph G) := M.IsMatching ∧ M.IsSpanning
 
 end SubTempGraph
 

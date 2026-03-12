@@ -11,57 +11,50 @@ variable {V : Type u}
 namespace SimpleTemporalGraph
 
 -- Theorem 2.1
-def Dismountable (G : SimpleTemporalGraph V)
-:= ∃ (x y z : V), G.EarliestNeigbhor y x ∧ G.LatestNeighbor z x
+def Dismountable (G : SimpleTemporalGraph V) :=
+  ∃ (x y z : V), G.EarliestNeigbhor y x ∧ G.LatestNeighbor z x
 
 namespace SubTempGraph
 
 variable {G : SimpleTemporalGraph V}
 
 -- Theorem 2.1
-def Dismountable (H : SubTempGraph G)
-:= H.IsClique ∧ ∃ (x y z : V), H.EarliestNeighbor y x ∧ H.LatestNeighbor z x
+def Dismountable (H : SubTempGraph G) :=
+  H.IsClique ∧ ∃ (x y z : V), H.EarliestNeighbor y x ∧ H.LatestNeighbor z x
 
-def Dismountable' (H : SubTempGraph G) (x y z : V) (n m : ℕ)
-:= H.IsClique ∧ H.EarliestEdge y x n ∧ H.LatestEdge z x m
+def Dismountable' (H : SubTempGraph G) (x y z : V) (n m : ℕ) :=
+  H.IsClique ∧ H.EarliestEdge y x n ∧ H.LatestEdge z x m
 
 abbrev Dismount (H : SubTempGraph G) (x : V) := H.deleteVerts {x}
 
 -- def 3.1
-def Vminus (H : SubTempGraph G) : Set V
-:= {x : V | ∃ y : V, H.EarliestNeighbor y x}
+def Vminus (H : SubTempGraph G) : Set V := {x : V | ∃ y : V, H.EarliestNeighbor y x}
 
 -- def 3.1
-def Vplus (H : SubTempGraph G) : Set V
-:= {x : V | ∃ y : V, H.LatestNeighbor y x}
+def Vplus (H : SubTempGraph G) : Set V := {x : V | ∃ y : V, H.LatestNeighbor y x}
 
 -- def 3.1
-def Vzero (H : SubTempGraph G) : Set V
-:= (H.Vminusᶜ ∩ H.Vplusᶜ)
+def Vzero (H : SubTempGraph G) : Set V := (H.Vminusᶜ ∩ H.Vplusᶜ)
 
-lemma vzero_univ_diff {H : SubTempGraph G} : H.Vzero = Set.univ \ (H.Vminus ∪ H.Vplus)
-:= by simp [Vzero, Set.diff_eq]
+lemma vzero_univ_diff {H : SubTempGraph G} : H.Vzero = Set.univ \ (H.Vminus ∪ H.Vplus) := by
+  simp [Vzero, Set.diff_eq]
 
-lemma vzero_mem {H : SubTempGraph G} : ∀ x : V, x ∈ H.Vzero → x ∉ H.Vminus ∧ x ∉ H.Vplus
-:= by
+lemma vzero_mem {H : SubTempGraph G} : ∀ x : V, x ∈ H.Vzero → x ∉ H.Vminus ∧ x ∉ H.Vplus := by
   intro _ hx
   simp [Vzero, Set.compl_def] at hx
   simp [hx]
 
-lemma vunion_eq_univ {H : SubTempGraph G} : H.Vminus ∪ H.Vplus ∪ H.Vzero = Set.univ
-:= by simp [vzero_univ_diff]
+lemma vunion_eq_univ {H : SubTempGraph G} : H.Vminus ∪ H.Vplus ∪ H.Vzero = Set.univ := by
+  simp [vzero_univ_diff]
 
-lemma nonempty_vplus_inter_vmimus_iff_Dismountable (H : SubTempGraph G)
-: H.IsClique ∧ (H.Vplus ∩ H.Vminus).Nonempty ↔ H.Dismountable
-:= by
+lemma nonempty_vplus_inter_vmimus_iff_Dismountable (H : SubTempGraph G) :
+    H.IsClique ∧ (H.Vplus ∩ H.Vminus).Nonempty ↔ H.Dismountable := by
   rw [Dismountable, Set.nonempty_def, Vminus, Vplus]
   simp only [Set.mem_inter_iff, Set.mem_setOf_eq, exists_and_left, exists_and_right, And.comm]
 
 -- lemma 3.1
-lemma partition_of_not_dismountable {H : SubTempGraph G}
-(h : H.IsClique ∧ ¬H.Dismountable)
-: ∀ x : V, ∃! s ∈ ({H.Vminus, H.Vplus, H.Vzero} : Set (Set V)), x ∈ s
-:= by
+lemma partition_of_not_dismountable {H : SubTempGraph G} (h : H.IsClique ∧ ¬H.Dismountable) :
+    ∀ x : V, ∃! s ∈ ({H.Vminus, H.Vplus, H.Vzero} : Set (Set V)), x ∈ s := by
   have ⟨hClique, hnDis⟩ := h
   conv at hnDis => rhs ; rw [←nonempty_vplus_inter_vmimus_iff_Dismountable]
   push_neg at hnDis
@@ -106,17 +99,18 @@ lemma partition_of_not_dismountable {H : SubTempGraph G}
           absurd hunin
           apply Set.mem_univ
 
-def Dismountable2 (H : SubTempGraph G)
-:= H.IsClique ∧ ( ∃ x : V,
+def Dismountable2 (H : SubTempGraph G) :=
+  H.IsClique
+  ∧
+  (∃ x : V,
     ((∃ y : V, H.EarliestNeighbor y x)
       ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.EarliestEdge y z n ∧ H.Adj z x m ∧ m ≤ n))
-  ∧ ((∃ y : V, H.LatestNeighbor y x)
-      ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.LatestEdge y z n ∧ H.Adj z x m ∧ n ≤ m))
-  )
+    ∧
+    ((∃ y : V, H.LatestNeighbor y x)
+      ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.LatestEdge y z n ∧ H.Adj z x m ∧ n ≤ m)))
 
-lemma dismountable2_of_dismountable {H : SubTempGraph G}
-(h : H.Dismountable) : H.Dismountable2
-:= by
+lemma dismountable2_of_dismountable {H : SubTempGraph G} (h : H.Dismountable) :
+    H.Dismountable2 := by
   constructor
   · exact h.left
   · rcases h.right with ⟨u, α, β, hen, hln⟩
@@ -126,15 +120,14 @@ lemma dismountable2_of_dismountable {H : SubTempGraph G}
     · exists β
 
 lemma not_dismountable_of_not_dismountable2 {H : SubTempGraph G}
-(h : H.IsClique ∧ ¬H.Dismountable2)
-: ¬H.Dismountable
-:= by contrapose h ; simp at * ; simp [h, dismountable2_of_dismountable]
+    (h : H.IsClique ∧ ¬H.Dismountable2) :
+    ¬H.Dismountable := by
+  contrapose h ; simp at * ; simp [h, dismountable2_of_dismountable]
 
 -- lemma 3.2
-lemma vplus_ne_neighbor_of_not_dismountable2 {H : SubTempGraph G}
-(x y : H.Vplus) (h : ¬H.Dismountable2) (h₁ : H.IsClique) (h₂ : x ≠ y)
-: ∀ z z', H.EarliestNeighbor x z ∧ H.EarliestNeighbor y z' → z ≠ z'
-:= by
+lemma vplus_ne_neighbor_of_not_dismountable2 {H : SubTempGraph G} (x y : H.Vplus)
+    (h : ¬H.Dismountable2) (h₁ : H.IsClique) (h₂ : x ≠ y) :
+    ∀ z z', H.EarliestNeighbor x z ∧ H.EarliestNeighbor y z' → z ≠ z' := by
   simp only [EarliestNeighbor, ne_eq, and_imp, forall_exists_index]
   intro z z' n hee m hee' hzz'
   have ⟨x, hx⟩ := x
@@ -169,10 +162,9 @@ lemma vplus_ne_neighbor_of_not_dismountable2 {H : SubTempGraph G}
     · apply Or.inl ; assumption
 
 -- lemma 3.2
-lemma notDismountable2_neDiff_imp_neigbhorDiff' {H : SubTempGraph G}
-(x y : H.Vminus) (h : ¬H.Dismountable2) (h₁ : H.IsClique) (h₂ : x ≠ y)
-: ∀ z z', H.LatestNeighbor x z ∧ H.LatestNeighbor y z' → z ≠ z'
-:= by
+lemma notDismountable2_neDiff_imp_neigbhorDiff' {H : SubTempGraph G} (x y : H.Vminus)
+    (h : ¬H.Dismountable2) (h₁ : H.IsClique) (h₂ : x ≠ y) :
+    ∀ z z', H.LatestNeighbor x z ∧ H.LatestNeighbor y z' → z ≠ z' := by
   simp only [LatestNeighbor, ne_eq, and_imp, forall_exists_index]
   intro z z' n hle m hle' hzz'
   have ⟨x, hx⟩ := x
@@ -212,10 +204,9 @@ lemma notDismountable2_neDiff_imp_neigbhorDiff' {H : SubTempGraph G}
 -- : ¬G'.Dismountable2 →
 
 -- lemma 3.3
-lemma vzero_empty_of_not_dismountable2 {H : SubTempGraph G}
-(h : H.IsClique)
-: ¬H.Dismountable2 → H.Vzero = ∅
-:= by sorry
+lemma vzero_empty_of_not_dismountable2 {H : SubTempGraph G} (h : H.IsClique) :
+    ¬H.Dismountable2 → H.Vzero = ∅ := by
+  sorry
   -- by_contra h'
   -- push_neg at h'
   -- have ⟨hnDis, hVne⟩ := h'

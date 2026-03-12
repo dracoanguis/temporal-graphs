@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ethan Bargaud-Arm
 -/
 import TemporalGraph.Basic
-import TemporalGraph.SubTempGraph
+import TemporalGraph.SubTemporalGraph
 
 universe u
 variable {V : Type u}
@@ -15,46 +15,46 @@ namespace SimpleTemporalGraph
 def Dismountable (G : SimpleTemporalGraph V) :=
   ∃ (x y z : V), G.EarliestNeighbor y x ∧ G.LatestNeighbor z x
 
-namespace SubTempGraph
+namespace SubTemporalGraph
 
 variable {G : SimpleTemporalGraph V}
 
 -- Theorem 2.1
-def Dismountable (H : SubTempGraph G) :=
+def Dismountable (H : SubTemporalGraph G) :=
   H.IsClique ∧ ∃ (x y z : V), H.EarliestNeighbor y x ∧ H.LatestNeighbor z x
 
-def Dismountable' (H : SubTempGraph G) (x y z : V) (n m : ℕ) :=
+def Dismountable' (H : SubTemporalGraph G) (x y z : V) (n m : ℕ) :=
   H.IsClique ∧ H.EarliestEdge y x n ∧ H.LatestEdge z x m
 
-abbrev Dismount (H : SubTempGraph G) (x : V) := H.deleteVerts {x}
+abbrev Dismount (H : SubTemporalGraph G) (x : V) := H.deleteVerts {x}
 
 -- def 3.1
-def Vminus (H : SubTempGraph G) : Set V := {x : V | ∃ y : V, H.EarliestNeighbor y x}
+def Vminus (H : SubTemporalGraph G) : Set V := {x : V | ∃ y : V, H.EarliestNeighbor y x}
 
 -- def 3.1
-def Vplus (H : SubTempGraph G) : Set V := {x : V | ∃ y : V, H.LatestNeighbor y x}
+def Vplus (H : SubTemporalGraph G) : Set V := {x : V | ∃ y : V, H.LatestNeighbor y x}
 
 -- def 3.1
-def Vzero (H : SubTempGraph G) : Set V := (H.Vminusᶜ ∩ H.Vplusᶜ)
+def Vzero (H : SubTemporalGraph G) : Set V := (H.Vminusᶜ ∩ H.Vplusᶜ)
 
-lemma vzero_univ_diff {H : SubTempGraph G} : H.Vzero = Set.univ \ (H.Vminus ∪ H.Vplus) := by
+lemma vzero_univ_diff {H : SubTemporalGraph G} : H.Vzero = Set.univ \ (H.Vminus ∪ H.Vplus) := by
   simp [Vzero, Set.diff_eq]
 
-lemma vzero_mem {H : SubTempGraph G} : ∀ x : V, x ∈ H.Vzero → x ∉ H.Vminus ∧ x ∉ H.Vplus := by
+lemma vzero_mem {H : SubTemporalGraph G} : ∀ x : V, x ∈ H.Vzero → x ∉ H.Vminus ∧ x ∉ H.Vplus := by
   intro _ hx
   simp [Vzero, Set.compl_def] at hx
   simp [hx]
 
-lemma vunion_eq_univ {H : SubTempGraph G} : H.Vminus ∪ H.Vplus ∪ H.Vzero = Set.univ := by
+lemma vunion_eq_univ {H : SubTemporalGraph G} : H.Vminus ∪ H.Vplus ∪ H.Vzero = Set.univ := by
   simp [vzero_univ_diff]
 
-lemma nonempty_vplus_inter_vmimus_iff_Dismountable (H : SubTempGraph G) :
+lemma nonempty_vplus_inter_vmimus_iff_Dismountable (H : SubTemporalGraph G) :
     H.IsClique ∧ (H.Vplus ∩ H.Vminus).Nonempty ↔ H.Dismountable := by
   rw [Dismountable, Set.nonempty_def, Vminus, Vplus]
   simp only [Set.mem_inter_iff, Set.mem_setOf_eq, exists_and_left, exists_and_right, And.comm]
 
 -- lemma 3.1
-lemma partition_of_not_dismountable {H : SubTempGraph G} (h : H.IsClique ∧ ¬H.Dismountable) :
+lemma partition_of_not_dismountable {H : SubTemporalGraph G} (h : H.IsClique ∧ ¬H.Dismountable) :
     ∀ x : V, ∃! s ∈ ({H.Vminus, H.Vplus, H.Vzero} : Set (Set V)), x ∈ s := by
   have ⟨hClique, hnDis⟩ := h
   conv at hnDis => rhs ; rw [←nonempty_vplus_inter_vmimus_iff_Dismountable]
@@ -100,7 +100,7 @@ lemma partition_of_not_dismountable {H : SubTempGraph G} (h : H.IsClique ∧ ¬H
           absurd hunin
           apply Set.mem_univ
 
-def Dismountable2 (H : SubTempGraph G) :=
+def Dismountable2 (H : SubTemporalGraph G) :=
   H.IsClique
   ∧
   (∃ x : V,
@@ -110,7 +110,7 @@ def Dismountable2 (H : SubTempGraph G) :=
     ((∃ y : V, H.LatestNeighbor y x)
       ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.LatestEdge y z n ∧ H.Adj z x m ∧ n ≤ m)))
 
-lemma dismountable2_of_dismountable {H : SubTempGraph G} (h : H.Dismountable) :
+lemma dismountable2_of_dismountable {H : SubTemporalGraph G} (h : H.Dismountable) :
     H.Dismountable2 := by
   constructor
   · exact h.left
@@ -120,13 +120,13 @@ lemma dismountable2_of_dismountable {H : SubTempGraph G} (h : H.Dismountable) :
     · exists α
     · exists β
 
-lemma not_dismountable_of_not_dismountable2 {H : SubTempGraph G}
+lemma not_dismountable_of_not_dismountable2 {H : SubTemporalGraph G}
     (h : H.IsClique ∧ ¬H.Dismountable2) :
     ¬H.Dismountable := by
   contrapose h ; simp at * ; simp [h, dismountable2_of_dismountable]
 
 -- lemma 3.2
-lemma vplus_ne_neighbor_of_not_dismountable2 {H : SubTempGraph G} (x y : H.Vplus)
+lemma vplus_ne_neighbor_of_not_dismountable2 {H : SubTemporalGraph G} (x y : H.Vplus)
     (h : ¬H.Dismountable2) (h₁ : H.IsClique) (h₂ : x ≠ y) :
     ∀ z z', H.EarliestNeighbor x z ∧ H.EarliestNeighbor y z' → z ≠ z' := by
   simp only [EarliestNeighbor, ne_eq, and_imp, forall_exists_index]
@@ -163,7 +163,7 @@ lemma vplus_ne_neighbor_of_not_dismountable2 {H : SubTempGraph G} (x y : H.Vplus
     · apply Or.inl ; assumption
 
 -- lemma 3.2
-lemma notDismountable2_neDiff_imp_neigbhorDiff' {H : SubTempGraph G} (x y : H.Vminus)
+lemma notDismountable2_neDiff_imp_neigbhorDiff' {H : SubTemporalGraph G} (x y : H.Vminus)
     (h : ¬H.Dismountable2) (h₁ : H.IsClique) (h₂ : x ≠ y) :
     ∀ z z', H.LatestNeighbor x z ∧ H.LatestNeighbor y z' → z ≠ z' := by
   simp only [LatestNeighbor, ne_eq, and_imp, forall_exists_index]
@@ -201,11 +201,11 @@ lemma notDismountable2_neDiff_imp_neigbhorDiff' {H : SubTempGraph G} (x y : H.Vm
 
 
 -- -- Corollary 3.3
--- lemma notDismountable2_imp_PerfectMatching {G' : SubTempGraph G}
+-- lemma notDismountable2_imp_PerfectMatching {G' : SubTemporalGraph G}
 -- : ¬G'.Dismountable2 →
 
 -- lemma 3.3
-lemma vzero_empty_of_not_dismountable2 {H : SubTempGraph G} (h : H.IsClique) :
+lemma vzero_empty_of_not_dismountable2 {H : SubTemporalGraph G} (h : H.IsClique) :
     ¬H.Dismountable2 → H.Vzero = ∅ := by
   sorry
   -- by_contra h'
@@ -215,6 +215,6 @@ lemma vzero_empty_of_not_dismountable2 {H : SubTempGraph G} (h : H.IsClique) :
 
 
 
-end SubTempGraph
+end SubTemporalGraph
 
 end SimpleTemporalGraph

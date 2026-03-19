@@ -153,6 +153,9 @@ end Spanning
 
 section Props
 
+def IsSimple (H : SubTemporalGraph G) : Prop :=
+  ∀ (x y : V) (n m : ℕ), H.Adj x y n ∧ H.Adj x y m → n=m
+
 def IsClique (H : SubTemporalGraph G) : Prop := ∀ (x y : H.Verts), x ≠ y → ∃ n, H.Adj x y n
 
 def IsProper (H : SubTemporalGraph G) : Prop :=
@@ -164,7 +167,44 @@ def IsMatching (M : SubTemporalGraph G) : Prop := ∀ ⦃v : V⦄, v ∈ M.Verts
 -- From SimpleGraph.Subgraph.IsPerfectMatching
 def IsPerfectMatching (M : SubTemporalGraph G) := M.IsMatching ∧ M.IsSpanning
 
+instance [Finite V] {H : SubTemporalGraph G} : Finite H.Verts :=
+  H.Verts.toFinite
+
 end Props
+
+section IncidenceSet
+
+def IncidenceSet (H : SubTemporalGraph G) (x : V) : Set (V × ℕ) :=
+  { (y, n) | H.Adj x y n }
+
+lemma finite_incidenceSet_of_finite_simple {H : SubTemporalGraph G} [h : Finite H.Verts]
+    (h₁ : H.IsSimple) :
+    ∀ (x : H.Verts), (H.IncidenceSet x).Finite := by
+  intro x
+  apply Set.Finite.of_injOn (f := fun p : V × ℕ => p.1) (t := H.Verts)
+  · intro ⟨y, n⟩ hadj ; exact hadj.snd_mem
+  · intro ⟨y, n⟩ hyn ⟨z, m⟩ hzm heq
+    simp only at heq
+    subst heq
+    congr
+    exact h₁ x y n m ⟨hyn, hzm⟩
+  · exact h
+
+lemma nonempty_of_nontrivial_clique {H : SubTemporalGraph G} [h : Nontrivial H.Verts]
+    (h₁ : H.IsClique) :
+    ∀ x : H.Verts, (H.IncidenceSet x).Nonempty := by
+  intro x
+  have ⟨y, z, hne⟩ := h.exists_pair_ne
+  by_cases heq : x=y
+  · subst heq
+    have ⟨n, hadj⟩ := h₁ x z hne
+    have h' : ⟨z, n⟩ ∈ (H.IncidenceSet x) := hadj
+    use ⟨z, n⟩
+  · have ⟨n, hadj⟩ := h₁ x y heq
+    have h' : ⟨y, n⟩ ∈ (H.IncidenceSet x) := hadj
+    use ⟨y, n⟩
+
+end IncidenceSet
 
 section Order
 
@@ -379,13 +419,37 @@ def EarliestNeighbor (H : SubTemporalGraph G) (x y : V) : Prop := ∃ n, H.Earli
 
 def LatestNeighbor (H : SubTemporalGraph G) (x y : V) : Prop := ∃ n, H.LatestEdge x y n
 
-lemma earliestEdge_exists {H : SubTemporalGraph G} {x y : V} {n : ℕ} (h : H.Adj x y n) :
-    ∃ (z : V) (m : ℕ), H.EarliestEdge x z m := by
-  sorry
+lemma earliestEdge_exists_of_nonempty_finite_incidenceSet {H : SubTemporalGraph G}
+    (h₀ : (H.IncidenceSet x).Nonempty)
+    (h₁ : (H.IncidenceSet x).Finite) :
+    ∃ (y : V) (n : ℕ), H.EarliestEdge x y n := by
+  haveI : Nonempty (H.IncidenceSet x) := Set.nonempty_coe_sort.mpr h₀
+  have ⟨⟨⟨y, n⟩, hin⟩, hmin⟩ := h₁.exists_min (fun x ↦ x.1.2)
+  use y, n
+  unfold EarliestEdge
+  constructor
+  · trivial
+  · intro z m hadj
+    have hin' : ⟨z, m⟩ ∈ H.IncidenceSet x := hadj
+    have hle := hmin ⟨⟨z, m⟩, hin'⟩
+    simp at hle
+    trivial
 
-lemma latestEdge_exists {H : SubTemporalGraph G} {x y : V} {n : ℕ} (h : H.Adj x y n) :
+lemma latestEdge_exists_of_nonempty_finite_incidenceSet {H : SubTemporalGraph G}
+    (h₀ : (H.IncidenceSet x).Nonempty)
+    (h₁ : (H.IncidenceSet x).Finite) :
     ∃ (z : V) (m : ℕ), H.LatestEdge x z m := by
-  sorry
+  haveI : Nonempty (H.IncidenceSet x) := Set.nonempty_coe_sort.mpr h₀
+  have ⟨⟨⟨y, n⟩, hin⟩, hmax⟩ := h₁.exists_max (fun x ↦ x.1.2)
+  use y, n
+  unfold LatestEdge
+  constructor
+  · trivial
+  · intro z m hadj
+    have hin' : ⟨z, m⟩ ∈ H.IncidenceSet x := hadj
+    have hle := hmax ⟨⟨z, m⟩, hin'⟩
+    simp at hle
+    trivial
 
 lemma subgraph_earliestEdge_of_graph_earliestEdge {H : SubTemporalGraph G}
     (h : G.EarliestEdge x y n) (h₁ : H.Adj x y n) :

@@ -199,7 +199,6 @@ lemma notDismountable2_neDiff_imp_neigbhorDiff' {H : SubTemporalGraph G} (x y : 
           · rw [hzz'] at hle ; exact hle.left.symm
           · push_neg at ht ; apply ht.le
 
-
 -- -- Corollary 3.3
 -- lemma notDismountable2_imp_PerfectMatching {G' : SubTemporalGraph G}
 -- : ¬G'.Dismountable2 →
@@ -207,10 +206,10 @@ lemma notDismountable2_neDiff_imp_neigbhorDiff' {H : SubTemporalGraph G} (x y : 
 -- lemma 3.3
 lemma vzero_empty_of_not_dismountable2 {H : SubTemporalGraph G} (h : H.IsClique) :
     ¬H.Dismountable2 → H.Vzero = ∅ := by
-  sorry
-  -- by_contra h'
-  -- push_neg at h'
-  -- have ⟨hnDis, hVne⟩ := h'
+  by_contra! h'
+  have ⟨hnDis, ⟨x, hxin⟩⟩ := h'
+  have hpart := partition_of_not_dismountable ⟨h, not_dismountable_of_not_dismountable2 ⟨h, hnDis⟩⟩
+
 
 
 

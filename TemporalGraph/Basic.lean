@@ -89,6 +89,10 @@ def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V :=
 --     DecidablePred (· ∈ G.neighborSet v) :=
 --   inferInstanceAs <| DecidablePred (Adj G v)
 
+-- Because it was infact not simple (╯°□°)╯︵ ┻━┻
+def IsSimple (G : SimpleTemporalGraph V) : Prop :=
+  ∀ (x y : V) (n m : ℕ), G.Adj x y n ∧ G.Adj x y m → n=m
+
 def IsComplete (G : SimpleTemporalGraph V) : Prop :=
   ∀ x y : V, x ≠ y → ∃ t, G.Adj x y t
 

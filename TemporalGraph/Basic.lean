@@ -62,6 +62,7 @@ protected theorem Adj.ne' (h : G.Adj x y n) : y ≠ x :=
 
 end Adjacency
 
+-- False because of not simple, and sends everything to one edge.
 /-- The Footprint of a SimpleTemporalGraph is a SimpleGraph representing
 the edges unlabeled by time. -/
 def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V :=

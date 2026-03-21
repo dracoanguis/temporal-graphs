@@ -203,14 +203,53 @@ lemma notDismountable2_neDiff_imp_neigbhorDiff' {H : SubTemporalGraph G} (x y : 
 -- lemma notDismountable2_imp_PerfectMatching {G' : SubTemporalGraph G}
 -- : ¬G'.Dismountable2 →
 
+def EarliestEdgeSet (H : SubTemporalGraph G) : Set (V × V × ℕ) :=
+  {(x, y, n) : V × V × ℕ | H.EarliestEdge x y n}
+
+def fromEdgeSet (G : SimpleTemporalGraph V) (s : Set (V × V × ℕ)) : SubTemporalGraph G where
+  Verts := {x | ∃ a ∈ s, x = a.1 ∨ x = a.2.1}
+  Adj x y n := ∃ a ∈ s, ((x = a.1 ∧ y = a.2.1) ∨ (x = a.2.1 ∧ y = a.1)) ∧ n = a.2.2 ∧ G.Adj x y n
+
+  adj_sub h := by
+    have ⟨a, h⟩ := h
+    exact h.2.2.2
+
+  edge_vert h := by
+    obtain ⟨a, h⟩ := h
+    simp only [Prod.exists, exists_and_right, Set.mem_setOf_eq]
+    use a.1, a.2.1
+    constructor
+    · use a.2.2 ; exact h.1
+    · apply h.2.1.elim
+    <;> intro h'
+      · exact Or.inl h'.1
+      · exact Or.inr h'.1
+
+  symm _ _ _ h := by
+    simp_all only [Prod.exists, ↓existsAndEq, true_and]
+    have ⟨x, y, h⟩ := h
+    use x, y
+    constructor
+    · exact h.1
+    · constructor
+      · apply h.2.1.elim
+        <;> intro h'
+        · exact Or.inr h'.symm
+        · exact Or.inl h'.symm
+      · exact h.2.2.symm
+
+
+lemma earliestEdge_perfectMatching_of_not_dismountable2 {H : SubTemporalGraph G}
+    (h : ¬ H.Dismountable2) :
+    (fromEdgeSet G H.EarliestEdgeSet).IsPerfectMatching := by --trouver comment écrire le truc
+  sorry
+
 -- lemma 3.3
 lemma vzero_empty_of_not_dismountable2 {H : SubTemporalGraph G} (h : H.IsClique) :
     ¬H.Dismountable2 → H.Vzero = ∅ := by
   by_contra! h'
   have ⟨hnDis, ⟨x, hxin⟩⟩ := h'
   have hpart := partition_of_not_dismountable ⟨h, not_dismountable_of_not_dismountable2 ⟨h, hnDis⟩⟩
-
-
 
 
 

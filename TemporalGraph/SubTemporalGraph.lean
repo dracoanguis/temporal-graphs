@@ -142,7 +142,7 @@ theorem Adj.of_spanningCoe {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
     (h : H.spanningCoe.Adj x y n) : G.Adj x y n :=
   H.adj_sub h
 
-lemma spanningcoe_le (H : SubTemporalGraph G) : H.spanningCoe ≤ G := H.adj_sub
+lemma spanningCoe_le (H : SubTemporalGraph G) : H.spanningCoe ≤ G := H.adj_sub
 
 variable {H₁ : SubTemporalGraph G} {H₂ : SubTemporalGraph G}
 
@@ -175,7 +175,7 @@ end Props
 section IncidenceSet
 
 def IncidenceSet (H : SubTemporalGraph G) (x : V) : Set (V × ℕ) :=
-  { (y, n) | H.Adj x y n }
+  { (y, n) : V × ℕ | H.Adj x y n }
 
 lemma finite_incidenceSet_of_finite_simple {H : SubTemporalGraph G} [h : Finite H.Verts]
     (h₁ : H.IsSimple) :
@@ -208,6 +208,7 @@ end IncidenceSet
 
 section Order
 
+/-- The `⊤ : SubTemporalGraph G` is `G` itself. -/
 instance : Top G.SubTemporalGraph where
   top := {
     Verts := Set.univ
@@ -225,6 +226,7 @@ theorem top_verts : (⊤ : SubTemporalGraph G).Verts = Set.univ := rfl
 
 theorem top_spanningCoe : (⊤ : SubTemporalGraph G).spanningCoe = G := rfl
 
+/-- The `⊥ : SubTemporalGraph G` is the empty graph where there is no vertices. -/
 instance : Bot G.SubTemporalGraph where
   bot := {
     Verts := ∅
@@ -584,6 +586,38 @@ theorem toSubgraph.isSpanning (H : SimpleTemporalGraph V) (h : H ≤ G) :
   Set.mem_univ
 
 def toSubgraphTop : G.SubTemporalGraph := ⊤
+
+def fromEdgeSet (G : SimpleTemporalGraph V) (s : Set (V × V × ℕ)) : SubTemporalGraph G where
+  Verts := {x | ∃ a ∈ s, x = a.1 ∨ x = a.2.1}
+  Adj x y n := ∃ a ∈ s, ((x = a.1 ∧ y = a.2.1) ∨ (x = a.2.1 ∧ y = a.1)) ∧ n = a.2.2 ∧ G.Adj x y n
+
+  adj_sub h := by
+    have ⟨a, h⟩ := h
+    exact h.2.2.2
+
+  edge_vert h := by
+    obtain ⟨a, h⟩ := h
+    simp only [Prod.exists, exists_and_right, Set.mem_setOf_eq]
+    use a.1, a.2.1
+    constructor
+    · use a.2.2 ; exact h.1
+    · apply h.2.1.elim
+    <;> intro h'
+      · exact Or.inl h'.1
+      · exact Or.inr h'.1
+
+  symm _ _ _ h := by
+    simp_all only [Prod.exists, ↓existsAndEq, true_and]
+    have ⟨x, y, h⟩ := h
+    use x, y
+    constructor
+    · exact h.1
+    · constructor
+      · apply h.2.1.elim
+        <;> intro h'
+        · exact Or.inr h'.symm
+        · exact Or.inl h'.symm
+      · exact h.2.2.symm
 
 end SubgraphProps
 

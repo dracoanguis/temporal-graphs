@@ -167,6 +167,10 @@ def IsMatching (M : SubTemporalGraph G) : Prop := ∀ ⦃v : V⦄, v ∈ M.Verts
 -- From SimpleGraph.Subgraph.IsPerfectMatching
 def IsPerfectMatching (M : SubTemporalGraph G) := M.IsMatching ∧ M.IsSpanning
 
+def IsPerfectMatchingOf (M : SubTemporalGraph G) (H : SubTemporalGraph G) :=
+  M.IsMatching ∧ M.Verts = H.Verts
+
+
 instance [Finite V] {H : SubTemporalGraph G} : Finite H.Verts :=
   H.Verts.toFinite
 
@@ -190,7 +194,7 @@ lemma finite_incidenceSet_of_finite_simple {H : SubTemporalGraph G} [h : Finite 
     exact h₁ x y n m ⟨hyn, hzm⟩
   · exact h
 
-lemma nonempty_of_nontrivial_clique {H : SubTemporalGraph G} [h : Nontrivial H.Verts]
+lemma nonempty_incidenceSet_of_nontrivial_clique {H : SubTemporalGraph G} [h : Nontrivial H.Verts]
     (h₁ : H.IsClique) :
     ∀ x : H.Verts, (H.IncidenceSet x).Nonempty := by
   intro x
@@ -587,6 +591,7 @@ theorem toSubgraph.isSpanning (H : SimpleTemporalGraph V) (h : H ≤ G) :
 
 def toSubgraphTop : G.SubTemporalGraph := ⊤
 
+-- If edges are bigger than `G` then they are ignored
 def fromEdgeSet (G : SimpleTemporalGraph V) (s : Set (V × V × ℕ)) : SubTemporalGraph G where
   Verts := {x | ∃ a ∈ s, x = a.1 ∨ x = a.2.1}
   Adj x y n := ∃ a ∈ s, ((x = a.1 ∧ y = a.2.1) ∨ (x = a.2.1 ∧ y = a.1)) ∧ n = a.2.2 ∧ G.Adj x y n

@@ -206,43 +206,36 @@ lemma notDismountable2_neDiff_imp_neigbhorDiff' {H : SubTemporalGraph G} (x y : 
 def EarliestEdgeSet (H : SubTemporalGraph G) : Set (V × V × ℕ) :=
   {(x, y, n) : V × V × ℕ | H.EarliestEdge x y n}
 
-def fromEdgeSet (G : SimpleTemporalGraph V) (s : Set (V × V × ℕ)) : SubTemporalGraph G where
-  Verts := {x | ∃ a ∈ s, x = a.1 ∨ x = a.2.1}
-  Adj x y n := ∃ a ∈ s, ((x = a.1 ∧ y = a.2.1) ∨ (x = a.2.1 ∧ y = a.1)) ∧ n = a.2.2 ∧ G.Adj x y n
-
-  adj_sub h := by
-    have ⟨a, h⟩ := h
-    exact h.2.2.2
-
-  edge_vert h := by
-    obtain ⟨a, h⟩ := h
-    simp only [Prod.exists, exists_and_right, Set.mem_setOf_eq]
-    use a.1, a.2.1
-    constructor
-    · use a.2.2 ; exact h.1
-    · apply h.2.1.elim
-    <;> intro h'
-      · exact Or.inl h'.1
-      · exact Or.inr h'.1
-
-  symm _ _ _ h := by
-    simp_all only [Prod.exists, ↓existsAndEq, true_and]
-    have ⟨x, y, h⟩ := h
-    use x, y
-    constructor
-    · exact h.1
-    · constructor
-      · apply h.2.1.elim
-        <;> intro h'
-        · exact Or.inr h'.symm
-        · exact Or.inl h'.symm
-      · exact h.2.2.symm
-
+lemma earliestEdge_exists_of_finite_nontrivial_simple_clique {H : SubTemporalGraph G}
+    [h₀ : Finite H.Verts]
+    [h₁ : Nontrivial H.Verts]
+    (h₂ : H.IsSimple)
+    (h₃ : H.IsClique) :
+    ∀ (x : H.Verts), ∃ (y : V) (n : ℕ), H.EarliestEdge x y n := by
+  intro x
+  have his₀ : (H.IncidenceSet x).Nonempty := nonempty_incidenceSet_of_nontrivial_clique h₃ x
+  have his₁ : (H.IncidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₂ x
+  exact earliestEdge_exists_of_nonempty_finite_incidenceSet his₀ his₁
 
 lemma earliestEdge_perfectMatching_of_not_dismountable2 {H : SubTemporalGraph G}
-    (h : ¬ H.Dismountable2) :
-    (fromEdgeSet G H.EarliestEdgeSet).IsPerfectMatching := by --trouver comment écrire le truc
-  sorry
+    [h₀ : Finite H.Verts]
+    [h₁ : Nontrivial H.Verts]
+    (h₂ : H.IsSimple)
+    (h₃ : H.IsClique)
+    (h₄ : ¬H.Dismountable2) :
+    (G.fromEdgeSet H.EarliestEdgeSet).IsPerfectMatchingOf H := by
+  constructor
+  · unfold IsMatching
+    intro v h
+  · -- Is it even spanning? Only if EE exist for all, so finite and nontrivial
+    simp only [fromEdgeSet, EarliestEdgeSet, Set.mem_setOf_eq, Prod.exists, exists_and_right,
+      ↓existsAndEq, true_and]
+    have h : {x : V | ∃ a ∈ H.EarliestEdgeSet, x=a.1} = H.Verts := by
+      simp only [EarliestEdgeSet, Set.mem_setOf_eq, Prod.exists, exists_and_right, exists_eq_right']
+      sorry
+    simp [EarliestEdgeSet] at h
+    -- How to match the representations? Are they even eq?
+
 
 -- lemma 3.3
 lemma vzero_empty_of_not_dismountable2 {H : SubTemporalGraph G} (h : H.IsClique) :
@@ -250,7 +243,7 @@ lemma vzero_empty_of_not_dismountable2 {H : SubTemporalGraph G} (h : H.IsClique)
   by_contra! h'
   have ⟨hnDis, ⟨x, hxin⟩⟩ := h'
   have hpart := partition_of_not_dismountable ⟨h, not_dismountable_of_not_dismountable2 ⟨h, hnDis⟩⟩
-
+  sorry
 
 
 end SubTemporalGraph

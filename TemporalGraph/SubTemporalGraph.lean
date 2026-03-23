@@ -161,14 +161,16 @@ def IsClique (H : SubTemporalGraph G) : Prop := ∀ (x y : H.Verts), x ≠ y →
 def IsProper (H : SubTemporalGraph G) : Prop :=
   ∀ (x y z : V) (n : ℕ), H.Adj x y n ∧ H.Adj x z n → y=z
 
--- From SimpleGraph.Subgraph.IsMatching
-def IsMatching (M : SubTemporalGraph G) : Prop := ∀ ⦃v : V⦄, v ∈ M.Verts → ∃! w , ∃ t, M.Adj v w t
+-- Multigraph? One target multiple edges of different times
+-- From SimpleGraph.Subgraph.IsMatching Revised
+def IsStrictMatching (M : SubTemporalGraph G) : Prop :=
+  ∀ ⦃v : V⦄, v ∈ M.Verts → ∃! w , ∃! t, M.Adj v w t
 
 -- From SimpleGraph.Subgraph.IsPerfectMatching
-def IsPerfectMatching (M : SubTemporalGraph G) := M.IsMatching ∧ M.IsSpanning
+def IsPerfecStricttMatching (M : SubTemporalGraph G) := M.IsStrictMatching ∧ M.IsSpanning
 
-def IsPerfectMatchingOf (M : SubTemporalGraph G) (H : SubTemporalGraph G) :=
-  M.IsMatching ∧ M.Verts = H.Verts
+def IsPerfectStrictMatchingOf (M : SubTemporalGraph G) (H : SubTemporalGraph G) :=
+  M.IsStrictMatching ∧ M.Verts = H.Verts
 
 
 instance [Finite V] {H : SubTemporalGraph G} : Finite H.Verts :=

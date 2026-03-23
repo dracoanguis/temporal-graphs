@@ -217,16 +217,17 @@ lemma earliestEdge_exists_of_finite_nontrivial_simple_clique {H : SubTemporalGra
   have his₁ : (H.IncidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₂ x
   exact earliestEdge_exists_of_nonempty_finite_incidenceSet his₀ his₁
 
-lemma earliestEdge_perfectMatching_of_not_dismountable2 {H : SubTemporalGraph G}
+lemma earliestEdge_perfectStrictMatching_of_not_dismountable2 {H : SubTemporalGraph G}
     [h₀ : Finite H.Verts]
     [h₁ : Nontrivial H.Verts]
     (h₂ : H.IsSimple)
     (h₃ : H.IsClique)
     (h₄ : ¬H.Dismountable2) :
-    (G.fromEdgeSet H.EarliestEdgeSet).IsPerfectMatchingOf H := by
+    (G.fromEdgeSet H.EarliestEdgeSet).IsPerfectStrictMatchingOf H := by
   constructor
-  · unfold IsMatching
+  · unfold IsStrictMatching
     intro v h
+    -- EE needs to be unique?
   · -- Is it even spanning? Only if EE exist for all, so finite and nontrivial
     simp only [fromEdgeSet, EarliestEdgeSet, Set.mem_setOf_eq, Prod.exists, exists_and_right,
       ↓existsAndEq, true_and]

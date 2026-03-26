@@ -154,7 +154,7 @@ end Spanning
 section Props
 
 def IsSimple (H : SubTemporalGraph G) : Prop :=
-  ∀ (x y : V) (n m : ℕ), H.Adj x y n ∧ H.Adj x y m → n=m
+  ∀ {x y : V} {n m : ℕ}, (H.Adj x y n ∧ H.Adj x y m) → n=m
 
 def IsClique (H : SubTemporalGraph G) : Prop := ∀ (x y : H.Verts), x ≠ y → ∃ n, H.Adj x y n
 
@@ -164,7 +164,9 @@ def IsProper (H : SubTemporalGraph G) : Prop :=
 -- Multigraph? One target multiple edges of different times
 -- From SimpleGraph.Subgraph.IsMatching Revised
 def IsStrictMatching (M : SubTemporalGraph G) : Prop :=
-  ∀ ⦃v : V⦄, v ∈ M.Verts → ∃! w , ∃! t, M.Adj v w t
+  -- ∀ ⦃v : V⦄, v ∈ M.Verts → ∃! w , ∃! t, M.Adj v w t
+  -- Or ? First one false because exist one where exist one, and not exist one such that thing
+  ∀ ⦃v : V⦄, v ∈ M.Verts → ∃! q : V × ℕ, M.Adj v q.1 q.2
 
 -- From SimpleGraph.Subgraph.IsPerfectMatching
 def IsPerfecStricttMatching (M : SubTemporalGraph G) := M.IsStrictMatching ∧ M.IsSpanning
@@ -193,7 +195,7 @@ lemma finite_incidenceSet_of_finite_simple {H : SubTemporalGraph G} [h : Finite 
     simp only at heq
     subst heq
     congr
-    exact h₁ x y n m ⟨hyn, hzm⟩
+    exact h₁ ⟨hyn, hzm⟩
   · exact h
 
 lemma nonempty_incidenceSet_of_nontrivial_clique {H : SubTemporalGraph G} [h : Nontrivial H.Verts]

@@ -163,7 +163,7 @@ lemma vplus_ne_neighbor_of_not_dismountable2 {H : SubTemporalGraph G} (x y : H.V
     · apply Or.inl ; assumption
 
 -- lemma 3.2
-lemma notDismountable2_neDiff_imp_neigbhorDiff' {H : SubTemporalGraph G} (x y : H.Vminus)
+lemma vminus_ne_neighbor_of_not_dismountable2 {H : SubTemporalGraph G} (x y : H.Vminus)
     (h : ¬H.Dismountable2) (h₁ : H.IsClique) (h₂ : x ≠ y) :
     ∀ z z', H.LatestNeighbor x z ∧ H.LatestNeighbor y z' → z ≠ z' := by
   simp only [LatestNeighbor, ne_eq, and_imp, forall_exists_index]
@@ -203,9 +203,6 @@ lemma notDismountable2_neDiff_imp_neigbhorDiff' {H : SubTemporalGraph G} (x y : 
 -- lemma notDismountable2_imp_PerfectMatching {G' : SubTemporalGraph G}
 -- : ¬G'.Dismountable2 →
 
-def EarliestEdgeSet (H : SubTemporalGraph G) : Set (V × V × ℕ) :=
-  {(x, y, n) : V × V × ℕ | H.EarliestEdge x y n}
-
 lemma earliestEdge_exists_of_finite_nontrivial_simple_clique {H : SubTemporalGraph G}
     [h₀ : Finite H.Verts]
     [h₁ : Nontrivial H.Verts]
@@ -217,26 +214,153 @@ lemma earliestEdge_exists_of_finite_nontrivial_simple_clique {H : SubTemporalGra
   have his₁ : (H.IncidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₂ x
   exact earliestEdge_exists_of_nonempty_finite_incidenceSet his₀ his₁
 
-lemma earliestEdge_perfectStrictMatching_of_not_dismountable2 {H : SubTemporalGraph G}
+lemma earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : SubTemporalGraph G}
     [h₀ : Finite H.Verts]
     [h₁ : Nontrivial H.Verts]
     (h₂ : H.IsSimple)
     (h₃ : H.IsClique)
-    (h₄ : ¬H.Dismountable2) :
-    (G.fromEdgeSet H.EarliestEdgeSet).IsPerfectStrictMatchingOf H := by
+    (h₄ : H.IsProper) :
+    ∀ (x : H.Verts), ∃! y : V, ∃! n : ℕ, H.EarliestEdge x y n := by
+  intro x
+  have ⟨y, n, h⟩ := earliestEdge_exists_of_finite_nontrivial_simple_clique h₂ h₃ x
+  use y
+  constructor
+  · use n
+    constructor
+    · trivial
+    · intro m h'
+      have hle := h.right _ _ h'.left
+      have hle' := h'.right _ _ h.left
+      exact Nat.eq_iff_le_and_ge.mpr <| And.intro hle' hle
+  · intro z ⟨m, ⟨h', h''⟩⟩
+    have hle := h.right _ _ h'.left
+    have hle' := h'.right _ _ h.left
+    have heq := Nat.eq_iff_le_and_ge.mpr <| And.intro hle' hle
+    have hadj := h'.left
+    symm
+    exact h₄ x y z n <| And.intro h.left (by rwa [heq] at hadj)
+
+def EarliestEdgeSet (H : SubTemporalGraph G) : Set (V × V × ℕ) :=
+  {(x, y, n) : V × V × ℕ | H.EarliestEdge x y n}
+
+def EarliestEdgeGraph (H : SubTemporalGraph G) : SubTemporalGraph G  :=
+  G.fromEdgeSet H.EarliestEdgeSet
+
+lemma earliestEdgeGraph_sub {H : SubTemporalGraph G} : H.EarliestEdgeGraph ≤ H := by
+  constructor
+  · rw [Set.subset_def]
+    intro x h
+    have ⟨a, ⟨⟨hadj, _⟩, hax⟩⟩ := h
+    apply Or.elim hax
+    <;> intro heq <;> rw [heq.symm] at hadj
+    · exact hadj.fst_mem
+    · exact hadj.snd_mem
+  · intro x y n ⟨a, ⟨⟨hadjH, _⟩, heq, heqn, _⟩⟩
+    rw [heqn]
+    apply Or.elim heq
+    <;> intro heq
+    <;> rw [heq.left, heq.right]
+    ·  exact hadjH
+    ·  exact hadjH.symm
+
+lemma earliestEdgeGraph_perfectStrictMatching_of_not_dismountable2 {H : SubTemporalGraph G}
+    [h₀ : Finite H.Verts]
+    [h₁ : Nontrivial H.Verts]
+    (h₂ : H.IsSimple)
+    (h₃ : H.IsClique)
+    (h₄ : H.IsProper)
+    (h₅ : ¬H.Dismountable2) :
+    H.EarliestEdgeGraph.IsPerfectStrictMatchingOf H := by
+  have hspanning : H.EarliestEdgeGraph.Verts = H.Verts := by
+    apply Set.eq_of_subset_of_subset earliestEdgeGraph_sub.left
+    intro x h
+    dsimp [EarliestEdgeGraph, fromEdgeSet, EarliestEdgeSet]
+    have ⟨y, n, hee⟩ := earliestEdge_exists_of_finite_nontrivial_simple_clique h₂ h₃ ⟨x, h⟩
+    use ⟨x, y, n⟩
+    simp only [hee, true_or, and_self]
   constructor
   · unfold IsStrictMatching
-    intro v h
+    intro x hin
     -- EE needs to be unique?
-  · -- Is it even spanning? Only if EE exist for all, so finite and nontrivial
-    simp only [fromEdgeSet, EarliestEdgeSet, Set.mem_setOf_eq, Prod.exists, exists_and_right,
-      ↓existsAndEq, true_and]
-    have h : {x : V | ∃ a ∈ H.EarliestEdgeSet, x=a.1} = H.Verts := by
-      simp only [EarliestEdgeSet, Set.mem_setOf_eq, Prod.exists, exists_and_right, exists_eq_right']
-      sorry
-    simp [EarliestEdgeSet] at h
-    -- How to match the representations? Are they even eq?
+    dsimp [EarliestEdgeGraph, fromEdgeSet, EarliestEdgeSet]
+    rw [hspanning] at hin
+    have ⟨y, hy, heqy⟩ := earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique h₂ h₃ h₄ ⟨x, hin⟩
+  --   use y
+  --   simp_all
+  --   constructor
+  --   · skip
+  --     have ⟨n, hee, heqn⟩ := hy
+  --     use n
+  --     simp_all
+  --     constructor
+  --     · skip
+  --       use x, y
+  --       constructor
+  --       · trivial
+  --       · simp [hee.left.adj_sub]
+  --     · skip
+  --       intro m z z' hee' heq' _
+  --       apply Or.elim heq'
+  --       <;> intro heq''
+  --       <;> rw [heq''.left.symm, heq''.right.symm] at hee'
+  --       ·  exact heqn m hee'
+  --       · skip
 
+
+  --   · skip
+  --     intro z
+  --     haveI := heqy z
+  --     simp_all
+    simp_all
+    use y
+    simp
+    constructor
+    · skip
+      have ⟨n, hn, heqn⟩ := hy
+      use n
+      constructor
+      · skip
+        use x, y
+        refine ⟨?_, Or.inl ⟨rfl, rfl⟩, ?_⟩
+        · trivial
+        · exact hn.left.adj_sub
+      · skip
+        intro m ⟨z, z', ⟨hee', hzz', _⟩⟩
+        apply heqn
+        apply Or.elim hzz'
+        <;> intro hzz'
+        · rwa [hzz'.left.symm, hzz'.right.symm] at hee'
+        · dsimp [EarliestEdge]
+          rw [hzz'.left.symm, hzz'.right.symm] at hee'
+          constructor
+          · exact hee'.left.symm
+          · intro u k hadj
+            simp at hn
+            haveI := hn.right u k hadj
+            have heqnm := h₂ ⟨hn.left, hee'.left.symm⟩
+            rwa [heqnm.symm]
+    -- · skip
+    --   intro z ⟨n, ⟨⟨u, v, ⟨huvee, huveq, _⟩⟩, _⟩⟩
+    --   apply heqy
+    --   use n
+    --   dsimp
+    --   constructor
+    --   · skip
+    --     apply Or.elim huveq
+    --     · skip
+    --       intro heq
+    --       rwa [heq.left, heq.right]
+    --     · skip
+    --       intro heq
+    --       rw [heq.left, heq.right]
+    --       constructor
+    --       · exact huvee.left.symm
+    --       · intro w m hadj
+
+    --   · intro m h
+    · skip
+      intro z h
+  · trivial
 
 -- lemma 3.3
 lemma vzero_empty_of_not_dismountable2 {H : SubTemporalGraph G} (h : H.IsClique) :

@@ -159,7 +159,7 @@ def IsSimple (H : SubTemporalGraph G) : Prop :=
 def IsClique (H : SubTemporalGraph G) : Prop := ∀ (x y : H.Verts), x ≠ y → ∃ n, H.Adj x y n
 
 def IsProper (H : SubTemporalGraph G) : Prop :=
-  ∀ (x y z : V) (n : ℕ), H.Adj x y n ∧ H.Adj x z n → y=z
+  ∀ {x y z : V} {n : ℕ}, H.Adj x y n ∧ H.Adj x z n → y=z
 
 -- Multigraph? One target multiple edges of different times
 -- From SimpleGraph.Subgraph.IsMatching Revised

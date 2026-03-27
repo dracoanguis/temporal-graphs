@@ -220,25 +220,21 @@ lemma earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : S
     (h₂ : H.IsSimple)
     (h₃ : H.IsClique)
     (h₄ : H.IsProper) :
-    ∀ (x : H.Verts), ∃! y : V, ∃! n : ℕ, H.EarliestEdge x y n := by
+    ∀ (x : H.Verts), ∃! q : V × ℕ, H.EarliestEdge x q.1 q.2 := by
   intro x
   have ⟨y, n, h⟩ := earliestEdge_exists_of_finite_nontrivial_simple_clique h₂ h₃ x
-  use y
+  use ⟨y, n⟩
   constructor
-  · use n
-    constructor
-    · trivial
-    · intro m h'
-      have hle := h.right _ _ h'.left
-      have hle' := h'.right _ _ h.left
-      exact Nat.eq_iff_le_and_ge.mpr <| And.intro hle' hle
-  · intro z ⟨m, ⟨h', h''⟩⟩
+  · simp [h]
+  · intro ⟨z, m⟩ h'
+    simp only [Prod.mk.injEq]
     have hle := h.right _ _ h'.left
     have hle' := h'.right _ _ h.left
-    have heq := Nat.eq_iff_le_and_ge.mpr <| And.intro hle' hle
+    have heq := hle.ge_iff_eq.mp hle'
     have hadj := h'.left
-    symm
-    exact h₄ x y z n <| And.intro h.left (by rwa [heq] at hadj)
+    rw [heq.symm] at hadj
+    have heq' := h₄ ⟨h.left, hadj⟩
+    exact ⟨heq'.symm, heq.symm⟩
 
 def EarliestEdgeSet (H : SubTemporalGraph G) : Set (V × V × ℕ) :=
   {(x, y, n) : V × V × ℕ | H.EarliestEdge x y n}
@@ -285,81 +281,7 @@ lemma earliestEdgeGraph_perfectStrictMatching_of_not_dismountable2 {H : SubTempo
     dsimp [EarliestEdgeGraph, fromEdgeSet, EarliestEdgeSet]
     rw [hspanning] at hin
     have ⟨y, hy, heqy⟩ := earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique h₂ h₃ h₄ ⟨x, hin⟩
-  --   use y
-  --   simp_all
-  --   constructor
-  --   · skip
-  --     have ⟨n, hee, heqn⟩ := hy
-  --     use n
-  --     simp_all
-  --     constructor
-  --     · skip
-  --       use x, y
-  --       constructor
-  --       · trivial
-  --       · simp [hee.left.adj_sub]
-  --     · skip
-  --       intro m z z' hee' heq' _
-  --       apply Or.elim heq'
-  --       <;> intro heq''
-  --       <;> rw [heq''.left.symm, heq''.right.symm] at hee'
-  --       ·  exact heqn m hee'
-  --       · skip
 
-
-  --   · skip
-  --     intro z
-  --     haveI := heqy z
-  --     simp_all
-    simp_all
-    use y
-    simp
-    constructor
-    · skip
-      have ⟨n, hn, heqn⟩ := hy
-      use n
-      constructor
-      · skip
-        use x, y
-        refine ⟨?_, Or.inl ⟨rfl, rfl⟩, ?_⟩
-        · trivial
-        · exact hn.left.adj_sub
-      · skip
-        intro m ⟨z, z', ⟨hee', hzz', _⟩⟩
-        apply heqn
-        apply Or.elim hzz'
-        <;> intro hzz'
-        · rwa [hzz'.left.symm, hzz'.right.symm] at hee'
-        · dsimp [EarliestEdge]
-          rw [hzz'.left.symm, hzz'.right.symm] at hee'
-          constructor
-          · exact hee'.left.symm
-          · intro u k hadj
-            simp at hn
-            haveI := hn.right u k hadj
-            have heqnm := h₂ ⟨hn.left, hee'.left.symm⟩
-            rwa [heqnm.symm]
-    -- · skip
-    --   intro z ⟨n, ⟨⟨u, v, ⟨huvee, huveq, _⟩⟩, _⟩⟩
-    --   apply heqy
-    --   use n
-    --   dsimp
-    --   constructor
-    --   · skip
-    --     apply Or.elim huveq
-    --     · skip
-    --       intro heq
-    --       rwa [heq.left, heq.right]
-    --     · skip
-    --       intro heq
-    --       rw [heq.left, heq.right]
-    --       constructor
-    --       · exact huvee.left.symm
-    --       · intro w m hadj
-
-    --   · intro m h
-    · skip
-      intro z h
   · trivial
 
 -- lemma 3.3

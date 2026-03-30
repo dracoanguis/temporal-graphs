@@ -45,23 +45,20 @@ lemma vplus_sub_verts {H : SubTemporalGraph G} : H.Vplus ⊆ H.Verts := by
   exact h.left.snd_mem
 
 -- def 3.1
-def Vzero (H : SubTemporalGraph G) : Set V := (H.Vminusᶜ ∩ H.Vplusᶜ)
+def Vzero (H : SubTemporalGraph G) : Set V := H.Verts \ (H.Vminus ∪ H.Vplus)
 
--- False definition is too vague
+-- False, definition is too vague
 -- @[simp]
 -- lemma vzero_sub_verts {H : SubTemporalGraph G} : H.Vzero ⊆ H.Verts := by
 --   intro x ⟨⟩
 
-lemma vzero_univ_diff {H : SubTemporalGraph G} : H.Vzero = H.Verts \ (H.Vminus ∪ H.Vplus) := by
-  simp [Vzero, Set.diff_eq]
-
 lemma vzero_mem {H : SubTemporalGraph G} : ∀ x : V, x ∈ H.Vzero → x ∉ H.Vminus ∧ x ∉ H.Vplus := by
   intro _ hx
-  simp [Vzero, Set.compl_def] at hx
+  simp [Vzero] at hx
   simp [hx]
 
-lemma vunion_eq_univ {H : SubTemporalGraph G} : H.Vminus ∪ H.Vplus ∪ H.Vzero = Set.univ := by
-  simp [vzero_univ_diff]
+lemma vunion_eq_univ {H : SubTemporalGraph G} : H.Vminus ∪ H.Vplus ∪ H.Vzero = H.Verts := by
+  simp [Vzero]
 
 lemma nonempty_vplus_inter_vmimus_iff_Dismountable (H : SubTemporalGraph G) :
     H.IsClique ∧ (H.Vplus ∩ H.Vminus).Nonempty ↔ H.Dismountable := by
@@ -70,7 +67,7 @@ lemma nonempty_vplus_inter_vmimus_iff_Dismountable (H : SubTemporalGraph G) :
 
 -- lemma 3.1
 lemma partition_of_not_dismountable {H : SubTemporalGraph G} (h : H.IsClique ∧ ¬H.Dismountable) :
-    ∀ x : V, ∃! s ∈ ({H.Vminus, H.Vplus, H.Vzero} : Set (Set V)), x ∈ s := by
+    ∀ x ∈ H.Verts, ∃! s ∈ ({H.Vminus, H.Vplus, H.Vzero} : Set (Set V)), x ∈ s := by
   have ⟨hClique, hnDis⟩ := h
   conv at hnDis => rhs ; rw [←nonempty_vplus_inter_vmimus_iff_Dismountable]
   push_neg at hnDis
@@ -85,7 +82,8 @@ lemma partition_of_not_dismountable {H : SubTemporalGraph G} (h : H.IsClique ∧
   intro u
   rw [ExistsUnique]
   by_cases hempty : (Set.univ : Set V) = ∅
-  · use H.Vminus
+  · intro _
+    use H.Vminus
     rw [hempty] at hvm hvp hvz
     have hvmeqe := Set.eq_empty_of_subset_empty hvm
     have hvpeqe := Set.eq_empty_of_subset_empty hvp
@@ -94,26 +92,30 @@ lemma partition_of_not_dismountable {H : SubTemporalGraph G} (h : H.IsClique ∧
     simp ; constructor
     <;> simp   [hvpeqe, hvzeqe, hvmeqe]
   · by_cases huin : u ∈ H.Vzero
-    · use H.Vzero ; simp only [Set.mem_insert_iff, Set.mem_singleton_iff, or_true, true_and,
+    · intro _
+      use H.Vzero ; simp only [Set.mem_insert_iff, Set.mem_singleton_iff, or_true, true_and,
       and_imp, forall_eq_or_imp, forall_eq, implies_true, and_true]
       constructor ; assumption' ; constructor
       <;> intro huin' <;> absurd huin' <;> simp [(vzero_mem u huin)]
     · by_cases huin' : u ∈ H.Vminus
-      · use H.Vminus ; simp only [Set.mem_insert_iff, Set.mem_singleton_iff, true_or, true_and,
+      · intro _
+        use H.Vminus ; simp only [Set.mem_insert_iff, Set.mem_singleton_iff, true_or, true_and,
         and_imp, forall_eq_or_imp, implies_true, forall_eq]
         constructor ; assumption' ; constructor
         <;> intro huin'' <;> absurd huin''
         · exact hnDis' u huin'
         · exact huin
       · by_cases huin'' : u ∈ H.Vplus
-        · use H.Vplus ; simp only [Set.mem_insert_iff, Set.mem_singleton_iff, true_or, or_true,
+        · intro _
+          use H.Vplus ; simp only [Set.mem_insert_iff, Set.mem_singleton_iff, true_or, or_true,
           true_and, and_imp, forall_eq_or_imp, implies_true, forall_eq]
           constructor ; assumption' ; constructor
           <;> intro huin''' <;> contradiction
-        · push_neg at hempty ; rw [Set.nonempty_def] at hempty
-          have hunin : u ∉ Set.univ := by rw [←H.vunion_eq_univ] ; simp [huin, huin', huin'']
+        · intro hin
+          push_neg at hempty ; rw [Set.nonempty_def] at hempty
+          have hunin : u ∉ H.Verts := by rw [←H.vunion_eq_univ] ; simp [huin, huin', huin'']
           absurd hunin
-          apply Set.mem_univ
+          exact hin
 
 def Dismountable2 (H : SubTemporalGraph G) :=
   H.IsClique

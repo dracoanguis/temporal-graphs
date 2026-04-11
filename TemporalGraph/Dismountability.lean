@@ -47,10 +47,10 @@ lemma vplus_sub_verts {H : SubTemporalGraph G} : H.Vplus ⊆ H.Verts := by
 -- def 3.1
 def Vzero (H : SubTemporalGraph G) : Set V := H.Verts \ (H.Vminus ∪ H.Vplus)
 
--- False, definition is too vague
--- @[simp]
--- lemma vzero_sub_verts {H : SubTemporalGraph G} : H.Vzero ⊆ H.Verts := by
---   intro x ⟨⟩
+@[simp]
+lemma vzero_sub_verts {H : SubTemporalGraph G} : H.Vzero ⊆ H.Verts := by
+  intro _ ⟨h, _⟩
+  exact h
 
 lemma vzero_mem {H : SubTemporalGraph G} : ∀ x : V, x ∈ H.Vzero → x ∉ H.Vminus ∧ x ∉ H.Vplus := by
   intro _ hx
@@ -127,6 +127,7 @@ def Dismountable2 (H : SubTemporalGraph G) :=
     ((∃ y : V, H.LatestNeighbor y x)
       ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.LatestEdge y z n ∧ H.Adj z x m ∧ n ≤ m)))
 
+@[simp]
 lemma dismountable2_of_dismountable {H : SubTemporalGraph G} (h : H.Dismountable) :
     H.Dismountable2 := by
   constructor
@@ -137,6 +138,7 @@ lemma dismountable2_of_dismountable {H : SubTemporalGraph G} (h : H.Dismountable
     · exists α
     · exists β
 
+@[simp]
 lemma not_dismountable_of_not_dismountable2 {H : SubTemporalGraph G}
     (h : H.IsClique ∧ ¬H.Dismountable2) :
     ¬H.Dismountable := by
@@ -363,9 +365,31 @@ lemma latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : Sub
 --         · intro z m h
 --           haveI := hee.right _ _ h
 --           haveI := hee.right _ _ hee'.left.symm
-
-
 --   · trivial
+
+-- Specialized 3.3 coro, is it true? matching follows of
+lemma truc_a_nommer {H : SubTemporalGraph G}
+    [Finite H.Verts]
+    [Nontrivial H.Verts]
+    (h₁ : H.IsSimple)
+    (h₂ : H.IsClique)
+    (h₃ : H.IsProper)
+    (h₄ : ¬H.Dismountable2) :
+    ∀ x ∈ H.Vminus, ∃! q : H.Vplus × ℕ, H.EarliestEdge q.1 x q.2 := by
+  intro x hx
+  sorry
+
+-- Specialized 3.3 coro
+lemma truc_a_nommer' {H : SubTemporalGraph G}
+    [Finite H.Verts]
+    [Nontrivial H.Verts]
+    (h₁ : H.IsSimple)
+    (h₂ : H.IsClique)
+    (h₃ : H.IsProper)
+    (h₄ : ¬H.Dismountable2) :
+    ∀ x ∈ H.Vplus, ∃! q : H.Vminus × ℕ, H.LatestEdge q.1 x q.2 := by
+  intro x hx
+  sorry
 
 -- lemma 3.4 -- Impossible because of vzero not defined correctly
 lemma vzero_empty_of_not_dismountable2 {H : SubTemporalGraph G}
@@ -377,8 +401,57 @@ lemma vzero_empty_of_not_dismountable2 {H : SubTemporalGraph G}
     (h₄ : ¬H.Dismountable2) :
     H.Vzero = ∅ := by
   by_contra! ⟨x, hx⟩
-  have hee := earliestEdge_exists_of_finite_nontrivial_simple_clique h₁ h₂ ⟨x, hx.⟩
-
+  have ⟨y, n, hee⟩ := earliestEdge_exists_of_finite_nontrivial_simple_clique h₁ h₂ ⟨x, vzero_sub_verts hx⟩
+  have hyin : y ∈ H.Vminus := ⟨x, ⟨n, hee⟩⟩
+  have ⟨z, m, hle⟩ := latestEdge_exists_of_finite_nontrivial_simple_clique h₁ h₂ ⟨x, vzero_sub_verts hx⟩
+  have hzin : z ∈ H.Vplus := ⟨x, ⟨m, hle⟩⟩
+  -- Here call coro 3.3 to define y' ∈ H.Vplus with y it's earliest neighbor
+  -- symm for z' ∈ H.Vminus with z it's latest neighbor
+  have ⟨⟨⟨y', hy'in⟩, n'⟩, ⟨hee', _⟩⟩ := truc_a_nommer h₁ h₂ h₃ h₄ y hyin
+  have ⟨⟨⟨z', hz'in⟩, m'⟩, ⟨hle', _⟩⟩ := truc_a_nommer' h₁ h₂ h₃ h₄ z hzin
+  by_cases hlt : n' ≤ n
+  <;> absurd h₄
+  · constructor
+    · trivial
+    · use y'
+      have ⟨⟨⟨y'', _⟩, _⟩, ⟨hle'', _⟩⟩ := truc_a_nommer' h₁ h₂ h₃ h₄ y' hy'in
+      refine ⟨?_, Or.inl ⟨y'', ⟨_, hle''⟩⟩⟩
+      apply Or.inr
+      use x, y, n, n'
+      refine ⟨?_, hee, hee'.left.symm, hlt⟩
+      intro heq
+      absurd hy'in
+      rw [heq] at hx
+      exact (vzero_mem y' hx).right
+  · constructor
+    · trivial
+    · by_cases hlt' : m ≤ m'
+      · -- Same as above with z and hee instead of y and hle
+        use z'
+        have ⟨⟨⟨z'', _⟩, _⟩, ⟨hee'', _⟩⟩ := truc_a_nommer h₁ h₂ h₃ h₄ z' hz'in
+        refine ⟨Or.inl ⟨z'', ⟨_, hee''⟩⟩, ?_⟩
+        apply Or.inr
+        use x, z, m, m'
+        refine ⟨?_, hle, hle'.left.symm, hlt'⟩
+        intro heq
+        absurd hz'in
+        rw [heq] at hx
+        exact (vzero_mem z' hx).left
+      · use x
+        constructor
+        <;> apply Or.inr
+        · use y', y, n' , n
+          refine ⟨?_, hee', hee.left.symm, Nat.le_of_not_le hlt⟩
+          intro heq
+          absurd hy'in
+          rw [←heq] at hx
+          exact (vzero_mem y' hx).right
+        · use z', z, m', m
+          refine ⟨?_, hle', hle.left.symm, Nat.le_of_not_le hlt'⟩
+          intro heq
+          absurd hz'in
+          rw [←heq] at hx
+          exact (vzero_mem z' hx).left
 
 end SubTemporalGraph
 

@@ -425,6 +425,20 @@ def EarliestEdge (H : SubTemporalGraph G) (x y : V) (n : ℕ) : Prop :=
 def LatestEdge (H : SubTemporalGraph G) (x y : V) (n : ℕ) : Prop :=
   H.Adj x y n ∧ ∀ (z : V) (m : ℕ), H.Adj x z m → m ≤ n
 
+@[simp]
+lemma earliestEdge_lt_of_proper {H : SubTemporalGraph G} {z : V} {m : ℕ}
+    (h₀ : H.IsProper)
+    (h₁ : H.EarliestEdge x y n)
+    (h₂ : H.Adj x z m)
+    (h₄ : y ≠ z) :
+    n < m := by
+  have hle := h₁.right _ _ h₂
+  apply hle.lt_of_ne
+  by_contra h
+  rw [←h] at h₂
+  absurd (h₀ ⟨h₁.left, h₂⟩)
+  exact h₄
+
 def EarliestNeighbor (H : SubTemporalGraph G) (x y : V) : Prop := ∃ n, H.EarliestEdge x y n
 
 def LatestNeighbor (H : SubTemporalGraph G) (x y : V) : Prop := ∃ n, H.LatestEdge x y n

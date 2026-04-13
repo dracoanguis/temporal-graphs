@@ -371,13 +371,42 @@ lemma latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : Sub
 lemma truc_a_nommer {H : SubTemporalGraph G}
     [Finite H.Verts]
     [Nontrivial H.Verts]
-    (h₁ : H.IsSimple)
-    (h₂ : H.IsClique)
-    (h₃ : H.IsProper)
-    (h₄ : ¬H.Dismountable2) :
+    (h₀ : H.IsSimple)
+    (h₁ : H.IsClique)
+    (h₂ : H.IsProper)
+    (h₃ : ¬H.Dismountable2) :
     ∀ x ∈ H.Vminus, ∃! q : H.Vplus × ℕ, H.EarliestEdge q.1 x q.2 := by
   intro x hx
-  sorry
+  have ⟨y, n, hee⟩ := hx
+  simp_all
+  suffices hy : y ∈ H.Vplus by
+    use ⟨⟨y, hy⟩, n⟩
+    simp
+    refine ⟨hee, ?_⟩
+    intro z hz m hee'
+    by_cases heq : y=z
+    · skip
+      refine ⟨heq.symm, ?_⟩
+      apply h₀
+      refine ⟨?_, hee.left.symm⟩
+      have hadj := hee'.left.symm
+      rwa [←heq] at hadj
+    · skip
+      have hne : x ≠ x :=
+        vplus_ne_neighbor_of_not_dismountable2 ⟨y, hy⟩ ⟨z, hz⟩ h₃ h₁ (by simp [heq]) _ _ ⟨⟨n, hee⟩, ⟨m, hee'⟩⟩
+      absurd hne
+      simp
+  skip
+  --Now the true question
+  by_contra! hny
+  have hy : y ∈ H.Verts := hee.left.fst_mem
+  rw [←vunion_eq_univ] at hy
+  simp only [Set.mem_union, hny, or_false] at hy
+  apply Or.elim hy
+  <;> intro hy
+  · skip
+  · skip
+
 
 -- Specialized 3.3 coro
 lemma truc_a_nommer' {H : SubTemporalGraph G}

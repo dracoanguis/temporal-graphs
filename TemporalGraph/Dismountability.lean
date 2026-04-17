@@ -36,6 +36,9 @@ lemma vminus_sub_verts {H : SubTemporalGraph G} : H.Vminus ⊆ H.Verts := by
   intro _ ⟨_, ⟨_, h⟩⟩
   exact h.left.snd_mem
 
+instance {H : SubTemporalGraph G} [h : Finite H.Verts] : Finite H.Vminus :=
+  Set.Finite.subset (H.Verts.finite_coe_iff.mp h) vminus_sub_verts
+
 -- def 3.1
 def Vplus (H : SubTemporalGraph G) : Set V := {x : V | ∃ y : V, H.LatestNeighbor y x}
 
@@ -44,6 +47,9 @@ lemma vplus_sub_verts {H : SubTemporalGraph G} : H.Vplus ⊆ H.Verts := by
   intro _ ⟨_, ⟨_, h⟩⟩
   exact h.left.snd_mem
 
+instance {H : SubTemporalGraph G} [h : Finite H.Verts] : Finite H.Vplus :=
+  Set.Finite.subset (H.Verts.finite_coe_iff.mp h) vplus_sub_verts
+
 -- def 3.1
 def Vzero (H : SubTemporalGraph G) : Set V := H.Verts \ (H.Vminus ∪ H.Vplus)
 
@@ -51,6 +57,9 @@ def Vzero (H : SubTemporalGraph G) : Set V := H.Verts \ (H.Vminus ∪ H.Vplus)
 lemma vzero_sub_verts {H : SubTemporalGraph G} : H.Vzero ⊆ H.Verts := by
   intro _ ⟨h, _⟩
   exact h
+
+instance {H : SubTemporalGraph G} [h : Finite H.Verts] : Finite H.Vzero :=
+  Set.Finite.subset (H.Verts.finite_coe_iff.mp h) vzero_sub_verts
 
 lemma vzero_mem {H : SubTemporalGraph G} : ∀ x : V, x ∈ H.Vzero → x ∉ H.Vminus ∧ x ∉ H.Vplus := by
   intro _ hx
@@ -146,14 +155,13 @@ lemma not_dismountable_of_not_dismountable2 {H : SubTemporalGraph G}
 
 -- lemma 3.2
 lemma vplus_ne_neighbor_of_not_dismountable2 {H : SubTemporalGraph G} (x y : H.Vplus)
-    (h : ¬H.Dismountable2) (h₁ : H.IsClique) (h₂ : x ≠ y) :
-    ∀ z z', H.EarliestNeighbor x z ∧ H.EarliestNeighbor y z' → z ≠ z' := by
+    (h₀ : ¬H.Dismountable2) (h₁ : H.IsClique) (h₂ : x ≠ y) :
+    ∀ z z' : V, H.EarliestNeighbor x z ∧ H.EarliestNeighbor y z' → z ≠ z' := by
   simp only [EarliestNeighbor, ne_eq, and_imp, forall_exists_index]
   intro z z' n hee m hee' hzz'
   have ⟨x, hx⟩ := x
   have ⟨y, hy⟩ := y
-  rw [Vplus] at hx hy
-  absurd h
+  absurd h₀
   constructor ; assumption'
   by_cases ht : m ≤ n
   · use y
@@ -183,14 +191,13 @@ lemma vplus_ne_neighbor_of_not_dismountable2 {H : SubTemporalGraph G} (x y : H.V
 
 -- lemma 3.2
 lemma vminus_ne_neighbor_of_not_dismountable2 {H : SubTemporalGraph G} (x y : H.Vminus)
-    (h : ¬H.Dismountable2) (h₁ : H.IsClique) (h₂ : x ≠ y) :
-    ∀ z z', H.LatestNeighbor x z ∧ H.LatestNeighbor y z' → z ≠ z' := by
+    (h₀ : ¬H.Dismountable2) (h₁ : H.IsClique) (h₂ : x ≠ y) :
+    ∀ z z' : V, H.LatestNeighbor x z ∧ H.LatestNeighbor y z' → z ≠ z' := by
   simp only [LatestNeighbor, ne_eq, and_imp, forall_exists_index]
   intro z z' n hle m hle' hzz'
   have ⟨x, hx⟩ := x
   have ⟨y, hy⟩ := y
-  rw [Vminus] at hx hy
-  absurd h
+  absurd h₀
   constructor ; assumption'
   by_cases ht : n ≤ m
   · use y
@@ -367,6 +374,104 @@ lemma latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : Sub
 --           haveI := hee.right _ _ hee'.left.symm
 --   · trivial
 
+lemma autre_truc_a_nommer {H : SubTemporalGraph G}
+    [Finite H.Verts]
+    [Nontrivial H.Verts]
+    (h₀ : H.IsSimple)
+    (h₁ : H.IsClique)
+    (h₂ : H.IsProper) :
+    ∀ x : H.Verts, ∃! y : H.Vminus, H.EarliestNeighbor x y := by
+  intro ⟨x, hx⟩
+  obtain ⟨⟨y, n⟩, hee, hunique⟩ :=
+    earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique
+      h₀ h₁ h₂ ⟨x, hx⟩
+  use ⟨y, ⟨_, ⟨n, hee⟩⟩⟩
+  refine ⟨⟨n, hee⟩, ?_⟩
+  intro ⟨z, hz⟩ ⟨m, hee'⟩
+  obtain heq := hunique ⟨z, m⟩ hee'
+  rw [Prod.mk.injEq] at heq
+  simp only [heq.left]
+
+lemma autre_truc_a_nommer' {H : SubTemporalGraph G}
+    [Finite H.Verts]
+    [Nontrivial H.Verts]
+    (h₀ : H.IsSimple)
+    (h₁ : H.IsClique)
+    (h₂ : H.IsProper) :
+    ∀ x : H.Verts, ∃! y : H.Vplus, H.LatestNeighbor x y := by
+  intro ⟨x, hx⟩
+  obtain ⟨⟨y, n⟩, hle, hunique⟩ :=
+    latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique
+      h₀ h₁ h₂ ⟨x, hx⟩
+  use ⟨y, ⟨_, ⟨n, hle⟩⟩⟩
+  refine ⟨⟨n, hle⟩, ?_⟩
+  intro ⟨z, hz⟩ ⟨m, hle'⟩
+  obtain heq := hunique ⟨z, m⟩ hle'
+  rw [Prod.mk.injEq] at heq
+  simp only [heq.left]
+
+lemma autre_truc_truc_a_nommer {H : SubTemporalGraph G}
+    [Finite H.Verts]
+    [Nontrivial H.Verts]
+    (h₀ : H.IsSimple)
+    (h₁ : H.IsClique)
+    (h₂ : H.IsProper)
+    (h₃ : ¬H.Dismountable2) :
+    (Fintype.ofFinite H.Vplus).card ≤ (Fintype.ofFinite H.Vminus).card := by
+  -- Utiliser vplus_ne_neighbor_of_not_dismountable2 pour montrer que
+  -- la fonction "earliest neighbor" est injective sur Vplus
+
+  -- Définir f : Vplus → Vminus par x ↦ earliest neighbor de x
+  -- Puisque Vplus ⊆ Verts, et chaque x ∈ Verts a un unique earliest neighbor par autre_truc_a_nommer
+  have f : H.Vplus → H.Vminus := fun ⟨x, hx_mem⟩ => by
+    -- x ∈ Vplus ⇒ x ∈ Verts (par vplus_sub_verts)
+    have hx_verts : x ∈ H.Verts := vplus_sub_verts hx_mem
+    -- Par autre_truc_a_nommer, il existe unique z ∈ Vminus tel que EarliestNeighbor x z
+    obtain ⟨⟨z, hz⟩, _, _⟩ := autre_truc_a_nommer h₀ h₁ h₂ ⟨x, hx_verts⟩
+    exact ⟨z, hz⟩
+
+  -- Montrer que f est injective en utilisant vplus_ne_neighbor_of_not_dismountable2
+  have f_inj : Function.Injective f := by
+    intro ⟨x₁, hx₁⟩ ⟨x₂, hx₂⟩ heq
+    simp only [Subtype.mk.injEq] at heq ⊢
+    by_cases h : x₁ = x₂
+    · exact h
+    · -- Si x₁ ≠ x₂ et f(x₁) = f(x₂), on obtient une contradiction via vplus_ne_neighbor_of_not_dismountable2
+      exfalso
+      have hx₁_verts : x₁ ∈ H.Verts := vplus_sub_verts hx₁
+      have hx₂_verts : x₂ ∈ H.Verts := vplus_sub_verts hx₂
+      -- Par autre_truc_a_nommer, on récupère les earliest neighbors
+      obtain ⟨⟨z₁, hz₁⟩, ⟨n₁, hen₁⟩, hunique₁⟩ := autre_truc_a_nommer h₀ h₁ h₂ ⟨x₁, hx₁_verts⟩
+      obtain ⟨⟨z₂, hz₂⟩, ⟨n₂, hen₂⟩, hunique₂⟩ := autre_truc_a_nommer h₀ h₁ h₂ ⟨x₂, hx₂_verts⟩
+      -- f(x₁) = ⟨z₁, hz₁⟩ et f(x₂) = ⟨z₂, hz₂⟩
+      -- heq dit que ces subtypes dans Vminus sont égaux, donc z₁ = z₂
+      have hz_eq : z₁ = z₂ := heq
+      -- Mais vplus_ne_neighbor_of_not_dismountable2 dit que z₁ ≠ z₂
+      have hz_ne : z₁ ≠ z₂ := vplus_ne_neighbor_of_not_dismountable2
+        ⟨x₁, hx₁⟩ ⟨x₂, hx₂⟩ h₃ h₁ h
+        z₁ z₂ ⟨hen₁, hen₂⟩
+      exact hz_ne hz_eq
+
+  exact Fintype.card_le_of_embedding ⟨f, f_inj⟩
+
+lemma truc_truc_a_nommer {H : SubTemporalGraph G}
+    [Finite H.Verts]
+    [Nontrivial H.Verts]
+    (h₀ : H.IsSimple)
+    (h₁ : H.IsClique)
+    (h₂ : H.IsProper)
+    (h₃ : ¬H.Dismountable2) :
+    ∀ x : H.Vminus, ∃ y : H.Vplus, H.EarliestNeighbor y x := by
+  intro ⟨x, hx_prop⟩
+  -- hx_prop : ∃ y_src, H.EarliestNeighbor y_src x
+  obtain ⟨y_src, ⟨_, hee_edge⟩⟩ := hx_prop
+  -- hee_edge : H.EarliestEdge y_src x _
+  have hy_verts : y_src ∈ H.Verts := hee_edge.left.fst_mem
+  -- Par autre_truc_a_nommer', y_src a un unique latest neighbor w ∈ Vplus
+  obtain ⟨⟨w, hw_vplus⟩, _, _⟩ := autre_truc_a_nommer' h₀ h₁ h₂ ⟨y_src, hy_verts⟩
+  exact ⟨⟨w, hw_vplus⟩, ⟨_, hee_edge⟩⟩
+
+
 -- Specialized 3.3 coro, is it true? matching follows of
 lemma truc_a_nommer {H : SubTemporalGraph G}
     [Finite H.Verts]
@@ -375,28 +480,28 @@ lemma truc_a_nommer {H : SubTemporalGraph G}
     (h₁ : H.IsClique)
     (h₂ : H.IsProper)
     (h₃ : ¬H.Dismountable2) :
-    ∀ x ∈ H.Vminus, ∃! q : H.Vplus × ℕ, H.EarliestEdge q.1 x q.2 := by
-  intro x hx
-  have ⟨y, n, hee⟩ := hx
-  simp_all
+    ∀ x : H.Vminus, ∃! q : H.Vplus × ℕ, H.EarliestEdge q.1 x q.2 := by
+  intro ⟨x, hx_prop⟩
+  obtain ⟨y, ⟨n, hee⟩⟩ := hx_prop
+  -- y est la source de EarliestNeighbor vers x au temps n
   suffices hy : y ∈ H.Vplus by
     use ⟨⟨y, hy⟩, n⟩
     simp
     refine ⟨hee, ?_⟩
-    intro z hz m hee'
-    by_cases heq : y=z
+    intro q hee_prime
+    obtain ⟨⟨z, hz⟩, m⟩ := q
+    by_cases heq : y = z
     · skip
       refine ⟨heq.symm, ?_⟩
       apply h₀
       refine ⟨?_, hee.left.symm⟩
-      have hadj := hee'.left.symm
+      have hadj := hee_prime.left.symm
       rwa [←heq] at hadj
     · skip
       have hne : x ≠ x :=
-        vplus_ne_neighbor_of_not_dismountable2 ⟨y, hy⟩ ⟨z, hz⟩ h₃ h₁ (by simp [heq]) _ _ ⟨⟨n, hee⟩, ⟨m, hee'⟩⟩
+        vplus_ne_neighbor_of_not_dismountable2 ⟨y, hy⟩ ⟨z, hz⟩ h₃ h₁ (by simp [heq]) _ _ ⟨⟨n, hee⟩, ⟨m, hee_prime⟩⟩
       absurd hne
       simp
-  skip
   --Now the true question
   by_contra! hny
   have hy : y ∈ H.Verts := hee.left.fst_mem
@@ -404,7 +509,20 @@ lemma truc_a_nommer {H : SubTemporalGraph G}
   simp only [Set.mem_union, hny, or_false] at hy
   apply Or.elim hy
   <;> intro hy
+  <;> absurd h₃
   · skip
+    refine ⟨h₁, ?_⟩
+    use x
+    refine ⟨Or.inl ⟨_, _, hee⟩, ?_⟩
+    have ⟨⟨z, m⟩, hle, _⟩ := latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique h₀ h₁ h₂ ⟨y, vminus_sub_verts hy⟩
+    by_cases heq : z = x
+    · skip
+      rw [heq] at hle
+      exact Or.inl ⟨_, _, hle⟩
+    · skip
+      apply Or.inr
+      use y, z, n, m
+      refine ⟨?_, hle, ?_, ?_⟩
   · skip
 
 
@@ -416,7 +534,7 @@ lemma truc_a_nommer' {H : SubTemporalGraph G}
     (h₂ : H.IsClique)
     (h₃ : H.IsProper)
     (h₄ : ¬H.Dismountable2) :
-    ∀ x ∈ H.Vplus, ∃! q : H.Vminus × ℕ, H.LatestEdge q.1 x q.2 := by
+    ∀ x : H.Vplus, ∃! q : H.Vminus × ℕ, H.LatestEdge q.1 x q.2 := by
   intro x hx
   sorry
 
@@ -436,14 +554,14 @@ lemma vzero_empty_of_not_dismountable2 {H : SubTemporalGraph G}
   have hzin : z ∈ H.Vplus := ⟨x, ⟨m, hle⟩⟩
   -- Here call coro 3.3 to define y' ∈ H.Vplus with y it's earliest neighbor
   -- symm for z' ∈ H.Vminus with z it's latest neighbor
-  have ⟨⟨⟨y', hy'in⟩, n'⟩, ⟨hee', _⟩⟩ := truc_a_nommer h₁ h₂ h₃ h₄ y hyin
-  have ⟨⟨⟨z', hz'in⟩, m'⟩, ⟨hle', _⟩⟩ := truc_a_nommer' h₁ h₂ h₃ h₄ z hzin
+  have ⟨⟨⟨y', hy'in⟩, n'⟩, ⟨hee', _⟩⟩ := truc_a_nommer h₁ h₂ h₃ h₄ ⟨y, hyin⟩
+  have ⟨⟨⟨z', hz'in⟩, m'⟩, ⟨hle', _⟩⟩ := truc_a_nommer' h₁ h₂ h₃ h₄ ⟨z, hzin⟩
   by_cases hlt : n' ≤ n
   <;> absurd h₄
   · constructor
     · trivial
     · use y'
-      have ⟨⟨⟨y'', _⟩, _⟩, ⟨hle'', _⟩⟩ := truc_a_nommer' h₁ h₂ h₃ h₄ y' hy'in
+      have ⟨⟨⟨y'', _⟩, _⟩, ⟨hle'', _⟩⟩ := truc_a_nommer' h₁ h₂ h₃ h₄ ⟨y', hy'in⟩
       refine ⟨?_, Or.inl ⟨y'', ⟨_, hle''⟩⟩⟩
       apply Or.inr
       use x, y, n, n'
@@ -457,7 +575,7 @@ lemma vzero_empty_of_not_dismountable2 {H : SubTemporalGraph G}
     · by_cases hlt' : m ≤ m'
       · -- Same as above with z and hee instead of y and hle
         use z'
-        have ⟨⟨⟨z'', _⟩, _⟩, ⟨hee'', _⟩⟩ := truc_a_nommer h₁ h₂ h₃ h₄ z' hz'in
+        have ⟨⟨⟨z'', _⟩, _⟩, ⟨hee'', _⟩⟩ := truc_a_nommer h₁ h₂ h₃ h₄ ⟨z', hz'in⟩
         refine ⟨Or.inl ⟨z'', ⟨_, hee''⟩⟩, ?_⟩
         apply Or.inr
         use x, z, m, m'

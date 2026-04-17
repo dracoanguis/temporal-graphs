@@ -44,11 +44,11 @@
 
 -- #check (triangle.induce ({u : Fin 3 | u ≠ 3})).Adj
 
-import TemporalGraph.SubTempGraph
-import TemporalGraph.PROOF.Dismountability
+import TemporalGraph.SubTemporalGraph
+import TemporalGraph.Dismountability
 
 open SimpleTemporalGraph
---open SubTempGraph
+--open SubTemporalGraph
 
 universe u
 variable {V : Type u} {G : SimpleTemporalGraph V}
@@ -79,7 +79,7 @@ def Square : SimpleTemporalGraph (Fin 4) := {
     | _ => split <;> constructor <;> aesop
 }
 
-open SubTempGraph
+open SubTemporalGraph
 
 def SubSquare := Square.toSubgraphTop
 

@@ -499,21 +499,6 @@ lemma subgraph_latestEdge_of_graph_latestEdge {H : SubTemporalGraph G}
 
 end EdgeProps
 
-section Maps
-
-section Iso
-
-variable {V W : Type*} {G : SimpleTemporalGraph V} {H : SimpleTemporalGraph W}
-
-/-- WIP consider removing as it is not used -/
-abbrev Iso (G' : SubTemporalGraph G) (H' : SubTemporalGraph H)
-:= G'.coe ≃tg H'.coe
-
-@[inherit_doc] infixl:50 " ≃stg " => Iso
-
-end Iso
-
-end Maps
 
 section NeighborSet
 

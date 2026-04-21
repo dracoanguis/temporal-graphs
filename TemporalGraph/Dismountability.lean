@@ -101,7 +101,6 @@ lemma partition_of_not_dismountable {H : SubTemporalGraph G} (h : H.IsClique ∧
   have hvz : H.Vzero ⊆ (Set.univ : Set V) := Set.subset_univ H.Vzero
   have hvp : H.Vplus ⊆ (Set.univ : Set V) := Set.subset_univ H.Vplus
   intro u
-  rw [ExistsUnique]
   by_cases hempty : (Set.univ : Set V) = ∅
   · intro _
     use H.Vminus
@@ -111,7 +110,7 @@ lemma partition_of_not_dismountable {H : SubTemporalGraph G} (h : H.IsClique ∧
     have hvzeqe := Set.eq_empty_of_subset_empty hvz
     rw [←hempty] at hvmeqe hvpeqe hvzeqe
     simp ; constructor
-    <;> simp   [hvpeqe, hvzeqe, hvmeqe]
+    <;> simp [hvpeqe, hvzeqe, hvmeqe]
   · by_cases huin : u ∈ H.Vzero
     · intro _
       use H.Vzero ; simp only [Set.mem_insert_iff, Set.mem_singleton_iff, or_true, true_and,
@@ -125,18 +124,18 @@ lemma partition_of_not_dismountable {H : SubTemporalGraph G} (h : H.IsClique ∧
         constructor ; assumption' ; constructor
         <;> intro huin'' <;> absurd huin''
         · exact hnDis' u huin'
-        · exact huin
+        · trivial
       · by_cases huin'' : u ∈ H.Vplus
         · intro _
           use H.Vplus ; simp only [Set.mem_insert_iff, Set.mem_singleton_iff, true_or, or_true,
           true_and, and_imp, forall_eq_or_imp, implies_true, forall_eq]
-          constructor ; assumption' ; constructor
-          <;> intro huin''' <;> contradiction
+          split_ands
+          assumption'
+          all_goals intro _ ; contradiction
         · intro hin
           push_neg at hempty ; rw [Set.nonempty_def] at hempty
           have hunin : u ∉ H.Verts := by rw [←H.vunion_eq_univ] ; simp [huin, huin', huin'']
-          absurd hunin
-          exact hin
+          contradiction
 
 def Dismountable2 (H : SubTemporalGraph G) :=
   H.IsClique
@@ -163,7 +162,8 @@ lemma dismountable2_of_dismountable {H : SubTemporalGraph G} (h : H.Dismountable
 lemma not_dismountable_of_not_dismountable2 {H : SubTemporalGraph G}
     (h : H.IsClique ∧ ¬H.Dismountable2) :
     ¬H.Dismountable := by
-  contrapose h ; simp at * ; simp [h, dismountable2_of_dismountable]
+  contrapose h
+  simp only [h, dismountable2_of_dismountable, not_true_eq_false, and_false, not_false_eq_true]
 
 -- lemma 3.2
 lemma vplus_ne_neighbor_of_not_dismountable2 {H : SubTemporalGraph G} (x y : H.Vplus)
@@ -237,10 +237,6 @@ lemma vminus_ne_neighbor_of_not_dismountable2 {H : SubTemporalGraph G} (x y : H.
           · rw [hzz'] at hle ; exact hle.left.symm
           · push_neg at ht ; apply ht.le
 
--- -- Corollary 3.3
--- lemma notDismountable2_imp_PerfectMatching {G' : SubTemporalGraph G}
--- : ¬G'.Dismountable2 →
-
 lemma earliestEdge_exists_of_finite_nontrivial_simple_clique {H : SubTemporalGraph G}
     [h₀ : Finite H.Verts]
     [h₁ : Nontrivial H.Verts]
@@ -307,85 +303,6 @@ lemma latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : Sub
     have heq' := h₃ ⟨h.left, hadj⟩
     exact ⟨heq'.symm, heq⟩
 
--- Till +23 is useless because not used after but true
--- def EarliestEdgeSet (H : SubTemporalGraph G) : Set (V × V × ℕ) :=
---   {(x, y, n) : V × V × ℕ | H.EarliestEdge x y n}
-
--- def EarliestEdgeGraph (H : SubTemporalGraph G) : SubTemporalGraph G  :=
---   G.fromEdgeSet H.EarliestEdgeSet
-
--- lemma earliestEdgeGraph_sub {H : SubTemporalGraph G} : H.EarliestEdgeGraph ≤ H := by
---   constructor
---   · rw [Set.subset_def]
---     intro x h
---     have ⟨a, ⟨⟨hadj, _⟩, hax⟩⟩ := h
---     apply Or.elim hax
---     <;> intro heq <;> rw [heq.symm] at hadj
---     · exact hadj.fst_mem
---     · exact hadj.snd_mem
---   · intro x y n ⟨a, ⟨⟨hadjH, _⟩, heq, heqn, _⟩⟩
---     rw [heqn]
---     apply Or.elim heq
---     <;> intro heq
---     <;> rw [heq.left, heq.right]
---     ·  exact hadjH
---     ·  exact hadjH.symm
-
--- Impossible to define currently
--- lemma matching_a_nommer {H : SubTemporalGraph G}
---     [h₀ : Finite H.Verts]
---     [h₁ : Nontrivial H.Verts]
---     (h₂ : H.IsSimple)
---     (h₃ : H.IsClique)
---     (h₄ : H.IsProper)
---     (h₅ : ¬H.Dismountable2) :
---   H.
-
--- Wrongly defined, untrue
--- lemma earliestEdgeGraph_perfectStrictMatching_of_not_dismountable2 {H : SubTemporalGraph G}
---     [h₀ : Finite H.Verts]
---     [h₁ : Nontrivial H.Verts]
---     (h₂ : H.IsSimple)
---     (h₃ : H.IsClique)
---     (h₄ : H.IsProper)
---     (h₅ : ¬H.Dismountable2) :
---     H.EarliestEdgeGraph.IsPerfectStrictMatchingOf H := by
---   have hspanning : H.EarliestEdgeGraph.Verts = H.Verts := by
---     apply Set.eq_of_subset_of_subset earliestEdgeGraph_sub.left
---     intro x h
---     dsimp [EarliestEdgeGraph, fromEdgeSet, EarliestEdgeSet]
---     have ⟨y, n, hee⟩ := earliestEdge_exists_of_finite_nontrivial_simple_clique h₂ h₃ ⟨x, h⟩
---     use ⟨x, y, n⟩
---     simp only [hee, true_or, and_self]
---   constructor
---   · unfold IsStrictMatching
---     intro x hin
---     -- EE needs to be unique?
---     dsimp [EarliestEdgeGraph, fromEdgeSet, EarliestEdgeSet]
---     rw [hspanning] at hin
---     have ⟨q, hee, heqq⟩ := earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique h₂ h₃ h₄ ⟨x, hin⟩
---     simp_all
---     use q
---     dsimp
---     constructor
---     · skip
---       use x, q.1
---       exact ⟨hee, Or.inl ⟨rfl, rfl⟩, hee.left.adj_sub⟩
---     · skip
---       intro q' ⟨y, y', ⟨hee', heqq', _⟩⟩
---       apply Or.elim heqq'
---       <;> intro heq
---       <;> rw [←heq.left, ←heq.right] at hee'
---       · exact heqq _ _ hee'
---       · skip
---         apply heqq
---         constructor
---         · exact hee'.left.symm
---         · intro z m h
---           haveI := hee.right _ _ h
---           haveI := hee.right _ _ hee'.left.symm
---   · trivial
-
 lemma existsUnique_earliestNeighbor {H : SubTemporalGraph G}
     [Finite H.Verts]
     [Nontrivial H.Verts]
@@ -393,16 +310,17 @@ lemma existsUnique_earliestNeighbor {H : SubTemporalGraph G}
     (h₁ : H.IsClique)
     (h₂ : H.IsProper) :
     ∀ x : H.Verts, ∃! y : H.Vminus, H.EarliestNeighbor x y := by
-  intro ⟨x, hx⟩
+  intro x
   obtain ⟨⟨y, n⟩, hee, hunique⟩ :=
     earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique
-      h₀ h₁ h₂ ⟨x, hx⟩
+      h₀ h₁ h₂ x
   use ⟨y, ⟨_, ⟨n, hee⟩⟩⟩
   refine ⟨⟨n, hee⟩, ?_⟩
-  intro ⟨z, hz⟩ ⟨m, hee'⟩
+  intro z ⟨m, hee'⟩
   obtain heq := hunique ⟨z, m⟩ hee'
-  rw [Prod.mk.injEq] at heq
-  simp only [heq.left]
+  rw [Prod.eq_iff_fst_eq_snd_eq] at heq
+  ext
+  exact heq.left
 
 noncomputable def earliestNeighborFn {H : SubTemporalGraph G}
     [Finite H.Verts]
@@ -438,17 +356,16 @@ lemma earliestNeighborFn_injective {H : SubTemporalGraph G}
     (h₂ : H.IsProper)
     (h₃ : ¬H.Dismountable2) :
     Function.Injective (earliestNeighborFn h₀ h₁ h₂) := by
-  intro ⟨x, hx⟩ ⟨y, hy⟩
+  intro x y
   by_contra! ⟨hfeq, hneq⟩
-  let (eq := hz) z := earliestNeighborFn h₀ h₁ h₂ ⟨x, hx⟩
-  let (eq := hz') z'  := earliestNeighborFn h₀ h₁ h₂ ⟨y, hy⟩
+  let (eq := hz) z := earliestNeighborFn h₀ h₁ h₂ x
+  let (eq := hz') z'  := earliestNeighborFn h₀ h₁ h₂ y
   rw [←hz, ←hz'] at hfeq
   have hz₁ := hz
   have hz'₁ := hz'
   rw [earliestNeighborFn_eq, ←hz] at hz₁
   rw [earliestNeighborFn_eq, ←hz'] at hz'₁
-  have := vplus_ne_neighbor_of_not_dismountable2
-      ⟨x, hx⟩ ⟨y, hy⟩ h₃ h₁ (by grind only) z z' ⟨hz₁, hz'₁⟩
+  have := vplus_ne_neighbor_of_not_dismountable2 x y h₃ h₁ hneq z z' ⟨hz₁, hz'₁⟩
   absurd this
   simp only [hfeq]
 
@@ -470,16 +387,17 @@ lemma existsUnique_latestNeighbor {H : SubTemporalGraph G}
     (h₁ : H.IsClique)
     (h₂ : H.IsProper) :
     ∀ x : H.Verts, ∃! y : H.Vplus, H.LatestNeighbor x y := by
-  intro ⟨x, hx⟩
+  intro x
   obtain ⟨⟨y, n⟩, hle, hunique⟩ :=
     latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique
-      h₀ h₁ h₂ ⟨x, hx⟩
+      h₀ h₁ h₂ x
   use ⟨y, ⟨_, ⟨n, hle⟩⟩⟩
   refine ⟨⟨n, hle⟩, ?_⟩
-  intro ⟨z, hz⟩ ⟨m, hle'⟩
+  intro z ⟨m, hle'⟩
   obtain heq := hunique ⟨z, m⟩ hle'
-  rw [Prod.mk.injEq] at heq
-  simp only [heq.left]
+  rw [Prod.eq_iff_fst_eq_snd_eq] at heq
+  ext
+  exact heq.left
 
 noncomputable def latestNeighborFn {H : SubTemporalGraph G}
     [Finite H.Verts]
@@ -515,17 +433,16 @@ lemma latestNeighborFn_injective {H : SubTemporalGraph G}
     (h₂ : H.IsProper)
     (h₃ : ¬H.Dismountable2) :
     Function.Injective (latestNeighborFn h₀ h₁ h₂) := by
-  intro ⟨x, hx⟩ ⟨y, hy⟩
+  intro x y
   by_contra! ⟨hfeq, hneq⟩
-  let (eq := hz) z := latestNeighborFn h₀ h₁ h₂ ⟨x, hx⟩
-  let (eq := hz') z'  := latestNeighborFn h₀ h₁ h₂ ⟨y, hy⟩
+  let (eq := hz) z := latestNeighborFn h₀ h₁ h₂ x
+  let (eq := hz') z'  := latestNeighborFn h₀ h₁ h₂ y
   rw [←hz, ←hz'] at hfeq
   have hz₁ := hz
   have hz'₁ := hz'
   rw [latestNeighborFn_eq, ←hz] at hz₁
   rw [latestNeighborFn_eq, ←hz'] at hz'₁
-  have := vminus_ne_neighbor_of_not_dismountable2
-      ⟨x, hx⟩ ⟨y, hy⟩ h₃ h₁ (by grind only) z z' ⟨hz₁, hz'₁⟩
+  have := vminus_ne_neighbor_of_not_dismountable2 x y h₃ h₁ hneq z z' ⟨hz₁, hz'₁⟩
   absurd this
   simp only [hfeq]
 
@@ -558,8 +475,7 @@ lemma earliestNeighborFn_bijective {H : SubTemporalGraph G}
     (h₂ : H.IsProper)
     (h₃ : ¬H.Dismountable2) :
     Function.Bijective (earliestNeighborFn h₀ h₁ h₂) := by
-  have := Fintype.bijective_iff_injective_and_card (earliestNeighborFn h₀ h₁ h₂)
-  rw [this]
+  apply Iff.mpr <| Fintype.bijective_iff_injective_and_card (earliestNeighborFn h₀ h₁ h₂)
   constructor
   · exact earliestNeighborFn_injective h₀ h₁ h₂ h₃
   · exact (vminus_card_eq_vplus_card h₀ h₁ h₂ h₃).symm
@@ -572,8 +488,7 @@ lemma latestNeighborFn_bijective {H : SubTemporalGraph G}
     (h₂ : H.IsProper)
     (h₃ : ¬H.Dismountable2) :
     Function.Bijective (latestNeighborFn h₀ h₁ h₂) := by
-  have := Fintype.bijective_iff_injective_and_card (latestNeighborFn h₀ h₁ h₂)
-  rw [this]
+  apply Iff.mpr <| Fintype.bijective_iff_injective_and_card (latestNeighborFn h₀ h₁ h₂)
   constructor
   · exact latestNeighborFn_injective h₀ h₁ h₂ h₃
   · exact vminus_card_eq_vplus_card h₀ h₁ h₂ h₃
@@ -594,14 +509,13 @@ lemma existsUnique_vplus_earliestEdge {H : SubTemporalGraph G}
     simp only [earliestNeighborFn_eq]
   have ⟨y, ⟨n, hee⟩, hunique⟩ := hen_bij x
   use ⟨y, n⟩
-  constructor
-  · exact hee
-  · intro q' hee'
-    have heq := hunique q'.1 ⟨q'.2, hee'⟩
-    have hadj := hee'.left
-    rw [heq] at hadj
-    have heq' := h₀ ⟨hee.left, hadj⟩
-    exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heq, heq'.symm⟩
+  refine ⟨hee, ?_⟩
+  intro q' hee'
+  have heq := hunique q'.1 ⟨q'.2, hee'⟩
+  have hadj := hee'.left
+  rw [heq] at hadj
+  have heq' := h₀ ⟨hee.left, hadj⟩
+  exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heq, heq'.symm⟩
 
 -- Specialized 3.3 coro
 lemma existsUnique_vminus_latestEdge {H : SubTemporalGraph G}
@@ -619,14 +533,13 @@ lemma existsUnique_vminus_latestEdge {H : SubTemporalGraph G}
     simp only [latestNeighborFn_eq]
   have ⟨y, ⟨n, hle⟩, hunique⟩ := hln_bij x
   use ⟨y, n⟩
-  constructor
-  · exact hle
-  · intro q' hle'
-    have heq := hunique q'.1 ⟨q'.2, hle'⟩
-    have hadj := hle'.left
-    rw [heq] at hadj
-    have heq' := h₀ ⟨hle.left, hadj⟩
-    exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heq, heq'.symm⟩
+  refine ⟨hle, ?_⟩
+  intro q' hle'
+  have heq := hunique q'.1 ⟨q'.2, hle'⟩
+  have hadj := hle'.left
+  rw [heq] at hadj
+  have heq' := h₀ ⟨hle.left, hadj⟩
+  exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heq, heq'.symm⟩
 
 -- lemma 3.4
 lemma vzero_empty_of_not_dismountable2 {H : SubTemporalGraph G}

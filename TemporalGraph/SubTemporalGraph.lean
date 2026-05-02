@@ -69,6 +69,14 @@ protected theorem Adj.adj_sub {H : G.SubTemporalGraph} {u v : V} {t : ℕ} (h : 
     G.Adj u v t :=
   H.adj_sub h
 
+protected theorem Adj.ne {H : SubTemporalGraph G} {x y : V} {n : ℕ} (h : H.Adj x y n) :
+    x ≠ y :=
+  h.adj_sub.ne
+
+protected theorem Adj.ne' {H : SubTemporalGraph G} {x y : V} {n : ℕ} (h : H.Adj x y n) :
+    y ≠ x :=
+  h.adj_sub.ne'
+
 protected theorem Adj.fst_mem {H : G.SubTemporalGraph} {u v : V} {t : ℕ} (h : H.Adj u v t) :
     u ∈ H.Verts :=
   H.edge_vert h
@@ -161,6 +169,9 @@ def IsClique (H : SubTemporalGraph G) : Prop := ∀ (x y : H.Verts), x ≠ y →
 def IsProper (H : SubTemporalGraph G) : Prop :=
   ∀ {x y z : V} {n : ℕ}, H.Adj x y n ∧ H.Adj x z n → y=z
 
+def IsHappy (H : SubTemporalGraph G) : Prop :=
+  H.IsSimple ∧ H.IsProper
+
 -- Multigraph? One target multiple edges of different times
 -- From SimpleGraph.Subgraph.IsMatching Revised
 def IsStrictMatching (M : SubTemporalGraph G) : Prop :=
@@ -197,6 +208,11 @@ lemma finite_incidenceSet_of_finite_simple {H : SubTemporalGraph G} [h : Finite 
     congr
     exact h₁ ⟨hyn, hzm⟩
   · exact h
+
+-- Utile?
+instance {H : SubTemporalGraph G} [Finite H.Verts] {h₀ : H.IsSimple} {x : H.Verts} :
+    Finite (H.IncidenceSet x) :=
+  finite_incidenceSet_of_finite_simple h₀ x
 
 lemma nonempty_incidenceSet_of_nontrivial_clique {H : SubTemporalGraph G} [h : Nontrivial H.Verts]
     (h₁ : H.IsClique) :
@@ -499,7 +515,6 @@ lemma subgraph_latestEdge_of_graph_latestEdge {H : SubTemporalGraph G}
 
 end EdgeProps
 
-
 section NeighborSet
 
 def NeighborSet (H : SubTemporalGraph G) (x : V) := {y | ∃ n, H.Adj x y n}
@@ -517,6 +532,210 @@ theorem neighborSet_subset_verts (H : SubTemporalGraph G) (x : V) : H.NeighborSe
   exact H.edge_vert <| H.adj_symm h
 
 end NeighborSet
+
+section EdgeSet
+
+def EdgeSet (H : SubTemporalGraph G) : Set ((Sym2 V) × ℕ) :=
+  {(p, n) | ∃ x y : p, H.Adj x y n}
+
+@[simp]
+theorem mem_edgeSet (H : SubTemporalGraph G) {x y : V} {n : ℕ} :
+    (s(x,y), n) ∈ H.EdgeSet ↔ H.Adj x y n := by
+  apply Iff.intro
+  · intro ⟨u, v, hadj⟩
+    rcases Sym2.mem_iff.mp u.prop with heq | heq
+    <;> rw [heq] at hadj
+    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_left hadj.ne'
+      rw [heq'] at hadj
+      exact hadj
+    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_right hadj.ne'
+      rw [heq'] at hadj
+      exact hadj.symm
+  · intro hadj
+    have hin : x ∈ s(x,y) := Sym2.mem_iff.mpr <| Or.inl <| Eq.refl x
+    have hin' : y ∈ s(x,y) := Sym2.mem_iff.mpr <| Or.inr <| Eq.refl y
+    exact ⟨⟨x, hin⟩, ⟨⟨y, hin'⟩, hadj⟩⟩
+
+-- instance {H : SubTemporalGraph G} [h₀ : Finite V] [Nonempty V] {h₁ : H.IsSimple} : Finite H.EdgeSet := by
+--   rw [Set.finite_coe_iff]
+--   have : Finite (Set (V ⨯ V)) := Prod.finite_iff.mpr ⟨h₀, h₀⟩ |> Set.fini
+--   · intro q hq
+--     simp
+--     have ⟨x, y, hadj⟩ := hq
+--     have hqs := q.1.mem_and_mem_iff hadj.adj_sub.ne |>.mp ⟨x.prop, y.prop⟩
+--     have hin : (Quot.out q.1).1 ∈ q.1 := Sym2.out_fst_mem q.1
+--     have hin₂ : (Quot.out q.1).2 ∈ q.1 := Sym2.out_snd_mem q.1
+--     rw [hqs] at hin hin₂
+--     have := q.1.out.
+--   · skip
+--     intro q hq q' hq' heq
+--     simp_all
+--     have ⟨x, y, hadj⟩ := hq
+--     have hqs := q.1.mem_and_mem_iff hadj.adj_sub.ne |>.mp ⟨x.prop, y.prop⟩
+--     have hin : (Quot.out q.1).1 ∈ q.1 := Sym2.out_fst_mem q.1
+--     have hin₂ : (Quot.out q.1).2 ∈ q.1 := Sym2.out_snd_mem q.1
+--     rw [hqs] at hin hin₂
+--     have ⟨x', y', hadj'⟩ := hq'
+--     have hq's := q'.1.mem_and_mem_iff hadj'.adj_sub.ne |>.mp ⟨x'.prop, y'.prop⟩
+--     have hin' : (Quot.out q'.1).1 ∈ q'.1 := Sym2.out_fst_mem q'.1
+--     have hin₂' : (Quot.out q'.1).2 ∈ q'.1 := Sym2.out_snd_mem q'.1
+--     rw [hq's] at hin' hin₂'
+--     rcases And.intro (Sym2.mem_iff.mp hin) (Sym2.mem_iff.mp hin') with  ⟨(heq_out | heq_out), (heq_out' | heq_out')⟩
+--     · skip
+--       have heq' := heq
+--       rw [hqs, heq_out, hq's, heq_out'] at heq'
+--       rw [←heq'] at hq's
+--       rcases And.intro (Sym2.mem_iff.mp hin₂) (Sym2.mem_iff.mp hin₂') with  ⟨(heq_out₂ | heq_out₂), (heq_out₂' | heq_out₂')⟩
+--       · skip --impossible
+--       · skip --impossible
+--       · skip --impossible
+--       · skip
+
+--     · skip
+--     · skip
+--     · skip
+
+
+--     suffices heq' : q.2 = q'.2 by
+--       rw [Prod.eq_iff_fst_eq_snd_eq]
+--       refine ⟨?_, heq'⟩
+--       have := q.1.eq_of_ne_mem hadj.adj_sub.ne x.prop y.prop
+--       rw [this] at heq
+--   · exact h₀
+
+@[simp]
+lemma addEdge_edgeSet (H : SubTemporalGraph G) {x y : V} {n : ℕ}
+    {h₀ : G.Adj x y n}
+    {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts} :
+    (H.addEdge h₀ h₁).EdgeSet = insert ⟨s(x,y), n⟩ H.EdgeSet := by
+  unfold addEdge EdgeSet
+  simp only [Subtype.exists, exists_prop]
+  ext a
+  apply Iff.intro
+  <;> intro h
+  · have ⟨b, hb, c, hc, hadj⟩ := h
+    apply Or.elim3 hadj
+    <;> intro h'
+    · apply Or.inr
+      use b, hb, c, hc
+    · apply Or.inl ; apply Prod.ext
+      · rw [h'.1.symm, h'.2.1.symm] at h₀ ⊢
+        exact a.1.mem_and_mem_iff h₀.ne |>.mp ⟨hb, hc⟩
+      · simp only [h']
+    · apply Or.inl ; apply Prod.ext
+      · rw [h'.1.symm, h'.2.1.symm] at h₀ ⊢
+        exact a.1.mem_and_mem_iff h₀.ne |>.mp ⟨hc, hb⟩
+      · simp only [h']
+  · apply Or.elim h
+    <;> intro h
+    · have hx : x ∈ a.1 := by simp only [h, Sym2.mem_iff, true_or]
+      have hy : y ∈ a.1 := by simp only [h, Sym2.mem_iff, or_true]
+      use x, hx, y, hy
+      apply Or.inr ; apply Or.inl
+      simp only [h, and_self]
+    · have ⟨b, hb, c, hc, hadj⟩ := h
+      use b, hb, c, hc
+      exact Or.inl hadj
+
+lemma addVerts_edgeSet {H : SubTemporalGraph G} {s : Set V} :
+    (H.addVerts s).EdgeSet = H.EdgeSet := by
+  simp only [EdgeSet, addVerts, induce, Set.mem_union, exists_and_left, Subtype.exists, exists_prop]
+  ext a
+  apply Iff.intro
+  <;> intro h
+  · have ⟨x, _, hx', y, _, hy', _⟩ := h
+    use x, hx', y, hy'
+  · have ⟨x, hx, y, hy, hadj⟩ := h
+    use x, Or.inl hadj.fst_mem, hx, y, Or.inl hadj.snd_mem
+
+def FootprintEdgeSet (H : SubTemporalGraph G) : Set (Sym2 V) :=
+  {p | ∃ n : ℕ, ∃ x y : p, H.Adj x y n}
+
+def EdgeSetToFootprintEdgeSet (H : SubTemporalGraph G) : H.EdgeSet → H.FootprintEdgeSet :=
+  fun x ↦ ⟨x.val.fst, ⟨x.val.snd, by
+    have ⟨a, b, hadj⟩ := x.2
+    use a, b
+  ⟩⟩
+
+lemma edgeSetToFootprintEdgeSet_surjective (H : SubTemporalGraph G) :
+    Function.Surjective H.EdgeSetToFootprintEdgeSet := by
+  intro x
+  simp only [Subtype.exists, Prod.exists]
+  have ⟨n, a, b ,hadj⟩ := x.prop
+  use x.1, n, ⟨a, b, hadj⟩
+  simp only [EdgeSetToFootprintEdgeSet, Subtype.coe_eta]
+
+lemma edgeSetToFootprintEdgeSet_injective (H : SubTemporalGraph G) (h₀ : H.IsSimple) :
+    Function.Injective H.EdgeSetToFootprintEdgeSet := by
+  intro x y h
+  have ⟨a, b, hadj⟩ := x.prop
+  have ⟨a', b', hadj'⟩ := y.prop
+  simp only [EdgeSetToFootprintEdgeSet, Subtype.mk.injEq] at h
+  ext
+  · apply Sym2.ext_iff.mp h
+  · refine h₀ ⟨hadj, ?_⟩
+    have hxs := x.1.1.mem_and_mem_iff hadj.adj_sub.ne |>.mp ⟨a.prop, b.prop⟩
+    have hys := y.1.1.mem_and_mem_iff hadj'.adj_sub.ne |>.mp ⟨a'.prop, b'.prop⟩
+    rw [hxs, hys] at h
+    rcases Sym2.eq_iff.mp h with heq | heq
+    · rw [heq.1.symm, heq.2.symm] at hadj'
+      exact hadj'
+    · rw [heq.1.symm, heq.2.symm] at hadj'
+      exact hadj'.symm
+
+lemma edgeSetToFootprintEdgeSet_bijective (H : SubTemporalGraph G) (h₀ : H.IsSimple) :
+    Function.Bijective H.EdgeSetToFootprintEdgeSet :=
+  ⟨H.edgeSetToFootprintEdgeSet_injective h₀, H.edgeSetToFootprintEdgeSet_surjective⟩
+
+end EdgeSet
+
+section Card
+
+-- set_option trace.Meta.synthInstance true
+
+lemma simple_card (H : SubTemporalGraph G)
+    [Fintype H.EdgeSet]
+    [Fintype H.FootprintEdgeSet]
+    (h₀ : H.IsSimple) :
+    Fintype.card H.EdgeSet = Fintype.card H.FootprintEdgeSet := by
+  apply Fintype.card_of_bijective (f := H.EdgeSetToFootprintEdgeSet)
+  exact H.edgeSetToFootprintEdgeSet_bijective h₀
+
+-- lemma card_clique (H : SubTemporalGraph G)
+--     [Fintype H.Verts]
+--     [Fintype V]
+--     [Fintype H.EdgeSet]
+--     (h₀ : H.IsClique)
+--     (h₁ : H.IsSimple) :
+--     Fintype.card H.EdgeSet = Fintype.card (Sym2 H.Verts) := by
+--   apply Fintype.card_of_bijective (f := fun x : H.EdgeSet ↦ x.1)
+
+
+-- lemma clique_card (H : SubTemporalGraph G)
+--     [Fintype H.Verts]
+--     [Fintype H.EdgeSet]
+--     (h₀ : H.IsClique)
+--     (h₁ : H.IsSimple) :
+--     Fintype.card H.EdgeSet = (Fintype.card H.Verts).choose 2 := by
+
+theorem card_addEdge (H : SubTemporalGraph G) {x y : V} {n : ℕ}
+    {h₀ : G.Adj x y n}
+    {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts}
+    {h₂ : ¬H.Adj x y n}
+    [Fintype H.EdgeSet]
+    [Fintype (H.addEdge h₀ h₁).EdgeSet] :
+    Fintype.card (H.addEdge h₀ h₁).EdgeSet = Fintype.card H.EdgeSet + 1 := by
+  simp [addEdge_edgeSet, h₂]
+
+theorem card_addVerts {H : SubTemporalGraph G} {s : Set V}
+    [Fintype H.EdgeSet]
+    [Fintype (H.addVerts s).EdgeSet] :
+    Fintype.card (H.addVerts s).EdgeSet = Fintype.card H.EdgeSet := by
+  simp [addVerts_edgeSet]
+
+
+
+end Card
 
 end SubTemporalGraph
 

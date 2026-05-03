@@ -727,13 +727,25 @@ theorem card_addEdge (H : SubTemporalGraph G) {x y : V} {n : ℕ}
     Fintype.card (H.addEdge h₀ h₁).EdgeSet = Fintype.card H.EdgeSet + 1 := by
   simp [addEdge_edgeSet, h₂]
 
+@[simp]
+theorem card_addEdge' (H : SubTemporalGraph G) {x y : V} {n : ℕ}
+    {h₀ : G.Adj x y n}
+    {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts}
+    [Fintype H.EdgeSet]
+    [Fintype (H.addEdge h₀ h₁).EdgeSet] :
+    Fintype.card (H.addEdge h₀ h₁).EdgeSet ≤ Fintype.card H.EdgeSet + 1 := by
+  have h : (H.addEdge h₀ h₁).EdgeSet = H.EdgeSet ∪ {(s(x,y), n)} := by simp only [addEdge_edgeSet,
+    Set.union_singleton]
+  have h' := Set.card_union_le H.EdgeSet {(s(x,y), n)}
+  simp only [h, Nat.card_eq_fintype_card, Set.card_singleton] at h' ⊢
+  assumption
+
+@[simp]
 theorem card_addVerts {H : SubTemporalGraph G} {s : Set V}
     [Fintype H.EdgeSet]
     [Fintype (H.addVerts s).EdgeSet] :
     Fintype.card (H.addVerts s).EdgeSet = Fintype.card H.EdgeSet := by
   simp [addVerts_edgeSet]
-
-
 
 end Card
 

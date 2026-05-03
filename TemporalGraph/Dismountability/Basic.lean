@@ -26,8 +26,6 @@ def Dismountable (H : SubTemporalGraph G) :=
 def Dismountable' (H : SubTemporalGraph G) (x y z : V) (n m : ℕ) :=
   H.IsClique ∧ H.EarliestEdge y x n ∧ H.LatestEdge z x m
 
-abbrev Dismount (H : SubTemporalGraph G) (x : V) := H.deleteVerts {x}
-
 -- def 3.1
 def Vminus (H : SubTemporalGraph G) : Set V := {x : V | ∃ y : V, H.EarliestNeighbor y x}
 

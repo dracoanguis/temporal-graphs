@@ -57,6 +57,19 @@ lemma reachable_of_subTempGraph_reachable' {H : SubTemporalGraph G} {H' : SubTem
   intro _ _ ⟨n, m, ⟨p⟩⟩
   exact ⟨n, m, ⟨p.lift_subtempgraph_walk' h⟩⟩
 
+@[simp]
+lemma reachable_of_earliestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
+    (h₀ : H.EarliestEdge x y n) :
+    ∀ z : H.Verts, H.Reachable x z → H.Reachable y z := by
+  intro z h
+  exact H.coe.reachable_of_earliestEdge (coe_earliestEdge h₀) z h
+
+@[simp]
+lemma reachable_of_latestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
+    (h₀ : H.LatestEdge x y n) :
+    ∀ z : H.Verts, H.Reachable z x → H.Reachable z y := by
+  intro z h
+  exact H.coe.reachable_of_latestEdge (coe_latestEdge h₀) z h
 
 @[simp]
 protected lemma temporallyConnected_of_TCSpanner (H : SubTemporalGraph G) :

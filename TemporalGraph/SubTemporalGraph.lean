@@ -345,6 +345,7 @@ lemma deleteVerts_verts (H : SubTemporalGraph G) (s : Set V) :
     (H.deleteVerts s).Verts = H.Verts \ s :=
   rfl
 
+@[simp]
 theorem deleteVerts_le {H : SubTemporalGraph G} {s : Set V} : (H.deleteVerts s) ≤ H := by
   constructor <;> simp [Set.diff_subset]
 
@@ -513,6 +514,24 @@ lemma subgraph_latestEdge_of_graph_latestEdge {H : SubTemporalGraph G}
     cases z with
     | mk z hz => exact hmin z m <| H.adj_sub hadj
 
+@[simp]
+lemma coe_earliestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
+    (h₀ : H.EarliestEdge x y n) :
+    H.coe.EarliestEdge x y n := by
+  constructor
+  · simp [h₀.left]
+  · intro _ _ h
+    exact h₀.right _ _ h
+
+@[simp]
+lemma coe_latestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
+    (h₀ : H.LatestEdge x y n) :
+    H.coe.LatestEdge x y n := by
+  constructor
+  · simp [h₀.left]
+  · intro _ _ h
+    exact h₀.right _ _ h
+
 end EdgeProps
 
 section NeighborSet
@@ -604,6 +623,12 @@ theorem mem_edgeSet (H : SubTemporalGraph G) {x y : V} {n : ℕ} :
 --   · exact h₀
 
 @[simp]
+lemma edgeSet_le {H : SubTemporalGraph G} {H' : SubTemporalGraph G} (h₀ : H ≤ H') :
+    H.EdgeSet ⊆ H'.EdgeSet := by
+  intro _ ⟨_, _, h⟩
+  exact ⟨_, _, h₀.right h⟩
+
+@[simp]
 lemma addEdge_edgeSet (H : SubTemporalGraph G) {x y : V} {n : ℕ}
     {h₀ : G.Adj x y n}
     {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts} :
@@ -637,6 +662,7 @@ lemma addEdge_edgeSet (H : SubTemporalGraph G) {x y : V} {n : ℕ}
       use b, hb, c, hc
       exact Or.inl hadj
 
+@[simp]
 lemma addVerts_edgeSet {H : SubTemporalGraph G} {s : Set V} :
     (H.addVerts s).EdgeSet = H.EdgeSet := by
   simp only [EdgeSet, addVerts, induce, Set.mem_union, exists_and_left, Subtype.exists, exists_prop]

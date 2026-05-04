@@ -71,7 +71,6 @@ lemma reachable_of_earliestEdge {x y : V} {n : ℕ} {G : SimpleTemporalGraph V}
     have hst : n ≤ m := NonemptyTemporalWalk.EarliestEdge.time_bound_of_edge p h
     exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.prepend h.left.symm hst⟩⟩
 
-
 lemma reachable_of_latestEdge {x y : V} {n : ℕ} {G : SimpleTemporalGraph V}
     (h : G.LatestEdge x y n) :
     ∀ z : V, G.Reachable z x → G.Reachable z y := by

@@ -77,20 +77,12 @@ lemma mount_le {H : SubTemporalGraph G} {x : V} {y z : H.Verts} {n m : ℕ}
   have h' := h.trans <| addEdge_le' (H.addVerts {x}) h₀ (by simp)
   exact le_trans h' addEdge_le
 
+@[simp]
 lemma mount_edgeSet {H : SubTemporalGraph G} {x : V} {y z : H.Verts} {n m : ℕ}
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
     (H.mount x h₀ h₁).EdgeSet = H.EdgeSet ∪ {⟨s(z,x), m⟩, ⟨s(y,x), n⟩} := by
   simp [mount, addEdge_edgeSet, addVerts_edgeSet]
-
--- lemma mount_earliestEdge {H : SubTemporalGraph G} {x : V} {y z : H.Verts} {n m : ℕ}
---     (h₀ : G.Adj y x n)
---     (h₁ : G.Adj z x m) :
---     (mount H x h₀ h₁).EarliestEdge y x n := by
---   constructor
---   · exact mount_le.right hee.1.1
---   · intro x' m' hadj
---     suffices h : H.adj x' m'
 
 theorem mount_tc (H : SubTemporalGraph G) {x : V} {y z : H.Verts} {n m : ℕ}
     (h₀ : G.Adj y x n)
@@ -126,6 +118,35 @@ theorem mount_tc (H : SubTemporalGraph G) {x : V} {y z : H.Verts} {n m : ℕ}
       exact hReach ⟨x', hx'⟩ ⟨z, _⟩ <| hTC _ _
     · intro hy' ; exact hReach ⟨x', hx'⟩ ⟨y', hy'⟩ <| hTC _ _
 
+instance {H : SubTemporalGraph G} [h₀ : Finite H.EdgeSet] {x : V} {y z : H.Verts} {n m : ℕ}
+    {h₁ : G.Adj y x n}
+    {h₂ : G.Adj z x m} :
+    Finite (H.mount x h₁ h₂).EdgeSet := by
+  conv =>
+    rhs ; rw [mount_edgeSet]
+  apply Set.Finite.union
+  · trivial
+  · simp only [Set.finite_insert, Set.finite_singleton]
+
+-- C'est pas beau mais ca marche
+theorem card_mount {H : SubTemporalGraph G} [Fintype H.EdgeSet] {x : V} {y z : H.Verts} {n m : ℕ}
+    {h₀ : G.Adj y x n}
+    {h₁ : G.Adj z x m} :
+    Fintype.card (H.mount x h₀ h₁).EdgeSet ≤ Fintype.card H.EdgeSet + 2 := by
+  conv => lhs ; simp only [mount_edgeSet]
+  simp only [Fintype.card_eq_nat_card]
+  have hle₀ : Nat.card ({(s(↑z, x), m), (s(↑y, x), n)} : Set ((Sym2 V) × ℕ)) ≤ 2 := by
+    simp only [Nat.card_eq_fintype_card, ←Set.union_singleton]
+    have h : 2 = 1 + 1 := by simp only [Nat.reduceAdd]
+    have h' : Fintype.card ({(s(↑z, x), m)} : Set (Sym2 V × ℕ)) = 1 := by simp
+    have h'' : Fintype.card ({(s(↑y, x), n)} : Set (Sym2 V × ℕ)) = 1 := by simp
+    conv => rhs ; rw [h] ; arg 1 ; rw [←h'']
+    conv => arg 2 ; arg 2 ; rw [←h']
+    simp only [←Nat.card_eq_fintype_card, Set.card_union_le]
+  have hle₁ : Nat.card ↑(H.EdgeSet ∪ {(s(↑z, x), m), (s(↑y, x), n)})
+      ≤ Nat.card H.EdgeSet + Nat.card ({(s(↑z, x), m), (s(↑y, x), n)} : Set ((Sym2 V) × ℕ)) := by
+    simp only [Set.card_union_le]
+  grind only
 
 end Mount
 

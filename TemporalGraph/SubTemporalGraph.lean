@@ -665,6 +665,22 @@ lemma addEdge_edgeSet (H : SubTemporalGraph G) {x y : V} {n : ℕ}
       use b, hb, c, hc
       exact Or.inl hadj
 
+lemma addEdge_edgeSet' (H : SubTemporalGraph G) {x y : V} {n : ℕ}
+    (h₀ : G.Adj x y n)
+    (h₁ : x ∈ H.Verts ∧ y ∈ H.Verts) :
+    (H.addEdge h₀ h₁).EdgeSet = insert ⟨s(x,y), n⟩ H.EdgeSet :=
+  H.addEdge_edgeSet
+
+instance {H : SubTemporalGraph G} [h : Finite H.EdgeSet] {x y : V} {n : ℕ}
+    {h₀ : G.Adj x y n}
+    {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts} :
+    Finite (H.addEdge h₀ h₁).EdgeSet := by
+  conv =>
+    rhs ; rw [addEdge_edgeSet, ←Set.union_singleton]
+  apply Set.Finite.union
+  · exact h
+  · simp only [Set.finite_singleton]
+
 @[simp]
 lemma addVerts_edgeSet {H : SubTemporalGraph G} {s : Set V} :
     (H.addVerts s).EdgeSet = H.EdgeSet := by
@@ -676,6 +692,13 @@ lemma addVerts_edgeSet {H : SubTemporalGraph G} {s : Set V} :
     use x, hx', y, hy'
   · have ⟨x, hx, y, hy, hadj⟩ := h
     use x, Or.inl hadj.fst_mem, hx, y, Or.inl hadj.snd_mem
+
+lemma addVerts_edgeSet' {H : SubTemporalGraph G} (s : Set V) :
+    (H.addVerts s).EdgeSet = H.EdgeSet := addVerts_edgeSet
+
+instance {H : SubTemporalGraph G} {s : Set V} [h₀ : Finite H.EdgeSet] [Finite s] :
+    Finite (H.addVerts s).EdgeSet := by
+  simp only [addVerts_edgeSet, h₀]
 
 def FootprintEdgeSet (H : SubTemporalGraph G) : Set (Sym2 V) :=
   {p | ∃ n : ℕ, ∃ x y : p, H.Adj x y n}
@@ -768,6 +791,14 @@ theorem card_addEdge_le (H : SubTemporalGraph G) {x y : V} {n : ℕ}
   have h' := Set.card_union_le H.EdgeSet {(s(x,y), n)}
   simp only [h, Nat.card_eq_fintype_card, Set.card_singleton] at h' ⊢
   assumption
+
+theorem card_addEdge_le' (H : SubTemporalGraph G) {x y : V} {n : ℕ}
+    (h₀ : G.Adj x y n)
+    (h₁ : x ∈ H.Verts ∧ y ∈ H.Verts)
+    [Fintype H.EdgeSet]
+    [Fintype (H.addEdge h₀ h₁).EdgeSet] :
+    Fintype.card (H.addEdge h₀ h₁).EdgeSet ≤ Fintype.card H.EdgeSet + 1 := by
+  exact H.card_addEdge_le
 
 @[simp]
 theorem card_addVerts {H : SubTemporalGraph G} {s : Set V}

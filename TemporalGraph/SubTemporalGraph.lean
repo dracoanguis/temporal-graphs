@@ -360,6 +360,7 @@ section AddVerts
 abbrev addVerts (H : SubTemporalGraph G) (s : Set V) : G.SubTemporalGraph :=
   H.induce (H.Verts ∪ s)
 
+@[simp]
 lemma addVerts_verts (H : SubTemporalGraph G) (s : Set V) : (H.addVerts s).Verts = H.Verts ∪ s :=
   rfl
 
@@ -423,11 +424,13 @@ theorem addEdge_le' (H : SubTemporalGraph G) (h : G.Adj x y n) (h₁ : x ∈ H.V
     H ≤ addEdge H h h₁ :=
   addEdge_le
 
+@[simp]
 theorem addEdge_edge : (addEdge H h h₁).Adj x y n := by
   right
   left
   exact ⟨rfl, rfl, rfl⟩
 
+@[simp]
 theorem addEdge_verts : (addEdge H h h₁).Verts = H.Verts := rfl
 
 end AddEdge

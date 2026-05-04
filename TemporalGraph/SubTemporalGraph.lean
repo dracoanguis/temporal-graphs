@@ -757,7 +757,7 @@ theorem card_addEdge (H : SubTemporalGraph G) {x y : V} {n : ℕ}
   simp [addEdge_edgeSet, h₂]
 
 @[simp]
-theorem card_addEdge' (H : SubTemporalGraph G) {x y : V} {n : ℕ}
+theorem card_addEdge_le (H : SubTemporalGraph G) {x y : V} {n : ℕ}
     {h₀ : G.Adj x y n}
     {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts}
     [Fintype H.EdgeSet]

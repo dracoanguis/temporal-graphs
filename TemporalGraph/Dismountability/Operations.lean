@@ -268,6 +268,48 @@ theorem mount2_TC (H : SubTemporalGraph G) {y y' z z' : H.Verts} {n n' m m' : �
       apply hReach ⟨a, ha⟩ ⟨b, hb⟩
       apply htc
 
+instance {H : SubTemporalGraph G} [h₀ : Finite H.EdgeSet] {y y' z z' : H.Verts} {n n' m m' : ℕ}
+    {x : V}
+    {h₁ : G.Adj x y' n'}
+    {h₂ : G.Adj y' y n}
+    {h₃ : G.Adj x z' m'}
+    {h₄ : G.Adj z' z m} :
+    Finite (H.mount2 x h₁ h₂ h₃ h₄).EdgeSet := by
+  conv =>
+    rhs ; rw [mount2_edgeSet]
+  apply Set.Finite.union
+  · trivial
+  · simp only [Set.finite_insert, Set.finite_singleton]
+
+-- gotta do it but crying is allowed
+theorem card_mount2 {H : SubTemporalGraph G} [Finite H.EdgeSet] {y y' z z' : H.Verts}
+    {n n' m m' : ℕ}
+    {x : V}
+    {h₀ : G.Adj x y' n'}
+    {h₁ : G.Adj y' y n}
+    {h₂ : G.Adj x z' m'}
+    {h₃ : G.Adj z' z m} :
+    Fintype.card (H.mount2 x h₀ h₁ h₂ h₃).EdgeSet ≤ Fintype.card H.EdgeSet + 4 := by
+  conv => lhs ; simp only [mount2_edgeSet]
+  rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card]
+  have hle₀ :
+      Nat.card ({(s(↑z', ↑z), m), (s(x, ↑z'), m'),
+      (s(↑y', ↑y), n), (s(x, ↑y'), n')} : Set ((Sym2 V) × ℕ)) ≤ 4 := by
+    have h :  4 = 1 + 1 + 1 + 1 := by simp only [Nat.reduceAdd]
+    have heq₀ : Nat.card ({(s(↑z', ↑z), m)} : Set (Sym2 V × ℕ)) = 1 := by simp
+    have heq₁ : Nat.card ({(s(x, z'), m')} : Set (Sym2 V × ℕ)) = 1 := by simp
+    have heq₂ : Nat.card ({(s(↑y', ↑y), n)} : Set (Sym2 V × ℕ)) = 1 := by simp
+    have heq₃ : Nat.card ({(s(x, ↑y'), n')} : Set (Sym2 V × ℕ)) = 1 := by simp
+    grind only [Set.card_union_le, !Set.insert_eq]
+  have hle₁ :
+      Nat.card ↑(H.EdgeSet ∪ {⟨s(z', z), m⟩,  ⟨s(x, z'), m'⟩, ⟨s(y',y), n⟩, ⟨s(x,y'), n'⟩})
+      ≤ Nat.card H.EdgeSet  + Nat.card ({(s(↑z', ↑z), m), (s(x, ↑z'), m'), (s(↑y', ↑y), n),
+        (s(x, ↑y'), n')} : Set ((Sym2 V) × ℕ)) := by
+    simp only [Set.card_union_le]
+  lia
+
+
+
 end Mount2
 
 end SubTemporalGraph

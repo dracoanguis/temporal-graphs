@@ -7,9 +7,9 @@ import TemporalGraph.NonemptyTemporalWalk
 
 universe u
 
-variable {V : Type u} {G : SimpleTemporalGraph V}
+variable {V : Type u} {G : LooplessTemporalGraph V}
 
-namespace SimpleTemporalGraph
+namespace LooplessTemporalGraph
 
 /-- We define a Non-strict TemporalWalk, meaning multiple edges can be crossed at a given time. -/
 inductive TemporalWalk : V → ℕ → V → ℕ → Type u
@@ -54,4 +54,4 @@ instance {x y : V} {n m : ℕ} : Coe (G.NonemptyTemporalWalk x n y m) (G.Tempora
 
 end NonemptyTemporalWalk
 
-end SimpleTemporalGraph
+end LooplessTemporalGraph

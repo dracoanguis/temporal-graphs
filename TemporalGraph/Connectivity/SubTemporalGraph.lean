@@ -7,9 +7,9 @@ import TemporalGraph.Connectivity.Basic
 import TemporalGraph.SubTemporalGraph
 
 universe u
-variable {V : Type u} {G : SimpleTemporalGraph V}
+variable {V : Type u} {G : LooplessTemporalGraph V}
 
-namespace SimpleTemporalGraph
+namespace LooplessTemporalGraph
 
 namespace SubTemporalGraph
 
@@ -32,11 +32,11 @@ protected lemma temporallyConnected_iff {H : SubTemporalGraph G} :
   apply Iff.intro
   · unfold TemporallyConnected
     intro h
-    unfold SimpleTemporalGraph.TemporallyConnected
+    unfold LooplessTemporalGraph.TemporallyConnected
     trivial
   · unfold TemporallyConnected
     intro h
-    rw [SimpleTemporalGraph.TemporallyConnected] at h
+    rw [LooplessTemporalGraph.TemporallyConnected] at h
     trivial
 
 @[simp]
@@ -64,6 +64,7 @@ lemma reachable_of_earliestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : �
   intro z h
   exact H.coe.reachable_of_earliestEdge (coe_earliestEdge h₀) z h
 
+-- Find intelligent name or generalize
 lemma reachable_of_???? {H : SubTemporalGraph G} {x y z : H.Verts} {n m : ℕ}
     (h₀ : H.EarliestEdge x y n)
     (h₁ : H.Adj z y m)
@@ -79,6 +80,7 @@ lemma reachable_of_latestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
   intro z h
   exact H.coe.reachable_of_latestEdge (coe_latestEdge h₀) z h
 
+-- Find intelligent name or generalize
 lemma reachable_of_????' {H : SubTemporalGraph G} {x y z : H.Verts} {n m : ℕ}
     (h₀ : H.LatestEdge x y n)
     (h₁ : H.Adj y z m)
@@ -93,7 +95,7 @@ protected lemma temporallyConnected_of_TCSpanner (H : SubTemporalGraph G) :
   intro ⟨h_span, h_tc⟩
   unfold TemporallyConnected at h_tc
   rw [SubTemporalGraph.IsSpanning] at h_span
-  rw [SimpleTemporalGraph.TemporallyConnected]
+  rw [LooplessTemporalGraph.TemporallyConnected]
   simp only [Reachable, Subtype.forall, h_span, forall_true_left] at h_tc
   intro x y
   let ⟨n, ⟨m, ⟨p⟩⟩⟩ :=  h_tc x y
@@ -186,4 +188,4 @@ theorem deleteVerts_reachability {s : Set V} {H : SubTemporalGraph G} :
 -- ((R.addVerts {u}).addEdge hE₁ hV₁).addEdge hE₂ hV₂
 
 end SubTemporalGraph
-end SimpleTemporalGraph
+end LooplessTemporalGraph

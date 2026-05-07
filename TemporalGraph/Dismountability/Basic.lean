@@ -9,15 +9,15 @@ import TemporalGraph.SubTemporalGraph
 universe u
 variable {V : Type u}
 
-namespace SimpleTemporalGraph
+namespace LooplessTemporalGraph
 
 -- Theorem 2.1
-def Dismountable (G : SimpleTemporalGraph V) :=
+def Dismountable (G : LooplessTemporalGraph V) :=
   ∃ (x y z : V), G.EarliestNeighbor y x ∧ G.LatestNeighbor z x
 
 namespace SubTemporalGraph
 
-variable {G : SimpleTemporalGraph V}
+variable {G : LooplessTemporalGraph V}
 
 -- Theorem 2.1
 def Dismountable (H : SubTemporalGraph G) :=
@@ -37,6 +37,7 @@ lemma vminus_sub_verts {H : SubTemporalGraph G} : H.Vminus ⊆ H.Verts := by
 instance {H : SubTemporalGraph G} [h : Finite H.Verts] : Finite H.Vminus :=
   Set.Finite.subset (H.Verts.finite_coe_iff.mp h) vminus_sub_verts
 
+-- Remove as it is malpractice
 noncomputable instance {H : SubTemporalGraph G} [Finite H.Vminus] : Fintype H.Vminus :=
   Fintype.ofFinite H.Vminus
 
@@ -51,6 +52,7 @@ lemma vplus_sub_verts {H : SubTemporalGraph G} : H.Vplus ⊆ H.Verts := by
 instance {H : SubTemporalGraph G} [h : Finite H.Verts] : Finite H.Vplus :=
   Set.Finite.subset (H.Verts.finite_coe_iff.mp h) vplus_sub_verts
 
+-- Remove as it is malpractice
 noncomputable instance {H : SubTemporalGraph G} [Finite H.Vplus] : Fintype H.Vplus :=
   Fintype.ofFinite H.Vplus
 
@@ -65,6 +67,7 @@ lemma vzero_sub_verts {H : SubTemporalGraph G} : H.Vzero ⊆ H.Verts := by
 instance {H : SubTemporalGraph G} [h : Finite H.Verts] : Finite H.Vzero :=
   Set.Finite.subset (H.Verts.finite_coe_iff.mp h) vzero_sub_verts
 
+-- Remove as it is malpractice
 noncomputable instance {H : SubTemporalGraph G} [Finite H.Vzero] : Fintype H.Vzero :=
   Fintype.ofFinite H.Vzero
 
@@ -605,4 +608,4 @@ lemma vzero_empty_of_not_dismountable2 {H : SubTemporalGraph G}
 
 end SubTemporalGraph
 
-end SimpleTemporalGraph
+end LooplessTemporalGraph

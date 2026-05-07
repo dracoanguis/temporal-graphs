@@ -8,9 +8,9 @@ import TemporalGraph.SubTemporalGraph
 import TemporalGraph.Connectivity.SubTemporalGraph
 
 universe u
-variable {V : Type u} {G : SimpleTemporalGraph V}
+variable {V : Type u} {G : LooplessTemporalGraph V}
 
-namespace SimpleTemporalGraph
+namespace LooplessTemporalGraph
 
 namespace SubTemporalGraph
 
@@ -106,7 +106,7 @@ theorem mount_tc (H : SubTemporalGraph G) {x : V} {y z : H.Verts} {n m : ℕ}
     <;> conv => rhs ; lhs ; lhs ; rw [heq]
     · intro heq'
       conv => rhs ; lhs ; rw [heq']
-      simpa using @SimpleTemporalGraph.self_reachable _ ((mount H x h₀ h₁).coe) ⟨x, _⟩
+      simpa using @LooplessTemporalGraph.self_reachable _ ((mount H x h₀ h₁).coe) ⟨x, _⟩
     · intro hy'₀
       have hy'₁ : y' ∈ (mount H x h₀ h₁).Verts := by simp [hy']
       apply @reachable_of_earliestEdge _ _ (mount H x h₀ h₁) ⟨y, _⟩ ⟨x, _⟩ n h₂ ⟨y', _⟩
@@ -128,8 +128,7 @@ instance {H : SubTemporalGraph G} [h₀ : Finite H.EdgeSet] {x : V} {y z : H.Ver
   · trivial
   · simp only [Set.finite_insert, Set.finite_singleton]
 
--- C'est pas beau mais ca marche
-theorem card_mount {H : SubTemporalGraph G} [Fintype H.EdgeSet] {x : V} {y z : H.Verts} {n m : ℕ}
+theorem mount_card {H : SubTemporalGraph G} [Fintype H.EdgeSet] {x : V} {y z : H.Verts} {n m : ℕ}
     {h₀ : G.Adj y x n}
     {h₁ : G.Adj z x m} :
     Fintype.card (H.mount x h₀ h₁).EdgeSet ≤ Fintype.card H.EdgeSet + 2 := by
@@ -281,8 +280,7 @@ instance {H : SubTemporalGraph G} [h₀ : Finite H.EdgeSet] {y y' z z' : H.Verts
   · trivial
   · simp only [Set.finite_insert, Set.finite_singleton]
 
--- gotta do it but crying is allowed
-theorem card_mount2 {H : SubTemporalGraph G} [Finite H.EdgeSet] {y y' z z' : H.Verts}
+theorem mount2_card {H : SubTemporalGraph G} [Finite H.EdgeSet] {y y' z z' : H.Verts}
     {n n' m m' : ℕ}
     {x : V}
     {h₀ : G.Adj x y' n'}
@@ -308,10 +306,8 @@ theorem card_mount2 {H : SubTemporalGraph G} [Finite H.EdgeSet] {y y' z z' : H.V
     simp only [Set.card_union_le]
   lia
 
-
-
 end Mount2
 
 end SubTemporalGraph
 
-end SimpleTemporalGraph
+end LooplessTemporalGraph

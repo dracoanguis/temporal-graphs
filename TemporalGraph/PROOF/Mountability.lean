@@ -8,12 +8,12 @@ import TemporalGraph.SubTemporalGraph
 import TemporalGraph.Connectivity.SubTemporalGraph
 
 universe u
-variable {V : Type u} {G : SimpleTemporalGraph V}
+variable {V : Type u} {G : LooplessTemporalGraph V}
 
 namespace SimpleTemporalGraph
 
 theorem mountable_construct' {u v w : V} {t₁ t₂ : ℕ}
-(G : SimpleTemporalGraph V) (G' : SubTemporalGraph G)
+(G : LooplessTemporalGraph V) (G' : SubTemporalGraph G)
 (h : G.EarliestEdge v u t₁ ∧ G.LatestEdge w u t₂)
 (h' : G'.Verts = {α:V| α≠u} ∧ G'.TemporallyConnected) : G.TemporallyConnected
 := by
@@ -41,11 +41,11 @@ theorem mountable_construct' {u v w : V} {t₁ t₂ : ℕ}
       exact htur ⟨x, by rwa [hnu]⟩
     · exact htc' ⟨x, by rwa [hnu]⟩ ⟨y, by rwa [hnu]⟩
 
-def V_minus (G : SimpleTemporalGraph V) : Set V := {u | ∃ α, G.EarliestNeighbor α u}
+def V_minus (G : LooplessTemporalGraph V) : Set V := {u | ∃ α, G.EarliestNeighbor α u}
 
-def V_plus (G : SimpleTemporalGraph V) : Set V := {u | ∃ β, G.LatestNeighbor β u}
+def V_plus (G : LooplessTemporalGraph V) : Set V := {u | ∃ β, G.LatestNeighbor β u}
 
-def V_zero (G : SimpleTemporalGraph V) : Set V := {u | u ∉ G.V_minus ∧ u ∉ G.V_plus}
+def V_zero (G : LooplessTemporalGraph V) : Set V := {u | u ∉ G.V_minus ∧ u ∉ G.V_plus}
 
 namespace SubTemporalGraph
 

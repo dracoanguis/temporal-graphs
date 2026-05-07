@@ -17,10 +17,10 @@ macro (name := aesop_temporal_graph) "aesop_temporal_graph" c:Aesop.tactic_claus
 
 universe u
 
-/-- The simplest undirected temporal graph with edges only present at one time
-(not proper by definition) -/
+/-- A loopless undirected temporal graph with edges only present at one time
+(not proper or simple by definition) -/
 @[ext, aesop safe constructors (rule_sets := [SimpleTemporalGraph])]
-structure SimpleTemporalGraph (V : Type u) where
+structure LooplessTemporalGraph (V : Type u) where
   /-- The adjacency labeled by a natural qualifying the time of existance -/
   Adj : V → V → ℕ → Prop
   symm : ∀ n : ℕ, Symmetric (fun x y => Adj x y n)
@@ -28,17 +28,17 @@ structure SimpleTemporalGraph (V : Type u) where
 
 
 
-namespace SimpleTemporalGraph
+namespace LooplessTemporalGraph
 
 variable {V : Type u}
 
 @[simp]
-protected theorem irrefl {G : SimpleTemporalGraph V} {x : V} {n : ℕ} : ¬G.Adj x x n :=
+protected theorem irrefl {G : LooplessTemporalGraph V} {x : V} {n : ℕ} : ¬G.Adj x x n :=
   (G.loopless n).irrefl x
 
 section Adjacency
 
-variable {G : SimpleTemporalGraph V} {x y : V} {n : ℕ}
+variable {G : LooplessTemporalGraph V} {x y : V} {n : ℕ}
 
 theorem adj_comm (x y : V) (n : ℕ) : G.Adj x y n ↔ G.Adj y x n :=
   ⟨fun x => G.symm n x, fun x => G.symm n x⟩
@@ -62,10 +62,9 @@ protected theorem Adj.ne' (h : G.Adj x y n) : y ≠ x :=
 
 end Adjacency
 
--- False because of not simple, and sends everything to one edge.
-/-- The Footprint of a SimpleTemporalGraph is a SimpleGraph representing
-the edges unlabeled by time. -/
-def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V :=
+/-- The Footprint of a TemporalGraph is a SimpleGraph representing
+the underlying edges unlabelled by time. -/
+def Footprint (G : LooplessTemporalGraph V) : SimpleGraph V :=
   {
     Adj := fun x y => ∃ n, G.Adj x y n
     symm := by
@@ -91,52 +90,52 @@ def Footprint (G : SimpleTemporalGraph V) : SimpleGraph V :=
 --   inferInstanceAs <| DecidablePred (Adj G v)
 
 -- Because it was infact not simple (╯°□°)╯︵ ┻━┻
-def IsSimple (G : SimpleTemporalGraph V) : Prop :=
+def IsSimple (G : LooplessTemporalGraph V) : Prop :=
   ∀ (x y : V) (n m : ℕ), G.Adj x y n ∧ G.Adj x y m → n=m
 
-def IsComplete (G : SimpleTemporalGraph V) : Prop :=
+def IsComplete (G : LooplessTemporalGraph V) : Prop :=
   ∀ x y : V, x ≠ y → ∃ t, G.Adj x y t
 
-def IsProper (G : SimpleTemporalGraph V) : Prop :=
+def IsProper (G : LooplessTemporalGraph V) : Prop :=
   --∀ u : V, ¬∃ t : ℕ, ∃ v w : V, G.Adj u v t ∧ G.Adj u w t
   ∀ x y z : V, ∀ n : ℕ, G.Adj x y n ∧ G.Adj x z n → y = z
 
 /- The *earliest edge* of *x*, with *y* destination at *n*-/
-def EarliestEdge (G : SimpleTemporalGraph V) (x y : V) (n : ℕ) : Prop :=
+def EarliestEdge (G : LooplessTemporalGraph V) (x y : V) (n : ℕ) : Prop :=
   G.Adj x y n ∧ ∀ z : V, ∀ j : ℕ, G.Adj x z j → n ≤ j
 
 /- The *latest edge* of *x*, with *y* destination at *n*-/
-def LatestEdge (G : SimpleTemporalGraph V) (x y : V) (n : ℕ) : Prop :=
+def LatestEdge (G : LooplessTemporalGraph V) (x y : V) (n : ℕ) : Prop :=
   G.Adj x y n ∧ ∀ z : V, ∀ j : ℕ, G.Adj x z j → j ≤ n
 
 /- *y* is an *earliest neighbor* of *x* -/
-def EarliestNeighbor (G : SimpleTemporalGraph V) (x y : V) : Prop := ∃ n : ℕ, G.EarliestEdge x y n
+def EarliestNeighbor (G : LooplessTemporalGraph V) (x y : V) : Prop := ∃ n : ℕ, G.EarliestEdge x y n
 
 /- *y* is a *latest neighbor* of *x* -/
-def LatestNeighbor (G : SimpleTemporalGraph V) (x y : V) : Prop := ∃ n : ℕ, G.LatestEdge x y n
+def LatestNeighbor (G : LooplessTemporalGraph V) (x y : V) : Prop := ∃ n : ℕ, G.LatestEdge x y n
 
 section Order
 
-def IsSubtempgraph {s : Set V} (G : SimpleTemporalGraph V) (H : SimpleTemporalGraph s) : Prop :=
+def IsSubtempgraph {s : Set V} (G : LooplessTemporalGraph V) (H : LooplessTemporalGraph s) : Prop :=
   ∀ {x y : s} {n : ℕ}, H.Adj x y n → G.Adj ↑x ↑y n
 
 /- This is a Subgraph with the same vertex set-/
-def IsSubtempgraphOnV (G H : SimpleTemporalGraph V) : Prop :=
+def IsSubtempgraphOnV (G H : LooplessTemporalGraph V) : Prop :=
   ∀ {x y : V} {n : ℕ}, G.Adj x y n → H.Adj x y n
 
-instance : LE (SimpleTemporalGraph V) :=
+instance : LE (LooplessTemporalGraph V) :=
   ⟨IsSubtempgraphOnV⟩
 
-lemma le_iff_adj {G H : SimpleTemporalGraph V} :
+lemma le_iff_adj {G H : LooplessTemporalGraph V} :
     G ≤ H ↔ ∀ x y : V, ∀ n : ℕ, G.Adj x y n → H.Adj x y n :=
   .rfl
 
 @[simp]
 theorem isSubtempgraphOnV_eq_le :
-    (IsSubtempgraphOnV : SimpleTemporalGraph V -> SimpleTemporalGraph V -> Prop) = (· ≤ ·) :=
+    (IsSubtempgraphOnV : LooplessTemporalGraph V -> LooplessTemporalGraph V -> Prop) = (· ≤ ·) :=
   rfl
 
-instance : Bot (SimpleTemporalGraph V) where
+instance : Bot (LooplessTemporalGraph V) where
   bot := {
     Adj _ _ _ := False
     symm := by
@@ -151,12 +150,12 @@ end Order
 
 section NeighborSet
 
-def NeighborSet (G : SimpleTemporalGraph V) (x : V) := {y | ∃ n : ℕ, G.Adj x y n}
+def NeighborSet (G : LooplessTemporalGraph V) (x : V) := {y | ∃ n : ℕ, G.Adj x y n}
 
-theorem mem_neighborSet (G : SimpleTemporalGraph V) (x y : V) :
+theorem mem_neighborSet (G : LooplessTemporalGraph V) (x y : V) :
     y ∈ G.NeighborSet x ↔ ∃ n : ℕ, G.Adj x y n :=
   Iff.rfl
 
 end NeighborSet
 
-end SimpleTemporalGraph
+end LooplessTemporalGraph

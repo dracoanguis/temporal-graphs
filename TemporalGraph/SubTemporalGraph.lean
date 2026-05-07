@@ -260,6 +260,7 @@ instance : Bot G.SubTemporalGraph where
     symm _ _ _ := id
   }
 
+@[simp]
 def IsSubgraphOf (H : SubTemporalGraph G) (H' : SubTemporalGraph G) : Prop :=
   (H.Verts ⊆ H'.Verts)
   ∧
@@ -372,6 +373,7 @@ lemma addVerts_Adj {x y : V} {n : ℕ} {H : SubTemporalGraph G} {s : Set V} :
   have hin' := hinc <| H.edge_vert h.symm
   exact ⟨hin, hin', h⟩
 
+@[simp]
 lemma addVerts_le {H : SubTemporalGraph G} {s : Set V} : H ≤ (H.addVerts s) := by
   constructor
   · simp
@@ -413,6 +415,7 @@ def addEdge (H : SubTemporalGraph G) (h : G.Adj x y n) (h₁ : x ∈ H.Verts ∧
 
 variable {H : SubTemporalGraph G} {h : G.Adj x y n} {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts}
 
+@[simp]
 theorem addEdge_le : H ≤ addEdge H h h₁ := by
   constructor
   · intro _ hx

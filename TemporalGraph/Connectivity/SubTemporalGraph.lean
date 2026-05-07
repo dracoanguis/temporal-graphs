@@ -64,12 +64,28 @@ lemma reachable_of_earliestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : �
   intro z h
   exact H.coe.reachable_of_earliestEdge (coe_earliestEdge h₀) z h
 
+lemma reachable_of_???? {H : SubTemporalGraph G} {x y z : H.Verts} {n m : ℕ}
+    (h₀ : H.EarliestEdge x y n)
+    (h₁ : H.Adj z y m)
+    (h₂ : m ≤ n) :
+    ∀ a : H.Verts, H.Reachable x a → H.Reachable z a := by
+  intro a h
+  exact H.coe.reachable_of_???? (coe_earliestEdge h₀) h₁ h₂ a h
+
 @[simp]
 lemma reachable_of_latestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
     (h₀ : H.LatestEdge x y n) :
     ∀ z : H.Verts, H.Reachable z x → H.Reachable z y := by
   intro z h
   exact H.coe.reachable_of_latestEdge (coe_latestEdge h₀) z h
+
+lemma reachable_of_????' {H : SubTemporalGraph G} {x y z : H.Verts} {n m : ℕ}
+    (h₀ : H.LatestEdge x y n)
+    (h₁ : H.Adj y z m)
+    (h₂ : n ≤ m) :
+    ∀ a : H.Verts, H.Reachable a x → H.Reachable a z := by
+  intro a h
+  exact H.coe.reachable_of_????' (coe_latestEdge h₀) h₁ h₂ a h
 
 @[simp]
 protected lemma temporallyConnected_of_TCSpanner (H : SubTemporalGraph G) :

@@ -71,6 +71,21 @@ lemma reachable_of_earliestEdge {x y : V} {n : ℕ} {G : SimpleTemporalGraph V}
     have hst : n ≤ m := NonemptyTemporalWalk.EarliestEdge.time_bound_of_edge p h
     exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.prepend h.left.symm hst⟩⟩
 
+lemma reachable_of_???? {x y z : V} {n m : ℕ} {G : SimpleTemporalGraph V}
+    (h₀ : G.EarliestEdge x y n)
+    (h₁ : G.Adj z y m)
+    (h₂ : m ≤ n) :
+    ∀ a : V, G.Reachable x a → G.Reachable z a := by
+  intro _ ⟨k, _, ⟨p⟩⟩
+  let p' : NonemptyTemporalWalk z m x n := NonemptyTemporalWalk.Single h₁ |>.Step h₀.left.symm h₂
+  cases p with
+  | Empty =>
+      apply reachable_of_nonempty_NonemptyTemporalWalk ;
+      use  m, n, p'
+  | Nonempty p =>
+    have h : n ≤ k := NonemptyTemporalWalk.EarliestEdge.time_bound_of_edge p h₀
+    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p'.extend p h⟩⟩
+
 lemma reachable_of_latestEdge {x y : V} {n : ℕ} {G : SimpleTemporalGraph V}
     (h : G.LatestEdge x y n) :
     ∀ z : V, G.Reachable z x → G.Reachable z y := by
@@ -81,6 +96,21 @@ lemma reachable_of_latestEdge {x y : V} {n : ℕ} {G : SimpleTemporalGraph V}
   | Nonempty p =>
     have het : m ≤ n := NonemptyTemporalWalk.LatestEdge.time_bound_of_edge p h
     exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.Step h.left het⟩⟩
+
+lemma reachable_of_????' {x y z : V} {n m : ℕ} {G : SimpleTemporalGraph V}
+    (h₀ : G.LatestEdge x y n)
+    (h₁ : G.Adj y z m)
+    (h₂ : n ≤ m) :
+    ∀ a : V, G.Reachable a x → G.Reachable a z := by
+  intro _ ⟨_, k, ⟨p⟩⟩
+  let p' : NonemptyTemporalWalk x n z m := NonemptyTemporalWalk.Single h₀.left |>.Step h₁ h₂
+  cases p with
+  | Empty =>
+      apply reachable_of_nonempty_NonemptyTemporalWalk ;
+      use  n, m, p'
+  | Nonempty p =>
+    have h : k ≤ n := NonemptyTemporalWalk.LatestEdge.time_bound_of_edge p h₀
+    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.extend p' h⟩⟩
 
 -- lemma earliest_latest_edge_co_reachability {u αₑ αₗ : V} {tₑ tₗ : ℕ} {G : SimpleTemporalGraph V}
 -- (hee : G.EarliestEdge αₑ u tₑ) (hle : G.LatestEdge αₗ u tₗ) (hr : G.Reachable αₑ αₗ)

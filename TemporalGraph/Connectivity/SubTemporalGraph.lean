@@ -69,7 +69,7 @@ theorem isTCSpanner_iff_isSpanner_and_TC {H : SubTemporalGraph G} :
 
 
 @[simp]
-lemma reachable_of_subTempGraph_reachable {H : SubTemporalGraph G} :
+lemma reachable_of_subTemporalGraph_reachable {H : SubTemporalGraph G} :
     ∀ x y : H.Verts, H.Reachable x y → G.Reachable ↑x ↑y := by
   intro _ _ h
   rw [Reachable, reachable_iff_nonempty_univ] at h
@@ -93,9 +93,7 @@ lemma reachable_of_earliestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : �
   intro z h
   exact H.coe.reachable_of_earliestEdge (coe_earliestEdge h₀) z h
 
--- TODO: extended
--- Find intelligent name or generalize
-lemma reachable_of_???? {H : SubTemporalGraph G} {x y z : H.Verts} {n m : ℕ}
+lemma reachable_of_extended_earliestEdge {H : SubTemporalGraph G} {x y z : H.Verts} {n m : ℕ}
     (h₀ : H.EarliestEdge x y n)
     (h₁ : H.Adj z y m)
     (h₂ : m ≤ n) :
@@ -110,8 +108,7 @@ lemma reachable_of_latestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
   intro z h
   exact H.coe.reachable_of_latestEdge (coe_latestEdge h₀) z h
 
--- Find intelligent name or generalize
-lemma reachable_of_????' {H : SubTemporalGraph G} {x y z : H.Verts} {n m : ℕ}
+lemma reachable_of_extended_latestEdge {H : SubTemporalGraph G} {x y z : H.Verts} {n m : ℕ}
     (h₀ : H.LatestEdge x y n)
     (h₁ : H.Adj y z m)
     (h₂ : n ≤ m) :

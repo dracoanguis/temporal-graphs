@@ -35,19 +35,17 @@ def support {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List V
   | Nonempty p => p.support
 
 
---Arcs
-/-- The `darts` of a TemporalWalk is the list of darts (edge with a direction) it visits in
+/-- The `arcs` of a TemporalWalk is the list of arcs (edge with a direction) it visits in
 order. -/
-def darts {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List (V × V × ℕ)
+def arcs {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List (V × V × ℕ)
   | Empty => []
-  | Nonempty p => p.darts
+  | Nonempty p => p.arcs
 
---Nondecreasing
 @[simp]
-lemma time_monotonicity {x y : V} {n m : ℕ} (tw : G.TemporalWalk x n y m) : n ≤ m := by
+lemma nondecreasing_time {x y : V} {n m : ℕ} (tw : G.TemporalWalk x n y m) : n ≤ m := by
   cases tw with
   | Empty => trivial
-  | Nonempty p => exact p.time_monotonicity
+  | Nonempty p => exact p.nondecreasing_time
 
 end TemporalWalk
 

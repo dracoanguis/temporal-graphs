@@ -137,12 +137,11 @@ end Order
 section NeighborSet
 
 
--- Neighborhood
-def NeighborSet (G : LooplessTemporalGraph V) (x : V) := {y | ∃ n : ℕ, G.Adj x y n}
+def NeighborhoodSet (G : LooplessTemporalGraph V) (x : V) := {y | ∃ n : ℕ, G.Adj x y n}
 
 @[simp]
 theorem mem_neighborSet (G : LooplessTemporalGraph V) (x y : V) :
-    y ∈ G.NeighborSet x ↔ ∃ n : ℕ, G.Adj x y n :=
+    y ∈ G.NeighborhoodSet x ↔ ∃ n : ℕ, G.Adj x y n :=
   Iff.rfl
 
 -- instance NeighborSet.memDecidable (G : LooplessTemporalGraph V) (v : V)

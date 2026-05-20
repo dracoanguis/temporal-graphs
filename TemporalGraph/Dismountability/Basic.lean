@@ -34,10 +34,6 @@ lemma vminus_sub_verts {H : SubTemporalGraph G} : H.Vminus ⊆ H.Verts := by
 instance {H : SubTemporalGraph G} [h : Finite H.Verts] : Finite H.Vminus :=
   Set.Finite.subset (H.Verts.finite_coe_iff.mp h) vminus_sub_verts
 
--- Remove as it is malpractice
-noncomputable instance {H : SubTemporalGraph G} [Finite H.Vminus] : Fintype H.Vminus :=
-  Fintype.ofFinite H.Vminus
-
 -- def 3.1
 def Vplus (H : SubTemporalGraph G) : Set V := {x : V | ∃ y : V, H.LatestNeighbor y x}
 
@@ -49,10 +45,6 @@ lemma vplus_sub_verts {H : SubTemporalGraph G} : H.Vplus ⊆ H.Verts := by
 instance {H : SubTemporalGraph G} [h : Finite H.Verts] : Finite H.Vplus :=
   Set.Finite.subset (H.Verts.finite_coe_iff.mp h) vplus_sub_verts
 
--- Remove as it is malpractice
-noncomputable instance {H : SubTemporalGraph G} [Finite H.Vplus] : Fintype H.Vplus :=
-  Fintype.ofFinite H.Vplus
-
 -- def 3.1
 def Vzero (H : SubTemporalGraph G) : Set V := H.Verts \ (H.Vminus ∪ H.Vplus)
 
@@ -63,10 +55,6 @@ lemma vzero_sub_verts {H : SubTemporalGraph G} : H.Vzero ⊆ H.Verts := by
 
 instance {H : SubTemporalGraph G} [h : Finite H.Verts] : Finite H.Vzero :=
   Set.Finite.subset (H.Verts.finite_coe_iff.mp h) vzero_sub_verts
-
--- Remove as it is malpractice
-noncomputable instance {H : SubTemporalGraph G} [Finite H.Vzero] : Fintype H.Vzero :=
-  Fintype.ofFinite H.Vzero
 
 lemma vzero_mem {H : SubTemporalGraph G} : ∀ x : V, x ∈ H.Vzero → x ∉ H.Vminus ∧ x ∉ H.Vplus := by
   intro _ hx
@@ -135,8 +123,7 @@ lemma partition_of_not_dismountable {H : SubTemporalGraph G} (h : H.IsClique ∧
           have hunin : u ∉ H.Verts := by rw [←H.vunion_eq_univ] ; simp [huin, huin', huin'']
           contradiction
 
--- TODO: TwoHopDismountable
-def Dismountable2 (H : SubTemporalGraph G) :=
+def TwoHopDismountable (H : SubTemporalGraph G) :=
   H.IsClique
   ∧
   (∃ x : V,
@@ -147,8 +134,8 @@ def Dismountable2 (H : SubTemporalGraph G) :=
       ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.LatestEdge y z n ∧ H.Adj z x m ∧ n ≤ m)))
 
 @[simp]
-lemma dismountable2_of_dismountable {H : SubTemporalGraph G} (h : H.Dismountable) :
-    H.Dismountable2 := by
+lemma twoHopDismountable_of_dismountable {H : SubTemporalGraph G} (h : H.Dismountable) :
+    H.TwoHopDismountable := by
   constructor
   · exact h.left
   · rcases h.right with ⟨u, α, β, hen, hln⟩
@@ -158,15 +145,15 @@ lemma dismountable2_of_dismountable {H : SubTemporalGraph G} (h : H.Dismountable
     · exists β
 
 @[simp]
-lemma not_dismountable_of_not_dismountable2 {H : SubTemporalGraph G}
-    (h : H.IsClique ∧ ¬H.Dismountable2) :
+lemma not_dismountable_of_not_twoHopDismountable {H : SubTemporalGraph G}
+    (h : H.IsClique ∧ ¬H.TwoHopDismountable) :
     ¬H.Dismountable := by
   contrapose h
-  simp only [h, dismountable2_of_dismountable, not_true_eq_false, and_false, not_false_eq_true]
+  simp only [h, twoHopDismountable_of_dismountable, not_true_eq_false, and_false, not_false_eq_true]
 
 -- lemma 3.2
-lemma vplus_ne_neighbor_of_not_dismountable2 {H : SubTemporalGraph G} (x y : H.Vplus)
-    (h₀ : ¬H.Dismountable2) (h₁ : H.IsClique) (h₂ : x ≠ y) :
+lemma vplus_ne_neighbor_of_not_twoHopHismountable {H : SubTemporalGraph G} (x y : H.Vplus)
+    (h₀ : ¬H.TwoHopDismountable) (h₁ : H.IsClique) (h₂ : x ≠ y) :
     ∀ z z' : V, H.EarliestNeighbor x z ∧ H.EarliestNeighbor y z' → z ≠ z' := by
   simp only [EarliestNeighbor, ne_eq, and_imp, forall_exists_index]
   intro z z' n hee m hee' hzz'
@@ -201,8 +188,8 @@ lemma vplus_ne_neighbor_of_not_dismountable2 {H : SubTemporalGraph G} (x y : H.V
     · apply Or.inl ; assumption
 
 -- lemma 3.2
-lemma vminus_ne_neighbor_of_not_dismountable2 {H : SubTemporalGraph G} (x y : H.Vminus)
-    (h₀ : ¬H.Dismountable2) (h₁ : H.IsClique) (h₂ : x ≠ y) :
+lemma vminus_ne_neighbor_of_not_twoHopDismountable {H : SubTemporalGraph G} (x y : H.Vminus)
+    (h₀ : ¬H.TwoHopDismountable) (h₁ : H.IsClique) (h₂ : x ≠ y) :
     ∀ z z' : V, H.LatestNeighbor x z ∧ H.LatestNeighbor y z' → z ≠ z' := by
   simp only [LatestNeighbor, ne_eq, and_imp, forall_exists_index]
   intro z z' n hle m hle' hzz'
@@ -353,7 +340,7 @@ lemma earliestNeighborFn_injective {H : SubTemporalGraph G}
     (h₀ : H.IsSimple)
     (h₁ : H.IsClique)
     (h₂ : H.IsProper)
-    (h₃ : ¬H.Dismountable2) :
+    (h₃ : ¬H.TwoHopDismountable) :
     Function.Injective (earliestNeighborFn h₀ h₁ h₂) := by
   intro x y
   by_contra! ⟨hfeq, hneq⟩
@@ -364,7 +351,7 @@ lemma earliestNeighborFn_injective {H : SubTemporalGraph G}
   have hz'₁ := hz'
   rw [earliestNeighborFn_eq, ←hz] at hz₁
   rw [earliestNeighborFn_eq, ←hz'] at hz'₁
-  have := vplus_ne_neighbor_of_not_dismountable2 x y h₃ h₁ hneq z z' ⟨hz₁, hz'₁⟩
+  have := vplus_ne_neighbor_of_not_twoHopHismountable x y h₃ h₁ hneq z z' ⟨hz₁, hz'₁⟩
   absurd this
   simp only [hfeq]
 
@@ -374,9 +361,9 @@ lemma vplus_card_le_vminus_card {H : SubTemporalGraph G}
     (h₀ : H.IsSimple)
     (h₁ : H.IsClique)
     (h₂ : H.IsProper)
-    (h₃ : ¬H.Dismountable2) :
-    Fintype.card H.Vplus ≤ Fintype.card H.Vminus :=
-  Fintype.card_le_of_injective
+    (h₃ : ¬H.TwoHopDismountable) :
+    @Fintype.card H.Vplus (Fintype.ofFinite _) ≤ @Fintype.card H.Vminus (Fintype.ofFinite _) :=
+  @Fintype.card_le_of_injective _ _ (Fintype.ofFinite _) (Fintype.ofFinite _)
     (earliestNeighborFn h₀ h₁ h₂) (earliestNeighborFn_injective h₀ h₁ h₂ h₃)
 
 lemma existsUnique_latestNeighbor {H : SubTemporalGraph G}
@@ -430,7 +417,7 @@ lemma latestNeighborFn_injective {H : SubTemporalGraph G}
     (h₀ : H.IsSimple)
     (h₁ : H.IsClique)
     (h₂ : H.IsProper)
-    (h₃ : ¬H.Dismountable2) :
+    (h₃ : ¬H.TwoHopDismountable) :
     Function.Injective (latestNeighborFn h₀ h₁ h₂) := by
   intro x y
   by_contra! ⟨hfeq, hneq⟩
@@ -441,7 +428,7 @@ lemma latestNeighborFn_injective {H : SubTemporalGraph G}
   have hz'₁ := hz'
   rw [latestNeighborFn_eq, ←hz] at hz₁
   rw [latestNeighborFn_eq, ←hz'] at hz'₁
-  have := vminus_ne_neighbor_of_not_dismountable2 x y h₃ h₁ hneq z z' ⟨hz₁, hz'₁⟩
+  have := vminus_ne_neighbor_of_not_twoHopDismountable x y h₃ h₁ hneq z z' ⟨hz₁, hz'₁⟩
   absurd this
   simp only [hfeq]
 
@@ -451,9 +438,9 @@ lemma vminus_card_le_vplus_card {H : SubTemporalGraph G}
     (h₀ : H.IsSimple)
     (h₁ : H.IsClique)
     (h₂ : H.IsProper)
-    (h₃ : ¬H.Dismountable2) :
-    Fintype.card H.Vminus ≤ Fintype.card H.Vplus:=
-  Fintype.card_le_of_injective
+    (h₃ : ¬H.TwoHopDismountable) :
+    @Fintype.card H.Vminus (Fintype.ofFinite _) ≤ @Fintype.card H.Vplus (Fintype.ofFinite _) :=
+  @Fintype.card_le_of_injective _ _ (Fintype.ofFinite _) (Fintype.ofFinite _)
     (latestNeighborFn h₀ h₁ h₂) (latestNeighborFn_injective h₀ h₁ h₂ h₃)
 
 lemma vminus_card_eq_vplus_card {H : SubTemporalGraph G}
@@ -462,8 +449,8 @@ lemma vminus_card_eq_vplus_card {H : SubTemporalGraph G}
     (h₀ : H.IsSimple)
     (h₁ : H.IsClique)
     (h₂ : H.IsProper)
-    (h₃ : ¬H.Dismountable2) :
-    Fintype.card H.Vminus = Fintype.card H.Vplus :=
+    (h₃ : ¬H.TwoHopDismountable) :
+    @Fintype.card H.Vminus (Fintype.ofFinite _) = @Fintype.card H.Vplus (Fintype.ofFinite _) :=
   Nat.le_antisymm (vminus_card_le_vplus_card h₀ h₁ h₂ h₃) (vplus_card_le_vminus_card h₀ h₁ h₂ h₃)
 
 lemma earliestNeighborFn_bijective {H : SubTemporalGraph G}
@@ -472,9 +459,10 @@ lemma earliestNeighborFn_bijective {H : SubTemporalGraph G}
     (h₀ : H.IsSimple)
     (h₁ : H.IsClique)
     (h₂ : H.IsProper)
-    (h₃ : ¬H.Dismountable2) :
+    (h₃ : ¬H.TwoHopDismountable) :
     Function.Bijective (earliestNeighborFn h₀ h₁ h₂) := by
-  apply Iff.mpr <| Fintype.bijective_iff_injective_and_card (earliestNeighborFn h₀ h₁ h₂)
+  apply Iff.mpr <| @Fintype.bijective_iff_injective_and_card _ _
+    (Fintype.ofFinite _) (Fintype.ofFinite _) (earliestNeighborFn h₀ h₁ h₂)
   constructor
   · exact earliestNeighborFn_injective h₀ h₁ h₂ h₃
   · exact (vminus_card_eq_vplus_card h₀ h₁ h₂ h₃).symm
@@ -485,9 +473,10 @@ lemma latestNeighborFn_bijective {H : SubTemporalGraph G}
     (h₀ : H.IsSimple)
     (h₁ : H.IsClique)
     (h₂ : H.IsProper)
-    (h₃ : ¬H.Dismountable2) :
+    (h₃ : ¬H.TwoHopDismountable) :
     Function.Bijective (latestNeighborFn h₀ h₁ h₂) := by
-  apply Iff.mpr <| Fintype.bijective_iff_injective_and_card (latestNeighborFn h₀ h₁ h₂)
+  apply Iff.mpr <| @Fintype.bijective_iff_injective_and_card _ _
+    (Fintype.ofFinite H.Vminus) (Fintype.ofFinite H.Vplus) (latestNeighborFn h₀ h₁ h₂)
   constructor
   · exact latestNeighborFn_injective h₀ h₁ h₂ h₃
   · exact vminus_card_eq_vplus_card h₀ h₁ h₂ h₃
@@ -499,7 +488,7 @@ lemma existsUnique_vplus_earliestEdge {H : SubTemporalGraph G}
     (h₀ : H.IsSimple)
     (h₁ : H.IsClique)
     (h₂ : H.IsProper)
-    (h₃ : ¬H.Dismountable2) :
+    (h₃ : ¬H.TwoHopDismountable) :
     ∀ x : H.Vminus, ∃! q : H.Vplus × ℕ, H.EarliestEdge q.1 x q.2 := by
   intro x
   have hen_bij := earliestNeighborFn_bijective h₀ h₁ h₂ h₃ |>.existsUnique
@@ -523,7 +512,7 @@ lemma existsUnique_vminus_latestEdge {H : SubTemporalGraph G}
     (h₀ : H.IsSimple)
     (h₁ : H.IsClique)
     (h₂ : H.IsProper)
-    (h₃ : ¬H.Dismountable2) :
+    (h₃ : ¬H.TwoHopDismountable) :
     ∀ x : H.Vplus, ∃! q : H.Vminus × ℕ, H.LatestEdge q.1 x q.2 := by
   intro x
   have hln_bij := latestNeighborFn_bijective h₀ h₁ h₂ h₃ |>.existsUnique
@@ -541,16 +530,16 @@ lemma existsUnique_vminus_latestEdge {H : SubTemporalGraph G}
   exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heq, heq'.symm⟩
 
 -- TODO: PERfect matching
--- TODO: impaire → TwoHeopDismountable
+-- TODO: impaire → TwoHopDismountable
 
 -- lemma 3.4
-lemma vzero_empty_of_not_dismountable2 {H : SubTemporalGraph G}
+lemma vzero_empty_of_not_twoHopDismountable {H : SubTemporalGraph G}
     [Finite H.Verts]
     [Nontrivial H.Verts]
     (h₁ : H.IsSimple)
     (h₂ : H.IsClique)
     (h₃ : H.IsProper)
-    (h₄ : ¬H.Dismountable2) :
+    (h₄ : ¬H.TwoHopDismountable) :
     H.Vzero = ∅ := by
   by_contra! ⟨x, hx⟩
   have ⟨y, n, hee⟩ :=

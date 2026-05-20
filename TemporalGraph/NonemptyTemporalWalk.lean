@@ -32,11 +32,11 @@ def support {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → List V
   | Step p _ _ => y :: p.support
 
 -- Arcs
-/-- The `darts` of a NonemptyTemporalWalk is the list of darts (edge with a direction) it visits in
+/-- The `arcs` of a NonemptyTemporalWalk is the list of arcs (edge with a direction) it visits in
 order. -/
-def darts {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → List (V × V × ℕ)
+def arcs {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → List (V × V × ℕ)
   | @Single _ _ x y n _ => [⟨x ,⟨y, n⟩⟩]
-  | @Step _ _ _ y z _ _ k p _ _ => ⟨y ,⟨ z, k⟩⟩ :: p.darts
+  | @Step _ _ _ y z _ _ k p _ _ => ⟨y ,⟨ z, k⟩⟩ :: p.arcs
 
 /-- Concatenate two compatible NonemptyTemporalWalks. -/
 def append {x y z : V} {n m k l}
@@ -54,9 +54,8 @@ def prepend {x y z : V} {n m k : ℕ}
     G.NonemptyTemporalWalk z k y m :=
   append (Single h) p h'
 
--- Non-decreasing
 @[simp]
-lemma time_monotonicity {x y : V} {n m : ℕ} (tw : G.NonemptyTemporalWalk x n y m) : n ≤ m := by
+lemma nondecreasing_time {x y : V} {n m : ℕ} (tw : G.NonemptyTemporalWalk x n y m) : n ≤ m := by
   induction tw with
   | Single h => rfl
   | Step h p h' ih => exact le_trans ih h'

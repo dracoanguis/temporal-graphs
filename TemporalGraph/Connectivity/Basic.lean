@@ -19,9 +19,10 @@ theorem reachable_of_nonempty_NonemptyTemporalWalk {G : LooplessTemporalGraph V}
   intro ⟨n, m, ⟨h⟩⟩
   use n, m, ↑h
 
--- abbrev  self_reachable
 theorem reachable_of_self {G : LooplessTemporalGraph V} (x : V) : G.Reachable x x := by
   use 0, 0, TemporalWalk.Empty
+
+abbrev self_reachable {G : LooplessTemporalGraph V} (x : V) := G.reachable_of_self x
 
 theorem reachable_iff_nonempty_univ {G : LooplessTemporalGraph V} {x y : V} :
     G.Reachable x y ↔ ∃ n m : ℕ, (Set.univ : Set (G.TemporalWalk x n y m)).Nonempty := by
@@ -51,8 +52,6 @@ def IsSpanner {s : Set V} (G : LooplessTemporalGraph V) (G' : LooplessTemporalGr
 
 def IsTCSpanner {s : Set V} (G : LooplessTemporalGraph V) (G' : LooplessTemporalGraph s) : Prop :=
   G.IsSpanner G' ∧ G'.TemporallyConnected
-
--- TODO: equiv
 
 theorem temporallyConnected_of_complete (G : LooplessTemporalGraph V) :
     G.IsComplete → G.TemporallyConnected := by

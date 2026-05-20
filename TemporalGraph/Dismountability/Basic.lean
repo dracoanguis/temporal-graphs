@@ -11,9 +11,9 @@ variable {V : Type u}
 
 namespace LooplessTemporalGraph
 
--- Theorem 2.1
-def Dismountable (G : LooplessTemporalGraph V) :=
-  ∃ (x y z : V), G.EarliestNeighbor y x ∧ G.LatestNeighbor z x
+-- -- Theorem 2.1
+-- def Dismountable (G : LooplessTemporalGraph V) :=
+--   ∃ (x y z : V), G.EarliestNeighbor y x ∧ G.LatestNeighbor z x
 
 namespace SubTemporalGraph
 
@@ -22,9 +22,6 @@ variable {G : LooplessTemporalGraph V}
 -- Theorem 2.1
 def Dismountable (H : SubTemporalGraph G) :=
   H.IsClique ∧ ∃ (x y z : V), H.EarliestNeighbor y x ∧ H.LatestNeighbor z x
-
-def Dismountable' (H : SubTemporalGraph G) (x y z : V) (n m : ℕ) :=
-  H.IsClique ∧ H.EarliestEdge y x n ∧ H.LatestEdge z x m
 
 -- def 3.1
 def Vminus (H : SubTemporalGraph G) : Set V := {x : V | ∃ y : V, H.EarliestNeighbor y x}
@@ -138,6 +135,7 @@ lemma partition_of_not_dismountable {H : SubTemporalGraph G} (h : H.IsClique ∧
           have hunin : u ∉ H.Verts := by rw [←H.vunion_eq_univ] ; simp [huin, huin', huin'']
           contradiction
 
+-- TODO: TwoHopDismountable
 def Dismountable2 (H : SubTemporalGraph G) :=
   H.IsClique
   ∧
@@ -494,7 +492,7 @@ lemma latestNeighborFn_bijective {H : SubTemporalGraph G}
   · exact latestNeighborFn_injective h₀ h₁ h₂ h₃
   · exact vminus_card_eq_vplus_card h₀ h₁ h₂ h₃
 
--- Specialized 3.3 coro, is it true? matching follows of
+-- Specialized 3.3 coro
 lemma existsUnique_vplus_earliestEdge {H : SubTemporalGraph G}
     [Finite H.Verts]
     [Nontrivial H.Verts]
@@ -541,6 +539,9 @@ lemma existsUnique_vminus_latestEdge {H : SubTemporalGraph G}
   rw [heq] at hadj
   have heq' := h₀ ⟨hle.left, hadj⟩
   exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heq, heq'.symm⟩
+
+-- TODO: PERfect matching
+-- TODO: impaire → TwoHeopDismountable
 
 -- lemma 3.4
 lemma vzero_empty_of_not_dismountable2 {H : SubTemporalGraph G}

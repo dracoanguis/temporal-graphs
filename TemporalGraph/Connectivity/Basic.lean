@@ -13,12 +13,14 @@ namespace LooplessTemporalGraph
 def Reachable (G : LooplessTemporalGraph V) (x y : V) : Prop :=
   ∃ n m : ℕ, Nonempty (G.TemporalWalk x n y m)
 
+/-- The type of `NonemptyTemporalWalk` is `Nonempty`. -/
 theorem reachable_of_nonempty_NonemptyTemporalWalk {G : LooplessTemporalGraph V} {x y : V} :
     (∃ n m : ℕ, Nonempty (G.NonemptyTemporalWalk x n y m)) → G.Reachable x y := by
   intro ⟨n, m, ⟨h⟩⟩
   use n, m, ↑h
 
-theorem self_reachable {G : LooplessTemporalGraph V} (x : V) : G.Reachable x x := by
+-- abbrev  self_reachable
+theorem reachable_of_self {G : LooplessTemporalGraph V} (x : V) : G.Reachable x x := by
   use 0, 0, TemporalWalk.Empty
 
 theorem reachable_iff_nonempty_univ {G : LooplessTemporalGraph V} {x y : V} :
@@ -40,6 +42,8 @@ theorem reachable_iff_nonempty_temporalWalkSet {G : LooplessTemporalGraph V} {x 
 
 def TemporallyConnected (G : LooplessTemporalGraph V) : Prop := ∀ x y : V, G.Reachable x y
 
+/-- `G'` is a spanner of `G` iff they have the same verticies and everything reachable in `G` is
+reachable in `G'`. -/
 def IsSpanner {s : Set V} (G : LooplessTemporalGraph V) (G' : LooplessTemporalGraph s) : Prop :=
   (∀ x : V, x ∈ s)
   ∧
@@ -47,6 +51,8 @@ def IsSpanner {s : Set V} (G : LooplessTemporalGraph V) (G' : LooplessTemporalGr
 
 def IsTCSpanner {s : Set V} (G : LooplessTemporalGraph V) (G' : LooplessTemporalGraph s) : Prop :=
   G.IsSpanner G' ∧ G'.TemporallyConnected
+
+-- TODO: equiv
 
 theorem temporallyConnected_of_complete (G : LooplessTemporalGraph V) :
     G.IsComplete → G.TemporallyConnected := by
@@ -56,7 +62,7 @@ theorem temporallyConnected_of_complete (G : LooplessTemporalGraph V) :
   by_cases hdiff : x ≠ y
   · have ⟨n, h'⟩ := h' hdiff
     exact reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨NonemptyTemporalWalk.Single h'⟩⟩
-  · simp_all [self_reachable]
+  · simp_all [reachable_of_self]
 
 lemma reachable_of_earliestEdge {x y : V} {n : ℕ} {G : LooplessTemporalGraph V}
     (h : G.EarliestEdge x y n) :
@@ -71,7 +77,7 @@ lemma reachable_of_earliestEdge {x y : V} {n : ℕ} {G : LooplessTemporalGraph V
     have hst : n ≤ m := NonemptyTemporalWalk.EarliestEdge.time_bound_of_edge p h
     exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.prepend h.left.symm hst⟩⟩
 
-lemma reachable_of_???? {x y z : V} {n m : ℕ} {G : LooplessTemporalGraph V}
+lemma reachable_of_extended_earliestEdge {x y z : V} {n m : ℕ} {G : LooplessTemporalGraph V}
     (h₀ : G.EarliestEdge x y n)
     (h₁ : G.Adj z y m)
     (h₂ : m ≤ n) :
@@ -84,7 +90,7 @@ lemma reachable_of_???? {x y z : V} {n m : ℕ} {G : LooplessTemporalGraph V}
       use  m, n, p'
   | Nonempty p =>
     have h : n ≤ k := NonemptyTemporalWalk.EarliestEdge.time_bound_of_edge p h₀
-    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p'.extend p h⟩⟩
+    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p'.append p h⟩⟩
 
 lemma reachable_of_latestEdge {x y : V} {n : ℕ} {G : LooplessTemporalGraph V}
     (h : G.LatestEdge x y n) :
@@ -97,7 +103,7 @@ lemma reachable_of_latestEdge {x y : V} {n : ℕ} {G : LooplessTemporalGraph V}
     have het : m ≤ n := NonemptyTemporalWalk.LatestEdge.time_bound_of_edge p h
     exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.Step h.left het⟩⟩
 
-lemma reachable_of_????' {x y z : V} {n m : ℕ} {G : LooplessTemporalGraph V}
+lemma reachable_of_extended_latestEdge {x y z : V} {n m : ℕ} {G : LooplessTemporalGraph V}
     (h₀ : G.LatestEdge x y n)
     (h₁ : G.Adj y z m)
     (h₂ : n ≤ m) :
@@ -110,19 +116,6 @@ lemma reachable_of_????' {x y z : V} {n m : ℕ} {G : LooplessTemporalGraph V}
       use  n, m, p'
   | Nonempty p =>
     have h : k ≤ n := NonemptyTemporalWalk.LatestEdge.time_bound_of_edge p h₀
-    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.extend p' h⟩⟩
-
--- lemma earliest_latest_edge_co_reachability {u αₑ αₗ : V} {tₑ tₗ : ℕ} {G : SimpleTemporalGraph V}
--- (hee : G.EarliestEdge αₑ u tₑ) (hle : G.LatestEdge αₗ u tₗ) (hr : G.Reachable αₑ αₗ)
--- : G.Reachable u u
--- := by
---   rw [EarliestEdge] at hee
---   rw [LatestEdge] at hle
---   rw [reachable_iff_nonempty_TemporalWalkset] at hr
---   rcases hr with ⟨_, s, e, tw, _⟩
---   let tw' := tw.prepend hee.left.symm (TemporalWalk.EarliestEdge.edge_time_bound tw hee)
---   let tw'' := tw'.step hle.left (TemporalWalk.LatestEdge.edge_time_bound tw' hle)
---   rw [reachable_iff_nonempty_TemporalWalkset]
---   exact ⟨⟨tₑ, tₗ, tw''⟩, ⟨tₑ, ⟨tₗ, ⟨tw'', rfl⟩⟩⟩⟩
+    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.append p' h⟩⟩
 
 end LooplessTemporalGraph

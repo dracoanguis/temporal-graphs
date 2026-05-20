@@ -52,7 +52,7 @@ lemma mem_mount_verts {H : SubTemporalGraph G} {x : V} {y z : H.Verts} {n m : �
     {h₀ : G.Adj y x n}
     {h₁ : G.Adj z x m}
     (x' : H.Verts) :
-    x'.val ∈ (mount H x h₀ h₁).Verts := by simp [mount_verts]
+    ↑x' ∈ (mount H x h₀ h₁).Verts := by simp [mount_verts]
 
 lemma mount_edge (H : SubTemporalGraph G) {x : V} {y z : H.Verts} {n m : ℕ}
     (h₀ : G.Adj y x n)
@@ -93,7 +93,7 @@ theorem mount_tc (H : SubTemporalGraph G) {x : V} {y z : H.Verts} {n m : ℕ}
   have hReach : ∀ x' y', H.Reachable x' y' → (mount H x h₀ h₁).Reachable
     ⟨x', by simp [mount_verts]⟩
     ⟨y', by simp [mount_verts]⟩
-    := reachable_of_subTempGraph_reachable' mount_le
+    := reachable_of_le_reachable mount_le
   unfold SubTemporalGraph.TemporallyConnected
   intro hTC
   have hy : y.val ∈ (mount H x h₀ h₁).Verts := by simp [mount_verts]
@@ -106,7 +106,7 @@ theorem mount_tc (H : SubTemporalGraph G) {x : V} {y z : H.Verts} {n m : ℕ}
     <;> conv => rhs ; lhs ; lhs ; rw [heq]
     · intro heq'
       conv => rhs ; lhs ; rw [heq']
-      simpa using @LooplessTemporalGraph.self_reachable _ ((mount H x h₀ h₁).coe) ⟨x, _⟩
+      simpa using @LooplessTemporalGraph.reachable_of_self _ ((mount H x h₀ h₁).coe) ⟨x, _⟩
     · intro hy'₀
       have hy'₁ : y' ∈ (mount H x h₀ h₁).Verts := by simp [hy']
       apply @reachable_of_earliestEdge _ _ (mount H x h₀ h₁) ⟨y, _⟩ ⟨x, _⟩ n h₂ ⟨y', _⟩
@@ -145,7 +145,7 @@ theorem mount_card {H : SubTemporalGraph G} [Fintype H.EdgeSet] {x : V} {y z : H
   have hle₁ : Nat.card ↑(H.EdgeSet ∪ {(s(↑z, x), m), (s(↑y, x), n)})
       ≤ Nat.card H.EdgeSet + Nat.card ({(s(↑z, x), m), (s(↑y, x), n)} : Set ((Sym2 V) × ℕ)) := by
     simp only [Set.card_union_le]
-  grind only
+  lia
 
 end Mount
 
@@ -232,7 +232,7 @@ theorem mount2_TC (H : SubTemporalGraph G) {y y' z z' : H.Verts} {n n' m m' : �
   have hReach : ∀ x' y', H.Reachable x' y' → (mount2 H x h₀ h₁ h₂ h₃).Reachable
     ⟨x', by simp [mount2_verts]⟩
     ⟨y', by simp [mount2_verts]⟩
-    := reachable_of_subTempGraph_reachable' mount2_le
+    := reachable_of_le_reachable mount2_le
   intro htc
   have hx  : x ∈ (H.mount2 x h₀ h₁ h₂ h₃).Verts   := by simp
   have hy  : ↑y ∈ (H.mount2 x h₀ h₁ h₂ h₃).Verts  := by simp
@@ -246,7 +246,7 @@ theorem mount2_TC (H : SubTemporalGraph G) {y y' z z' : H.Verts} {n n' m m' : �
   · intro heq
     apply Or.elim hb
     · intro heq'
-      simp only [heq, heq', self_reachable]
+      simp only [heq, heq', reachable_of_self]
     · intro hb
       simp only [heq]
       have hb' : ↑b ∈ (H.mount2 x h₀ h₁ h₂ h₃).Verts := mem_mount2_verts ⟨b, hb⟩

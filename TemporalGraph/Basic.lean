@@ -11,7 +11,7 @@ macro (name := aesop_temporal_graph) "aesop_temporal_graph" c:Aesop.tactic_claus
   `(tactic|
     aesop $c*
       (config := { introsTransparency? := some .default, terminal := true })
-      (rule_sets := [$(Lean.mkIdent `SimpleTemporalGraph):ident]))
+      (rule_sets := [$(Lean.mkIdent `LooplessTemporalGraph):ident]))
 
 
 
@@ -19,7 +19,7 @@ universe u
 
 /-- A loopless undirected temporal graph with edges only present at one time
 (not proper or simple by definition) -/
-@[ext, aesop safe constructors (rule_sets := [SimpleTemporalGraph])]
+@[ext, aesop safe constructors (rule_sets := [LooplessTemporalGraph])]
 structure LooplessTemporalGraph (V : Type u) where
   /-- The adjacency labeled by a natural qualifying the time of existance -/
   Adj : V → V → ℕ → Prop
@@ -73,23 +73,6 @@ def Footprint (G : LooplessTemporalGraph V) : SimpleGraph V :=
     loopless := ⟨fun _ ↦ by simp⟩
   }
 
--- @[simp]
--- theorem isSubtempgraph_self (G : SimpleTemporalGraph V) : G.IsSubtempgraph G := by
---   unfold IsSubtempgraph
---   intro _ _ _ h
---   exact h
-
--- def support :=
-  -- SetRel.dom {(u, v, t) : V ⨯ V ⨯ ℕ | G.Adj u v t}
-
-
-
--- instance neighborSet.memDecidable (G : SimpleTemporalGraph V) (v : V)
--- [DecidableRel (λ x y↦ ∃ t, G.Adj x y t)] :
---     DecidablePred (· ∈ G.neighborSet v) :=
---   inferInstanceAs <| DecidablePred (Adj G v)
-
--- Because it was infact not simple (╯°□°)╯︵ ┻━┻
 def IsSimple (G : LooplessTemporalGraph V) : Prop :=
   ∀ (x y : V) (n m : ℕ), G.Adj x y n ∧ G.Adj x y m → n=m
 
@@ -97,8 +80,10 @@ def IsComplete (G : LooplessTemporalGraph V) : Prop :=
   ∀ x y : V, x ≠ y → ∃ t, G.Adj x y t
 
 def IsProper (G : LooplessTemporalGraph V) : Prop :=
-  --∀ u : V, ¬∃ t : ℕ, ∃ v w : V, G.Adj u v t ∧ G.Adj u w t
   ∀ x y z : V, ∀ n : ℕ, G.Adj x y n ∧ G.Adj x z n → y = z
+
+def IsHappy (G : LooplessTemporalGraph V) : Prop :=
+  G.IsSimple ∧ G.IsProper
 
 /- The *earliest edge* of *x*, with *y* destination at *n*-/
 def EarliestEdge (G : LooplessTemporalGraph V) (x y : V) (n : ℕ) : Prop :=
@@ -119,7 +104,8 @@ section Order
 def IsSubtempgraph {s : Set V} (G : LooplessTemporalGraph V) (H : LooplessTemporalGraph s) : Prop :=
   ∀ {x y : s} {n : ℕ}, H.Adj x y n → G.Adj ↑x ↑y n
 
-/- This is a Subgraph with the same vertex set-/
+-- TODO: Change to spanning
+/- This is a spanning SubTemporalGraph. -/
 def IsSubtempgraphOnV (G H : LooplessTemporalGraph V) : Prop :=
   ∀ {x y : V} {n : ℕ}, G.Adj x y n → H.Adj x y n
 
@@ -150,11 +136,19 @@ end Order
 
 section NeighborSet
 
+
+-- Neighborhood
 def NeighborSet (G : LooplessTemporalGraph V) (x : V) := {y | ∃ n : ℕ, G.Adj x y n}
 
+@[simp]
 theorem mem_neighborSet (G : LooplessTemporalGraph V) (x y : V) :
     y ∈ G.NeighborSet x ↔ ∃ n : ℕ, G.Adj x y n :=
   Iff.rfl
+
+-- instance NeighborSet.memDecidable (G : LooplessTemporalGraph V) (v : V)
+-- [DecidableRel (λ x y↦ ∃ t, G.Adj x y t)] :
+    -- DecidablePred (· ∈ G.NeighborSet v) :=
+  -- inferInstanceAs <| DecidablePred (Adj G v)
 
 end NeighborSet
 

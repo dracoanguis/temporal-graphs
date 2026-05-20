@@ -17,6 +17,7 @@ inductive TemporalWalk : V → ℕ → V → ℕ → Type u
   | Nonempty {x y : V} {n m : ℕ} (p : G.NonemptyTemporalWalk x n y m) : TemporalWalk x n y m
   deriving DecidableEq
 
+-- Juste pluriels
 def TemporalWalkSet (x y : V) :
     Set (Σ n m : ℕ, G.TemporalWalk x n y m) :=
   { p | ∃ (n m : ℕ), ∃ (tw : TemporalWalk x n y m), p = ⟨n, m, tw⟩ }
@@ -33,12 +34,16 @@ def support {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List V
   | Empty => [x]
   | Nonempty p => p.support
 
+
+--Arcs
 /-- The `darts` of a TemporalWalk is the list of darts (edge with a direction) it visits in
 order. -/
 def darts {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List (V × V × ℕ)
   | Empty => []
   | Nonempty p => p.darts
 
+--Nondecreasing
+@[simp]
 lemma time_monotonicity {x y : V} {n m : ℕ} (tw : G.TemporalWalk x n y m) : n ≤ m := by
   cases tw with
   | Empty => trivial

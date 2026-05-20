@@ -21,35 +21,41 @@ inductive NonemptyTemporalWalk : V → ℕ → V → ℕ → Type u
 
 namespace NonemptyTemporalWalk
 
-/-- The length of a NETemporalWalk is the number of edges along it. -/
+/-- The length of a NonemptyTemporalWalk is the number of edges along it. -/
 def length {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → ℕ
   | Single _ => 1
   | Step p _ _ => 1 + p.length
 
-/-- The `support` of a NETemporalWalk is the list of vertices it visits in order. -/
+/-- The `support` of a NonemptyTemporalWalk is the list of vertices it visits in order. -/
 def support {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → List V
   | Single _ => y :: [x]
   | Step p _ _ => y :: p.support
 
-/-- The `darts` of a NETemporalWalk is the list of darts (edge with a direction) it visits in
+-- Arcs
+/-- The `darts` of a NonemptyTemporalWalk is the list of darts (edge with a direction) it visits in
 order. -/
 def darts {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → List (V × V × ℕ)
   | @Single _ _ x y n _ => [⟨x ,⟨y, n⟩⟩]
   | @Step _ _ _ y z _ _ k p _ _ => ⟨y ,⟨ z, k⟩⟩ :: p.darts
 
-def extend {x y z : V} {n m k l}
+/-- Concatenate two compatible NonemptyTemporalWalks. -/
+def append {x y z : V} {n m k l}
     (p : G.NonemptyTemporalWalk x n y m) (ext : G.NonemptyTemporalWalk y k z l)
     (h : m ≤ k := by decide) :
     G.NonemptyTemporalWalk x n z l :=
   match ext with
   | Single h_edge => p.Step h_edge h
-  | Step p' h_edge h_ord' => Step (extend p p' h) h_edge h_ord'
+  | Step p' h_edge h_ord' => Step (append p p' h) h_edge h_ord'
 
+/-- The reversed version of `NonemptyTemporalWalk.Step`, concatening an edge at the start of a
+walk. -/
 def prepend {x y z : V} {n m k : ℕ}
     (p : G.NonemptyTemporalWalk x n y m) (h : G.Adj z x k) (h' : k ≤ n := by decide) :
     G.NonemptyTemporalWalk z k y m :=
-  extend (Single h) p h'
+  append (Single h) p h'
 
+-- Non-decreasing
+@[simp]
 lemma time_monotonicity {x y : V} {n m : ℕ} (tw : G.NonemptyTemporalWalk x n y m) : n ≤ m := by
   induction tw with
   | Single h => rfl

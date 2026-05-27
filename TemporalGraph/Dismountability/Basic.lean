@@ -529,8 +529,16 @@ lemma existsUnique_vminus_latestEdge {H : SubTemporalGraph G}
   have heq' := h₀ ⟨hle.left, hadj⟩
   exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heq, heq'.symm⟩
 
--- TODO: PERfect matching
--- TODO: impaire → TwoHopDismountable
+-- -- TODO: PERfect matching
+-- lemma earliestEdge_perfectMatching {H : SubTemporalGraph G}
+--     [Finite H.Verts]
+--     [Nontrivial H.Verts]
+--     (h₀ : H.IsSimple)
+--     (h₁ : H.IsClique)
+--     (h₂ : H.IsProper)
+--     (h₃ : ¬H.TwoHopDismountable) :
+--     H.coe.fromEdgeSet
+
 
 -- lemma 3.4
 lemma vzero_empty_of_not_twoHopDismountable {H : SubTemporalGraph G}

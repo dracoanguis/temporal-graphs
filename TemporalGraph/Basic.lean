@@ -85,18 +85,18 @@ def IsProper (G : LooplessTemporalGraph V) : Prop :=
 def IsHappy (G : LooplessTemporalGraph V) : Prop :=
   G.IsSimple ∧ G.IsProper
 
-/- The *earliest edge* of *x*, with *y* destination at *n*-/
+/-- The *earliest edge* of *x*, with *y* destination at *n*-/
 def EarliestEdge (G : LooplessTemporalGraph V) (x y : V) (n : ℕ) : Prop :=
   G.Adj x y n ∧ ∀ z : V, ∀ j : ℕ, G.Adj x z j → n ≤ j
 
-/- The *latest edge* of *x*, with *y* destination at *n*-/
+/-- The *latest edge* of *x*, with *y* destination at *n*-/
 def LatestEdge (G : LooplessTemporalGraph V) (x y : V) (n : ℕ) : Prop :=
   G.Adj x y n ∧ ∀ z : V, ∀ j : ℕ, G.Adj x z j → j ≤ n
 
-/- *y* is an *earliest neighbor* of *x* -/
+/-- *y* is an *earliest neighbor* of *x* -/
 def EarliestNeighbor (G : LooplessTemporalGraph V) (x y : V) : Prop := ∃ n : ℕ, G.EarliestEdge x y n
 
-/- *y* is a *latest neighbor* of *x* -/
+/-- *y* is a *latest neighbor* of *x* -/
 def LatestNeighbor (G : LooplessTemporalGraph V) (x y : V) : Prop := ∃ n : ℕ, G.LatestEdge x y n
 
 section Order
@@ -104,21 +104,21 @@ section Order
 def IsSubtempgraph {s : Set V} (G : LooplessTemporalGraph V) (H : LooplessTemporalGraph s) : Prop :=
   ∀ {x y : s} {n : ℕ}, H.Adj x y n → G.Adj ↑x ↑y n
 
--- TODO: Change to spanning
-/- This is a spanning SubTemporalGraph. -/
-def IsSubtempgraphOnV (G H : LooplessTemporalGraph V) : Prop :=
+/-- This is a spanning SubTemporalGraph. -/
+def IsSpanningSubTemporalGraph (G H : LooplessTemporalGraph V) : Prop :=
   ∀ {x y : V} {n : ℕ}, G.Adj x y n → H.Adj x y n
 
 instance : LE (LooplessTemporalGraph V) :=
-  ⟨IsSubtempgraphOnV⟩
+  ⟨IsSpanningSubTemporalGraph⟩
 
 lemma le_iff_adj {G H : LooplessTemporalGraph V} :
     G ≤ H ↔ ∀ x y : V, ∀ n : ℕ, G.Adj x y n → H.Adj x y n :=
   .rfl
 
 @[simp]
-theorem isSubtempgraphOnV_eq_le :
-    (IsSubtempgraphOnV : LooplessTemporalGraph V -> LooplessTemporalGraph V -> Prop) = (· ≤ ·) :=
+theorem isSpanningSubTemporalGraph_eq_le :
+    (IsSpanningSubTemporalGraph : LooplessTemporalGraph V -> LooplessTemporalGraph V -> Prop) =
+    (· ≤ ·) :=
   rfl
 
 instance : Bot (LooplessTemporalGraph V) where
@@ -134,7 +134,7 @@ instance : Bot (LooplessTemporalGraph V) where
 
 end Order
 
-section NeighborSet
+section NeighborhoodSet
 
 
 def NeighborhoodSet (G : LooplessTemporalGraph V) (x : V) := {y | ∃ n : ℕ, G.Adj x y n}
@@ -149,6 +149,38 @@ theorem mem_neighborSet (G : LooplessTemporalGraph V) (x y : V) :
     -- DecidablePred (· ∈ G.NeighborSet v) :=
   -- inferInstanceAs <| DecidablePred (Adj G v)
 
-end NeighborSet
+end NeighborhoodSet
+
+section EdgeSet
+
+/-- The set of every edges in G. -/
+def EdgeSet (G : LooplessTemporalGraph V) : Set ((Sym2 V) × ℕ) :=
+  {(p, n) | ∃ x y : p, G.Adj x y n}
+
+@[simp]
+theorem mem_edgeSet (G : LooplessTemporalGraph V) {x y : V} {n : ℕ} :
+    (s(x,y), n) ∈ G.EdgeSet ↔ G.Adj x y n := by
+  apply Iff.intro
+  · intro ⟨u, v, hadj⟩
+    rcases Sym2.mem_iff.mp u.prop with heq | heq
+    <;> rw [heq] at hadj
+    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_left hadj.ne'
+      rw [heq'] at hadj
+      exact hadj
+    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_right hadj.ne'
+      rw [heq'] at hadj
+      exact hadj.symm
+  · intro hadj
+    have hin : x ∈ s(x,y) := Sym2.mem_iff.mpr <| Or.inl <| Eq.refl x
+    have hin' : y ∈ s(x,y) := Sym2.mem_iff.mpr <| Or.inr <| Eq.refl y
+    exact ⟨⟨x, hin⟩, ⟨⟨y, hin'⟩, hadj⟩⟩
+
+end EdgeSet
+
+section Size
+
+def size (G : LooplessTemporalGraph V) [Fintype G.EdgeSet] := Fintype.card G.EdgeSet
+
+end Size
 
 end LooplessTemporalGraph

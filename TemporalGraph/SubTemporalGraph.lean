@@ -69,16 +69,6 @@ protected def coe (H : SubTemporalGraph G) : LooplessTemporalGraph H.Verts where
   symm n _ _ h := H.symm n h
   loopless _ := ⟨fun _ h ↦ G.irrefl (H.adj_sub h)⟩
 
--- Rajouter attention pas testé
--- Seems a bit weird for it to work should check on site
--- instance {V : Type u} {G : LooplessTemporalGraph V} {G' : SubTemporalGraph G}
--- : Coe (SubTemporalGraph G) (LooplessTemporalGraph G'.Verts) where
-  -- coe H := {
-    -- Adj v w t := H.Adj v w t
-    -- symm t _ _ h := H.symm t h
-    -- loopless _ := ⟨fun _ h ↦ G.irrefl (H.adj_sub h)⟩
-  -- }
-
 @[simp]
 theorem Adj.adj_sub' (H : SubTemporalGraph G) (x y : H.Verts) (n : ℕ) (h : H.Adj x y n) :
     G.Adj x y n :=
@@ -601,56 +591,6 @@ theorem mem_edgeSet (H : SubTemporalGraph G) {x y : V} {n : ℕ} :
     have hin' : y ∈ s(x,y) := Sym2.mem_iff.mpr <| Or.inr <| Eq.refl y
     exact ⟨⟨x, hin⟩, ⟨⟨y, hin'⟩, hadj⟩⟩
 
--- instance {H : SubTemporalGraph G} [h₀ : Finite V] [Nonempty V] {h₁ : H.IsSimple} :
---     Finite H.EdgeSet := by
---   rw [Set.finite_coe_iff]
---   have : Finite (Set (V ⨯ V)) := Prod.finite_iff.mpr ⟨h₀, h₀⟩ |> Set.fini
---   · intro q hq
---     simp
---     have ⟨x, y, hadj⟩ := hq
---     have hqs := q.1.mem_and_mem_iff hadj.adj_sub.ne |>.mp ⟨x.prop, y.prop⟩
---     have hin : (Quot.out q.1).1 ∈ q.1 := Sym2.out_fst_mem q.1
---     have hin₂ : (Quot.out q.1).2 ∈ q.1 := Sym2.out_snd_mem q.1
---     rw [hqs] at hin hin₂
---     have := q.1.out.
---   · skip
---     intro q hq q' hq' heq
---     simp_all
---     have ⟨x, y, hadj⟩ := hq
---     have hqs := q.1.mem_and_mem_iff hadj.adj_sub.ne |>.mp ⟨x.prop, y.prop⟩
---     have hin : (Quot.out q.1).1 ∈ q.1 := Sym2.out_fst_mem q.1
---     have hin₂ : (Quot.out q.1).2 ∈ q.1 := Sym2.out_snd_mem q.1
---     rw [hqs] at hin hin₂
---     have ⟨x', y', hadj'⟩ := hq'
---     have hq's := q'.1.mem_and_mem_iff hadj'.adj_sub.ne |>.mp ⟨x'.prop, y'.prop⟩
---     have hin' : (Quot.out q'.1).1 ∈ q'.1 := Sym2.out_fst_mem q'.1
---     have hin₂' : (Quot.out q'.1).2 ∈ q'.1 := Sym2.out_snd_mem q'.1
---     rw [hq's] at hin' hin₂'
---     rcases And.intro (Sym2.mem_iff.mp hin) (Sym2.mem_iff.mp hin')
---       with ⟨(heq_out | heq_out), (heq_out' | heq_out')⟩
---     · skip
---       have heq' := heq
---       rw [hqs, heq_out, hq's, heq_out'] at heq'
---       rw [←heq'] at hq's
---       rcases And.intro (Sym2.mem_iff.mp hin₂) (Sym2.mem_iff.mp hin₂')
---         with ⟨(heq_out₂ | heq_out₂), (heq_out₂' | heq_out₂')⟩
---       · skip --impossible
---       · skip --impossible
---       · skip --impossible
---       · skip
-
---     · skip
---     · skip
---     · skip
-
-
---     suffices heq' : q.2 = q'.2 by
---       rw [Prod.eq_iff_fst_eq_snd_eq]
---       refine ⟨?_, heq'⟩
---       have := q.1.eq_of_ne_mem hadj.adj_sub.ne x.prop y.prop
---       rw [this] at heq
---   · exact h₀
-
 @[simp]
 lemma edgeSet_le {H : SubTemporalGraph G} {H' : SubTemporalGraph G} (h₀ : H ≤ H') :
     H.EdgeSet ⊆ H'.EdgeSet := by
@@ -726,8 +666,34 @@ instance {H : SubTemporalGraph G} {s : Set V} [h₀ : Finite H.EdgeSet] [Finite 
     Finite (H.addVerts s).EdgeSet := by
   simp only [addVerts_edgeSet, h₀]
 
+lemma spanningCoe_edgeSet_eq {H : SubTemporalGraph G} :
+    H.EdgeSet = H.spanningCoe.EdgeSet := by
+  simp [EdgeSet, LooplessTemporalGraph.EdgeSet]
+
 def FootprintEdgeSet (H : SubTemporalGraph G) : Set (Sym2 V) :=
   {p | ∃ n : ℕ, ∃ x y : p, H.Adj x y n}
+
+theorem FootprintEdgeSet_eq {H : SubTemporalGraph G} :
+    H.spanningCoe.Footprint.edgeSet = H.FootprintEdgeSet := by
+  simp only [Footprint, spanningCoe_Adj, FootprintEdgeSet, Subtype.exists, exists_prop]
+  ext a
+  apply Iff.intro
+  · intro ha
+    obtain ⟨x, y⟩ := a
+    simp only [SimpleGraph.mem_edgeSet, Set.mem_setOf_eq, Sym2.mem_iff, exists_eq_or_imp,
+      ↓existsAndEq, true_and, SubTemporalGraph.irrefl, false_or, or_false] at ha ⊢
+    obtain ⟨n, hadj⟩ := ha
+    use n
+    apply Or.inl hadj
+  · intro ha
+    obtain ⟨x, y⟩ := a
+    simp only [Set.mem_setOf_eq, Sym2.mem_iff, exists_eq_or_imp, ↓existsAndEq, true_and,
+      SubTemporalGraph.irrefl, false_or, or_false, SimpleGraph.mem_edgeSet] at ha ⊢
+    obtain ⟨n, hadj⟩ := ha
+    use n
+    apply hadj.elim
+    · intro _ ; trivial
+    · intro h ; exact h.symm
 
 def EdgeSetToFootprintEdgeSet (H : SubTemporalGraph G) : H.EdgeSet → H.FootprintEdgeSet :=
   fun x ↦ ⟨x.val.fst, ⟨x.val.snd, by
@@ -765,8 +731,6 @@ lemma edgeSetToFootprintEdgeSet_bijective (H : SubTemporalGraph G) (h₀ : H.IsS
     Function.Bijective H.EdgeSetToFootprintEdgeSet :=
   ⟨H.edgeSetToFootprintEdgeSet_injective h₀, H.edgeSetToFootprintEdgeSet_surjective⟩
 
--- TODO: Link to Footprint
-
 end EdgeSet
 
 section Size
@@ -783,22 +747,12 @@ lemma size_of_simple (H : SubTemporalGraph G)
   apply Fintype.card_of_bijective (f := H.EdgeSetToFootprintEdgeSet)
   exact H.edgeSetToFootprintEdgeSet_bijective h₀
 
--- lemma card_clique (H : SubTemporalGraph G)
---     [Fintype H.Verts]
---     [Fintype V]
---     [Fintype H.EdgeSet]
---     (h₀ : H.IsClique)
---     (h₁ : H.IsSimple) :
---     Fintype.card H.EdgeSet = Fintype.card (Sym2 H.Verts) := by
---   apply Fintype.card_of_bijective (f := fun x : H.EdgeSet ↦ x.1)
-
-
--- lemma clique_card (H : SubTemporalGraph G)
---     [Fintype H.Verts]
---     [Fintype H.EdgeSet]
---     (h₀ : H.IsClique)
---     (h₁ : H.IsSimple) :
---     Fintype.card H.EdgeSet = (Fintype.card H.Verts).choose 2 := by
+lemma size_of_spanningCoe (H : SubTemporalGraph G)
+    [Fintype H.EdgeSet]
+    [Fintype H.spanningCoe.EdgeSet] :
+    H.size = H.spanningCoe.size := by
+  unfold size LooplessTemporalGraph.size
+  simp only [spanningCoe_edgeSet_eq]
 
 theorem addEdge_size (H : SubTemporalGraph G) {x y : V} {n : ℕ}
     {h₀ : G.Adj x y n}
@@ -806,7 +760,7 @@ theorem addEdge_size (H : SubTemporalGraph G) {x y : V} {n : ℕ}
     {h₂ : ¬H.Adj x y n}
     [Fintype H.EdgeSet] :
     (H.addEdge h₀ h₁).size = H.size + 1 := by
-  simp [size, addEdge_edgeSet, h₂]
+  simp only [size, addEdge_edgeSet, mem_edgeSet, h₂, not_false_eq_true, Set.card_insert]
 
 @[simp]
 theorem addEdge_size_le (H : SubTemporalGraph G) {x y : V} {n : ℕ}
@@ -833,7 +787,7 @@ theorem addVerts_size {H : SubTemporalGraph G} {s : Set V}
     [Fintype H.EdgeSet]
     [Fintype (H.addVerts s).EdgeSet] :
     Fintype.card (H.addVerts s).EdgeSet = Fintype.card H.EdgeSet := by
-  simp [addVerts_edgeSet]
+  simp only [addVerts_edgeSet]
 
 end Size
 
@@ -928,40 +882,53 @@ theorem toSubgraph.isSpanning (H : LooplessTemporalGraph V) (h : H ≤ G) :
 
 def toSubgraphTop : G.SubTemporalGraph := ⊤
 
--- TODO: Ajouter equiv avec nouveau edgeSet
-
--- If edges are bigger than `G` then they are ignored
-def fromEdgeSet (G : LooplessTemporalGraph V) (s : Set (V × V × ℕ)) : SubTemporalGraph G where
-  Verts := {x | ∃ a ∈ s, x = a.1 ∨ x = a.2.1}
-  Adj x y n := ∃ a ∈ s, ((x = a.1 ∧ y = a.2.1) ∨ (x = a.2.1 ∧ y = a.1)) ∧ n = a.2.2 ∧ G.Adj x y n
+/-- Create a `SubTemporalGraph G` from a set of edges, the edges not in `G.EdgeSet` are ignored. -/
+@[simps]
+def fromEdgeSet (G : LooplessTemporalGraph V) (s : Set ((Sym2 V) × ℕ)) : SubTemporalGraph G where
+  Verts := {x | ∃ (p : s) , x ∈ p.1.1 }
+  Adj x y n := ∃ (a : s), x ∈ a.1.1 ∧ y ∈ a.1.1 ∧ n = a.1.2 ∧ G.Adj x y n
 
   adj_sub h := by
-    have ⟨a, h⟩ := h
+    have ⟨_, h⟩ := h
     exact h.2.2.2
 
   edge_vert h := by
     obtain ⟨a, h⟩ := h
-    simp only [Prod.exists, exists_and_right, Set.mem_setOf_eq]
-    use a.1, a.2.1
-    constructor
-    · use a.2.2 ; exact h.1
-    · apply h.2.1.elim
-    <;> intro h'
-      · exact Or.inl h'.1
-      · exact Or.inr h'.1
+    use a
+    exact h.1
 
   symm _ _ _ h := by
-    simp_all only [Prod.exists, ↓existsAndEq, true_and]
-    have ⟨x, y, h⟩ := h
-    use x, y
-    constructor
-    · exact h.1
-    · constructor
-      · apply h.2.1.elim
-        <;> intro h'
-        · exact Or.inr h'.symm
-        · exact Or.inl h'.symm
-      · exact h.2.2.symm
+    simp only [Subtype.exists, exists_and_left, exists_prop, Prod.exists, ↓existsAndEq,
+      true_and] at ⊢ h
+    obtain ⟨a, h⟩ := h
+    use a
+    simp only [h, h.2.2.2.symm, and_self]
+
+@[simp]
+theorem fromEdgeSet_eq {G : LooplessTemporalGraph V} {s : Set ((Sym2 V) × ℕ)} (h₀ : s ⊆ G.EdgeSet) :
+    (G.fromEdgeSet s).EdgeSet = s := by
+  simp only [SubTemporalGraph.EdgeSet, fromEdgeSet, Subtype.exists, exists_prop, Prod.exists,
+    exists_and_right, ↓existsAndEq, true_and]
+  ext a
+  constructor
+  · simp only [Set.mem_setOf_eq, forall_exists_index, and_imp]
+    intro x hx y hy b hb hbx hby hG
+    have heq : a.1=b := by
+      apply a.1.eq_of_ne_mem hG.ne
+      <;> trivial
+    rwa [←heq] at hb
+  · intro ha
+    simp only [Set.mem_setOf_eq]
+    obtain ⟨⟨x, y⟩, n⟩ := a
+    use x
+    simp only [Sym2.mem_iff, true_or, exists_eq_or_imp, LooplessTemporalGraph.irrefl, and_false,
+      exists_false, ↓existsAndEq, true_and, false_or]
+    use s(x,y)
+    simp only [Sym2.mem_iff, true_or, or_true, ha, true_and]
+    rw [←mem_edgeSet]
+    have : (s(x,y), n) ∈ s := by simp only [ha]
+    apply Set.mem_of_subset_of_mem h₀ this
+
 
 end SubgraphProps
 

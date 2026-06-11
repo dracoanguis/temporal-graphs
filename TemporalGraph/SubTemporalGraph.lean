@@ -140,8 +140,9 @@ lemma isSimple_iff_coe {H : SubTemporalGraph G} : H.IsSimple ↔ H.coe.IsSimple 
 def IsClique (H : SubTemporalGraph G) : Prop := ∀ (x y : H.Verts), x ≠ y → ∃ n, H.Adj x y n
 
 @[simp]
-lemma isClique_iff_coe {H : SubTemporalGraph G} : H.IsClique ↔ H.coe.IsComplete := by
-  simp only [IsClique, ne_eq, Subtype.forall, Subtype.mk.injEq, IsComplete, coe_Adj]
+lemma isClique_iff_coe {H : SubTemporalGraph G} : H.IsClique ↔ H.coe.IsClique := by
+  simp only [IsClique, ne_eq, Subtype.forall, Subtype.mk.injEq, LooplessTemporalGraph.IsClique,
+    coe_Adj]
 
 def IsProper (H : SubTemporalGraph G) : Prop :=
   ∀ {x y z : V} {n : ℕ}, H.Adj x y n ∧ H.Adj x z n → y=z

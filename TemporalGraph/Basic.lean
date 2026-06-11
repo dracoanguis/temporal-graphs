@@ -76,8 +76,13 @@ def Footprint (G : LooplessTemporalGraph V) : SimpleGraph V :=
 def IsSimple (G : LooplessTemporalGraph V) : Prop :=
   ∀ (x y : V) (n m : ℕ), G.Adj x y n ∧ G.Adj x y m → n=m
 
-def IsComplete (G : LooplessTemporalGraph V) : Prop :=
+def IsClique (G : LooplessTemporalGraph V) : Prop :=
   ∀ x y : V, x ≠ y → ∃ t, G.Adj x y t
+
+lemma isClique_iff_footprint_isComplete {G : LooplessTemporalGraph V} :
+    G.IsClique ↔ (Footprint G).IsClique Set.univ := by
+  simp only [IsClique, ne_eq, SimpleGraph.IsClique, Set.Pairwise, Set.mem_univ, Footprint,
+    forall_const]
 
 def IsProper (G : LooplessTemporalGraph V) : Prop :=
   ∀ x y z : V, ∀ n : ℕ, G.Adj x y n ∧ G.Adj x z n → y = z
@@ -85,11 +90,11 @@ def IsProper (G : LooplessTemporalGraph V) : Prop :=
 def IsHappy (G : LooplessTemporalGraph V) : Prop :=
   G.IsSimple ∧ G.IsProper
 
-/-- The *earliest edge* of *x*, with *y* destination at *n*-/
+/-- The *earliest edge* of *x*, with *y* destination at *n* -/
 def EarliestEdge (G : LooplessTemporalGraph V) (x y : V) (n : ℕ) : Prop :=
   G.Adj x y n ∧ ∀ z : V, ∀ j : ℕ, G.Adj x z j → n ≤ j
 
-/-- The *latest edge* of *x*, with *y* destination at *n*-/
+/-- The *latest edge* of *x*, with *y* destination at *n* -/
 def LatestEdge (G : LooplessTemporalGraph V) (x y : V) (n : ℕ) : Prop :=
   G.Adj x y n ∧ ∀ z : V, ∀ j : ℕ, G.Adj x z j → j ≤ n
 

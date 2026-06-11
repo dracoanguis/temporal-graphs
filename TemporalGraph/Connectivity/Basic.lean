@@ -53,9 +53,9 @@ def IsSpanner {s : Set V} (G : LooplessTemporalGraph V) (G' : LooplessTemporalGr
 def IsTCSpanner {s : Set V} (G : LooplessTemporalGraph V) (G' : LooplessTemporalGraph s) : Prop :=
   G.IsSpanner G' ∧ G'.TemporallyConnected
 
-theorem temporallyConnected_of_complete (G : LooplessTemporalGraph V) :
-    G.IsComplete → G.TemporallyConnected := by
-  unfold IsComplete TemporallyConnected
+theorem temporallyConnected_of_isClique (G : LooplessTemporalGraph V) :
+    G.IsClique → G.TemporallyConnected := by
+  unfold IsClique TemporallyConnected
   intro h x y
   have h' := h x y
   by_cases hdiff : x ≠ y

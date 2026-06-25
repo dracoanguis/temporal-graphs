@@ -514,23 +514,91 @@ lemma latestEdge_exists_of_nonempty_finite_incidenceSet {H : SubTemporalGraph G}
     simp at hle
     trivial
 
+lemma coe_earliestEdge_of_graph_earliestEdge {H : SubTemporalGraph G}
+    (h₀ : G.EarliestEdge x y n) (h₁ : H.Adj x y n) :
+    H.coe.EarliestEdge ⟨x, H.edge_vert h₁⟩ ⟨y, H.edge_vert h₁.symm⟩ n := by
+  constructor
+  · exact h₁
+  · rw [LooplessTemporalGraph.EarliestEdge] at h₀
+    rcases h₀ with ⟨hαβ, hmin⟩
+    intro z m hadj
+    cases z with
+    | mk z hz => exact hmin z m <| H.adj_sub hadj
+
+lemma coe_latestEdge_of_graph_latestEdge {H : SubTemporalGraph G}
+    (h₀ : G.LatestEdge x y n) (h₁ : H.Adj x y n) :
+    H.coe.LatestEdge ⟨x, H.edge_vert h₁⟩ ⟨y, H.edge_vert h₁.symm⟩ n := by
+  constructor
+  · exact h₁
+  · rw [LooplessTemporalGraph.LatestEdge] at h₀
+    rcases h₀ with ⟨_, hmin⟩
+    intro z m hadj
+    cases z with
+    | mk z hz => exact hmin z m <| H.adj_sub hadj
+
 @[simp]
 lemma coe_earliestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
     (h₀ : H.EarliestEdge x y n) :
     H.coe.EarliestEdge x y n := by
   constructor
-  · simp [h₀.left]
+  · exact h₀.left.coe
   · intro _ _ h
     exact h₀.right _ _ h
+
+@[simp]
+lemma earliestEdge_of_coe {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
+    (h₀ : H.coe.EarliestEdge x y n) :
+    H.EarliestEdge x y n := by
+  constructor
+  · exact h₀.left
+  · intro _ _ h
+    exact h₀.right _ _ h.coe
+
+lemma earliestEdge_of_graph_earliestEdge {H : SubTemporalGraph G}
+    (h₀ : G.EarliestEdge x y n) (h₁ : H.Adj x y n) :
+    H.EarliestEdge x y n := by
+  have h := coe_earliestEdge_of_graph_earliestEdge h₀ h₁
+  exact earliestEdge_of_coe h
+
+lemma earliestEdge_of_ge {H H' : SubTemporalGraph G} (h₀ : H ≤ H') (h₁ : H'.EarliestEdge x y n)
+    (h₂ : H.Adj x y n) :
+    H.EarliestEdge x y n := by
+  constructor
+  · trivial
+  · intro _ _ h
+    exact h₁.right _ _ <| h₀.right h
 
 @[simp]
 lemma coe_latestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
     (h₀ : H.LatestEdge x y n) :
     H.coe.LatestEdge x y n := by
   constructor
-  · simp [h₀.left]
+  · exact h₀.left.coe
   · intro _ _ h
     exact h₀.right _ _ h
+
+@[simp]
+lemma latestEdge_of_coe {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
+    (h₀ : H.coe.LatestEdge x y n) :
+    H.LatestEdge x y n := by
+  constructor
+  · exact h₀.left
+  · intro _ _ h
+    exact h₀.right _ _ h.coe
+
+lemma latestEdge_of_graph_latestEdge {H : SubTemporalGraph G}
+    (h₀ : G.LatestEdge x y n) (h₁ : H.Adj x y n) :
+    H.LatestEdge x y n := by
+  have h := coe_latestEdge_of_graph_latestEdge h₀ h₁
+  exact latestEdge_of_coe h
+
+lemma latestEdge_of_ge {H H' : SubTemporalGraph G} (h₀ : H ≤ H') (h₁ : H'.LatestEdge x y n)
+    (h₂ : H.Adj x y n) :
+    H.LatestEdge x y n := by
+  constructor
+  · trivial
+  · intro _ _ h
+    exact h₁.right _ _ <| h₀.right h
 
 end EdgeProps
 
@@ -597,6 +665,20 @@ lemma edgeSet_le {H : SubTemporalGraph G} {H' : SubTemporalGraph G} (h₀ : H �
     H.EdgeSet ⊆ H'.EdgeSet := by
   intro _ ⟨_, _, h⟩
   exact ⟨_, _, h₀.right h⟩
+
+lemma le_iff_edgeSet_and_verts {H H' : SubTemporalGraph G} :
+    H ≤ H' ↔ H.EdgeSet ⊆ H'.EdgeSet ∧ H.Verts ⊆ H'.Verts := by
+  constructor
+  · intro h
+    constructor
+    · apply edgeSet_le h
+    · exact h.left
+  · intro h
+    constructor
+    · exact h.right
+    · intro _ _ _ hadj
+      rw [←mem_edgeSet] at hadj ⊢
+      apply Set.mem_of_subset_of_mem h.left hadj
 
 @[simp]
 lemma addEdge_edgeSet (H : SubTemporalGraph G) {x y : V} {n : ℕ}
@@ -812,7 +894,7 @@ instance {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
   coe := NonemptyTemporalWalk.lift_walk
 
 @[coe]
-protected def lift_subTemporalTraph_walk {H : SubTemporalGraph G} {H' : SubTemporalGraph G}
+protected def lift_subTemporalGraph_walk {H : SubTemporalGraph G} {H' : SubTemporalGraph G}
     {x y : H.Verts}
     {n m : ℕ}
     (h : H ≤ H') :
@@ -821,7 +903,7 @@ protected def lift_subTemporalTraph_walk {H : SubTemporalGraph G} {H' : SubTempo
       ⟨y, Set.mem_of_subset_of_mem h.left y.prop⟩ m
   | Single h' => Single (h.right h')
   | Step p h' hle =>
-    Step (NonemptyTemporalWalk.lift_subTemporalTraph_walk h p)
+    Step (p.lift_subTemporalGraph_walk h)
       (h.right h').coe
       hle
 
@@ -837,6 +919,16 @@ protected def lift_spanningCoe_walk {H : SubTemporalGraph G} {x y : H.Verts} {n 
 instance {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
     Coe (H.spanningCoe.NonemptyTemporalWalk x n y m) (H.coe.NonemptyTemporalWalk x n y m) where
   coe p := p.lift_spanningCoe_walk
+
+@[coe]
+protected def lift_walk_spanningCoe {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
+    H.coe.NonemptyTemporalWalk x n y m → H.spanningCoe.NonemptyTemporalWalk ↑x n ↑y m
+  | Single h => Single h
+  | Step p h h' => Step p.lift_walk_spanningCoe h h'
+
+instance {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
+    Coe (H.coe.NonemptyTemporalWalk x n y m) (H.spanningCoe.NonemptyTemporalWalk ↑x n ↑y m) where
+  coe p := p.lift_walk_spanningCoe
 
 end NonemptyTemporalWalk
 
@@ -861,7 +953,34 @@ protected def lift_subtempgraph_walk' {H' : SubTemporalGraph G} {x y : H.Verts} 
       ⟨x, Set.mem_of_subset_of_mem h.left x.prop⟩ n
       ⟨y, Set.mem_of_subset_of_mem h.left y.prop⟩ m
   | Empty => Empty
-  | Nonempty p => Nonempty <| p.lift_subTemporalTraph_walk h
+  | Nonempty p => Nonempty <| p.lift_subTemporalGraph_walk h
+
+@[coe]
+protected def lift_spanningCoe_walk {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ}
+    (w : H.spanningCoe.TemporalWalk ↑x n ↑y m) : H.coe.TemporalWalk x n y m := by
+  obtain ⟨xv, hx⟩ := x
+  obtain ⟨yv, hy⟩ := y
+  simp only at w ⊢
+  cases w with
+  | Empty =>
+    exact .Empty
+  | Nonempty p =>
+    exact .Nonempty p.lift_spanningCoe_walk
+
+instance {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
+    Coe (H.spanningCoe.TemporalWalk x n y m) (H.coe.TemporalWalk x n y m) where
+  coe p := p.lift_spanningCoe_walk
+
+@[coe]
+protected def lift_walk_spanningCoe {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
+    H.coe.TemporalWalk x n y m → H.spanningCoe.TemporalWalk ↑x n ↑y m
+  | Empty => Empty
+  | Nonempty p => Nonempty p.lift_walk_spanningCoe
+
+instance {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
+    Coe (H.coe.TemporalWalk x n y m) (H.spanningCoe.TemporalWalk ↑x n ↑y m) where
+  coe p := p.lift_walk_spanningCoe
+
 
 end TemporalWalk
 

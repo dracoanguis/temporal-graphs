@@ -30,6 +30,14 @@ lemma dismount_clique (H : SubTemporalGraph G) (x : V) (h₀ : H.IsClique) :
   simp only [induce_Adj, Set.mem_diff, hy', Set.mem_singleton_iff, true_and, hz', hadj, and_true]
   exact ⟨hy.2, hz.2⟩
 
+@[simp]
+lemma dismount_verts {H : SubTemporalGraph G} {x : V} : (H.dismount x).Verts = H.Verts \ {x} := by
+  simp only [induce_Verts]
+
+@[simp]
+lemma dismount_le {H : SubTemporalGraph G} {x : V} : (H.dismount x) ≤ H := by
+  simp only [deleteVerts_le]
+
 end Dismount
 
 section Mount
@@ -146,6 +154,60 @@ theorem mount_size {H : SubTemporalGraph G} [Fintype H.EdgeSet] {x : V} {y z : H
       ≤ Nat.card H.EdgeSet + Nat.card ({(s(↑z, x), m), (s(↑y, x), n)} : Set ((Sym2 V) × ℕ)) := by
     simp only [Set.card_union_le]
   lia
+
+theorem dismountability {H H' : SubTemporalGraph G} {x : H.Verts} {y z : H'.Verts} {n m : ℕ}
+    (h₀ : H.IsClique)
+    (h₁ : G.Adj y x n)
+    (h₂ : G.Adj z x m)
+    (h₃ : H.EarliestEdge y x n)
+    (h₄ : H.LatestEdge z x m)
+    (h₅ : H'.IsSpannerOf (H.dismount x)) :
+    H'.mount x h₁ h₂ |>.IsSpannerOf H := by
+  have heq : (H'.mount x h₁ h₂).Verts = H.Verts := by simp only [mount_verts, h₅.right.choose,
+    induce_Verts, Set.union_singleton, Subtype.coe_prop, Set.insert_diff_self_of_mem]
+  have hle : H'.mount x h₁ h₂ ≤ H := by
+    apply le_iff_edgeSet_and_verts.mpr
+    constructor
+    · rw [mount_edgeSet]
+      have hsplit : H.EdgeSet = H.EdgeSet ∪ H.EdgeSet := by simp
+      rw [hsplit]
+      apply Set.union_subset_union
+      · apply edgeSet_le
+        apply le_trans h₅.left dismount_le
+      · have : (s(↑z, ↑x), m) ∈ H.EdgeSet := by
+          rw [mem_edgeSet]
+          apply h₄.left
+        have : (s(↑y, ↑x), n) ∈ H.EdgeSet := by
+          rw [mem_edgeSet]
+          apply h₃.left
+        grind
+    · simp only [mount_verts, h₅.right.choose, induce_Verts, Set.union_singleton, Subtype.coe_prop,
+      Set.insert_diff_self_of_mem, subset_refl]
+  have htc : (H'.mount x h₁ h₂).TemporallyConnected := by
+    apply mount_tc
+    · apply earliestEdge_of_ge _ h₃
+      · symm
+        apply mount_edge
+      · trivial
+    · apply latestEdge_of_ge _ h₄
+      · apply mount_edge'
+      · trivial
+    · have htc : H.dismount x |>.IsClique := by
+        apply dismount_clique
+        exact h₀
+      rw [isClique_iff_coe] at htc
+      apply temporallyConnected_of_isClique at htc
+      rw [←temporallyConnected_iff] at htc
+      unfold TemporallyConnected at htc ⊢
+      intro u v
+      have := htc ⟨u, by grind only [h₅.right.choose]⟩ ⟨v, by grind only [h₅.right.choose]⟩
+      obtain ⟨_, h⟩ := h₅.right
+      exact h _ _ this
+  constructor
+  · trivial
+  · use heq
+    intro u v _
+    simpa using htc ⟨u, by grind only⟩ ⟨v, by grind only⟩
 
 end Mount
 

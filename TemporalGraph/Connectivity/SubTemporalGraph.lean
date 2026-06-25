@@ -16,6 +16,17 @@ namespace SubTemporalGraph
 @[simp]
 def Reachable (H : SubTemporalGraph G) (x y : H.Verts) : Prop := H.coe.Reachable x y
 
+@[simp]
+lemma reachable_iff_spanningCoe {H : SubTemporalGraph G} {x y : H.Verts} :
+    H.Reachable x y ↔ H.spanningCoe.Reachable x y := by
+  unfold Reachable
+  constructor
+  · intro ⟨n, m, ⟨w⟩⟩
+    exact ⟨n, m, ⟨↑w⟩⟩
+  · intro ⟨n, m, ⟨w⟩⟩
+    exact ⟨n, m, ⟨↑w⟩⟩
+
+
 /-- A `SubTemporalGraph` is a spanner of it's original graph `G`, if it's spanning and every
 vertices as the same Reachability as in `G`. -/
 def IsSpanner (H : SubTemporalGraph G) : Prop :=
@@ -37,7 +48,9 @@ lemma isSpanner_iff_coe {H : SubTemporalGraph G} : H.IsSpanner ↔ G.IsSpanner H
 /-- A `SubTempGraph` `H` is a spanner of another one `H'` if they have the same vertices and
 everything reachable in `H'` is also in `H`. -/
 def IsSpannerOf (H : SubTemporalGraph G) (H' : SubTemporalGraph G) : Prop :=
-  H.Verts = H'.Verts ∧  ∀ u v , H'.Reachable u v → H.spanningCoe.Reachable u v
+  H ≤ H' ∧ ∃ heq : H.Verts = H'.Verts, ∀ u v : H'.Verts , H'.Reachable u v →
+  H.Reachable ⟨u, by simp only [heq, Subtype.coe_prop]⟩
+              ⟨v, by simp only [heq, Subtype.coe_prop]⟩
 
 /-- Every vertex can reach every vertex in the `SubTemporalGraph`. -/
 def TemporallyConnected (H : SubTemporalGraph G) : Prop := ∀ x y : H.Verts , H.Reachable x y
@@ -55,7 +68,17 @@ lemma temporallyConnected_iff {H : SubTemporalGraph G} :
     rw [LooplessTemporalGraph.TemporallyConnected] at h
     trivial
 
-/-- The `SubTemporalGrpah` `H` is a temporally connected spanner of `G`
+lemma spanningCoe_temporallyConnected_of_spanning_temporallyConnected {H : SubTemporalGraph G} :
+    H.TemporallyConnected ∧ H.IsSpanning → H.spanningCoe.TemporallyConnected := by
+  unfold TemporallyConnected IsSpanning
+  intro h
+  unfold LooplessTemporalGraph.TemporallyConnected
+  have h' := h.left
+  intro x y
+  simp only [reachable_iff_spanningCoe] at h'
+  apply h' ⟨x, h.right x⟩ ⟨y, h.right y⟩
+
+/-- The `SubTemporalGraph` `H` is a temporally connected spanner of `G`
 if it is spanning and it is temporally connected. -/
 def IsTCSpanner (H : SubTemporalGraph G) : Prop :=
   (H.IsSpanning) ∧ (H.TemporallyConnected)

@@ -270,6 +270,22 @@ lemma twoHopMount_edge' {H : SubTemporalGraph G} {y y' z z' : H.Verts} {n n' m m
     (H.twoHopMount x h₀ h₁ h₂ h₃).Adj x z' m' := by
   simp [←mem_edgeSet]
 
+lemma twoHopMount_edge'' {H : SubTemporalGraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x : V}
+    {h₀ : G.Adj x y' n'}
+    {h₁ : G.Adj y' y n}
+    {h₂ : G.Adj x z' m'}
+    {h₃ : G.Adj z' z m} :
+    (H.twoHopMount x h₀ h₁ h₂ h₃).Adj y' y n := by
+  simp [←mem_edgeSet]
+
+lemma twoHopMount_edge''' {H : SubTemporalGraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x : V}
+    {h₀ : G.Adj x y' n'}
+    {h₁ : G.Adj y' y n}
+    {h₂ : G.Adj x z' m'}
+    {h₃ : G.Adj z' z m} :
+    (H.twoHopMount x h₀ h₁ h₂ h₃).Adj z' z m := by
+  simp [←mem_edgeSet]
+
 @[simp]
 lemma twoHopMount_le {H : SubTemporalGraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x : V}
     {h₀ : G.Adj x y' n'}
@@ -342,7 +358,7 @@ instance {H : SubTemporalGraph G} [h₀ : Finite H.EdgeSet] {y y' z z' : H.Verts
   · trivial
   · simp only [Set.finite_insert, Set.finite_singleton]
 
-theorem twoHopMount_size {H : SubTemporalGraph G} [Finite H.EdgeSet] {y y' z z' : H.Verts}
+theorem twoHopMount_size {H : SubTemporalGraph G} [Fintype H.EdgeSet] {y y' z z' : H.Verts}
     {n n' m m' : ℕ}
     {x : V}
     {h₀ : G.Adj x y' n'}
@@ -367,6 +383,73 @@ theorem twoHopMount_size {H : SubTemporalGraph G} [Finite H.EdgeSet] {y y' z z' 
         (s(x, ↑y'), n')} : Set ((Sym2 V) × ℕ)) := by
     simp only [Set.card_union_le]
   lia
+
+theorem twoHopDismountability {H H' : SubTemporalGraph G} {x : H.Verts} {y y' z z' : H'.Verts}
+    {n n' m m' : ℕ}
+    (h₀ : H.IsClique)
+    (h₁ : G.Adj x y' n')
+    (h₂ : G.Adj y' y n)
+    (h₃ : G.Adj x z' m')
+    (h₄ : G.Adj z' z m)
+    (h₅ : H.EarliestEdge y y' n ∧ n' ≤ n ∧ H.Adj x y' n')
+    (h₆ : H.LatestEdge z z' m ∧ m ≤ m' ∧ H.Adj x z' m')
+    (h₇ : H'.IsSpannerOf (H.dismount x)) :
+    H'.twoHopMount x h₁ h₂ h₃ h₄ |>.IsSpannerOf H := by
+  have heq : (H'.twoHopMount x h₁ h₂ h₃ h₄).Verts = H.Verts := by
+    simp [twoHopMount_verts, h₇.right.choose]
+  have hle : (H'.twoHopMount x h₁ h₂ h₃ h₄) ≤ H := by
+    apply le_iff_edgeSet_and_verts.mpr
+    constructor
+    · rw [twoHopMount_edgeSet]
+      have hsplit : H.EdgeSet = H.EdgeSet ∪ H.EdgeSet := by simp
+      rw [hsplit]
+      apply Set.union_subset_union
+      · apply edgeSet_le
+        apply le_trans h₇.left dismount_le
+      · have : (s(↑z, ↑z'), m) ∈ H.EdgeSet := by
+          rw [mem_edgeSet]
+          apply h₆.1.1
+        have : (s(↑x, ↑z'), m') ∈ H.EdgeSet := by
+          rw [mem_edgeSet]
+          apply h₆.2.2
+        have : (s(↑y, ↑y'), n) ∈ H.EdgeSet := by
+          rw [mem_edgeSet]
+          apply h₅.1.1
+        have : (s(↑x, ↑y'), n') ∈ H.EdgeSet := by
+          rw [mem_edgeSet]
+          apply h₅.2.2
+        grind
+    · exact heq.le
+  have htc : (H'.twoHopMount x h₁ h₂ h₃ h₄).TemporallyConnected := by
+    apply twoHopMount_TC
+    · apply And.intro
+      · apply earliestEdge_of_ge _ h₅.left
+        · symm
+          apply twoHopMount_edge''
+        · trivial
+      · exact h₅.2.1
+    · apply And.intro
+      · apply latestEdge_of_ge _ h₆.left
+        · symm
+          apply twoHopMount_edge'''
+        · trivial
+      · exact h₆.2.1
+    · have hclique : H.dismount x |>.IsClique := by
+        apply dismount_clique
+        exact h₀
+      rw [isClique_iff_coe] at hclique
+      apply temporallyConnected_of_isClique at hclique
+      rw [←temporallyConnected_iff] at hclique
+      unfold TemporallyConnected at hclique ⊢
+      intro u v
+      have := hclique ⟨u, by grind only [h₇.right.choose]⟩ ⟨v, by grind only [h₇.right.choose]⟩
+      obtain ⟨_, h⟩ := h₇.right
+      exact h _ _ this
+  constructor
+  · trivial
+  · use heq
+    intro u v _
+    simpa using htc ⟨u, by grind only⟩ ⟨v, by grind only⟩
 
 end Mount2
 

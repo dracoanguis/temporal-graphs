@@ -43,15 +43,15 @@ theorem reachable_iff_nonempty_temporalWalkSet {G : LooplessTemporalGraph V} {x 
 
 def TemporallyConnected (G : LooplessTemporalGraph V) : Prop := ∀ x y : V, G.Reachable x y
 
-/-- `G'` is a spanner of `G` iff they have the same verticies and everything reachable in `G` is
-reachable in `G'`. -/
-def IsSpanner {s : Set V} (G : LooplessTemporalGraph V) (G' : LooplessTemporalGraph s) : Prop :=
-  (∀ x : V, x ∈ s)
-  ∧
-  ∀ (x y : V) (hx : x ∈ s) (hy : y ∈ s), G.Reachable x y → G'.Reachable ⟨x, hx⟩ ⟨y, hy⟩
+-- /-- `G'` is a spanner of `G` iff they have the same verticies and everything reachable in `G` is
+-- reachable in `G'`. -/
+-- def IsSpanner {s : Set V} (G : LooplessTemporalGraph V) (G' : LooplessTemporalGraph s) : Prop :=
+--   (∀ x : V, x ∈ s)
+--   ∧
+--   ∀ (x y : V) (hx : x ∈ s) (hy : y ∈ s), G.Reachable x y → G'.Reachable ⟨x, hx⟩ ⟨y, hy⟩
 
-def IsTCSpanner {s : Set V} (G : LooplessTemporalGraph V) (G' : LooplessTemporalGraph s) : Prop :=
-  G.IsSpanner G' ∧ G'.TemporallyConnected
+-- def IsTCSpanner {s : Set V} (G : LooplessTemporalGraph V) (G' : LooplessTemporalGraph s) : Prop :=
+  -- G.IsSpanner G' ∧ G'.TemporallyConnected
 
 theorem temporallyConnected_of_isClique (G : LooplessTemporalGraph V) :
     G.IsClique → G.TemporallyConnected := by

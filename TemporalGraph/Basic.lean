@@ -21,7 +21,7 @@ universe u
 (not proper or simple by definition) -/
 @[ext, aesop safe constructors (rule_sets := [LooplessTemporalGraph])]
 structure LooplessTemporalGraph (V : Type u) where
-  /-- The adjacency labeled by a natural qualifying the time of existance -/
+  /-- The adjacency labeled by a natural qualifying the time of existence -/
   Adj : V → V → ℕ → Prop
   symm : ∀ n : ℕ, Symmetric (fun x y => Adj x y n)
   loopless : ∀ n : ℕ, Std.Irrefl (fun x y => Adj x y n)

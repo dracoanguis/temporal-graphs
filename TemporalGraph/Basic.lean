@@ -109,6 +109,40 @@ section Order
 def IsSubtempgraph {s : Set V} (G : LooplessTemporalGraph V) (H : LooplessTemporalGraph s) : Prop :=
   ∀ {x y : s} {n : ℕ}, H.Adj x y n → G.Adj ↑x ↑y n
 
+
+-- Garder prime  et tierce et lemme equiv
+variable {X Y : Type u}
+
+def IsSubtempgraph' (f : X ↪ Y) (G : LooplessTemporalGraph X) (H : LooplessTemporalGraph Y) : Prop :=
+  ∀ {x y : X} {n : ℕ}, G.Adj x y n → H.Adj (f x) (f y) n
+
+def IsSubtempgraph'' [Coe X Y] (G : LooplessTemporalGraph X) (H : LooplessTemporalGraph Y) : Prop :=
+  ∀ {x y : X} {n : ℕ}, G.Adj x y n → H.Adj x y n
+
+def IsSubtempgraph''' {P : Y → Prop} (G : LooplessTemporalGraph {x : Y // P x})
+  (H : LooplessTemporalGraph Y) : Prop :=
+  ∀ {x y : {x : Y // P x}} {n : ℕ}, G.Adj x y n → H.Adj x y n
+
+def IsSubtempgraph'''' {s : Set Y} (G : LooplessTemporalGraph s) (H : LooplessTemporalGraph Y) : Prop :=
+  ∀ {x y : s} {n : ℕ}, G.Adj x y n → H.Adj ↑x ↑y n
+
+example : ∀ (s : Set Y) (G : LooplessTemporalGraph s) (H : LooplessTemporalGraph Y),
+  IsSubtempgraph''' G H ↔ IsSubtempgraph'''' G H := by
+  intro s G H
+  rfl
+
+example : ∀ (s : Set Y) (G : LooplessTemporalGraph s) (H : LooplessTemporalGraph Y),
+  @IsSubtempgraph'' _ _ (⟨ Subtype.val ⟩)  G H ↔ IsSubtempgraph'''' G H := by
+  intro s G H
+  rfl
+
+example : ∀ (s : Set Y) (G : LooplessTemporalGraph s) (H : LooplessTemporalGraph Y),
+  IsSubtempgraph' (⟨ Subtype.val, Subtype.val_injective ⟩)  G H ↔ IsSubtempgraph'''' G H := by
+  intro s G H
+  rfl
+
+#print IsSubtempgraph'''
+
 /-- This is a spanning SubTemporalGraph. -/
 def IsSpanningSubTemporalGraph (G H : LooplessTemporalGraph V) : Prop :=
   ∀ {x y : V} {n : ℕ}, G.Adj x y n → H.Adj x y n

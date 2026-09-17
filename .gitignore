@@ -1,1 +1,9 @@
 /.lake
+
+/blueprint/web/
+/blueprint/print/*.pdf
+/blueprint/print/*.aux
+/blueprint/print/*.log
+/blueprint/print/*.out
+/blueprint/print/*.toc
+/blueprint/.venv/

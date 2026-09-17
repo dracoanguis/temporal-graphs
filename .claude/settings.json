@@ -1,0 +1,26 @@
+{
+  "enabledPlugins": {
+    "lean4@lean4-skills": true
+  },
+  "extraKnownMarketplaces": {
+    "lean4-skills": {
+      "source": {
+        "source": "github",
+        "repo": "cameronfreer/lean4-skills"
+      }
+    }
+  },
+  "permissions": {
+    "allow": [
+      "Bash(lake build:*)",
+      "Bash(lake env lean:*)",
+      "Bash(lake exe cache get:*)",
+      "Bash(leanblueprint web:*)",
+      "Bash(leanblueprint pdf:*)",
+      "Bash(leanblueprint checkdecls:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ]
+  }
+}

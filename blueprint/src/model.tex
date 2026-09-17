@@ -1,0 +1,66 @@
+\chapter{Temporal graphs}
+\label{chap:model}
+
+This chapter fixes the basic model: a temporal graph is a relation labeled by
+discrete time, and we recall the handful of predicates on such a relation
+(symmetry, looplessness, simplicity, being a clique) that the rest of the
+library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
+
+\begin{definition}[Temporal graph]
+  \label{def:temporal-graph}
+  \lean{TemporalGraph}
+  \leanok
+  A \emph{temporal graph} on a vertex type $V$ is a relation
+  $\mathrm{Adj} : V \to V \to \mathbb{N} \to \mathrm{Prop}$, where
+  $\mathrm{Adj}(x,y,t)$ means there is an edge between $x$ and $y$ present at
+  time $t$. No symmetry or irreflexivity is assumed a priori; see
+  Definition~\ref{def:is-symm-loopless}.
+\end{definition}
+
+\begin{definition}[Symmetric, loopless]
+  \label{def:is-symm-loopless}
+  \uses{def:temporal-graph}
+  \lean{TemporalGraph.IsSymm}
+  \lean{TemporalGraph.IsLoopless}
+  \leanok
+  A temporal graph $G$ \emph{is symmetric} if $\mathrm{Adj}_G(x,y,t) \iff
+  \mathrm{Adj}_G(y,x,t)$ for every $x,y,t$; it \emph{is loopless} if
+  $\mathrm{Adj}_G(x,x,t)$ never holds.
+\end{definition}
+
+\begin{definition}[Simple, clique]
+  \label{def:is-simple-clique}
+  \uses{def:temporal-graph}
+  \lean{TemporalGraph.IsSimple}
+  \lean{TemporalGraph.IsClique}
+  \leanok
+  $G$ \emph{is simple} if between any two vertices there is at most one edge
+  at a given time (i.e.\ $\mathrm{Adj}_G(x,y,n) \wedge \mathrm{Adj}_G(x,y,m)
+  \Rightarrow n = m$). $G$ \emph{is a clique} if every pair of distinct
+  vertices is joined by an edge at some time.
+\end{definition}
+
+\begin{definition}[Earliest / latest neighbor]
+  \label{def:earliest-latest-neighbor}
+  \uses{def:temporal-graph}
+  \lean{TemporalGraph.EarliestEdge}
+  \lean{TemporalGraph.LatestEdge}
+  \lean{TemporalGraph.EarliestNeighbor}
+  \lean{TemporalGraph.LatestNeighbor}
+  \leanok
+  For $x \in V$, an edge $(x,y,n)$ is the \emph{earliest edge} of $x$ towards
+  $y$ if $n$ is minimal among times at which $x$ has an edge; it is the
+  \emph{latest edge} if $n$ is maximal. $y$ is an \emph{earliest} (resp.\
+  \emph{latest}) \emph{neighbor} of $x$ if such an edge exists. These notions
+  drive the dismountability argument of Chapter~\ref{chap:dismountability}.
+\end{definition}
+
+\begin{definition}[Spanning sub-temporal-graph order]
+  \label{def:spanning-order}
+  \uses{def:temporal-graph}
+  \lean{TemporalGraph.IsSpanningSubTemporalGraph}
+  \leanok
+  $G$ is a \emph{spanning sub-temporal-graph} of $H$ (written $G \le H$) if
+  every edge of $G$ is an edge of $H$: $\mathrm{Adj}_G(x,y,n) \Rightarrow
+  \mathrm{Adj}_H(x,y,n)$ for all $x,y,n$.
+\end{definition}

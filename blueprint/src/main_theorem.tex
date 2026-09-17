@@ -1,0 +1,19 @@
+\chapter{Main goal: sparse spanners for temporal cliques}
+\label{chap:main-theorem}
+
+This is the target result of the project (see \texttt{README.md} and
+\texttt{CLAUDE.md}): not yet formalized, stated here only to record the
+goal and its dependency on the dismountability machinery of
+Chapter~\ref{chap:dismountability}.
+
+\begin{theorem}[$O(n \log n)$ spanner for temporal cliques]
+  \label{thm:main-spanner-bound}
+  \uses{thm:dismountability,lem:vzero-empty,def:spanner}
+  Every temporal clique on $n$ vertices admits a temporally-connected
+  spanner (Definition~\ref{def:spanner}) with $O(n \log n)$ edges.
+\end{theorem}
+
+\noindent\textbf{Status.} Stated, not proved: no Lean declaration exists yet
+for this theorem. It is expected to follow from repeated dismounting
+(Chapter~\ref{chap:dismountability}) driving a recursion on the clique
+size, following Casteigts, Peters \& Schoeters (ICALP 2019 / JCSS).

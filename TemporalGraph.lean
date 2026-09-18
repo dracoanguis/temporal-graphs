@@ -45,13 +45,11 @@
 -- #check (triangle.induce ({u : Fin 3 | u ≠ 3})).Adj
 
 import TemporalGraph.SubTemporalGraph
-import TemporalGraph.Dismountability
 
-open SimpleTemporalGraph
---open SubTemporalGraph
+open TemporalGraph
 
 universe u
-variable {V : Type u} {G : SimpleTemporalGraph V}
+variable {V : Type u} {G : TemporalGraph V}
 
 -- example {G' : SubTempGraph G} (u : G'.Vplus) (h' : ¬G'.Dismountable2) (h'' : G'.IsClique)
 -- (h''' : ∃ w, EarliestNeighborhor u w)
@@ -61,7 +59,7 @@ variable {V : Type u} {G : SimpleTemporalGraph V}
   -- have h := notDismountable2_neDiff_imp_neigbhorDiff u u h' h'' w w ⟨hee, hee⟩
   -- contradiction
 
-def Square : SimpleTemporalGraph (Fin 4) := {
+def Square : TemporalGraph (Fin 4) := {
   Adj := fun v w t =>
     match t with
     | 1 => (v=0 ∧ w=1) ∨ (w=0 ∧ v=1)
@@ -69,23 +67,19 @@ def Square : SimpleTemporalGraph (Fin 4) := {
     | 3 => (v=0 ∧ w=3) ∨ (w=0 ∧ v=3) ∨ (v=1 ∧ w=2) ∨ (w=1 ∧ v=2)
     | 4 => (v=2 ∧ w=3) ∨ (w=2 ∧ v=3)
     | _ => False
-  symm := by aesop_temporal_graph
-  loopless t := by
-    match t with
-    -- | 1 => simp only [Fin.isValue] ; constructor ; simp
-    -- | 2 => simp only [Fin.isValue] ; constructor ; aesop
-    -- | 3 => simp only [Fin.isValue] ; constructor ; aesop
-    -- | 4 => simp only [Fin.isValue] ; constructor ; simp
-    | _ => split <;> constructor <;> aesop
 }
 
-open SubTemporalGraph
+lemma Square_isSymm : Square.IsSymm := by
+  intro n x y h
+  simp only [Square] at h ⊢
+  split at h <;> aesop
 
-def SubSquare := Square.toSubgraphTop
+lemma Square_isLoopless : Square.IsLoopless := fun t => by
+  simp only [Square]
+  split <;> constructor <;> aesop
 
-lemma square_clique : SubSquare.IsClique
+lemma square_clique : Square.IsClique
 := by
-  simp [IsClique, SubSquare, toSubgraphTop, top_verts]
   intro u v _
   match u, v with
   | 0, 1 => simp [Square] ; use 1

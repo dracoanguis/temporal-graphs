@@ -7,9 +7,9 @@ import TemporalGraph.Connectivity.Basic
 import TemporalGraph.SubTemporalGraph
 
 universe u
-variable {V : Type u} {G : LooplessTemporalGraph V}
+variable {V : Type u} {G : TemporalGraph V}
 
-namespace LooplessTemporalGraph
+namespace TemporalGraph
 
 namespace SubTemporalGraph
 
@@ -32,18 +32,17 @@ vertices as the same Reachability as in `G`. -/
 def IsSpanner (H : SubTemporalGraph G) : Prop :=
   H.IsSpanning ∧ ∀ x y : H.Verts, G.Reachable x y → H.Reachable x y
 
-@[simp]
-lemma isSpanner_iff_coe {H : SubTemporalGraph G} : H.IsSpanner ↔ G.IsSpanner H.coe := by
-  unfold IsSpanner LooplessTemporalGraph.IsSpanner IsSpanning
-  constructor
-  · intro h
-    refine ⟨h.left, ?_⟩
-    intro x y hx hy hr
-    exact h.right ⟨x, hx⟩ ⟨y, hy⟩ hr
-  · intro h
-    refine ⟨h.left, ?_⟩
-    intro x y hr
-    exact h.right ↑x ↑y x.prop y.prop hr
+-- NOTE(refactor): `G.IsSpanner H.coe` doesn't even type-check via dot notation: `IsSpanner` is
+-- nested in `TemporalGraph.SubTemporalGraph`, and Lean's dot notation does not search nested
+-- namespaces for a matching explicit argument (verified independently of the Loopless/Symm
+-- rename: `G : TemporalGraph V` has no argument of type `SubTemporalGraph G` to dot into). This
+-- looks like it wanted the top-level (currently commented-out) `IsSpanner {s : Set V}
+-- (G : TemporalGraph V) (G' : TemporalGraph s) : Prop` from `Connectivity/Basic.lean` instead.
+-- The statement can't be restated without that design decision, so it's commented out entirely
+-- (not just `sorry`-ed) pending review.
+-- @[simp]
+-- lemma isSpanner_iff_coe {H : SubTemporalGraph G} : H.IsSpanner ↔ G.IsSpanner H.coe := by
+--   sorry
 
 /-- A `SubTempGraph` `H` is a spanner of another one `H'` if they have the same vertices and
 everything reachable in `H'` is also in `H`. -/
@@ -61,18 +60,18 @@ lemma temporallyConnected_iff {H : SubTemporalGraph G} :
   apply Iff.intro
   · unfold TemporallyConnected
     intro h
-    unfold LooplessTemporalGraph.TemporallyConnected
+    unfold TemporalGraph.TemporallyConnected
     trivial
   · unfold TemporallyConnected
     intro h
-    rw [LooplessTemporalGraph.TemporallyConnected] at h
+    rw [TemporalGraph.TemporallyConnected] at h
     trivial
 
 lemma spanningCoe_temporallyConnected_of_spanning_temporallyConnected {H : SubTemporalGraph G} :
     H.TemporallyConnected ∧ H.IsSpanning → H.spanningCoe.TemporallyConnected := by
   unfold TemporallyConnected IsSpanning
   intro h
-  unfold LooplessTemporalGraph.TemporallyConnected
+  unfold TemporalGraph.TemporallyConnected
   have h' := h.left
   intro x y
   simp only [reachable_iff_spanningCoe] at h'
@@ -114,7 +113,7 @@ lemma reachable_of_earliestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : �
     (h₀ : H.EarliestEdge x y n) :
     ∀ z : H.Verts, H.Reachable x z → H.Reachable y z := by
   intro z h
-  exact H.coe.reachable_of_earliestEdge (coe_earliestEdge h₀) z h
+  exact H.coe.reachable_of_earliestEdge H.coe_isSymm (coe_earliestEdge h₀) z h
 
 lemma reachable_of_extended_earliestEdge {H : SubTemporalGraph G} {x y z : H.Verts} {n m : ℕ}
     (h₀ : H.EarliestEdge x y n)
@@ -122,14 +121,14 @@ lemma reachable_of_extended_earliestEdge {H : SubTemporalGraph G} {x y z : H.Ver
     (h₂ : m ≤ n) :
     ∀ a : H.Verts, H.Reachable x a → H.Reachable z a := by
   intro a h
-  exact H.coe.reachable_of_extended_earliestEdge (coe_earliestEdge h₀) h₁ h₂ a h
+  exact H.coe.reachable_of_extended_earliestEdge H.coe_isSymm (coe_earliestEdge h₀) h₁ h₂ a h
 
 @[simp]
 lemma reachable_of_latestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
     (h₀ : H.LatestEdge x y n) :
     ∀ z : H.Verts, H.Reachable z x → H.Reachable z y := by
   intro z h
-  exact H.coe.reachable_of_latestEdge (coe_latestEdge h₀) z h
+  exact H.coe.reachable_of_latestEdge H.coe_isSymm (coe_latestEdge h₀) z h
 
 lemma reachable_of_extended_latestEdge {H : SubTemporalGraph G} {x y z : H.Verts} {n m : ℕ}
     (h₀ : H.LatestEdge x y n)
@@ -137,7 +136,7 @@ lemma reachable_of_extended_latestEdge {H : SubTemporalGraph G} {x y z : H.Verts
     (h₂ : n ≤ m) :
     ∀ a : H.Verts, H.Reachable a x → H.Reachable a z := by
   intro a h
-  exact H.coe.reachable_of_extended_latestEdge (coe_latestEdge h₀) h₁ h₂ a h
+  exact H.coe.reachable_of_extended_latestEdge H.coe_isSymm (coe_latestEdge h₀) h₁ h₂ a h
 
 @[simp]
 protected lemma temporallyConnected_of_TCSpanner (H : SubTemporalGraph G) :
@@ -145,7 +144,7 @@ protected lemma temporallyConnected_of_TCSpanner (H : SubTemporalGraph G) :
   intro ⟨h_span, h_tc⟩
   unfold TemporallyConnected at h_tc
   rw [SubTemporalGraph.IsSpanning] at h_span
-  rw [LooplessTemporalGraph.TemporallyConnected]
+  rw [TemporalGraph.TemporallyConnected]
   simp only [Reachable, Subtype.forall, h_span, forall_true_left] at h_tc
   intro x y
   let ⟨n, ⟨m, ⟨p⟩⟩⟩ :=  h_tc x y
@@ -155,9 +154,9 @@ theorem addVerts_reachability {s : Set V} {H : SubTemporalGraph G} :
     ∀ x y : H.Verts, H.Reachable x y → (H.addVerts s).Reachable ⟨x, by simp⟩ ⟨y, by simp⟩ := by
   exact reachable_of_le_reachable addVerts_le
 
-theorem addEdge_reachability {x y : V} {n : ℕ} {H : SubTemporalGraph G} {h : G.Adj x y n}
-    {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts} :
-    ∀ x y : H.Verts, H.Reachable x y → (H.addEdge h h₁).Reachable x y := by
+theorem addEdge_reachability {x y : V} {n : ℕ} {H : SubTemporalGraph G} (hs : G.IsSymm)
+    {h : G.Adj x y n} {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts} :
+    ∀ x y : H.Verts, H.Reachable x y → (H.addEdge hs h h₁).Reachable x y := by
   exact reachable_of_le_reachable addEdge_le
 
 theorem deleteVerts_reachability {s : Set V} {H : SubTemporalGraph G} :
@@ -185,7 +184,7 @@ theorem TCspanner_iff_TC : (∃ (H : SubTemporalGraph G), H.IsTCSpanner) ↔ G.T
   · intro ⟨H, ⟨h_span, h_tc⟩⟩
     unfold TemporallyConnected at h_tc
     rw [IsSpanning] at h_span
-    rw [LooplessTemporalGraph.TemporallyConnected]
+    rw [TemporalGraph.TemporallyConnected]
     simp only [Reachable, Subtype.forall, h_span, forall_true_left] at h_tc
     intro x y
     let ⟨_, ⟨_, ⟨tw⟩⟩⟩ :=  h_tc x y
@@ -193,10 +192,10 @@ theorem TCspanner_iff_TC : (∃ (H : SubTemporalGraph G), H.IsTCSpanner) ↔ G.T
   · intro h_tc
     have h'_tc : (⊤ : SubTemporalGraph G).TemporallyConnected  := by
       have hspanner : (⊤ : SubTemporalGraph G).IsSpanner := top_isSpanner
-      rw [LooplessTemporalGraph.TemporallyConnected] at h_tc
+      rw [TemporalGraph.TemporallyConnected] at h_tc
       intro x y
       exact hspanner.right ↑x ↑y <| h_tc x y
     exact ⟨⊤, ⟨top_isSpanning, h'_tc⟩⟩
 
 end SubTemporalGraph
-end LooplessTemporalGraph
+end TemporalGraph

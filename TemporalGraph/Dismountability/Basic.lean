@@ -9,15 +9,15 @@ import TemporalGraph.SubTemporalGraph
 universe u
 variable {V : Type u}
 
-namespace LooplessTemporalGraph
+namespace TemporalGraph
 
 -- -- Theorem 2.1
--- def Dismountable (G : LooplessTemporalGraph V) :=
+-- def Dismountable (G : TemporalGraph V) :=
 --   ∃ (x y z : V), G.EarliestNeighbor y x ∧ G.LatestNeighbor z x
 
 namespace SubTemporalGraph
 
-variable {G : LooplessTemporalGraph V}
+variable {G : TemporalGraph V}
 
 -- Theorem 2.1
 def Dismountable (H : SubTemporalGraph G) :=
@@ -606,4 +606,4 @@ lemma vzero_empty_of_not_twoHopDismountable {H : SubTemporalGraph G}
 
 end SubTemporalGraph
 
-end LooplessTemporalGraph
+end TemporalGraph

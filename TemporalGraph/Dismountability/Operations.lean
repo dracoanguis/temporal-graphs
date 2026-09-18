@@ -8,9 +8,9 @@ import TemporalGraph.SubTemporalGraph
 import TemporalGraph.Connectivity.SubTemporalGraph
 
 universe u
-variable {V : Type u} {G : LooplessTemporalGraph V}
+variable {V : Type u} {G : TemporalGraph V}
 
-namespace LooplessTemporalGraph
+namespace TemporalGraph
 
 namespace SubTemporalGraph
 
@@ -42,71 +42,72 @@ end Dismount
 
 section Mount
 
-def mount (H : SubTemporalGraph G) {y z : H.Verts} {n m : ℕ} (x : V)
+def mount (H : SubTemporalGraph G) {y z : H.Verts} {n m : ℕ} (x : V) (hs : G.IsSymm)
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
     G.SubTemporalGraph :=
-((H.addVerts {x}).addEdge h₀ (by simp)).addEdge h₁ (by simp)
+((H.addVerts {x}).addEdge hs h₀ (by simp)).addEdge hs h₁ (by simp)
 
 @[simp]
-lemma mount_verts {H : SubTemporalGraph G} {x : V} {y z : H.Verts} {n m : ℕ}
+lemma mount_verts {H : SubTemporalGraph G} {x : V} {y z : H.Verts} {n m : ℕ} (hs : G.IsSymm)
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
-    (mount H x h₀ h₁).Verts = H.Verts ∪ {x} := by
+    (mount H x hs h₀ h₁).Verts = H.Verts ∪ {x} := by
   rw [mount, addEdge_verts, addEdge_verts, addVerts_verts]
 
 @[simp]
-lemma mem_mount_verts {H : SubTemporalGraph G} {x : V} {y z : H.Verts} {n m : ℕ}
+lemma mem_mount_verts {H : SubTemporalGraph G} {x : V} {y z : H.Verts} {n m : ℕ} {hs : G.IsSymm}
     {h₀ : G.Adj y x n}
     {h₁ : G.Adj z x m}
     (x' : H.Verts) :
-    ↑x' ∈ (mount H x h₀ h₁).Verts := by simp [mount_verts]
+    ↑x' ∈ (mount H x hs h₀ h₁).Verts := by simp [mount_verts]
 
-lemma mount_edge (H : SubTemporalGraph G) {x : V} {y z : H.Verts} {n m : ℕ}
+lemma mount_edge (H : SubTemporalGraph G) {x : V} {y z : H.Verts} {n m : ℕ} (hs : G.IsSymm)
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
-    (mount H x h₀ h₁).Adj x y n := by
+    (mount H x hs h₀ h₁).Adj x y n := by
   simp only [mount, addEdge, induce_Verts, Set.union_singleton, induce_Adj, Set.mem_insert_iff,
     true_or, true_and, and_true, and_self, or_true]
 
-lemma mount_edge' (H : SubTemporalGraph G) {x : V} {y z : H.Verts} {n m : ℕ}
+lemma mount_edge' (H : SubTemporalGraph G) {x : V} {y z : H.Verts} {n m : ℕ} (hs : G.IsSymm)
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
-    (mount H x h₀ h₁).Adj z x m := by
+    (mount H x hs h₀ h₁).Adj z x m := by
   rw [mount]
   apply addEdge_edge
 
-lemma mount_le {H : SubTemporalGraph G} {x : V} {y z : H.Verts} {n m : ℕ}
+lemma mount_le {H : SubTemporalGraph G} {x : V} {y z : H.Verts} {n m : ℕ} {hs : G.IsSymm}
     {h₀ : G.Adj y x n}
     {h₁ : G.Adj z x m} :
-    H ≤ H.mount x h₀ h₁ := by
+    H ≤ H.mount x hs h₀ h₁ := by
   unfold mount
   have h := addVerts_le' H {x}
-  have h' := h.trans <| addEdge_le' (H.addVerts {x}) h₀ (by simp)
+  have h' := h.trans <| addEdge_le' (H.addVerts {x}) hs h₀ (by simp)
   exact le_trans h' addEdge_le
 
 @[simp]
-lemma mount_edgeSet (H : SubTemporalGraph G) {x : V} {y z : H.Verts} {n m : ℕ}
+lemma mount_edgeSet (H : SubTemporalGraph G) {x : V} {y z : H.Verts} {n m : ℕ} (hs : G.IsSymm)
+    (hl : G.IsLoopless)
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
-    (H.mount x h₀ h₁).EdgeSet = H.EdgeSet ∪ {⟨s(z,x), m⟩, ⟨s(y,x), n⟩} := by
-  simp [mount, addEdge_edgeSet, addVerts_edgeSet]
+    (H.mount x hs h₀ h₁).EdgeSet = H.EdgeSet ∪ {⟨s(z,x), m⟩, ⟨s(y,x), n⟩} := by
+  simp [mount, addEdge_edgeSet, addVerts_edgeSet, hl]
 
-theorem mount_tc (H : SubTemporalGraph G) {x : V} {y z : H.Verts} {n m : ℕ}
+theorem mount_tc (H : SubTemporalGraph G) {x : V} {y z : H.Verts} {n m : ℕ} (hs : G.IsSymm)
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m)
-    (h₂ : (mount H x h₀ h₁).EarliestEdge y x n)
-    (h₃ : (mount H x h₀ h₁).LatestEdge z x m) :
-    H.TemporallyConnected → (mount H x h₀ h₁).TemporallyConnected := by
-  have hReach : ∀ x' y', H.Reachable x' y' → (mount H x h₀ h₁).Reachable
+    (h₂ : (mount H x hs h₀ h₁).EarliestEdge y x n)
+    (h₃ : (mount H x hs h₀ h₁).LatestEdge z x m) :
+    H.TemporallyConnected → (mount H x hs h₀ h₁).TemporallyConnected := by
+  have hReach : ∀ x' y', H.Reachable x' y' → (mount H x hs h₀ h₁).Reachable
     ⟨x', by simp [mount_verts]⟩
     ⟨y', by simp [mount_verts]⟩
     := reachable_of_le_reachable mount_le
   unfold SubTemporalGraph.TemporallyConnected
   intro hTC
-  have hy : y.val ∈ (mount H x h₀ h₁).Verts := by simp [mount_verts]
-  have hx : x ∈ (mount H x h₀ h₁).Verts := by simp [mount_verts]
-  have hz : z.val ∈ (mount H x h₀ h₁).Verts := by simp [mount_verts]
+  have hy : y.val ∈ (mount H x hs h₀ h₁).Verts := by simp [mount_verts]
+  have hx : x ∈ (mount H x hs h₀ h₁).Verts := by simp [mount_verts]
+  have hz : z.val ∈ (mount H x hs h₀ h₁).Verts := by simp [mount_verts]
   simp only [Reachable, Subtype.forall, mount_verts, Set.union_singleton, Set.mem_insert_iff]
   intro x' hx' y' hy'
   apply hx'.elim
@@ -114,33 +115,36 @@ theorem mount_tc (H : SubTemporalGraph G) {x : V} {y z : H.Verts} {n m : ℕ}
     <;> conv => rhs ; lhs ; lhs ; rw [heq]
     · intro heq'
       conv => rhs ; lhs ; rw [heq']
-      simpa using @LooplessTemporalGraph.reachable_of_self _ ((mount H x h₀ h₁).coe) ⟨x, _⟩
+      simpa using @TemporalGraph.reachable_of_self _ ((mount H x hs h₀ h₁).coe) ⟨x, _⟩
     · intro hy'₀
-      have hy'₁ : y' ∈ (mount H x h₀ h₁).Verts := by simp [hy']
-      apply @reachable_of_earliestEdge _ _ (mount H x h₀ h₁) ⟨y, _⟩ ⟨x, _⟩ n h₂ ⟨y', _⟩
+      have hy'₁ : y' ∈ (mount H x hs h₀ h₁).Verts := by simp [hy']
+      apply @reachable_of_earliestEdge _ _ (mount H x hs h₀ h₁) ⟨y, _⟩ ⟨x, _⟩ n h₂ ⟨y', _⟩
       exact hReach ⟨y, _⟩ ⟨y', hy'₀⟩ <| hTC _ _
   · intro hx' ; apply hy'.elim
     · intro heq
       conv => rhs ; lhs ; rw [heq]
-      apply @reachable_of_latestEdge _ _ (mount H x h₀ h₁) ⟨z, _⟩ ⟨x, _⟩ m h₃ ⟨x', _⟩
+      apply @reachable_of_latestEdge _ _ (mount H x hs h₀ h₁) ⟨z, _⟩ ⟨x, _⟩ m h₃ ⟨x', _⟩
       exact hReach ⟨x', hx'⟩ ⟨z, _⟩ <| hTC _ _
     · intro hy' ; exact hReach ⟨x', hx'⟩ ⟨y', hy'⟩ <| hTC _ _
 
 instance {H : SubTemporalGraph G} [h₀ : Finite H.EdgeSet] {x : V} {y z : H.Verts} {n m : ℕ}
+    {hs : G.IsSymm} {hl : G.IsLoopless}
     {h₁ : G.Adj y x n}
     {h₂ : G.Adj z x m} :
-    Finite (H.mount x h₁ h₂).EdgeSet := by
+    Finite (H.mount x hs h₁ h₂).EdgeSet := by
   conv =>
-    rhs ; rw [mount_edgeSet]
+    rhs ; rw [H.mount_edgeSet hs hl]
   apply Set.Finite.union
   · trivial
   · simp only [Set.finite_insert, Set.finite_singleton]
 
 theorem mount_size {H : SubTemporalGraph G} [Fintype H.EdgeSet] {x : V} {y z : H.Verts} {n m : ℕ}
+    (hs : G.IsSymm) (hl : G.IsLoopless)
     {h₀ : G.Adj y x n}
-    {h₁ : G.Adj z x m} :
-    Fintype.card (H.mount x h₀ h₁).EdgeSet ≤ Fintype.card H.EdgeSet + 2 := by
-  conv => lhs ; simp only [mount_edgeSet]
+    {h₁ : G.Adj z x m}
+    [Fintype (H.mount x hs h₀ h₁).EdgeSet] :
+    Fintype.card (H.mount x hs h₀ h₁).EdgeSet ≤ Fintype.card H.EdgeSet + 2 := by
+  conv => lhs ; simp only [H.mount_edgeSet hs hl]
   rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card]
   have hle₀ : Nat.card ({(s(↑z, x), m), (s(↑y, x), n)} : Set ((Sym2 V) × ℕ)) ≤ 2 := by
     simp only [Nat.card_eq_fintype_card, ←Set.union_singleton]
@@ -156,34 +160,35 @@ theorem mount_size {H : SubTemporalGraph G} [Fintype H.EdgeSet] {x : V} {y z : H
   lia
 
 theorem dismountability {H H' : SubTemporalGraph G} {x : H.Verts} {y z : H'.Verts} {n m : ℕ}
+    (hs : G.IsSymm) (hl : G.IsLoopless)
     (h₀ : H.IsClique)
     (h₁ : G.Adj y x n)
     (h₂ : G.Adj z x m)
     (h₃ : H.EarliestEdge y x n)
     (h₄ : H.LatestEdge z x m)
     (h₅ : H'.IsSpannerOf (H.dismount x)) :
-    H'.mount x h₁ h₂ |>.IsSpannerOf H := by
-  have heq : (H'.mount x h₁ h₂).Verts = H.Verts := by simp only [mount_verts, h₅.right.choose,
+    H'.mount x hs h₁ h₂ |>.IsSpannerOf H := by
+  have heq : (H'.mount x hs h₁ h₂).Verts = H.Verts := by simp only [mount_verts, h₅.right.choose,
     induce_Verts, Set.union_singleton, Subtype.coe_prop, Set.insert_diff_self_of_mem]
-  have hle : H'.mount x h₁ h₂ ≤ H := by
-    apply le_iff_edgeSet_and_verts.mpr
+  have hle : H'.mount x hs h₁ h₂ ≤ H := by
+    apply (le_iff_edgeSet_and_verts hl).mpr
     constructor
-    · rw [mount_edgeSet]
+    · rw [H'.mount_edgeSet hs hl]
       have hsplit : H.EdgeSet = H.EdgeSet ∪ H.EdgeSet := by simp
       rw [hsplit]
       apply Set.union_subset_union
       · apply edgeSet_le
         apply le_trans h₅.left dismount_le
       · have : (s(↑z, ↑x), m) ∈ H.EdgeSet := by
-          rw [mem_edgeSet]
+          rw [H.mem_edgeSet hl]
           apply h₄.left
         have : (s(↑y, ↑x), n) ∈ H.EdgeSet := by
-          rw [mem_edgeSet]
+          rw [H.mem_edgeSet hl]
           apply h₃.left
         grind
     · simp only [mount_verts, h₅.right.choose, induce_Verts, Set.union_singleton, Subtype.coe_prop,
       Set.insert_diff_self_of_mem, subset_refl]
-  have htc : (H'.mount x h₁ h₂).TemporallyConnected := by
+  have htc : (H'.mount x hs h₁ h₂).TemporallyConnected := by
     apply mount_tc
     · apply earliestEdge_of_ge _ h₃
       · symm
@@ -214,109 +219,123 @@ end Mount
 section Mount2
 
 def twoHopMount (H : SubTemporalGraph G) {y y' z z' : H.Verts} {n n' m m' : ℕ} (x : V)
+    (hs : G.IsSymm)
     (h₀ : G.Adj x y' n')
     (h₁ : G.Adj y' y n)
     (h₂ : G.Adj x z' m')
     (h₃ : G.Adj z' z m) :
     G.SubTemporalGraph :=
   H.addVerts {x}
-    |>.addEdge h₀ (by simp)
-    |>.addEdge h₁ (by simp)
-    |>.addEdge h₂ (by simp)
-    |>.addEdge h₃ (by simp)
+    |>.addEdge hs h₀ (by simp)
+    |>.addEdge hs h₁ (by simp)
+    |>.addEdge hs h₂ (by simp)
+    |>.addEdge hs h₃ (by simp)
 
 @[simp]
 lemma twoHopMount_verts (H : SubTemporalGraph G) {y y' z z' : H.Verts} {n n' m m' : ℕ} (x : V)
+    (hs : G.IsSymm)
     (h₀ : G.Adj x y' n')
     (h₁ : G.Adj y' y n)
     (h₂ : G.Adj x z' m')
     (h₃ : G.Adj z' z m) :
-    (H.twoHopMount x h₀ h₁ h₂ h₃).Verts = H.Verts ∪ {x} := by
+    (H.twoHopMount x hs h₀ h₁ h₂ h₃).Verts = H.Verts ∪ {x} := by
   simp only [twoHopMount, addEdge_verts, induce_Verts, Set.union_singleton]
 
 @[simp]
 lemma mem_twoHopMount_verts {H : SubTemporalGraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x : V}
+    {hs : G.IsSymm}
     {h₀ : G.Adj x y' n'}
     {h₁ : G.Adj y' y n}
     {h₂ : G.Adj x z' m'}
     {h₃ : G.Adj z' z m}
     (x' : H.Verts) :
-    ↑x' ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts := by
+    ↑x' ∈ (H.twoHopMount x hs h₀ h₁ h₂ h₃).Verts := by
   simp [twoHopMount_verts]
 
 @[simp]
 lemma twoHopMount_edgeSet (H : SubTemporalGraph G) {y y' z z' : H.Verts} {n n' m m' : ℕ} (x : V)
+    (hs : G.IsSymm) (hl : G.IsLoopless)
     (h₀ : G.Adj x y' n')
     (h₁ : G.Adj y' y n)
     (h₂ : G.Adj x z' m')
     (h₃ : G.Adj z' z m) :
-    (H.twoHopMount x h₀ h₁ h₂ h₃).EdgeSet =
+    (H.twoHopMount x hs h₀ h₁ h₂ h₃).EdgeSet =
     H.EdgeSet ∪ {⟨s(z', z), m⟩,  ⟨s(x, z'), m'⟩, ⟨s(y',y), n⟩, ⟨s(x,y'), n'⟩} := by
-  simp [twoHopMount, addEdge_edgeSet, addVerts_edgeSet]
+  simp [twoHopMount, addEdge_edgeSet, addVerts_edgeSet, hl]
 
 lemma twoHopMount_edge {H : SubTemporalGraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x : V}
+    {hs : G.IsSymm} {hl : G.IsLoopless}
     {h₀ : G.Adj x y' n'}
     {h₁ : G.Adj y' y n}
     {h₂ : G.Adj x z' m'}
     {h₃ : G.Adj z' z m} :
-    (H.twoHopMount x h₀ h₁ h₂ h₃).Adj x y' n' := by
-  simp [←mem_edgeSet]
+    (H.twoHopMount x hs h₀ h₁ h₂ h₃).Adj x y' n' := by
+  rw [← (H.twoHopMount x hs h₀ h₁ h₂ h₃).mem_edgeSet hl, H.twoHopMount_edgeSet x hs hl h₀ h₁ h₂ h₃]
+  simp
 
 lemma twoHopMount_edge' {H : SubTemporalGraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x : V}
+    {hs : G.IsSymm} {hl : G.IsLoopless}
     {h₀ : G.Adj x y' n'}
     {h₁ : G.Adj y' y n}
     {h₂ : G.Adj x z' m'}
     {h₃ : G.Adj z' z m} :
-    (H.twoHopMount x h₀ h₁ h₂ h₃).Adj x z' m' := by
-  simp [←mem_edgeSet]
+    (H.twoHopMount x hs h₀ h₁ h₂ h₃).Adj x z' m' := by
+  rw [← (H.twoHopMount x hs h₀ h₁ h₂ h₃).mem_edgeSet hl, H.twoHopMount_edgeSet x hs hl h₀ h₁ h₂ h₃]
+  simp
 
 lemma twoHopMount_edge'' {H : SubTemporalGraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x : V}
+    {hs : G.IsSymm} {hl : G.IsLoopless}
     {h₀ : G.Adj x y' n'}
     {h₁ : G.Adj y' y n}
     {h₂ : G.Adj x z' m'}
     {h₃ : G.Adj z' z m} :
-    (H.twoHopMount x h₀ h₁ h₂ h₃).Adj y' y n := by
-  simp [←mem_edgeSet]
+    (H.twoHopMount x hs h₀ h₁ h₂ h₃).Adj y' y n := by
+  rw [← (H.twoHopMount x hs h₀ h₁ h₂ h₃).mem_edgeSet hl, H.twoHopMount_edgeSet x hs hl h₀ h₁ h₂ h₃]
+  simp
 
 lemma twoHopMount_edge''' {H : SubTemporalGraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x : V}
+    {hs : G.IsSymm} {hl : G.IsLoopless}
     {h₀ : G.Adj x y' n'}
     {h₁ : G.Adj y' y n}
     {h₂ : G.Adj x z' m'}
     {h₃ : G.Adj z' z m} :
-    (H.twoHopMount x h₀ h₁ h₂ h₃).Adj z' z m := by
-  simp [←mem_edgeSet]
+    (H.twoHopMount x hs h₀ h₁ h₂ h₃).Adj z' z m := by
+  rw [← (H.twoHopMount x hs h₀ h₁ h₂ h₃).mem_edgeSet hl, H.twoHopMount_edgeSet x hs hl h₀ h₁ h₂ h₃]
+  simp
 
 @[simp]
 lemma twoHopMount_le {H : SubTemporalGraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x : V}
+    {hs : G.IsSymm}
     {h₀ : G.Adj x y' n'}
     {h₁ : G.Adj y' y n}
     {h₂ : G.Adj x z' m'}
     {h₃ : G.Adj z' z m} :
-    H ≤ H.twoHopMount x h₀ h₁ h₂ h₃ :=
+    H ≤ H.twoHopMount x hs h₀ h₁ h₂ h₃ :=
   addVerts_le' H {x}
-    |>.trans (addEdge_le' _ h₀ (by simp))
-    |>.trans (addEdge_le' _ h₁ (by simp))
-    |>.trans (addEdge_le' _ h₂ (by simp))
-    |>.trans (addEdge_le' _ h₃ (by simp))
+    |>.trans (addEdge_le' _ hs h₀ (by simp))
+    |>.trans (addEdge_le' _ hs h₁ (by simp))
+    |>.trans (addEdge_le' _ hs h₂ (by simp))
+    |>.trans (addEdge_le' _ hs h₃ (by simp))
 
 theorem twoHopMount_TC (H : SubTemporalGraph G) {y y' z z' : H.Verts} {n n' m m' : ℕ} (x : V)
+    (hs : G.IsSymm) (hl : G.IsLoopless)
     (h₀ : G.Adj x y' n')
     (h₁ : G.Adj y' y n)
     (h₂ : G.Adj x z' m')
     (h₃ : G.Adj z' z m)
-    (h₄ : (H.twoHopMount x h₀ h₁ h₂ h₃).EarliestEdge y y' n ∧ n' ≤ n)
-    (h₅ : (H.twoHopMount x h₀ h₁ h₂ h₃).LatestEdge z z' m ∧ m ≤ m') :
-    H.TemporallyConnected → (H.twoHopMount x h₀ h₁ h₂ h₃).TemporallyConnected := by
-  have hReach : ∀ x' y', H.Reachable x' y' → (twoHopMount H x h₀ h₁ h₂ h₃).Reachable
+    (h₄ : (H.twoHopMount x hs h₀ h₁ h₂ h₃).EarliestEdge y y' n ∧ n' ≤ n)
+    (h₅ : (H.twoHopMount x hs h₀ h₁ h₂ h₃).LatestEdge z z' m ∧ m ≤ m') :
+    H.TemporallyConnected → (H.twoHopMount x hs h₀ h₁ h₂ h₃).TemporallyConnected := by
+  have hReach : ∀ x' y', H.Reachable x' y' → (twoHopMount H x hs h₀ h₁ h₂ h₃).Reachable
     ⟨x', by simp [twoHopMount_verts]⟩
     ⟨y', by simp [twoHopMount_verts]⟩
     := reachable_of_le_reachable twoHopMount_le
   intro htc
-  have hx  : x ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts   := by simp
-  have hy  : ↑y ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts  := by simp
-  have hy' : ↑y' ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts := by simp
-  have hz  : ↑z ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts  := by simp
-  have hz' : ↑z' ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts := by simp
+  have hx  : x ∈ (H.twoHopMount x hs h₀ h₁ h₂ h₃).Verts   := by simp
+  have hy  : ↑y ∈ (H.twoHopMount x hs h₀ h₁ h₂ h₃).Verts  := by simp
+  have hy' : ↑y' ∈ (H.twoHopMount x hs h₀ h₁ h₂ h₃).Verts := by simp
+  have hz  : ↑z ∈ (H.twoHopMount x hs h₀ h₁ h₂ h₃).Verts  := by simp
+  have hz' : ↑z' ∈ (H.twoHopMount x hs h₀ h₁ h₂ h₃).Verts := by simp
   simp only [TemporallyConnected, Reachable, Subtype.forall, twoHopMount_verts, Set.union_singleton,
     Set.mem_insert_iff]
   intro a ha b hb
@@ -327,18 +346,18 @@ theorem twoHopMount_TC (H : SubTemporalGraph G) {y y' z z' : H.Verts} {n n' m m'
       simp only [heq, heq', reachable_of_self]
     · intro hb
       simp only [heq]
-      have hb' : ↑b ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts := mem_twoHopMount_verts ⟨b, hb⟩
-      apply @reachable_of_extended_earliestEdge _ _ (H.twoHopMount x h₀ h₁ h₂ h₃)
-        ⟨y, hy⟩ ⟨y', hy'⟩ ⟨x, hx⟩ _ _ h₄.left (twoHopMount_edge) h₄.right ⟨b, hb'⟩
+      have hb' : ↑b ∈ (H.twoHopMount x hs h₀ h₁ h₂ h₃).Verts := mem_twoHopMount_verts ⟨b, hb⟩
+      apply @reachable_of_extended_earliestEdge _ _ (H.twoHopMount x hs h₀ h₁ h₂ h₃)
+        ⟨y, hy⟩ ⟨y', hy'⟩ ⟨x, hx⟩ _ _ h₄.left (twoHopMount_edge (hl := hl)) h₄.right ⟨b, hb'⟩
       apply hReach y ⟨b, hb⟩
       apply htc
   · intro ha
     apply Or.elim hb
     · intro heq
       simp only [heq]
-      have ha' : ↑a ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts := mem_twoHopMount_verts ⟨a, ha⟩
-      apply @reachable_of_extended_latestEdge _ _ (H.twoHopMount x h₀ h₁ h₂ h₃)
-        ⟨z, hz⟩ ⟨z', hz'⟩ ⟨x, hx⟩ _ _ h₅.left (twoHopMount_edge'.symm) h₅.right ⟨a, ha'⟩
+      have ha' : ↑a ∈ (H.twoHopMount x hs h₀ h₁ h₂ h₃).Verts := mem_twoHopMount_verts ⟨a, ha⟩
+      apply @reachable_of_extended_latestEdge _ _ (H.twoHopMount x hs h₀ h₁ h₂ h₃)
+        ⟨z, hz⟩ ⟨z', hz'⟩ ⟨x, hx⟩ _ _ h₅.left (twoHopMount_edge' (hl := hl)).symm h₅.right ⟨a, ha'⟩
       apply hReach ⟨a, ha⟩ z
       apply htc
     · intro hb
@@ -346,27 +365,28 @@ theorem twoHopMount_TC (H : SubTemporalGraph G) {y y' z z' : H.Verts} {n n' m m'
       apply htc
 
 instance {H : SubTemporalGraph G} [h₀ : Finite H.EdgeSet] {y y' z z' : H.Verts} {n n' m m' : ℕ}
-    {x : V}
+    {x : V} {hs : G.IsSymm} {hl : G.IsLoopless}
     {h₁ : G.Adj x y' n'}
     {h₂ : G.Adj y' y n}
     {h₃ : G.Adj x z' m'}
     {h₄ : G.Adj z' z m} :
-    Finite (H.twoHopMount x h₁ h₂ h₃ h₄).EdgeSet := by
+    Finite (H.twoHopMount x hs h₁ h₂ h₃ h₄).EdgeSet := by
   conv =>
-    rhs ; rw [twoHopMount_edgeSet]
+    rhs ; rw [H.twoHopMount_edgeSet x hs hl h₁ h₂ h₃ h₄]
   apply Set.Finite.union
   · trivial
   · simp only [Set.finite_insert, Set.finite_singleton]
 
 theorem twoHopMount_size {H : SubTemporalGraph G} [Fintype H.EdgeSet] {y y' z z' : H.Verts}
     {n n' m m' : ℕ}
-    {x : V}
+    {x : V} (hs : G.IsSymm) (hl : G.IsLoopless)
     {h₀ : G.Adj x y' n'}
     {h₁ : G.Adj y' y n}
     {h₂ : G.Adj x z' m'}
-    {h₃ : G.Adj z' z m} :
-    Fintype.card (H.twoHopMount x h₀ h₁ h₂ h₃).EdgeSet ≤ Fintype.card H.EdgeSet + 4 := by
-  conv => lhs ; simp only [twoHopMount_edgeSet]
+    {h₃ : G.Adj z' z m}
+    [Fintype (H.twoHopMount x hs h₀ h₁ h₂ h₃).EdgeSet] :
+    Fintype.card (H.twoHopMount x hs h₀ h₁ h₂ h₃).EdgeSet ≤ Fintype.card H.EdgeSet + 4 := by
+  conv => lhs ; simp only [H.twoHopMount_edgeSet x hs hl h₀ h₁ h₂ h₃]
   rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card]
   have hle₀ :
       Nat.card ({(s(↑z', ↑z), m), (s(x, ↑z'), m'),
@@ -386,6 +406,7 @@ theorem twoHopMount_size {H : SubTemporalGraph G} [Fintype H.EdgeSet] {y y' z z'
 
 theorem twoHopDismountability {H H' : SubTemporalGraph G} {x : H.Verts} {y y' z z' : H'.Verts}
     {n n' m m' : ℕ}
+    (hs : G.IsSymm) (hl : G.IsLoopless)
     (h₀ : H.IsClique)
     (h₁ : G.Adj x y' n')
     (h₂ : G.Adj y' y n)
@@ -394,44 +415,45 @@ theorem twoHopDismountability {H H' : SubTemporalGraph G} {x : H.Verts} {y y' z 
     (h₅ : H.EarliestEdge y y' n ∧ n' ≤ n ∧ H.Adj x y' n')
     (h₆ : H.LatestEdge z z' m ∧ m ≤ m' ∧ H.Adj x z' m')
     (h₇ : H'.IsSpannerOf (H.dismount x)) :
-    H'.twoHopMount x h₁ h₂ h₃ h₄ |>.IsSpannerOf H := by
-  have heq : (H'.twoHopMount x h₁ h₂ h₃ h₄).Verts = H.Verts := by
+    H'.twoHopMount x hs h₁ h₂ h₃ h₄ |>.IsSpannerOf H := by
+  have heq : (H'.twoHopMount x hs h₁ h₂ h₃ h₄).Verts = H.Verts := by
     simp [twoHopMount_verts, h₇.right.choose]
-  have hle : (H'.twoHopMount x h₁ h₂ h₃ h₄) ≤ H := by
-    apply le_iff_edgeSet_and_verts.mpr
+  have hle : (H'.twoHopMount x hs h₁ h₂ h₃ h₄) ≤ H := by
+    apply (le_iff_edgeSet_and_verts hl).mpr
     constructor
-    · rw [twoHopMount_edgeSet]
+    · rw [H'.twoHopMount_edgeSet x hs hl h₁ h₂ h₃ h₄]
       have hsplit : H.EdgeSet = H.EdgeSet ∪ H.EdgeSet := by simp
       rw [hsplit]
       apply Set.union_subset_union
       · apply edgeSet_le
         apply le_trans h₇.left dismount_le
       · have : (s(↑z, ↑z'), m) ∈ H.EdgeSet := by
-          rw [mem_edgeSet]
+          rw [H.mem_edgeSet hl]
           apply h₆.1.1
         have : (s(↑x, ↑z'), m') ∈ H.EdgeSet := by
-          rw [mem_edgeSet]
+          rw [H.mem_edgeSet hl]
           apply h₆.2.2
         have : (s(↑y, ↑y'), n) ∈ H.EdgeSet := by
-          rw [mem_edgeSet]
+          rw [H.mem_edgeSet hl]
           apply h₅.1.1
         have : (s(↑x, ↑y'), n') ∈ H.EdgeSet := by
-          rw [mem_edgeSet]
+          rw [H.mem_edgeSet hl]
           apply h₅.2.2
         grind
     · exact heq.le
-  have htc : (H'.twoHopMount x h₁ h₂ h₃ h₄).TemporallyConnected := by
+  have htc : (H'.twoHopMount x hs h₁ h₂ h₃ h₄).TemporallyConnected := by
     apply twoHopMount_TC
+    · exact hl
     · apply And.intro
       · apply earliestEdge_of_ge _ h₅.left
         · symm
-          apply twoHopMount_edge''
+          apply twoHopMount_edge'' (hl := hl)
         · trivial
       · exact h₅.2.1
     · apply And.intro
       · apply latestEdge_of_ge _ h₆.left
         · symm
-          apply twoHopMount_edge'''
+          apply twoHopMount_edge''' (hl := hl)
         · trivial
       · exact h₆.2.1
     · have hclique : H.dismount x |>.IsClique := by
@@ -455,4 +477,4 @@ end Mount2
 
 end SubTemporalGraph
 
-end LooplessTemporalGraph
+end TemporalGraph

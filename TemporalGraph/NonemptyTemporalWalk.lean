@@ -7,9 +7,9 @@ import TemporalGraph.Basic
 
 universe u
 
-namespace LooplessTemporalGraph
+namespace TemporalGraph
 
-variable {V : Type u} {G : LooplessTemporalGraph V}
+variable {V : Type u} {G : TemporalGraph V}
 
 /-- This is a Nonempty Non-strict TemporalWalk. -/
 inductive NonemptyTemporalWalk : V → ℕ → V → ℕ → Type u
@@ -68,15 +68,15 @@ lemma EarliestEdge.time_bound_of_edge {x y z : V} {n m k : ℕ}
   |Single h' => exact h.right _ _ h'
   |Step _ _ _ hi => exact hi
 
-lemma LatestEdge.time_bound_of_edge {x y z : V} {n m k : ℕ}
+lemma LatestEdge.time_bound_of_edge {x y z : V} {n m k : ℕ} (hs : G.IsSymm)
     (tw : G.NonemptyTemporalWalk x n y m) (h : G.LatestEdge y z k) :
     m ≤ k := by
   rw [LatestEdge] at h
   cases tw with
-  | Single h' => exact h.right _ _ h'.symm
-  | Step _ h' _ => exact h.right _ _ h'.symm
+  | Single h' => exact h.right _ _ (h'.symm hs)
+  | Step _ h' _ => exact h.right _ _ (h'.symm hs)
 
 
 end NonemptyTemporalWalk
 
-end LooplessTemporalGraph
+end TemporalGraph

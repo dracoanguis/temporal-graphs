@@ -105,22 +105,60 @@ section Order
 
 variable {X Y : Type u}
 
-/-- `G` is a sub-temporal-graph of `H`, embedded via the injection `f`. -/
-def IsSubtempgraph' (f : X ↪ Y) (G : TemporalGraph X) (H : TemporalGraph Y) : Prop :=
-  ∀ {x y : X} {n : ℕ}, G.Adj x y n → H.Adj (f x) (f y) n
+structure IsSubgraphOf {P : Y → Prop} {P' : Y → Prop} (G : TemporalGraph {x : Y // P x})
+    (H : TemporalGraph {x : Y // P' x}) : Prop where
+  incl : ∀ x, P x → P' x
+  incl' : ∀ {x y : {x : Y // P x}} {n : ℕ}, G.Adj x y n → H.Adj ⟨_, incl x x.prop⟩
+                                                                ⟨_, incl y y.prop⟩
+                                                                n
 
 /-- `G`, a temporal graph on the vertices of `Y` satisfying `P`, is a
 sub-temporal-graph of `H`. -/
-def IsSubtempgraph {P : Y → Prop} (G : TemporalGraph {x : Y // P x})
-    (H : TemporalGraph Y) : Prop :=
-  ∀ {x y : {x : Y // P x}} {n : ℕ}, G.Adj x y n → H.Adj x y n
+def IsSubgraph {P : V → Prop} (G : TemporalGraph {x : V // P x})
+    (H : TemporalGraph V) : Prop :=
+  ∀ {x y : {x : V // P x}} {n : ℕ}, G.Adj x y n → H.Adj x y n
+
+-- TODO: lié les deux top
+
+instance : Coe (TemporalGraph V) (TemporalGraph {x : V // True}) where
+  coe G := ⟨fun x y n => G.Adj x y n⟩
+
+-- instance : Coe (TemporalGraph {x : V // True}) (TemporalGraph V)where
+--   coe G := ⟨fun x y n => G.Adj ⟨x, by simp⟩ ⟨y, by simp⟩ n⟩
+
+lemma isSubgraph_iff_isSubgraphOf {P : Y → Prop}
+    (G : TemporalGraph {x : Y // P x})
+    (H : TemporalGraph Y) :
+    G.IsSubgraph H
+    ↔ @IsSubgraphOf _ P (fun _ => True) G H := by
+  constructor
+  · intro h
+    constructor
+    · intro x y n hadj
+      simp only
+      apply h
+      assumption
+    · simp
+  · intro ⟨_,h⟩ x y n hadj
+    apply h
+    assumption
 
 /-- This is a spanning SubTemporalGraph. -/
-def IsSpanningSubTemporalGraph (G H : TemporalGraph V) : Prop :=
+def IsSpanningSubgraph (G H : TemporalGraph V) : Prop :=
   ∀ {x y : V} {n : ℕ}, G.Adj x y n → H.Adj x y n
 
+-- lemma isSpanningSubgraph_iff_isSubgraph (G H : TemporalGraph V) :
+--     (G : TemporalGraph {x : V // True}).IsSubgraph H ↔ G.IsSpanningSubgraph H := by
+--   constructor
+--   · intro h x y n hadj
+--     unfold IsSubgraph at h
+--     apply h G
+
+
+
+
 instance : LE (TemporalGraph V) :=
-  ⟨IsSpanningSubTemporalGraph⟩
+  ⟨IsSpanningSubgraph⟩
 
 lemma le_iff_adj {G H : TemporalGraph V} :
     G ≤ H ↔ ∀ x y : V, ∀ n : ℕ, G.Adj x y n → H.Adj x y n :=
@@ -128,7 +166,7 @@ lemma le_iff_adj {G H : TemporalGraph V} :
 
 @[simp]
 theorem isSpanningSubTemporalGraph_eq_le :
-    (IsSpanningSubTemporalGraph : TemporalGraph V -> TemporalGraph V -> Prop) =
+    (IsSpanningSubgraph : TemporalGraph V -> TemporalGraph V -> Prop) =
     (· ≤ ·) :=
   rfl
 
@@ -156,6 +194,7 @@ end NeighborhoodSet
 
 section EdgeSet
 
+-- Change edge Set fot V x V ordered paire
 /-- The set of every edges in G. -/
 def EdgeSet (G : TemporalGraph V) : Set ((Sym2 V) × ℕ) :=
   {(p, n) | ∃ x y : p, G.Adj x y n}

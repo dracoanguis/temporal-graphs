@@ -167,7 +167,7 @@ theorem deleteVerts_reachability {s : Set V} {H : SubTemporalGraph G} :
         |mk y hy => exact h y hy⟩ := by
   exact reachable_of_le_reachable deleteVerts_le
 
-lemma top_isSpanner : (⊤ : SubTemporalGraph G).IsSpanner := by
+lemma top_isSpanner [Fact G.IsSymm] : (⊤ : SubTemporalGraph G).IsSpanner := by
   dsimp [IsSpanner]
   constructor
   · exact top_isSpanning
@@ -178,7 +178,8 @@ lemma top_isSpanner : (⊤ : SubTemporalGraph G).IsSpanner := by
 
 /-- A temporal graph admits a spanner if and only if it is Temporally Connected -/
 @[simp]
-theorem TCspanner_iff_TC : (∃ (H : SubTemporalGraph G), H.IsTCSpanner) ↔ G.TemporallyConnected := by
+theorem TCspanner_iff_TC [Fact G.IsSymm] :
+    (∃ (H : SubTemporalGraph G), H.IsTCSpanner) ↔ G.TemporallyConnected := by
   unfold SubTemporalGraph.IsTCSpanner
   apply Iff.intro
   · intro ⟨H, ⟨h_span, h_tc⟩⟩

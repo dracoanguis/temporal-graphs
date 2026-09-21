@@ -240,30 +240,29 @@ end IncidenceSet
 
 section Order
 
-/-- The `⊤ : SubTemporalGraph G` is `G` itself. -/
--- NOTE(refactor): `⊤` needs `G.Adj` to be symmetric, which is no longer guaranteed by the bare
--- `TemporalGraph` type (unlike the old bundled `LooplessTemporalGraph`). An `instance` cannot
--- demand an arbitrary hypothesis `G.IsSymm` be supplied, so this is left as a `sorry` pending a
--- design decision (e.g. downgrading `⊤` to a plain `def top (hs : G.IsSymm) : G.SubTemporalGraph`,
--- or gating the instance behind a `[Fact G.IsSymm]`-style typeclass). Left for review.
-instance : Top G.SubTemporalGraph where
+/-- The `⊤ : SubTemporalGraph G` is `G` itself. Requires `[Fact G.IsSymm]` since a bare
+`TemporalGraph` no longer bundles symmetry (mirrors `Set.Icc.instBoundedOrderElemOfFactLe`, which
+gates `Icc a b`'s `⊤`/`⊥` behind `[Fact (a ≤ b)]`). -/
+instance [Fact G.IsSymm] : Top G.SubTemporalGraph where
   top := {
     Verts := Set.univ
     Adj := G.Adj
     adj_sub := id
-    symm := sorry
+    symm := (Fact.out : G.IsSymm)
     edge_vert := @fun x _ _ _ ↦ Set.mem_univ x
   }
 
 @[simp]
-theorem top_adj {x y : V} {n : ℕ} : (⊤ : SubTemporalGraph G).Adj x y n ↔ G.Adj x y n :=
+theorem top_adj [Fact G.IsSymm] {x y : V} {n : ℕ} :
+    (⊤ : SubTemporalGraph G).Adj x y n ↔ G.Adj x y n :=
   Iff.rfl
 
-theorem top_verts : (⊤ : SubTemporalGraph G).Verts = Set.univ := rfl
+theorem top_verts [Fact G.IsSymm] : (⊤ : SubTemporalGraph G).Verts = Set.univ := rfl
 
-theorem top_spanningCoe : (⊤ : SubTemporalGraph G).spanningCoe = G := rfl
+theorem top_spanningCoe [Fact G.IsSymm] : (⊤ : SubTemporalGraph G).spanningCoe = G := rfl
 
-theorem top_isSpanning : (⊤ : SubTemporalGraph G).IsSpanning := by simp [IsSpanning, top_verts]
+theorem top_isSpanning [Fact G.IsSymm] : (⊤ : SubTemporalGraph G).IsSpanning := by
+  simp [IsSpanning, top_verts]
 
 /-- The `⊥ : SubTemporalGraph G` is the empty graph where there is no vertices. -/
 instance : Bot G.SubTemporalGraph where
@@ -284,7 +283,7 @@ def IsSubTemporalGraphOf (H : SubTemporalGraph G) (H' : SubTemporalGraph G) : Pr
 instance : LE (SubTemporalGraph G) :=
   ⟨IsSubTemporalGraphOf⟩
 
-instance : BoundedOrder (SubTemporalGraph G) where
+instance [Fact G.IsSymm] : BoundedOrder (SubTemporalGraph G) where
   top := ⊤
   bot := ⊥
   le_top x := ⟨Set.subset_univ _, by intro _ _ _ h ; rw [top_adj] ; exact x.adj_sub h⟩
@@ -340,7 +339,8 @@ they are adjacent in `G`. -/
 def IsInduced (H : SubTemporalGraph G) : Prop :=
   ∀ ⦃x⦄, x ∈ H.Verts → ∀ ⦃y⦄, y ∈ H.Verts → ∀ ⦃n : ℕ⦄, G.Adj x y n → H.Adj x y n
 
-@[simp] lemma IsInduced.top : (⊤ : G.SubTemporalGraph).IsInduced := fun _ _ _ _ _ ↦ id
+@[simp] lemma IsInduced.top [Fact G.IsSymm] : (⊤ : G.SubTemporalGraph).IsInduced :=
+  fun _ _ _ _ _ ↦ id
 
 /-- Create the induced subgraph on `G` from another subgraph on `G`, it might not be induced to `G`.
 -/
@@ -352,7 +352,8 @@ def induce (H : G.SubTemporalGraph) (s : Set V) : G.SubTemporalGraph where
   edge_vert h := h.1
   symm n _ _ h := ⟨h.2.1, h.1, H.symm n h.2.2⟩
 
-lemma isInduced_of_top_induce {s : Set V} : (induce (⊤ : SubTemporalGraph G) s).IsInduced := by
+lemma isInduced_of_top_induce [Fact G.IsSymm] {s : Set V} :
+    (induce (⊤ : SubTemporalGraph G) s).IsInduced := by
   intro x hx y hy n h
   refine ⟨hx, hy, h⟩
 
@@ -469,14 +470,14 @@ variable {x y : V} {n : ℕ}
 def EarliestEdge (H : SubTemporalGraph G) (x y : V) (n : ℕ) : Prop :=
   H.Adj x y n ∧ ∀ (z : V) (m : ℕ), H.Adj x z m → n ≤ m
 
-lemma top_earliestEdge :
+lemma top_earliestEdge [Fact G.IsSymm] :
     (⊤ : SubTemporalGraph G).EarliestEdge x y n ↔ G.EarliestEdge x y n := by
   simp [EarliestEdge, TemporalGraph.EarliestEdge, top_adj]
 
 def LatestEdge (H : SubTemporalGraph G) (x y : V) (n : ℕ) : Prop :=
   H.Adj x y n ∧ ∀ (z : V) (m : ℕ), H.Adj x z m → m ≤ n
 
-lemma top_latestEdge :
+lemma top_latestEdge [Fact G.IsSymm] :
     (⊤ : SubTemporalGraph G).LatestEdge x y n ↔ G.LatestEdge x y n := by
   simp [LatestEdge, TemporalGraph.LatestEdge, top_adj]
 
@@ -496,13 +497,13 @@ lemma earliestEdge_lt_of_proper {H : SubTemporalGraph G} {z : V} {m : ℕ}
 
 def EarliestNeighbor (H : SubTemporalGraph G) (x y : V) : Prop := ∃ n, H.EarliestEdge x y n
 
-lemma top_earliestNeighbor :
+lemma top_earliestNeighbor [Fact G.IsSymm] :
     (⊤ : SubTemporalGraph G).EarliestNeighbor x y ↔ G.EarliestNeighbor x y := by
   simp [EarliestNeighbor, TemporalGraph.EarliestNeighbor, top_earliestEdge]
 
 def LatestNeighbor (H : SubTemporalGraph G) (x y : V) : Prop := ∃ n, H.LatestEdge x y n
 
-lemma top_latestNeighbor :
+lemma top_latestNeighbor [Fact G.IsSymm] :
     (⊤ : SubTemporalGraph G).LatestNeighbor x y ↔ G.LatestNeighbor x y := by
   simp [LatestNeighbor, TemporalGraph.LatestNeighbor, top_latestEdge]
 
@@ -634,7 +635,7 @@ theorem mem_neighborhoodSet (H : SubTemporalGraph G) (x : H.Verts) (y : V) :
     y ∈ H.NeighborhoodSet x ↔ ∃ n, H.Adj x y n :=
   Iff.rfl
 
-theorem neighborhoodSet_top (x : (⊤ : G.SubTemporalGraph).Verts) :
+theorem neighborhoodSet_top [Fact G.IsSymm] (x : (⊤ : G.SubTemporalGraph).Verts) :
     (⊤ : G.SubTemporalGraph).NeighborhoodSet x = G.NeighborhoodSet x := rfl
 
 theorem neighborSet_subset_verts (H : SubTemporalGraph G) (x : H.Verts) :
@@ -1025,7 +1026,7 @@ theorem toSubgraph.isSpanning (H : TemporalGraph V) (hs : H.IsSymm) (h : H ≤ G
     (toSubTemporalGraph H hs h).IsSpanning :=
   Set.mem_univ
 
-def toSubgraphTop : G.SubTemporalGraph := ⊤
+def toSubgraphTop [Fact G.IsSymm] : G.SubTemporalGraph := ⊤
 
 /-- Create a `SubTemporalGraph G` from a set of edges, the edges not in `G.EdgeSet` are ignored. -/
 @[simps]

@@ -435,6 +435,10 @@ lemma addVerts_le {H : SubTemporalGraph G} {s : Set V} : H ≤ (H.addVerts s) :=
 
 lemma addVerts_le' (H : SubTemporalGraph G) (s : Set V) : H ≤ (H.addVerts s) := addVerts_le
 
+lemma addVerts_isSymm {H : SubTemporalGraph G} (hs : H.IsSymm) (s : Set V) :
+    (H.addVerts s).IsSymm :=
+  induce_isSymm hs _
+
 end AddVerts
 
 section AddEdge

@@ -501,7 +501,8 @@ def addEdgeSymm (H : SubTemporalGraph G) (hs : G.IsSymm) (h : G.Adj x y n)
     · intro h'' ; rw [h''.left.symm, h''.right.left.symm, h''.right.right.symm] at h
       exact h.symm hs
 
-variable {H : SubTemporalGraph G} {hs : G.IsSymm} {h : G.Adj x y n} {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts}
+variable {H : SubTemporalGraph G} {hs : G.IsSymm} {h : G.Adj x y n}
+  {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts}
 
 @[simp]
 theorem addEdge_le : H ≤ addEdge H h h₁ := by
@@ -760,6 +761,13 @@ section EdgeSet
 def EdgeSet (H : SubTemporalGraph G) : Set ((Sym2 V) × ℕ) :=
   {(p, n) | ∃ x y : p, H.Adj x y n}
 
+-- The `Adj → EdgeSet` direction is orientation-free: it just exhibits `x` and `y` as members of
+-- `s(x,y)`, so it needs neither symmetry of `H` nor looplessness of `G`.
+protected theorem Adj.mem_edgeSet {H : SubTemporalGraph G} {x y : V} {n : ℕ} (h : H.Adj x y n) :
+    (s(x,y), n) ∈ H.EdgeSet :=
+  ⟨⟨x, Sym2.mem_iff.mpr <| Or.inl <| Eq.refl x⟩,
+    ⟨y, Sym2.mem_iff.mpr <| Or.inr <| Eq.refl y⟩, h⟩
+
 -- `EdgeSet` is `Sym2`-valued, i.e. unordered: recognizing `s(x,y)` as an edge of `H` from the
 -- reversed orientation genuinely needs `H` to be symmetric.
 @[simp]
@@ -776,10 +784,7 @@ theorem mem_edgeSet (H : SubTemporalGraph G) (hs : H.IsSymm) (hl : G.IsLoopless)
     · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_right (hadj.ne' hl)
       rw [heq'] at hadj
       exact hadj.symm hs
-  · intro hadj
-    have hin : x ∈ s(x,y) := Sym2.mem_iff.mpr <| Or.inl <| Eq.refl x
-    have hin' : y ∈ s(x,y) := Sym2.mem_iff.mpr <| Or.inr <| Eq.refl y
-    exact ⟨⟨x, hin⟩, ⟨⟨y, hin'⟩, hadj⟩⟩
+  · exact SubTemporalGraph.Adj.mem_edgeSet
 
 @[simp]
 lemma edgeSet_le {H : SubTemporalGraph G} {H' : SubTemporalGraph G} (h₀ : H ≤ H') :
@@ -787,7 +792,7 @@ lemma edgeSet_le {H : SubTemporalGraph G} {H' : SubTemporalGraph G} (h₀ : H �
   intro _ ⟨_, _, h⟩
   exact ⟨_, _, h₀.right h⟩
 
-lemma le_iff_edgeSet_and_verts {H H' : SubTemporalGraph G} (hs : H.IsSymm) (hs' : H'.IsSymm)
+lemma le_iff_edgeSet_and_verts {H H' : SubTemporalGraph G} (hs' : H'.IsSymm)
     (hl : G.IsLoopless) :
     H ≤ H' ↔ H.EdgeSet ⊆ H'.EdgeSet ∧ H.Verts ⊆ H'.Verts := by
   constructor
@@ -799,9 +804,8 @@ lemma le_iff_edgeSet_and_verts {H H' : SubTemporalGraph G} (hs : H.IsSymm) (hs' 
     constructor
     · exact h.right
     · intro _ _ _ hadj
-      rw [←mem_edgeSet _ hs hl] at hadj
       rw [←mem_edgeSet _ hs' hl]
-      apply Set.mem_of_subset_of_mem h.left hadj
+      exact Set.mem_of_subset_of_mem h.left hadj.mem_edgeSet
 
 @[simp]
 lemma addEdgeSymm_edgeSet (H : SubTemporalGraph G) {x y : V} {n : ℕ}

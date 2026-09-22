@@ -47,7 +47,8 @@ variable {G : TemporalGraph V} {x y : V} {n : ℕ}
 theorem adj_comm (hs : G.IsSymm) (x y : V) (n : ℕ) : G.Adj x y n ↔ G.Adj y x n :=
   ⟨fun x => hs n x, fun x => hs n x⟩
 
-@[symm]
+-- No `@[symm]`: the `symm` tactic cannot discharge the `hs` side hypothesis, it leaves it as an
+-- unassigned metavariable and the declaration then fails in the kernel. Use `h.symm hs`.
 theorem adj_symm (hs : G.IsSymm) (h : G.Adj x y n) : G.Adj y x n :=
   hs n h
 

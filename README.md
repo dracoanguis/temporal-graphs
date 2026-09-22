@@ -35,7 +35,7 @@ fields of the structure.
 | `TemporalGraph/Init.lean` | The `LooplessTemporalGraph` aesop rule-set used by the `aesop_temporal_graph` macro |
 | `TemporalGraph/Basic.lean` | `TemporalGraph V`; the `IsSymm`/`IsLoopless` predicates; `IsSimple`/`IsProper`/`IsHappy`/`IsClique`; `Footprint` (→ `Digraph`); earliest/latest edges and neighbors; `IsSubgraph`/`IsSpanningSubgraph`; `NeighborhoodSet`/`EdgeSet`/`size` |
 | `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Non-strict, time-non-decreasing temporal walks (journeys), split into nonempty/empty variants |
-| `TemporalGraph/SubTemporalGraph.lean` | The bundled `SubTemporalGraph` type, its coercions back to a `TemporalGraph`, spanning predicates, and the `addVerts`/`addEdge`/`deleteVerts` operations |
+| `TemporalGraph/SubTemporalGraph.lean` | The unbundled `SubTemporalGraph` type with fields `Verts`/`Adj`/proofs, its coercions back to a `TemporalGraph`, symmetry predicate `IsSymm`, spanning predicates, and the `addVerts`/`addEdge`/`addEdgeSymm`/`deleteVerts` operations |
 | `TemporalGraph/Connectivity/Basic.lean`, `TemporalGraph/Connectivity/SubTemporalGraph.lean` | `Reachable`, temporal connectivity, and temporal spanners (`IsSpanner`/`IsTCSpanner`) |
 | `TemporalGraph/Dismountability/Basic.lean` | Earliest/latest-edge extension lemmas; the `Dismountable`/`TwoHopDismountable` properties; the vertex sets `Vminus`/`Vplus`/`Vzero` and their characterization (Lemmas/Theorems 3.1–3.4 of Casteigts–Peters–Schoeters) |
 | `TemporalGraph/Dismountability/Operations.lean` | The `dismount`/`mount`/`twoHopMount` operations and their correctness theorems (`dismountability`, `twoHopDismountability`) |
@@ -68,16 +68,27 @@ The toolchain (`lean`, `lake`, `elan`) is pinned by [`lean-toolchain`](lean-tool
 it with [elan](https://github.com/leanprover/elan) if needed.
 
 ```sh
-lake build                                  # full build
+lake build                                  # root module and its imports only
+lake build TemporalGraph.Dismountability.Operations   # one module, with its dependencies
 lake env lean TemporalGraph/<File>.lean     # typecheck a single file in isolation
 ```
 
+The library target has no `globs`, so `lake build` builds the root module `TemporalGraph.lean`
+and whatever it imports — today that stops at `SubTemporalGraph`. The `Connectivity/` and
+`Dismountability/` modules are only built when named explicitly.
+
 ## Status
 
-This library is under active development alongside the thesis. The core `Basic.lean` type was
-recently reworked from a bundled `LooplessTemporalGraph` (with `symm`/`loopless` fields) to the
-unbundled `TemporalGraph` + `IsSymm`/`IsLoopless` pattern described above; the rest of the
-library is being ported to match.
+This library is under active development alongside the thesis. Both `TemporalGraph` and
+`SubTemporalGraph` follow an unbundled design: the types carry only data (`Adj`, and `Verts` for
+a subgraph), while symmetry and irreflexivity are external predicates (`IsSymm`/`IsLoopless`)
+passed as explicit hypotheses wherever needed. This departs from Mathlib's `SimpleGraph`, which
+bundles `symm` and `loopless` as structure fields; the motivation is to state each result with
+exactly the hypotheses it uses, and to let a subgraph be oriented.
+
+Every module typechecks and the library contains no `sorry`. Note that a bare `lake build` only
+covers the root module and what it imports, which currently leaves out `Connectivity/` and
+`Dismountability/`; check those with an explicit module target (see above).
 
 ## License
 

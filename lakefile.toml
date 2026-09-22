@@ -17,3 +17,4 @@ scope = "leanprover-community"
 
 [[lean_lib]]
 name = "TemporalGraph"
+globs = ["TemporalGraph.+"]

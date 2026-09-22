@@ -59,11 +59,12 @@ des prédicats externes passés explicitement en hypothèse.
   symétrie ; `addEdgeSymm` (l'ancien `addEdge`, corps de définition inchangé) ajoute les deux
   orientations, requiert `G.IsSymm`, et reste celui qu'utilisent `mount`/`twoHopMount`.
 
-Chaque module typecheck et il n'existe aucun `sorry`. **Attention au piège de vérification** : le
-`lean_lib` n'a pas de `globs`, donc `lake build` ne compile que le module racine et ses imports —
-ce qui s'arrête aujourd'hui à `SubTemporalGraph`. `Connectivity/*` et `Dismountability/*` ne sont
-jamais construits par un `lake build` nu (la CI a donc le même angle mort) : il faut nommer la
-cible, par ex. `lake build TemporalGraph.Dismountability.Operations`.
+Chaque module typecheck et il n'existe aucun `sorry`. **Piège de vérification corrigé au passage** :
+le `lean_lib` n'avait pas de `globs`, si bien que `lake build` ne compilait que le module racine et
+ses imports — ce qui s'arrête à `SubTemporalGraph`. `Connectivity/*` et `Dismountability/*`
+n'étaient donc jamais construits, ni en local ni en CI. Le `lakefile.toml` déclare désormais
+`globs = ["TemporalGraph.+"]` : un `lake build` nu couvre tout. Si un doute subsiste sur un module
+précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Operations`).
 
 ## Conventions de nommage/style observées
 

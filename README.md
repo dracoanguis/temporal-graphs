@@ -68,14 +68,14 @@ The toolchain (`lean`, `lake`, `elan`) is pinned by [`lean-toolchain`](lean-tool
 it with [elan](https://github.com/leanprover/elan) if needed.
 
 ```sh
-lake build                                  # root module and its imports only
+lake build                                  # every module of the library
 lake build TemporalGraph.Dismountability.Operations   # one module, with its dependencies
 lake env lean TemporalGraph/<File>.lean     # typecheck a single file in isolation
 ```
 
-The library target has no `globs`, so `lake build` builds the root module `TemporalGraph.lean`
-and whatever it imports — today that stops at `SubTemporalGraph`. The `Connectivity/` and
-`Dismountability/` modules are only built when named explicitly.
+The library target declares `globs = ["TemporalGraph.+"]`, so `lake build` covers every module.
+Without it, lake would build only the root module `TemporalGraph.lean` and what it imports, which
+stops at `SubTemporalGraph` and silently skips `Connectivity/` and `Dismountability/`.
 
 ## Status
 
@@ -86,9 +86,7 @@ passed as explicit hypotheses wherever needed. This departs from Mathlib's `Simp
 bundles `symm` and `loopless` as structure fields; the motivation is to state each result with
 exactly the hypotheses it uses, and to let a subgraph be oriented.
 
-Every module typechecks and the library contains no `sorry`. Note that a bare `lake build` only
-covers the root module and what it imports, which currently leaves out `Connectivity/` and
-`Dismountability/`; check those with an explicit module target (see above).
+Every module typechecks and the library contains no `sorry`.
 
 ## License
 

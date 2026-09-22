@@ -110,33 +110,35 @@ lemma reachable_of_le_reachable {H : SubTemporalGraph G} {H' : SubTemporalGraph 
 
 @[simp]
 lemma reachable_of_earliestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
-    (h₀ : H.EarliestEdge x y n) :
+    (hs : H.IsSymm) (h₀ : H.EarliestEdge x y n) :
     ∀ z : H.Verts, H.Reachable x z → H.Reachable y z := by
   intro z h
-  exact H.coe.reachable_of_earliestEdge H.coe_isSymm (coe_earliestEdge h₀) z h
+  exact H.coe.reachable_of_earliestEdge (H.coe_isSymm hs) (coe_earliestEdge h₀) z h
 
 lemma reachable_of_extended_earliestEdge {H : SubTemporalGraph G} {x y z : H.Verts} {n m : ℕ}
+    (hs : H.IsSymm)
     (h₀ : H.EarliestEdge x y n)
     (h₁ : H.Adj z y m)
     (h₂ : m ≤ n) :
     ∀ a : H.Verts, H.Reachable x a → H.Reachable z a := by
   intro a h
-  exact H.coe.reachable_of_extended_earliestEdge H.coe_isSymm (coe_earliestEdge h₀) h₁ h₂ a h
+  exact H.coe.reachable_of_extended_earliestEdge (H.coe_isSymm hs) (coe_earliestEdge h₀) h₁ h₂ a h
 
 @[simp]
 lemma reachable_of_latestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
-    (h₀ : H.LatestEdge x y n) :
+    (hs : H.IsSymm) (h₀ : H.LatestEdge x y n) :
     ∀ z : H.Verts, H.Reachable z x → H.Reachable z y := by
   intro z h
-  exact H.coe.reachable_of_latestEdge H.coe_isSymm (coe_latestEdge h₀) z h
+  exact H.coe.reachable_of_latestEdge (H.coe_isSymm hs) (coe_latestEdge h₀) z h
 
 lemma reachable_of_extended_latestEdge {H : SubTemporalGraph G} {x y z : H.Verts} {n m : ℕ}
+    (hs : H.IsSymm)
     (h₀ : H.LatestEdge x y n)
     (h₁ : H.Adj y z m)
     (h₂ : n ≤ m) :
     ∀ a : H.Verts, H.Reachable a x → H.Reachable a z := by
   intro a h
-  exact H.coe.reachable_of_extended_latestEdge H.coe_isSymm (coe_latestEdge h₀) h₁ h₂ a h
+  exact H.coe.reachable_of_extended_latestEdge (H.coe_isSymm hs) (coe_latestEdge h₀) h₁ h₂ a h
 
 @[simp]
 protected lemma temporallyConnected_of_TCSpanner (H : SubTemporalGraph G) :
@@ -154,10 +156,10 @@ theorem addVerts_reachability {s : Set V} {H : SubTemporalGraph G} :
     ∀ x y : H.Verts, H.Reachable x y → (H.addVerts s).Reachable ⟨x, by simp⟩ ⟨y, by simp⟩ := by
   exact reachable_of_le_reachable addVerts_le
 
-theorem addEdge_reachability {x y : V} {n : ℕ} {H : SubTemporalGraph G} (hs : G.IsSymm)
+theorem addEdgeSymm_reachability {x y : V} {n : ℕ} {H : SubTemporalGraph G} (hs : G.IsSymm)
     {h : G.Adj x y n} {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts} :
-    ∀ x y : H.Verts, H.Reachable x y → (H.addEdge hs h h₁).Reachable x y := by
-  exact reachable_of_le_reachable addEdge_le
+    ∀ x y : H.Verts, H.Reachable x y → (H.addEdgeSymm hs h h₁).Reachable x y := by
+  exact reachable_of_le_reachable addEdgeSymm_le
 
 theorem deleteVerts_reachability {s : Set V} {H : SubTemporalGraph G} :
     ∀ x y : (H.deleteVerts s).Verts, (H.deleteVerts s).Reachable x y → H.Reachable
@@ -167,7 +169,7 @@ theorem deleteVerts_reachability {s : Set V} {H : SubTemporalGraph G} :
         |mk y hy => exact h y hy⟩ := by
   exact reachable_of_le_reachable deleteVerts_le
 
-lemma top_isSpanner [Fact G.IsSymm] : (⊤ : SubTemporalGraph G).IsSpanner := by
+lemma top_isSpanner : (⊤ : SubTemporalGraph G).IsSpanner := by
   dsimp [IsSpanner]
   constructor
   · exact top_isSpanning
@@ -178,7 +180,7 @@ lemma top_isSpanner [Fact G.IsSymm] : (⊤ : SubTemporalGraph G).IsSpanner := by
 
 /-- A temporal graph admits a spanner if and only if it is Temporally Connected -/
 @[simp]
-theorem TCspanner_iff_TC [Fact G.IsSymm] :
+theorem TCspanner_iff_TC :
     (∃ (H : SubTemporalGraph G), H.IsTCSpanner) ↔ G.TemporallyConnected := by
   unfold SubTemporalGraph.IsTCSpanner
   apply Iff.intro

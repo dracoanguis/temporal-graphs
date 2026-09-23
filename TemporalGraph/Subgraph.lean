@@ -6,6 +6,63 @@ Authors: Ethan Bargaud-Arm
 import TemporalGraph.Basic
 import TemporalGraph.TemporalWalk
 
+/-!
+# Sub-temporal-graphs
+
+A subgraph of a temporal graph is a set of vertices together with a temporal adjacency relation
+that refines the ambient graph's and whose edges have both endpoints in that vertex set. Unlike
+Mathlib's `SimpleGraph.Subgraph`, symmetry is not a field: a subgraph may be oriented, and the
+symmetric world is entered by assuming `[H.IsSymm]`.
+
+This file defines `TemporalGraph.Subgraph`, its bounded order, the constructions that build one
+(`induce`, `deleteVerts`, `addVerts`, `addEdge`, `addEdgeSymm`, `toSubgraph`, `fromEdgeSet`), and
+the subgraph counterparts of the vertex- and edge-indexed notions of `TemporalGraph.Basic`.
+
+## Main definitions
+
+* `TemporalGraph.Subgraph G` : the type of subgraphs of `G : TemporalGraph V`.
+* `TemporalGraph.Subgraph.coe` : the view of `H : Subgraph G` as a `TemporalGraph H.verts`.
+* `TemporalGraph.Subgraph.IsSpanning`, `TemporalGraph.Subgraph.IsInduced` : whether a subgraph
+  carries all of `G`'s vertices, resp. all of `G`'s edges between its own vertices.
+* `TemporalGraph.Subgraph.IsClique`, `TemporalGraph.Subgraph.IsMatching`,
+  `TemporalGraph.Subgraph.IsPerfectMatching` : the predicates quantifying over `H.verts`.
+* `TemporalGraph.Subgraph.neighborSet`, `TemporalGraph.Subgraph.incidenceSet`,
+  `TemporalGraph.Subgraph.size`, `TemporalGraph.Subgraph.order` : the counting notions.
+* `TemporalGraph.Subgraph.induce`, `TemporalGraph.Subgraph.deleteVerts`,
+  `TemporalGraph.Subgraph.addVerts`, `TemporalGraph.Subgraph.addEdge`,
+  `TemporalGraph.Subgraph.addEdgeSymm` : the constructions turning a subgraph into another one.
+  `addEdge` adds a single orientation and needs no symmetry; `addEdgeSymm` adds both.
+* `TemporalGraph.toSubgraph`, `TemporalGraph.Subgraph.fromEdgeSet` : the constructions producing a
+  subgraph from a temporal graph below `G`, resp. from a set of edges.
+
+## Main results
+
+* Instances `BoundedOrder (Subgraph G)` and `PartialOrder (Subgraph G)`, with `⊤` the whole of `G`
+  and `⊥` the empty subgraph.
+* `TemporalGraph.Subgraph.le_iff_edgeSet_and_verts` : a symmetric subgraph is below another
+  exactly when its vertices and its edges are.
+* `TemporalGraph.Subgraph.earliestEdge_exists_of_nonempty_finite_incidenceSet` and its `latest`
+  counterpart : a vertex with a nonempty finite incidence set has an earliest, resp. latest, edge.
+* `TemporalGraph.Subgraph.edgeSetToFootprintEdgeSet_bijective` : for a symmetric, simple subgraph,
+  edges and footprint edges are in bijection.
+* Coercion instances lifting temporal walks between `H.coe`, `H` and `G`.
+
+## Implementation notes
+
+* `Subgraph` **extends** `TemporalGraph V`: a subgraph literally *is* a temporal graph together
+  with a vertex set and compatibility proofs. The parent's whole lemma corpus therefore applies to
+  `H.Adj` for free, and notions such as `H.IsSymm`, `H.IsSimple`, `H.EarliestEdge` or `H.edgeSet`
+  resolve through generalized field notation to the `TemporalGraph` ones taken at
+  `H.toTemporalGraph`, instead of being redefined here. Only the notions quantifying over
+  `H.verts` are defined afresh.
+* The flip side of that inheritance: since `H.Adj x y n` *is* the parent's `Adj`, dot notation on
+  a proof `h : H.Adj x y n` resolves in the `TemporalGraph.Adj` namespace, never in
+  `TemporalGraph.Subgraph.Adj`. The subgraph-specific helpers must accordingly be written with the
+  subgraph in front — `H.adj_sub h`, `H.edge_vert h`, `H.edge_vert' h`, `H.adj_symm h` — and not
+  as `h.adj_sub`, `h.fst_mem`, `h.snd_mem`, `h.symm`. The fully qualified spellings, such as
+  `TemporalGraph.Subgraph.Adj.snd_mem h`, keep working.
+-/
+
 universe u
 
 namespace TemporalGraph
@@ -22,6 +79,8 @@ structure Subgraph {V : Type u} (G : TemporalGraph V) extends TemporalGraph V wh
 namespace Subgraph
 
 variable {V : Type u} {G : TemporalGraph V}
+
+section CoeAdjacency
 
 -- `IsSymm` is no longer redefined here: `Subgraph` now `extends TemporalGraph V`, so
 -- `H.IsSymm` resolves through generalized field notation to
@@ -85,11 +144,6 @@ instance coe_isSymm (H : Subgraph G) [hs : H.IsSymm] : H.coe.IsSymm :=
 instance coe_isLoopless (H : Subgraph G) [G.IsLoopless] : H.coe.IsLoopless :=
   ⟨fun _ ↦ ⟨fun _ h ↦ G.irrefl (H.adj_sub h)⟩⟩
 
-@[simp]
-theorem Adj.adj_sub' (H : Subgraph G) (x y : H.verts) (n : ℕ) (h : H.Adj x y n) :
-    G.Adj x y n :=
-  H.adj_sub h
-
 theorem coe_adj_sub (H : Subgraph G) (x y : H.verts) (n : ℕ) (h : H.coe.Adj x y n) :
     G.Adj x y n :=
   H.adj_sub h
@@ -105,6 +159,8 @@ theorem coe_sub (H : Subgraph G) :
     IsSubgraphOf H.coe (G : TemporalGraph {x : V // True}) where
   incl _ _ := trivial
   incl' hadj := H.adj_sub hadj
+
+end CoeAdjacency
 
 section Spanning
 
@@ -224,6 +280,38 @@ lemma nonempty_incidenceSet_of_nontrivial_clique {H : Subgraph G} [h : Nontrivia
   · have ⟨n, hadj⟩ := h₁ x y heq
     have h' : ⟨y, n⟩ ∈ (H.incidenceSet x) := hadj
     use ⟨y, n⟩
+
+lemma earliestEdge_exists_of_nonempty_finite_incidenceSet {x : V} {H : Subgraph G}
+    (h₀ : (H.incidenceSet x).Nonempty)
+    (h₁ : (H.incidenceSet x).Finite) :
+    ∃ (y : V) (n : ℕ), H.EarliestEdge x y n := by
+  haveI : Nonempty (H.incidenceSet x) := Set.nonempty_coe_sort.mpr h₀
+  have ⟨⟨⟨y, n⟩, hin⟩, hmin⟩ := h₁.exists_min (fun x ↦ x.1.2)
+  use y, n
+  unfold TemporalGraph.EarliestEdge
+  constructor
+  · trivial
+  · intro z m hadj
+    have hin' : ⟨z, m⟩ ∈ H.incidenceSet x := hadj
+    have hle := hmin ⟨⟨z, m⟩, hin'⟩
+    simp at hle
+    trivial
+
+lemma latestEdge_exists_of_nonempty_finite_incidenceSet {x : V} {H : Subgraph G}
+    (h₀ : (H.incidenceSet x).Nonempty)
+    (h₁ : (H.incidenceSet x).Finite) :
+    ∃ (z : V) (m : ℕ), H.LatestEdge x z m := by
+  haveI : Nonempty (H.incidenceSet x) := Set.nonempty_coe_sort.mpr h₀
+  have ⟨⟨⟨y, n⟩, hin⟩, hmax⟩ := h₁.exists_max (fun x ↦ x.1.2)
+  use y, n
+  unfold TemporalGraph.LatestEdge
+  constructor
+  · trivial
+  · intro z m hadj
+    have hin' : ⟨z, m⟩ ∈ H.incidenceSet x := hadj
+    have hle := hmax ⟨⟨z, m⟩, hin'⟩
+    simp at hle
+    trivial
 
 end incidenceSet
 
@@ -562,38 +650,6 @@ lemma top_latestNeighbor :
     (⊤ : Subgraph G).LatestNeighbor x y ↔ G.LatestNeighbor x y := by
   simp [TemporalGraph.LatestNeighbor, top_latestEdge]
 
-lemma earliestEdge_exists_of_nonempty_finite_incidenceSet {H : Subgraph G}
-    (h₀ : (H.incidenceSet x).Nonempty)
-    (h₁ : (H.incidenceSet x).Finite) :
-    ∃ (y : V) (n : ℕ), H.EarliestEdge x y n := by
-  haveI : Nonempty (H.incidenceSet x) := Set.nonempty_coe_sort.mpr h₀
-  have ⟨⟨⟨y, n⟩, hin⟩, hmin⟩ := h₁.exists_min (fun x ↦ x.1.2)
-  use y, n
-  unfold TemporalGraph.EarliestEdge
-  constructor
-  · trivial
-  · intro z m hadj
-    have hin' : ⟨z, m⟩ ∈ H.incidenceSet x := hadj
-    have hle := hmin ⟨⟨z, m⟩, hin'⟩
-    simp at hle
-    trivial
-
-lemma latestEdge_exists_of_nonempty_finite_incidenceSet {H : Subgraph G}
-    (h₀ : (H.incidenceSet x).Nonempty)
-    (h₁ : (H.incidenceSet x).Finite) :
-    ∃ (z : V) (m : ℕ), H.LatestEdge x z m := by
-  haveI : Nonempty (H.incidenceSet x) := Set.nonempty_coe_sort.mpr h₀
-  have ⟨⟨⟨y, n⟩, hin⟩, hmax⟩ := h₁.exists_max (fun x ↦ x.1.2)
-  use y, n
-  unfold TemporalGraph.LatestEdge
-  constructor
-  · trivial
-  · intro z m hadj
-    have hin' : ⟨z, m⟩ ∈ H.incidenceSet x := hadj
-    have hle := hmax ⟨⟨z, m⟩, hin'⟩
-    simp at hle
-    trivial
-
 lemma coe_earliestEdge_of_graph_earliestEdge {H : Subgraph G}
     (h₀ : G.EarliestEdge x y n) (h₁ : H.Adj x y n) :
     H.coe.EarliestEdge ⟨x, H.edge_vert h₁⟩ ⟨y, H.edge_vert' h₁⟩ n := by
@@ -804,15 +860,6 @@ instance {H : Subgraph G} {s : Set V} [h₀ : Finite H.edgeSet] [Finite s] :
 def footprintEdgeSet (H : Subgraph G) : Set (Sym2 V) :=
   {p | ∃ n x y, p = s(x,y) ∧ H.Adj x y n}
 
--- NOTE(refactor): `footprint` now returns a Mathlib `Digraph` (Basic.lean's "Relation rework"),
--- which has no `edgeSet` (directed graphs don't have unordered edges) — unlike the old
--- `SimpleGraph`-valued `footprint`. This statement can't even be typed as-is anymore; left for
--- review (likely needs restating via `footprint.Adj` or `SimpleGraph.fromRel` instead of
--- `.edgeSet`).
--- theorem FootprintEdgeSet_eq {H : Subgraph G} (hl : G.IsLoopless) :
---     H.toTemporalGraph.footprint.edgeSet = H.footprintEdgeSet := by
---   sorry
-
 def edgeSetToFootprintEdgeSet (H : Subgraph G) : H.edgeSet → H.footprintEdgeSet :=
   fun x ↦ ⟨x.val.fst, by
     obtain ⟨a, b, hp, hadj⟩ := x.2
@@ -910,6 +957,8 @@ theorem addVerts_size {H : Subgraph G} {s : Set V}
 end Size
 
 end Subgraph
+
+section WalkLift
 
 namespace NonemptyTemporalWalk
 
@@ -1020,7 +1069,9 @@ instance {H : Subgraph G} {x y : H.verts} {n m : ℕ} :
 
 end TemporalWalk
 
-section SubgraphProps
+end WalkLift
+
+section Construction
 
 variable {V : Type u} {G : TemporalGraph V}
 
@@ -1047,8 +1098,6 @@ theorem toSubgraph_isSpanning (H : TemporalGraph V) (h : H ≤ G) :
 instance toSubgraph_isSymm (H : TemporalGraph V) [hs : H.IsSymm] (h : H ≤ G) :
     (toSubgraph H h).IsSymm :=
   hs
-
-def toSubgraphTop : G.Subgraph := ⊤
 
 -- `fromEdgeSet` lives in the `Subgraph` namespace (unlike `TemporalGraph.fromEdgeSet` in
 -- `Basic.lean`, which builds a plain, symmetrized `TemporalGraph`): dot notation `G.fromEdgeSet`
@@ -1106,6 +1155,6 @@ theorem fromEdgeSet_eq {G : TemporalGraph V} [G.IsSymm] [G.IsLoopless]
 
 end Subgraph
 
-end SubgraphProps
+end Construction
 
 end TemporalGraph

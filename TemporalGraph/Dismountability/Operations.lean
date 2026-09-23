@@ -22,17 +22,17 @@ lemma dismount_clique (H : Subgraph G) (x : V) (h₀ : H.IsClique) :
     (H.dismount x).IsClique := by
   unfold IsClique dismount
   intro ⟨y, hy⟩ ⟨z, hz⟩ hne
-  simp only [induce_Verts, Set.mem_diff, Set.mem_singleton_iff] at hy hz
-  have hy' : y ∈ H.Verts := hy.1
-  have hz' : z ∈ H.Verts := hz.1
+  simp only [induce_verts, Set.mem_diff, Set.mem_singleton_iff] at hy hz
+  have hy' : y ∈ H.verts := hy.1
+  have hz' : z ∈ H.verts := hz.1
   have ⟨n, hadj⟩ := h₀ ⟨y, hy'⟩ ⟨z, hz'⟩ (by grind only)
   use n
   simp only [induce_Adj, Set.mem_diff, hy', Set.mem_singleton_iff, true_and, hz', hadj, and_true]
   exact ⟨hy.2, hz.2⟩
 
 @[simp]
-lemma dismount_verts {H : Subgraph G} {x : V} : (H.dismount x).Verts = H.Verts \ {x} := by
-  simp only [induce_Verts]
+lemma dismount_verts {H : Subgraph G} {x : V} : (H.dismount x).verts = H.verts \ {x} := by
+  simp only [induce_verts]
 
 @[simp]
 lemma dismount_le {H : Subgraph G} {x : V} : (H.dismount x) ≤ H := by
@@ -42,22 +42,22 @@ end Dismount
 
 section Mount
 
-def mount (H : Subgraph G) {y z : H.Verts} {n m : ℕ} (x : V) [G.IsSymm]
+def mount (H : Subgraph G) {y z : H.verts} {n m : ℕ} (x : V) [G.IsSymm]
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
     G.Subgraph :=
 ((H.addVerts {x}).addEdgeSymm h₀ (by simp)).addEdgeSymm h₁ (by simp)
 
 @[simp]
-lemma mount_verts {H : Subgraph G} {x : V} {y z : H.Verts} {n m : ℕ} [G.IsSymm]
+lemma mount_verts {H : Subgraph G} {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
-    (mount H x h₀ h₁).Verts = H.Verts ∪ {x} := by
+    (mount H x h₀ h₁).verts = H.verts ∪ {x} := by
   rw [mount, addEdgeSymm_verts, addEdgeSymm_verts, addVerts_verts]
 
 -- `mount` is a plain `def`, so instance resolution cannot see the `addEdgeSymm`/`addVerts`
 -- layers it is built from; this instance unfolds it once and hands the goal back to resolution.
-instance mount_isSymm {H : Subgraph G} {x : V} {y z : H.Verts} {n m : ℕ} [H.IsSymm]
+instance mount_isSymm {H : Subgraph G} {x : V} {y z : H.verts} {n m : ℕ} [H.IsSymm]
     [G.IsSymm]
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
@@ -66,27 +66,27 @@ instance mount_isSymm {H : Subgraph G} {x : V} {y z : H.Verts} {n m : ℕ} [H.Is
   infer_instance
 
 @[simp]
-lemma mem_mount_verts {H : Subgraph G} {x : V} {y z : H.Verts} {n m : ℕ} [G.IsSymm]
+lemma mem_mount_verts {H : Subgraph G} {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
     {h₀ : G.Adj y x n}
     {h₁ : G.Adj z x m}
-    (x' : H.Verts) :
-    ↑x' ∈ (mount H x h₀ h₁).Verts := by simp [mount_verts]
+    (x' : H.verts) :
+    ↑x' ∈ (mount H x h₀ h₁).verts := by simp [mount_verts]
 
-lemma mount_edge (H : Subgraph G) {x : V} {y z : H.Verts} {n m : ℕ} [G.IsSymm]
+lemma mount_edge (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
     (mount H x h₀ h₁).Adj x y n := by
-  simp only [mount, addEdgeSymm, induce_Verts, Set.union_singleton, induce_Adj,
+  simp only [mount, addEdgeSymm, induce_verts, Set.union_singleton, induce_Adj,
     Set.mem_insert_iff, true_or, true_and, and_true, and_self, or_true]
 
-lemma mount_edge' (H : Subgraph G) {x : V} {y z : H.Verts} {n m : ℕ} [G.IsSymm]
+lemma mount_edge' (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
     (mount H x h₀ h₁).Adj z x m := by
   rw [mount]
   apply addEdgeSymm_edge
 
-lemma mount_le {H : Subgraph G} {x : V} {y z : H.Verts} {n m : ℕ} [G.IsSymm]
+lemma mount_le {H : Subgraph G} {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
     {h₀ : G.Adj y x n}
     {h₁ : G.Adj z x m} :
     H ≤ H.mount x h₀ h₁ := by
@@ -96,14 +96,14 @@ lemma mount_le {H : Subgraph G} {x : V} {y z : H.Verts} {n m : ℕ} [G.IsSymm]
   exact le_trans h' addEdgeSymm_le
 
 @[simp]
-lemma mount_edgeSet (H : Subgraph G) {x : V} {y z : H.Verts} {n m : ℕ} [G.IsSymm]
+lemma mount_edgeSet (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
     [G.IsLoopless]
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
-    (H.mount x h₀ h₁).EdgeSet = H.EdgeSet ∪ {⟨s(z,x), m⟩, ⟨s(y,x), n⟩} := by
+    (H.mount x h₀ h₁).edgeSet = H.edgeSet ∪ {⟨s(z,x), m⟩, ⟨s(y,x), n⟩} := by
   simp [mount, addEdgeSymm_edgeSet, addVerts_edgeSet]
 
-theorem mount_tc (H : Subgraph G) {x : V} {y z : H.Verts} {n m : ℕ} [H.IsSymm]
+theorem mount_tc (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [H.IsSymm]
     [G.IsSymm]
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m)
@@ -116,9 +116,9 @@ theorem mount_tc (H : Subgraph G) {x : V} {y z : H.Verts} {n m : ℕ} [H.IsSymm]
     := reachable_of_le_reachable mount_le
   unfold Subgraph.TemporallyConnected
   intro hTC
-  have hy : y.val ∈ (mount H x h₀ h₁).Verts := by simp [mount_verts]
-  have hx : x ∈ (mount H x h₀ h₁).Verts := by simp [mount_verts]
-  have hz : z.val ∈ (mount H x h₀ h₁).Verts := by simp [mount_verts]
+  have hy : y.val ∈ (mount H x h₀ h₁).verts := by simp [mount_verts]
+  have hx : x ∈ (mount H x h₀ h₁).verts := by simp [mount_verts]
+  have hz : z.val ∈ (mount H x h₀ h₁).verts := by simp [mount_verts]
   simp only [Reachable, Subtype.forall, mount_verts, Set.union_singleton, Set.mem_insert_iff]
   intro x' hx' y' hy'
   apply hx'.elim
@@ -128,7 +128,7 @@ theorem mount_tc (H : Subgraph G) {x : V} {y z : H.Verts} {n m : ℕ} [H.IsSymm]
       conv => rhs ; lhs ; rw [heq']
       simpa using @TemporalGraph.reachable_of_self _ ((mount H x h₀ h₁).coe) ⟨x, _⟩
     · intro hy'₀
-      have hy'₁ : y' ∈ (mount H x h₀ h₁).Verts := by simp [hy']
+      have hy'₁ : y' ∈ (mount H x h₀ h₁).verts := by simp [hy']
       apply @reachable_of_earliestEdge _ _ (mount H x h₀ h₁) ⟨y, _⟩ ⟨x, _⟩ n inferInstance h₂
         ⟨y', _⟩
       exact hReach ⟨y, _⟩ ⟨y', hy'₀⟩ <| hTC _ _
@@ -140,23 +140,23 @@ theorem mount_tc (H : Subgraph G) {x : V} {y z : H.Verts} {n m : ℕ} [H.IsSymm]
       exact hReach ⟨x', hx'⟩ ⟨z, _⟩ <| hTC _ _
     · intro hy' ; exact hReach ⟨x', hx'⟩ ⟨y', hy'⟩ <| hTC _ _
 
-instance {H : Subgraph G} [h₀ : Finite H.EdgeSet] {x : V} {y z : H.Verts} {n m : ℕ}
+instance {H : Subgraph G} [h₀ : Finite H.edgeSet] {x : V} {y z : H.verts} {n m : ℕ}
     [G.IsSymm] [G.IsLoopless]
     {h₁ : G.Adj y x n}
     {h₂ : G.Adj z x m} :
-    Finite (H.mount x h₁ h₂).EdgeSet := by
+    Finite (H.mount x h₁ h₂).edgeSet := by
   conv =>
     rhs ; rw [H.mount_edgeSet]
   apply Set.Finite.union
   · trivial
   · simp only [Set.finite_insert, Set.finite_singleton]
 
-theorem mount_size {H : Subgraph G} [Fintype H.EdgeSet] {x : V} {y z : H.Verts} {n m : ℕ}
+theorem mount_size {H : Subgraph G} [Fintype H.edgeSet] {x : V} {y z : H.verts} {n m : ℕ}
     [G.IsSymm] [G.IsLoopless]
     {h₀ : G.Adj y x n}
     {h₁ : G.Adj z x m}
-    [Fintype (H.mount x h₀ h₁).EdgeSet] :
-    Fintype.card (H.mount x h₀ h₁).EdgeSet ≤ Fintype.card H.EdgeSet + 2 := by
+    [Fintype (H.mount x h₀ h₁).edgeSet] :
+    Fintype.card (H.mount x h₀ h₁).edgeSet ≤ Fintype.card H.edgeSet + 2 := by
   conv => lhs ; simp only [H.mount_edgeSet]
   rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card]
   have hle₀ : Nat.card ({(s(↑z, x), m), (s(↑y, x), n)} : Set ((Sym2 V) × ℕ)) ≤ 2 := by
@@ -167,12 +167,12 @@ theorem mount_size {H : Subgraph G} [Fintype H.EdgeSet] {x : V} {y z : H.Verts} 
     conv => rhs ; rw [h] ; arg 1 ; rw [←h'']
     conv => arg 2 ; arg 2 ; rw [←h']
     simp only [←Nat.card_eq_fintype_card, Set.card_union_le]
-  have hle₁ : Nat.card ↑(H.EdgeSet ∪ {(s(↑z, x), m), (s(↑y, x), n)})
-      ≤ Nat.card H.EdgeSet + Nat.card ({(s(↑z, x), m), (s(↑y, x), n)} : Set ((Sym2 V) × ℕ)) := by
+  have hle₁ : Nat.card ↑(H.edgeSet ∪ {(s(↑z, x), m), (s(↑y, x), n)})
+      ≤ Nat.card H.edgeSet + Nat.card ({(s(↑z, x), m), (s(↑y, x), n)} : Set ((Sym2 V) × ℕ)) := by
     simp only [Set.card_union_le]
   lia
 
-theorem dismountability {H H' : Subgraph G} {x : H.Verts} {y z : H'.Verts} {n m : ℕ}
+theorem dismountability {H H' : Subgraph G} {x : H.verts} {y z : H'.verts} {n m : ℕ}
     [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G.IsLoopless]
     (h₀ : H.IsClique)
     (h₁ : G.Adj y x n)
@@ -181,25 +181,25 @@ theorem dismountability {H H' : Subgraph G} {x : H.Verts} {y z : H'.Verts} {n m 
     (h₄ : H.LatestEdge z x m)
     (h₅ : H'.IsSpannerOf (H.dismount x)) :
     H'.mount x h₁ h₂ |>.IsSpannerOf H := by
-  have heq : (H'.mount x h₁ h₂).Verts = H.Verts := by simp only [mount_verts, h₅.right.choose,
-    induce_Verts, Set.union_singleton, Subtype.coe_prop, Set.insert_diff_self_of_mem]
+  have heq : (H'.mount x h₁ h₂).verts = H.verts := by simp only [mount_verts, h₅.right.choose,
+    induce_verts, Set.union_singleton, Subtype.coe_prop, Set.insert_diff_self_of_mem]
   have hle : H'.mount x h₁ h₂ ≤ H := by
     apply le_iff_edgeSet_and_verts.mpr
     constructor
     · rw [H'.mount_edgeSet]
-      have hsplit : H.EdgeSet = H.EdgeSet ∪ H.EdgeSet := by simp
+      have hsplit : H.edgeSet = H.edgeSet ∪ H.edgeSet := by simp
       rw [hsplit]
       apply Set.union_subset_union
       · apply edgeSet_le
         apply le_trans h₅.left dismount_le
-      · have : (s(↑z, ↑x), m) ∈ H.EdgeSet := by
+      · have : (s(↑z, ↑x), m) ∈ H.edgeSet := by
           rw [H.mem_edgeSet]
           apply h₄.left
-        have : (s(↑y, ↑x), n) ∈ H.EdgeSet := by
+        have : (s(↑y, ↑x), n) ∈ H.edgeSet := by
           rw [H.mem_edgeSet]
           apply h₃.left
         grind
-    · simp only [mount_verts, h₅.right.choose, induce_Verts, Set.union_singleton, Subtype.coe_prop,
+    · simp only [mount_verts, h₅.right.choose, induce_verts, Set.union_singleton, Subtype.coe_prop,
       Set.insert_diff_self_of_mem, subset_refl]
   have htc : (H'.mount x h₁ h₂).TemporallyConnected := by
     apply mount_tc H'
@@ -230,7 +230,7 @@ end Mount
 
 section Mount2
 
-def twoHopMount (H : Subgraph G) {y y' z z' : H.Verts} {n n' m m' : ℕ} (x : V)
+def twoHopMount (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
     [G.IsSymm]
     (h₀ : G.Adj x y' n')
     (h₁ : G.Adj y' y n)
@@ -244,18 +244,18 @@ def twoHopMount (H : Subgraph G) {y y' z z' : H.Verts} {n n' m m' : ℕ} (x : V)
     |>.addEdgeSymm h₃ (by simp)
 
 @[simp]
-lemma twoHopMount_verts (H : Subgraph G) {y y' z z' : H.Verts} {n n' m m' : ℕ} (x : V)
+lemma twoHopMount_verts (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
     [G.IsSymm]
     (h₀ : G.Adj x y' n')
     (h₁ : G.Adj y' y n)
     (h₂ : G.Adj x z' m')
     (h₃ : G.Adj z' z m) :
-    (H.twoHopMount x h₀ h₁ h₂ h₃).Verts = H.Verts ∪ {x} := by
-  simp only [twoHopMount, addEdgeSymm_verts, induce_Verts, Set.union_singleton]
+    (H.twoHopMount x h₀ h₁ h₂ h₃).verts = H.verts ∪ {x} := by
+  simp only [twoHopMount, addEdgeSymm_verts, induce_verts, Set.union_singleton]
 
 -- Same as `mount_isSymm`: resolution stops at the `def`, so unfold the four `addEdgeSymm`
 -- layers once and let the `addEdgeSymm_isSymm`/`addVerts_isSymm` instances take over.
-instance twoHopMount_isSymm (H : Subgraph G) {y y' z z' : H.Verts} {n n' m m' : ℕ} (x : V)
+instance twoHopMount_isSymm (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
     [H.IsSymm] [G.IsSymm]
     (h₀ : G.Adj x y' n')
     (h₁ : G.Adj y' y n)
@@ -266,30 +266,30 @@ instance twoHopMount_isSymm (H : Subgraph G) {y y' z z' : H.Verts} {n n' m m' : 
   infer_instance
 
 @[simp]
-lemma mem_twoHopMount_verts {H : Subgraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x : V}
+lemma mem_twoHopMount_verts {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
     [G.IsSymm]
     {h₀ : G.Adj x y' n'}
     {h₁ : G.Adj y' y n}
     {h₂ : G.Adj x z' m'}
     {h₃ : G.Adj z' z m}
-    (x' : H.Verts) :
-    ↑x' ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts := by
+    (x' : H.verts) :
+    ↑x' ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts := by
   simp [twoHopMount_verts]
 
 @[simp]
-lemma twoHopMount_edgeSet (H : Subgraph G) {y y' z z' : H.Verts} {n n' m m' : ℕ} (x : V)
+lemma twoHopMount_edgeSet (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
     [G.IsSymm] [G.IsLoopless]
     (h₀ : G.Adj x y' n')
     (h₁ : G.Adj y' y n)
     (h₂ : G.Adj x z' m')
     (h₃ : G.Adj z' z m) :
-    (H.twoHopMount x h₀ h₁ h₂ h₃).EdgeSet =
-    H.EdgeSet ∪ {⟨s(z', z), m⟩,  ⟨s(x, z'), m'⟩, ⟨s(y',y), n⟩, ⟨s(x,y'), n'⟩} := by
+    (H.twoHopMount x h₀ h₁ h₂ h₃).edgeSet =
+    H.edgeSet ∪ {⟨s(z', z), m⟩,  ⟨s(x, z'), m'⟩, ⟨s(y',y), n⟩, ⟨s(x,y'), n'⟩} := by
   simp [twoHopMount, addEdgeSymm_edgeSet, addVerts_edgeSet]
 
 -- The four edges below are the ones `twoHopMount` inserts directly, so each is obtained by
 -- lifting `addEdgeSymm_edge` along the later `addEdgeSymm_le` layers: no symmetry needed.
-lemma twoHopMount_edge {H : Subgraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x : V}
+lemma twoHopMount_edge {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
     [G.IsSymm]
     {h₀ : G.Adj x y' n'}
     {h₁ : G.Adj y' y n}
@@ -299,7 +299,7 @@ lemma twoHopMount_edge {H : Subgraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} 
   rw [twoHopMount]
   exact addEdgeSymm_le.right <| addEdgeSymm_le.right <| addEdgeSymm_le.right addEdgeSymm_edge
 
-lemma twoHopMount_edge' {H : Subgraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x : V}
+lemma twoHopMount_edge' {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
     [G.IsSymm]
     {h₀ : G.Adj x y' n'}
     {h₁ : G.Adj y' y n}
@@ -309,7 +309,7 @@ lemma twoHopMount_edge' {H : Subgraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ}
   rw [twoHopMount]
   exact addEdgeSymm_le.right addEdgeSymm_edge
 
-lemma twoHopMount_edge'' {H : Subgraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x : V}
+lemma twoHopMount_edge'' {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
     [G.IsSymm]
     {h₀ : G.Adj x y' n'}
     {h₁ : G.Adj y' y n}
@@ -319,7 +319,7 @@ lemma twoHopMount_edge'' {H : Subgraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ
   rw [twoHopMount]
   exact addEdgeSymm_le.right <| addEdgeSymm_le.right addEdgeSymm_edge
 
-lemma twoHopMount_edge''' {H : Subgraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x : V}
+lemma twoHopMount_edge''' {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
     [G.IsSymm]
     {h₀ : G.Adj x y' n'}
     {h₁ : G.Adj y' y n}
@@ -330,7 +330,7 @@ lemma twoHopMount_edge''' {H : Subgraph G} {y y' z z' : H.Verts} {n n' m m' : �
   exact addEdgeSymm_edge
 
 @[simp]
-lemma twoHopMount_le {H : Subgraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x : V}
+lemma twoHopMount_le {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
     [G.IsSymm]
     {h₀ : G.Adj x y' n'}
     {h₁ : G.Adj y' y n}
@@ -343,7 +343,7 @@ lemma twoHopMount_le {H : Subgraph G} {y y' z z' : H.Verts} {n n' m m' : ℕ} {x
     |>.trans (addEdgeSymm_le' _ h₂ (by simp))
     |>.trans (addEdgeSymm_le' _ h₃ (by simp))
 
-theorem twoHopMount_TC (H : Subgraph G) {y y' z z' : H.Verts} {n n' m m' : ℕ} (x : V)
+theorem twoHopMount_TC (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
     [H.IsSymm] [G.IsSymm]
     (h₀ : G.Adj x y' n')
     (h₁ : G.Adj y' y n)
@@ -357,11 +357,11 @@ theorem twoHopMount_TC (H : Subgraph G) {y y' z z' : H.Verts} {n n' m m' : ℕ} 
     ⟨y', by simp [twoHopMount_verts]⟩
     := reachable_of_le_reachable twoHopMount_le
   intro htc
-  have hx  : x ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts   := by simp
-  have hy  : ↑y ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts  := by simp
-  have hy' : ↑y' ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts := by simp
-  have hz  : ↑z ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts  := by simp
-  have hz' : ↑z' ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts := by simp
+  have hx  : x ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts   := by simp
+  have hy  : ↑y ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts  := by simp
+  have hy' : ↑y' ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts := by simp
+  have hz  : ↑z ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts  := by simp
+  have hz' : ↑z' ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts := by simp
   simp only [TemporallyConnected, Reachable, Subtype.forall, twoHopMount_verts, Set.union_singleton,
     Set.mem_insert_iff]
   intro a ha b hb
@@ -372,7 +372,7 @@ theorem twoHopMount_TC (H : Subgraph G) {y y' z z' : H.Verts} {n n' m m' : ℕ} 
       simp only [heq, heq', reachable_of_self]
     · intro hb
       simp only [heq]
-      have hb' : ↑b ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts := mem_twoHopMount_verts ⟨b, hb⟩
+      have hb' : ↑b ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts := mem_twoHopMount_verts ⟨b, hb⟩
       apply @reachable_of_extended_earliestEdge _ _ (H.twoHopMount x h₀ h₁ h₂ h₃)
         ⟨y, hy⟩ ⟨y', hy'⟩ ⟨x, hx⟩ _ _ inferInstance h₄.left twoHopMount_edge
         h₄.right ⟨b, hb'⟩
@@ -382,7 +382,7 @@ theorem twoHopMount_TC (H : Subgraph G) {y y' z z' : H.Verts} {n n' m m' : ℕ} 
     apply Or.elim hb
     · intro heq
       simp only [heq]
-      have ha' : ↑a ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).Verts := mem_twoHopMount_verts ⟨a, ha⟩
+      have ha' : ↑a ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts := mem_twoHopMount_verts ⟨a, ha⟩
       apply @reachable_of_extended_latestEdge _ _ (H.twoHopMount x h₀ h₁ h₂ h₃)
         ⟨z, hz⟩ ⟨z', hz'⟩ ⟨x, hx⟩ _ _ inferInstance h₅.left
         twoHopMount_edge'.symm h₅.right ⟨a, ha'⟩
@@ -392,28 +392,28 @@ theorem twoHopMount_TC (H : Subgraph G) {y y' z z' : H.Verts} {n n' m m' : ℕ} 
       apply hReach ⟨a, ha⟩ ⟨b, hb⟩
       apply htc
 
-instance {H : Subgraph G} [h₀ : Finite H.EdgeSet] {y y' z z' : H.Verts} {n n' m m' : ℕ}
+instance {H : Subgraph G} [h₀ : Finite H.edgeSet] {y y' z z' : H.verts} {n n' m m' : ℕ}
     {x : V} [G.IsSymm] [G.IsLoopless]
     {h₁ : G.Adj x y' n'}
     {h₂ : G.Adj y' y n}
     {h₃ : G.Adj x z' m'}
     {h₄ : G.Adj z' z m} :
-    Finite (H.twoHopMount x h₁ h₂ h₃ h₄).EdgeSet := by
+    Finite (H.twoHopMount x h₁ h₂ h₃ h₄).edgeSet := by
   conv =>
     rhs ; rw [H.twoHopMount_edgeSet x h₁ h₂ h₃ h₄]
   apply Set.Finite.union
   · trivial
   · simp only [Set.finite_insert, Set.finite_singleton]
 
-theorem twoHopMount_size {H : Subgraph G} [Fintype H.EdgeSet] {y y' z z' : H.Verts}
+theorem twoHopMount_size {H : Subgraph G} [Fintype H.edgeSet] {y y' z z' : H.verts}
     {n n' m m' : ℕ}
     {x : V} [G.IsSymm] [G.IsLoopless]
     {h₀ : G.Adj x y' n'}
     {h₁ : G.Adj y' y n}
     {h₂ : G.Adj x z' m'}
     {h₃ : G.Adj z' z m}
-    [Fintype (H.twoHopMount x h₀ h₁ h₂ h₃).EdgeSet] :
-    Fintype.card (H.twoHopMount x h₀ h₁ h₂ h₃).EdgeSet ≤ Fintype.card H.EdgeSet + 4 := by
+    [Fintype (H.twoHopMount x h₀ h₁ h₂ h₃).edgeSet] :
+    Fintype.card (H.twoHopMount x h₀ h₁ h₂ h₃).edgeSet ≤ Fintype.card H.edgeSet + 4 := by
   conv => lhs ; simp only [H.twoHopMount_edgeSet x h₀ h₁ h₂ h₃]
   rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card]
   have hle₀ :
@@ -426,13 +426,13 @@ theorem twoHopMount_size {H : Subgraph G} [Fintype H.EdgeSet] {y y' z z' : H.Ver
     have heq₃ : Nat.card ({(s(x, ↑y'), n')} : Set (Sym2 V × ℕ)) = 1 := by simp
     grind only [Set.card_union_le, !Set.insert_eq]
   have hle₁ :
-      Nat.card ↑(H.EdgeSet ∪ {⟨s(z', z), m⟩,  ⟨s(x, z'), m'⟩, ⟨s(y',y), n⟩, ⟨s(x,y'), n'⟩})
-      ≤ Nat.card H.EdgeSet  + Nat.card ({(s(↑z', ↑z), m), (s(x, ↑z'), m'), (s(↑y', ↑y), n),
+      Nat.card ↑(H.edgeSet ∪ {⟨s(z', z), m⟩,  ⟨s(x, z'), m'⟩, ⟨s(y',y), n⟩, ⟨s(x,y'), n'⟩})
+      ≤ Nat.card H.edgeSet  + Nat.card ({(s(↑z', ↑z), m), (s(x, ↑z'), m'), (s(↑y', ↑y), n),
         (s(x, ↑y'), n')} : Set ((Sym2 V) × ℕ)) := by
     simp only [Set.card_union_le]
   lia
 
-theorem twoHopDismountability {H H' : Subgraph G} {x : H.Verts} {y y' z z' : H'.Verts}
+theorem twoHopDismountability {H H' : Subgraph G} {x : H.verts} {y y' z z' : H'.verts}
     {n n' m m' : ℕ}
     [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G.IsLoopless]
     (h₀ : H.IsClique)
@@ -444,27 +444,27 @@ theorem twoHopDismountability {H H' : Subgraph G} {x : H.Verts} {y y' z z' : H'.
     (h₆ : H.LatestEdge z z' m ∧ m ≤ m' ∧ H.Adj x z' m')
     (h₇ : H'.IsSpannerOf (H.dismount x)) :
     H'.twoHopMount x h₁ h₂ h₃ h₄ |>.IsSpannerOf H := by
-  have heq : (H'.twoHopMount x h₁ h₂ h₃ h₄).Verts = H.Verts := by
+  have heq : (H'.twoHopMount x h₁ h₂ h₃ h₄).verts = H.verts := by
     simp [twoHopMount_verts, h₇.right.choose]
   have hle : (H'.twoHopMount x h₁ h₂ h₃ h₄) ≤ H := by
     apply le_iff_edgeSet_and_verts.mpr
     constructor
     · rw [H'.twoHopMount_edgeSet x h₁ h₂ h₃ h₄]
-      have hsplit : H.EdgeSet = H.EdgeSet ∪ H.EdgeSet := by simp
+      have hsplit : H.edgeSet = H.edgeSet ∪ H.edgeSet := by simp
       rw [hsplit]
       apply Set.union_subset_union
       · apply edgeSet_le
         apply le_trans h₇.left dismount_le
-      · have : (s(↑z, ↑z'), m) ∈ H.EdgeSet := by
+      · have : (s(↑z, ↑z'), m) ∈ H.edgeSet := by
           rw [H.mem_edgeSet]
           apply h₆.1.1
-        have : (s(↑x, ↑z'), m') ∈ H.EdgeSet := by
+        have : (s(↑x, ↑z'), m') ∈ H.edgeSet := by
           rw [H.mem_edgeSet]
           apply h₆.2.2
-        have : (s(↑y, ↑y'), n) ∈ H.EdgeSet := by
+        have : (s(↑y, ↑y'), n) ∈ H.edgeSet := by
           rw [H.mem_edgeSet]
           apply h₅.1.1
-        have : (s(↑x, ↑y'), n') ∈ H.EdgeSet := by
+        have : (s(↑x, ↑y'), n') ∈ H.edgeSet := by
           rw [H.mem_edgeSet]
           apply h₅.2.2
         grind

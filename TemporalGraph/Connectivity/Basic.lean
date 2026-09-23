@@ -34,7 +34,7 @@ theorem reachable_iff_nonempty_univ {G : TemporalGraph V} {x y : V} :
     exact ⟨n, ⟨m, ⟨p⟩⟩⟩
 
 theorem reachable_iff_nonempty_temporalWalkSet {G : TemporalGraph V} {x y : V} :
-    G.Reachable x y ↔ (G.TemporalWalkSet x y).Nonempty := by
+    G.Reachable x y ↔ (G.temporalWalkSet x y).Nonempty := by
   apply Iff.intro
   · rintro ⟨n, ⟨m, ⟨p⟩⟩⟩
     exact ⟨⟨n, m, p⟩, ⟨n, m, p, rfl⟩⟩

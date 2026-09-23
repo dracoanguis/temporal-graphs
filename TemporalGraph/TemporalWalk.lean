@@ -18,7 +18,7 @@ inductive TemporalWalk : V → ℕ → V → ℕ → Type u
   deriving DecidableEq
 
 -- Juste pluriels
-def TemporalWalkSet (x y : V) :
+def temporalWalkSet (x y : V) :
     Set (Σ n m : ℕ, G.TemporalWalk x n y m) :=
   { p | ∃ (n m : ℕ), ∃ (tw : TemporalWalk x n y m), p = ⟨n, m, tw⟩ }
 

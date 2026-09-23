@@ -72,9 +72,9 @@ protected theorem Adj.ne' [G.IsLoopless] (h : G.Adj x y n) : y ≠ x :=
 
 end Adjacency
 
-/-- The Footprint of a TemporalGraph is a Digraph representing the underlying
+/-- The footprint of a TemporalGraph is a Digraph representing the underlying
 directed edges unlabelled by time. -/
-def Footprint (G : TemporalGraph V) : Digraph V :=
+def footprint (G : TemporalGraph V) : Digraph V :=
   { Adj := fun x y => ∃ n, G.Adj x y n }
 
 def IsSimple (G : TemporalGraph V) : Prop :=
@@ -84,8 +84,8 @@ def IsClique (G : TemporalGraph V) : Prop :=
   ∀ x y : V, x ≠ y → ∃ t, G.Adj x y t
 
 lemma isClique_iff_footprint_isComplete {G : TemporalGraph V} :
-    G.IsClique ↔ Set.univ.Pairwise G.Footprint.Adj := by
-  simp only [IsClique, ne_eq, Set.Pairwise, Set.mem_univ, Footprint, forall_const]
+    G.IsClique ↔ Set.univ.Pairwise G.footprint.Adj := by
+  simp only [IsClique, ne_eq, Set.Pairwise, Set.mem_univ, footprint, forall_const]
 
 def IsProper (G : TemporalGraph V) : Prop :=
   ∀ x y z : V, ∀ n : ℕ, G.Adj x y n ∧ G.Adj x z n → y = z
@@ -151,14 +151,14 @@ instance : Bot (TemporalGraph V) where
 
 end Order
 
-section NeighborhoodSet
+section neighborSet
 
 
-def NeighborhoodSet (G : TemporalGraph V) (x : V) := {y | ∃ n : ℕ, G.Adj x y n}
+def neighborSet (G : TemporalGraph V) (x : V) := {y | ∃ n : ℕ, G.Adj x y n}
 
 @[simp]
 theorem mem_neighborSet (G : TemporalGraph V) (x y : V) :
-    y ∈ G.NeighborhoodSet x ↔ ∃ n : ℕ, G.Adj x y n :=
+    y ∈ G.neighborSet x ↔ ∃ n : ℕ, G.Adj x y n :=
   Iff.rfl
 
 -- instance NeighborSet.memDecidable (G : TemporalGraph V) (v : V)
@@ -166,38 +166,38 @@ theorem mem_neighborSet (G : TemporalGraph V) (x y : V) :
     -- DecidablePred (· ∈ G.NeighborSet v) :=
   -- inferInstanceAs <| DecidablePred (Adj G v)
 
-end NeighborhoodSet
+end neighborSet
 
-section ArcSet
+section arcSet
 
 /-- The *arcs* of `G`: oriented edges, as an ordered pair of endpoints with their time. This is
 the oriented world's notion, and it characterizes adjacency with no hypothesis at all — unlike
-`EdgeSet`, which lives on `Sym2 V` and therefore only does so for a symmetric, loopless graph. -/
-def ArcSet (G : TemporalGraph V) : Set (V × V × ℕ) :=
+`edgeSet`, which lives on `Sym2 V` and therefore only does so for a symmetric, loopless graph. -/
+def arcSet (G : TemporalGraph V) : Set (V × V × ℕ) :=
   {a | G.Adj a.1 a.2.1 a.2.2}
 
 @[simp]
 theorem mem_arcSet (G : TemporalGraph V) {x y : V} {n : ℕ} :
-    (x, y, n) ∈ G.ArcSet ↔ G.Adj x y n :=
+    (x, y, n) ∈ G.arcSet ↔ G.Adj x y n :=
   Iff.rfl
 
-end ArcSet
+end arcSet
 
-section EdgeSet
+section edgeSet
 
 /-- The unordered edges of `G`, with their time: a pair `(p, n)` belongs when `p` is the
 unordered pair of the endpoints of an arc at time `n`. Note that this asks `p` to *be* such a
 pair, not merely to have its endpoints among them — quantifying over the members of `p` would
 also admit `s(x, y)` whenever `G` has a loop at `x`, which is why a looplessness hypothesis used
 to be needed to use this set at all. -/
-def EdgeSet (G : TemporalGraph V) : Set ((Sym2 V) × ℕ) :=
+def edgeSet (G : TemporalGraph V) : Set ((Sym2 V) × ℕ) :=
   {(p, n) | ∃ x y, p = s(x,y) ∧ G.Adj x y n}
 
-/-- Membership in `EdgeSet`, with no hypothesis: an unordered pair carries an edge exactly when
+/-- Membership in `edgeSet`, with no hypothesis: an unordered pair carries an edge exactly when
 one of its two orientations is an arc. For a symmetric graph the two disjuncts collapse — see
 `mem_edgeSet`. -/
 theorem mem_edgeSet_iff_or (G : TemporalGraph V) {x y : V} {n : ℕ} :
-    (s(x,y), n) ∈ G.EdgeSet ↔ G.Adj x y n ∨ G.Adj y x n := by
+    (s(x,y), n) ∈ G.edgeSet ↔ G.Adj x y n ∨ G.Adj y x n := by
   constructor
   · rintro ⟨a, b, hp, hadj⟩
     rcases Sym2.eq_iff.mp hp with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
@@ -209,19 +209,19 @@ theorem mem_edgeSet_iff_or (G : TemporalGraph V) {x y : V} {n : ℕ} :
 
 @[simp]
 theorem mem_edgeSet (G : TemporalGraph V) [G.IsSymm] {x y : V} {n : ℕ} :
-    (s(x,y), n) ∈ G.EdgeSet ↔ G.Adj x y n := by
+    (s(x,y), n) ∈ G.edgeSet ↔ G.Adj x y n := by
   rw [mem_edgeSet_iff_or]
   exact or_iff_left_iff_imp.mpr fun h ↦ h.symm
 
-end EdgeSet
+end edgeSet
 
 section Size
 
 /-- The number of unordered edges: the symmetric world's measure. -/
-def size (G : TemporalGraph V) [Fintype G.EdgeSet] := Fintype.card G.EdgeSet
+def size (G : TemporalGraph V) [Fintype G.edgeSet] := Fintype.card G.edgeSet
 
 /-- The number of arcs: the oriented counterpart of `size`. -/
-def arcSize (G : TemporalGraph V) [Fintype G.ArcSet] := Fintype.card G.ArcSet
+def arcSize (G : TemporalGraph V) [Fintype G.arcSet] := Fintype.card G.arcSet
 
 end Size
 
@@ -268,7 +268,7 @@ theorem fromArcSet_adj {s : Set (V × V × ℕ)} {x y : V} {n : ℕ} :
   Iff.rfl
 
 @[simp]
-theorem arcSet_fromArcSet (s : Set (V × V × ℕ)) : (fromArcSet (V := V) s).ArcSet = s := by
+theorem arcSet_fromArcSet (s : Set (V × V × ℕ)) : (fromArcSet (V := V) s).arcSet = s := by
   ext ⟨x, y, n⟩
   rfl
 
@@ -286,7 +286,7 @@ instance fromEdgeSet_isSymm (s : Set ((Sym2 V) × ℕ)) : (fromEdgeSet (V := V) 
   ⟨fun _ _ _ h ↦ by simpa [Sym2.eq_swap] using h⟩
 
 @[simp]
-theorem edgeSet_fromEdgeSet (s : Set ((Sym2 V) × ℕ)) : (fromEdgeSet (V := V) s).EdgeSet = s := by
+theorem edgeSet_fromEdgeSet (s : Set ((Sym2 V) × ℕ)) : (fromEdgeSet (V := V) s).edgeSet = s := by
   ext ⟨p, n⟩
   induction p using Sym2.ind with
   | _ x y => simp

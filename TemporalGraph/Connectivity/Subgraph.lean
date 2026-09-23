@@ -14,10 +14,10 @@ namespace TemporalGraph
 namespace Subgraph
 
 @[simp]
-def Reachable (H : Subgraph G) (x y : H.Verts) : Prop := H.coe.Reachable x y
+def Reachable (H : Subgraph G) (x y : H.verts) : Prop := H.coe.Reachable x y
 
 @[simp]
-lemma reachable_iff_toTemporalGraph {H : Subgraph G} {x y : H.Verts} :
+lemma reachable_iff_toTemporalGraph {H : Subgraph G} {x y : H.verts} :
     H.Reachable x y ↔ H.toTemporalGraph.Reachable x y := by
   unfold Reachable
   constructor
@@ -30,7 +30,7 @@ lemma reachable_iff_toTemporalGraph {H : Subgraph G} {x y : H.Verts} :
 /-- A `Subgraph` is a spanner of it's original graph `G`, if it's spanning and every
 vertices as the same Reachability as in `G`. -/
 def IsSpanner (H : Subgraph G) : Prop :=
-  H.IsSpanning ∧ ∀ x y : H.Verts, G.Reachable x y → H.Reachable x y
+  H.IsSpanning ∧ ∀ x y : H.verts, G.Reachable x y → H.Reachable x y
 
 -- NOTE(refactor): `G.IsSpanner H.coe` doesn't even type-check via dot notation: `IsSpanner` is
 -- nested in `TemporalGraph.Subgraph`, and Lean's dot notation does not search nested
@@ -47,12 +47,12 @@ def IsSpanner (H : Subgraph G) : Prop :=
 /-- A `SubTempGraph` `H` is a spanner of another one `H'` if they have the same vertices and
 everything reachable in `H'` is also in `H`. -/
 def IsSpannerOf (H : Subgraph G) (H' : Subgraph G) : Prop :=
-  H ≤ H' ∧ ∃ heq : H.Verts = H'.Verts, ∀ u v : H'.Verts , H'.Reachable u v →
+  H ≤ H' ∧ ∃ heq : H.verts = H'.verts, ∀ u v : H'.verts , H'.Reachable u v →
   H.Reachable ⟨u, by simp only [heq, Subtype.coe_prop]⟩
               ⟨v, by simp only [heq, Subtype.coe_prop]⟩
 
 /-- Every vertex can reach every vertex in the `Subgraph`. -/
-def TemporallyConnected (H : Subgraph G) : Prop := ∀ x y : H.Verts , H.Reachable x y
+def TemporallyConnected (H : Subgraph G) : Prop := ∀ x y : H.verts , H.Reachable x y
 
 @[simp]
 lemma temporallyConnected_iff {H : Subgraph G} :
@@ -93,7 +93,7 @@ theorem isTCSpanner_iff_isSpanner_and_TC {H : Subgraph G} :
 
 @[simp]
 lemma reachable_of_subgraph_reachable {H : Subgraph G} :
-    ∀ x y : H.Verts, H.Reachable x y → G.Reachable ↑x ↑y := by
+    ∀ x y : H.verts, H.Reachable x y → G.Reachable ↑x ↑y := by
   intro _ _ h
   rw [Reachable, reachable_iff_nonempty_univ] at h
   have ⟨n, ⟨m, ⟨p, h⟩⟩⟩ := h
@@ -103,41 +103,41 @@ lemma reachable_of_subgraph_reachable {H : Subgraph G} :
 @[simp]
 lemma reachable_of_le_reachable {H : Subgraph G} {H' : Subgraph G}
     (h : H ≤ H') :
-    ∀ x y : H.Verts, H.Reachable x y → H'.Reachable
+    ∀ x y : H.verts, H.Reachable x y → H'.Reachable
       ⟨x, Set.mem_of_subset_of_mem h.left x.prop⟩
       ⟨y, Set.mem_of_subset_of_mem h.left y.prop⟩ := by
   intro _ _ ⟨n, m, ⟨p⟩⟩
   exact ⟨n, m, ⟨p.lift_subtempgraph_walk' h⟩⟩
 
 @[simp]
-lemma reachable_of_earliestEdge {H : Subgraph G} {x y : H.Verts} {n : ℕ}
+lemma reachable_of_earliestEdge {H : Subgraph G} {x y : H.verts} {n : ℕ}
     [H.IsSymm] (h₀ : H.EarliestEdge x y n) :
-    ∀ z : H.Verts, H.Reachable x z → H.Reachable y z := by
+    ∀ z : H.verts, H.Reachable x z → H.Reachable y z := by
   intro z h
   exact H.coe.reachable_of_earliestEdge (coe_earliestEdge h₀) z h
 
-lemma reachable_of_extended_earliestEdge {H : Subgraph G} {x y z : H.Verts} {n m : ℕ}
+lemma reachable_of_extended_earliestEdge {H : Subgraph G} {x y z : H.verts} {n m : ℕ}
     [H.IsSymm]
     (h₀ : H.EarliestEdge x y n)
     (h₁ : H.Adj z y m)
     (h₂ : m ≤ n) :
-    ∀ a : H.Verts, H.Reachable x a → H.Reachable z a := by
+    ∀ a : H.verts, H.Reachable x a → H.Reachable z a := by
   intro a h
   exact H.coe.reachable_of_extended_earliestEdge (coe_earliestEdge h₀) h₁ h₂ a h
 
 @[simp]
-lemma reachable_of_latestEdge {H : Subgraph G} {x y : H.Verts} {n : ℕ}
+lemma reachable_of_latestEdge {H : Subgraph G} {x y : H.verts} {n : ℕ}
     [H.IsSymm] (h₀ : H.LatestEdge x y n) :
-    ∀ z : H.Verts, H.Reachable z x → H.Reachable z y := by
+    ∀ z : H.verts, H.Reachable z x → H.Reachable z y := by
   intro z h
   exact H.coe.reachable_of_latestEdge (coe_latestEdge h₀) z h
 
-lemma reachable_of_extended_latestEdge {H : Subgraph G} {x y z : H.Verts} {n m : ℕ}
+lemma reachable_of_extended_latestEdge {H : Subgraph G} {x y z : H.verts} {n m : ℕ}
     [H.IsSymm]
     (h₀ : H.LatestEdge x y n)
     (h₁ : H.Adj y z m)
     (h₂ : n ≤ m) :
-    ∀ a : H.Verts, H.Reachable a x → H.Reachable a z := by
+    ∀ a : H.verts, H.Reachable a x → H.Reachable a z := by
   intro a h
   exact H.coe.reachable_of_extended_latestEdge (coe_latestEdge h₀) h₁ h₂ a h
 
@@ -154,16 +154,16 @@ protected lemma temporallyConnected_of_TCSpanner (H : Subgraph G) :
   exact ⟨n, ⟨m, ⟨p.lift_subtempgraph_walk⟩⟩⟩
 
 theorem addVerts_reachability {s : Set V} {H : Subgraph G} :
-    ∀ x y : H.Verts, H.Reachable x y → (H.addVerts s).Reachable ⟨x, by simp⟩ ⟨y, by simp⟩ := by
+    ∀ x y : H.verts, H.Reachable x y → (H.addVerts s).Reachable ⟨x, by simp⟩ ⟨y, by simp⟩ := by
   exact reachable_of_le_reachable addVerts_le
 
 theorem addEdgeSymm_reachability {x y : V} {n : ℕ} {H : Subgraph G} [G.IsSymm]
-    {h : G.Adj x y n} {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts} :
-    ∀ x y : H.Verts, H.Reachable x y → (H.addEdgeSymm h h₁).Reachable x y := by
+    {h : G.Adj x y n} {h₁ : x ∈ H.verts ∧ y ∈ H.verts} :
+    ∀ x y : H.verts, H.Reachable x y → (H.addEdgeSymm h h₁).Reachable x y := by
   exact reachable_of_le_reachable addEdgeSymm_le
 
 theorem deleteVerts_reachability {s : Set V} {H : Subgraph G} :
-    ∀ x y : (H.deleteVerts s).Verts, (H.deleteVerts s).Reachable x y → H.Reachable
+    ∀ x y : (H.deleteVerts s).verts, (H.deleteVerts s).Reachable x y → H.Reachable
       ⟨x, by have h := (deleteVerts_le' H s).left ; rw [Set.subset_def] at h ; cases x with
         |mk x hx => exact h x hx⟩
       ⟨y, by have h := (deleteVerts_le' H s).left ; rw [Set.subset_def] at h ; cases y with

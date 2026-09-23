@@ -34,7 +34,7 @@
 
 -- #eval triangle.path''.darts
 
--- #check triangle.Footprint
+-- #check triangle.footprint
 
 -- example : triangle.IsProper
 -- := by
@@ -51,7 +51,7 @@ open TemporalGraph
 universe u
 variable {V : Type u} {G : TemporalGraph V}
 
--- example {G' : SubTempGraph G} (u : G'.Vplus) (h' : ¬G'.Dismountable2) (h'' : G'.IsClique)
+-- example {G' : SubTempGraph G} (u : G'.vplus) (h' : ¬G'.Dismountable2) (h'' : G'.IsClique)
 -- (h''' : ∃ w, EarliestNeighborhor u w)
 -- : ¬G'.IsClique
 -- := by
@@ -59,7 +59,7 @@ variable {V : Type u} {G : TemporalGraph V}
   -- have h := notDismountable2_neDiff_imp_neigbhorDiff u u h' h'' w w ⟨hee, hee⟩
   -- contradiction
 
-def Square : TemporalGraph (Fin 4) := {
+def square : TemporalGraph (Fin 4) := {
   Adj := fun v w t =>
     match t with
     | 1 => (v=0 ∧ w=1) ∨ (w=0 ∧ v=1)
@@ -69,31 +69,31 @@ def Square : TemporalGraph (Fin 4) := {
     | _ => False
 }
 
-instance Square_isSymm : Square.IsSymm := ⟨by
+instance Square_isSymm : square.IsSymm := ⟨by
   intro n x y h
-  simp only [Square] at h ⊢
+  simp only [square] at h ⊢
   split at h <;> aesop⟩
 
-instance Square_isLoopless : Square.IsLoopless := ⟨fun t => by
-  simp only [Square]
+instance Square_isLoopless : square.IsLoopless := ⟨fun t => by
+  simp only [square]
   split <;> constructor <;> aesop⟩
 
-lemma square_clique : Square.IsClique
+lemma square_clique : square.IsClique
 := by
   intro u v _
   match u, v with
-  | 0, 1 => simp [Square] ; use 1
-  | 1, 0 => simp [Square] ; use 1
-  | 0, 2 => use 2 ; simp [Square]
-  | 2, 0 => use 2 ; simp [Square]
-  | 0, 3 => use 3 ; simp [Square]
-  | 1, 2 => use 3 ; simp [Square]
-  | 2, 1 => use 3 ; simp [Square]
-  | 1, 3 => use 2 ; simp [Square]
-  | 2, 3 => use 4 ; simp [Square]
-  | 3, 0 => simp [Square] ; use 3
-  | 3, 1 => simp [Square] ; use 2
-  | 3, 2 => simp [Square] ; use 4
+  | 0, 1 => simp [square] ; use 1
+  | 1, 0 => simp [square] ; use 1
+  | 0, 2 => use 2 ; simp [square]
+  | 2, 0 => use 2 ; simp [square]
+  | 0, 3 => use 3 ; simp [square]
+  | 1, 2 => use 3 ; simp [square]
+  | 2, 1 => use 3 ; simp [square]
+  | 1, 3 => use 2 ; simp [square]
+  | 2, 3 => use 4 ; simp [square]
+  | 3, 0 => simp [square] ; use 3
+  | 3, 1 => simp [square] ; use 2
+  | 3, 2 => simp [square] ; use 4
   | 3, 3 => aesop_temporal_graph
 
 -- lemma square_not_dis2 : ¬SubSquare.Dismountable2
@@ -106,18 +106,18 @@ lemma square_clique : Square.IsClique
 --   constructor
 --   · intro v t hadj
 --     match u, v, t with
---     | 0, 1, 1 => simp [Square] ; use 2, 3 ; simp
---     | 0, 2, 2 => simp [Square] ; use 3, 4 ; simp
---     | 0, 3, 3 => simp [Square] ; use 2, 4 ; simp
---     | 1, 0, 1 => simp [Square] ; use 2, 2 ; simp
---     | 1, 2, 3 => simp [Square] ; use 3, 4 ; simp
---     | 1, 3, 2 => simp [Square] ; use 2, 4 ; simp
---     | 2, 0, 2 => simp [Square] ; use 3, 3 ; simp
---     | 2, 1, 3 => simp [Square] ; use 0, 1 ;
---     | 2, 3, 4 => simp [Square] ; use 2, 4 ; sorry
---     | 3, 0, 3 => simp [Square] ; use 3, 3 ; sorry
---     | 3, 1, 2 => simp [Square] ; use 2, 3 ; simp
---     | 3, 2, 4 => simp [Square] ; sorry
+--     | 0, 1, 1 => simp [square] ; use 2, 3 ; simp
+--     | 0, 2, 2 => simp [square] ; use 3, 4 ; simp
+--     | 0, 3, 3 => simp [square] ; use 2, 4 ; simp
+--     | 1, 0, 1 => simp [square] ; use 2, 2 ; simp
+--     | 1, 2, 3 => simp [square] ; use 3, 4 ; simp
+--     | 1, 3, 2 => simp [square] ; use 2, 4 ; simp
+--     | 2, 0, 2 => simp [square] ; use 3, 3 ; simp
+--     | 2, 1, 3 => simp [square] ; use 0, 1 ;
+--     | 2, 3, 4 => simp [square] ; use 2, 4 ; sorry
+--     | 3, 0, 3 => simp [square] ; use 3, 3 ; sorry
+--     | 3, 1, 2 => simp [square] ; use 2, 3 ; simp
+--     | 3, 2, 4 => simp [square] ; sorry
 
 
 -- lemma square_not_dis2' : ¬SubSquare.Dismountable2
@@ -147,10 +147,10 @@ lemma square_clique : Square.IsClique
 --   match u with
 --   | 0 => right ; constructor ; intro v t hadj ;
 --             (match v with
---               | 1 => by_cases h : t=1 ; use 2, 3 ; simp [Square, h] ; absurd h ; simp [Square] at hadj ; aesop
---               | 2 => by_cases h : t=2 ; use 3, 4 ; simp [Square, h] ; absurd h ; simp [Square] at hadj ; aesop
---               | 3 => by_cases h : t=3 ; use 2, 4 ; simp [Square, h] ; absurd h ; simp [Square] at hadj ; aesop
---               | 0 => grind [Square] ) ;
+--               | 1 => by_cases h : t=1 ; use 2, 3 ; simp [square, h] ; absurd h ; simp [square] at hadj ; aesop
+--               | 2 => by_cases h : t=2 ; use 3, 4 ; simp [square, h] ; absurd h ; simp [square] at hadj ; aesop
+--               | 3 => by_cases h : t=3 ; use 2, 4 ; simp [square, h] ; absurd h ; simp [square] at hadj ; aesop
+--               | 0 => grind [square] ) ;
 --             ( intro v w t ;
 --               match v with
 --               | 1 => (match )
@@ -170,15 +170,15 @@ lemma square_clique : Square.IsClique
 --   · right
 --     constructor
 --     · intro v t hadj
---       fin_cases v <;> simp_all [Square]
+--       fin_cases v <;> simp_all [square]
 --       · by_cases h : t=1 ; use 2, 3 ; simp [h] ; absurd h ; aesop
 --       · by_cases h : t=2 ; use 3, 4 ; simp [h] ; absurd h ; aesop
 --       · by_cases h : t=3 ; use 2, 4 ; simp [h] ; absurd h ; aesop
 --     · intro v v' t
---       fin_cases v <;> simp_all [Square]
+--       fin_cases v <;> simp_all [square]
 --       · -- u=0, v=0 : goal ci-dessus
 --         fin_cases v' <;> simp
---         · grind [Square] -- w=0 : pas de match possible
+--         · grind [square] -- w=0 : pas de match possible
 --         · by_cases h : t=1
 --           · left ; simp [h] ; use 2, 2 ; simp
 --           · left ; grind
@@ -203,17 +203,17 @@ lemma square_clique : Square.IsClique
 --     · simp
 --       intro v t hadj
 --       fin_cases v <;> simp_all
---       · use 2, 3 ; grind [Square]
---       · use 3, 4 ; grind [Square]
---       · use 2, 4 ; grind [Square]
+--       · use 2, 3 ; grind [square]
+--       · use 3, 4 ; grind [square]
+--       · use 2, 4 ; grind [square]
 --     · intro β β' t t'
 --       fin_cases β <;> simp only [Fin.zero_eta,Fin.mk_one, Fin.reduceFinMk, Fin.isValue]
 --       · fin_cases β' <;> simp only [Fin.zero_eta,Fin.mk_one, Fin.reduceFinMk, Fin.isValue]
---         · grind [Square]
---         · by_cases h : t=1∧t'=1 <;> simp [h, Square]
+--         · grind [square]
+--         · by_cases h : t=1∧t'=1 <;> simp [h, square]
 --           · use 2,2 ; simp
 --           · grind
---         · by_cases h : t=2∧t'=2 <;> simp [h, Square]
+--         · by_cases h : t=2∧t'=2 <;> simp [h, square]
 --           · use 3,3 ; simp
 --           · grind
 --         ·
@@ -234,4 +234,4 @@ lemma square_clique : Square.IsClique
 --     · constructor ; trivial
 --     · intro w t
 --       match w, t with
---       | _, _ => grind [Square]
+--       | _, _ => grind [square]

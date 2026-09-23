@@ -111,6 +111,11 @@ section Order
 
 variable {X Y : Type u}
 
+/-- `G`, carried by the vertices satisfying `P`, is a subgraph of `H`, carried by those
+satisfying `P'`: the vertices included, and the adjacencies with them. This is the most general
+of the three inclusion relations here — it compares graphs on two different vertex subsets, so it
+needs no coercion — and the others are its special cases. -/
+@[mk_iff]
 structure IsSubgraphOf {P : Y → Prop} {P' : Y → Prop} (G : TemporalGraph {x : Y // P x})
     (H : TemporalGraph {x : Y // P' x}) : Prop where
   incl : ∀ x, P x → P' x
@@ -118,50 +123,15 @@ structure IsSubgraphOf {P : Y → Prop} {P' : Y → Prop} (G : TemporalGraph {x 
                                                                 ⟨_, incl y y.prop⟩
                                                                 n
 
-/-- `G`, a temporal graph on the vertices of `Y` satisfying `P`, is a
-sub-temporal-graph of `H`. -/
-def IsSubgraph {P : V → Prop} (G : TemporalGraph {x : V // P x})
-    (H : TemporalGraph V) : Prop :=
-  ∀ {x y : {x : V // P x}} {n : ℕ}, G.Adj x y n → H.Adj x y n
-
--- TODO: lié les deux top
-
 instance : Coe (TemporalGraph V) (TemporalGraph {x : V // True}) where
   coe G := ⟨fun x y n => G.Adj x y n⟩
 
--- instance : Coe (TemporalGraph {x : V // True}) (TemporalGraph V)where
---   coe G := ⟨fun x y n => G.Adj ⟨x, by simp⟩ ⟨y, by simp⟩ n⟩
-
-lemma isSubgraph_iff_isSubgraphOf {P : Y → Prop}
-    (G : TemporalGraph {x : Y // P x})
-    (H : TemporalGraph Y) :
-    G.IsSubgraph H
-    ↔ @IsSubgraphOf _ P (fun _ => True) G H := by
-  constructor
-  · intro h
-    constructor
-    · intro x y n hadj
-      simp only
-      apply h
-      assumption
-    · simp
-  · intro ⟨_,h⟩ x y n hadj
-    apply h
-    assumption
-
-/-- This is a spanning SubTemporalGraph. -/
+/-- `G` is a *spanning* subgraph of `H`: same vertices, fewer adjacencies. This is the relation
+behind `≤`. Beware for readers coming from Mathlib: `SimpleGraph.IsSubgraph` names this very
+relation, where `SimpleGraph` has no notion of a vertex subset to distinguish it from
+`IsSubgraphOf`. -/
 def IsSpanningSubgraph (G H : TemporalGraph V) : Prop :=
   ∀ {x y : V} {n : ℕ}, G.Adj x y n → H.Adj x y n
-
--- lemma isSpanningSubgraph_iff_isSubgraph (G H : TemporalGraph V) :
---     (G : TemporalGraph {x : V // True}).IsSubgraph H ↔ G.IsSpanningSubgraph H := by
---   constructor
---   · intro h x y n hadj
---     unfold IsSubgraph at h
---     apply h G
-
-
-
 
 instance : LE (TemporalGraph V) :=
   ⟨IsSpanningSubgraph⟩

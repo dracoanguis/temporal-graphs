@@ -99,14 +99,12 @@ protected theorem Adj.coe {H : G.SubTemporalGraph} {x y : V} {n : ℕ} (h : H.Ad
     H.coe.Adj ⟨x, H.edge_vert h⟩ ⟨y, H.edge_vert' h⟩ n :=
   h
 
--- NOTE(refactor): `IsSubtempgraph` was renamed/reworked into `IsSubgraph`/`IsSubgraphOf` in
--- Basic.lean's "Relation rework" (independent of the Loopless/Symm split). The statement below
--- is my best guess at the intended correspondence (the original `G.IsSubtempgraph H.coe` didn't
--- even type-check against the pre-rework `IsSubtempgraph`, since `G` isn't subtype-indexed) —
--- left for review since it needs a real design decision, not just a hypothesis.
-theorem coe_sub (H : SubTemporalGraph G) : H.coe.IsSubgraph G := by
-  intro x y n hadj
-  exact H.adj_sub hadj
+/-- The subtype view of a subgraph is a subgraph of the ambient graph, in the general sense of
+`TemporalGraph.IsSubgraphOf`: its vertices are vertices of `G`, and its adjacencies are `G`'s. -/
+theorem coe_sub (H : SubTemporalGraph G) :
+    IsSubgraphOf H.coe (G : TemporalGraph {x : V // True}) where
+  incl _ _ := trivial
+  incl' hadj := H.adj_sub hadj
 
 section Spanning
 
@@ -268,14 +266,11 @@ instance : Bot G.SubTemporalGraph where
 
 instance bot_isSymm : (⊥ : SubTemporalGraph G).IsSymm := ⟨fun _ _ _ ↦ id⟩
 
-@[simp]
-def IsSubTemporalGraphOf (H : SubTemporalGraph G) (H' : SubTemporalGraph G) : Prop :=
-  (H.Verts ⊆ H'.Verts)
-  ∧
-  (∀ {x y : V} {n : ℕ}, H.Adj x y n → H'.Adj x y n)
-
+/-- `H ≤ H'` when `H`'s vertices are among `H'`'s and every adjacency of `H` is one of `H'`.
+Written directly into the instance, as `SimpleGraph.Subgraph` does, rather than through a named
+relation that would compete with `TemporalGraph.IsSubgraphOf`. -/
 instance : LE (SubTemporalGraph G) :=
-  ⟨IsSubTemporalGraphOf⟩
+  ⟨fun H H' => H.Verts ⊆ H'.Verts ∧ ∀ {x y : V} {n : ℕ}, H.Adj x y n → H'.Adj x y n⟩
 
 instance : BoundedOrder (SubTemporalGraph G) where
   top := ⊤
@@ -310,7 +305,7 @@ instance : Preorder (SubTemporalGraph G) where
         · assumption
         · constructor
           · exact h.left.right
-          · have h := h.right ; dsimp [LE.le, IsSubTemporalGraphOf] at h ; push_neg at h
+          · have h := h.right ; dsimp [LE.le] at h ; push_neg at h
             exact h h'.symm.subset
       · intro h' ; left ; constructor
         · assumption

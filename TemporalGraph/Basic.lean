@@ -198,10 +198,26 @@ theorem mem_neighborSet (G : TemporalGraph V) (x y : V) :
 
 end NeighborhoodSet
 
+section ArcSet
+
+/-- The *arcs* of `G`: oriented edges, as an ordered pair of endpoints with their time. This is
+the oriented world's notion, and it characterizes adjacency with no hypothesis at all — unlike
+`EdgeSet`, which lives on `Sym2 V` and therefore only does so for a symmetric, loopless graph. -/
+def ArcSet (G : TemporalGraph V) : Set (V × V × ℕ) :=
+  {a | G.Adj a.1 a.2.1 a.2.2}
+
+@[simp]
+theorem mem_arcSet (G : TemporalGraph V) {x y : V} {n : ℕ} :
+    (x, y, n) ∈ G.ArcSet ↔ G.Adj x y n :=
+  Iff.rfl
+
+end ArcSet
+
 section EdgeSet
 
--- Change edge Set fot V x V ordered paire
-/-- The set of every edges in G. -/
+/-- The unordered edges of `G`, with their time. Counting these is the symmetric world's
+convention: see `ArcSet` for the oriented one, and note that `mem_edgeSet`, which is what makes
+this set usable, needs `[G.IsSymm]` and `[G.IsLoopless]`. -/
 def EdgeSet (G : TemporalGraph V) : Set ((Sym2 V) × ℕ) :=
   {(p, n) | ∃ x y : p, G.Adj x y n}
 
@@ -227,7 +243,11 @@ end EdgeSet
 
 section Size
 
+/-- The number of unordered edges: the symmetric world's measure. -/
 def size (G : TemporalGraph V) [Fintype G.EdgeSet] := Fintype.card G.EdgeSet
+
+/-- The number of arcs: the oriented counterpart of `size`. -/
+def arcSize (G : TemporalGraph V) [Fintype G.ArcSet] := Fintype.card G.ArcSet
 
 end Size
 

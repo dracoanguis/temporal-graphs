@@ -11,7 +11,7 @@ macro (name := aesop_temporal_graph) "aesop_temporal_graph" c:Aesop.tactic_claus
   `(tactic|
     aesop $c*
       (config := { introsTransparency? := some .default, terminal := true })
-      (rule_sets := [$(Lean.mkIdent `LooplessTemporalGraph):ident]))
+      (rule_sets := [$(Lean.mkIdent `TemporalGraph):ident]))
 
 
 
@@ -19,7 +19,7 @@ universe u
 
 /-- A temporal graph: edges are labeled by the time (ℕ) at which they exist.
 No symmetry or irreflexivity is required — see `IsSymm` and `IsLoopless`. -/
-@[ext, aesop safe constructors (rule_sets := [LooplessTemporalGraph])]
+@[ext, aesop safe constructors (rule_sets := [TemporalGraph])]
 structure TemporalGraph (V : Type u) where
   /-- The adjacency labeled by a natural qualifying the time of existence -/
   Adj : V → V → ℕ → Prop

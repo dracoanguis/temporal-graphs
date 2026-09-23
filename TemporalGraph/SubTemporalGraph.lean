@@ -12,9 +12,8 @@ namespace TemporalGraph
 
 
 @[ext]
-structure SubTemporalGraph {V : Type u} (G : TemporalGraph V) where
+structure SubTemporalGraph {V : Type u} (G : TemporalGraph V) extends TemporalGraph V where
   Verts : Set V
-  Adj : V → V → ℕ → Prop
 
   adj_sub : ∀ {x y : V} {n : ℕ}, Adj x y n → G.Adj x y n
   edge_vert : ∀ {x y : V} {n : ℕ}, Adj x y n → x ∈ Verts
@@ -24,10 +23,9 @@ namespace SubTemporalGraph
 
 variable {V : Type u} {G : TemporalGraph V}
 
-/-- Symmetry is not bundled: mirroring `TemporalGraph.IsSymm`, it is an external predicate
-passed as an explicit hypothesis wherever it is needed. -/
-def IsSymm (H : SubTemporalGraph G) : Prop :=
-  ∀ n : ℕ, Symmetric (fun x y => H.Adj x y n)
+-- `IsSymm` is no longer redefined here: `SubTemporalGraph` now `extends TemporalGraph V`, so
+-- `H.IsSymm` resolves through generalized field notation to
+-- `TemporalGraph.IsSymm H.toTemporalGraph`.
 
 protected theorem loopless (H : SubTemporalGraph G) (hl : G.IsLoopless) :
     ∀ n, Std.Irrefl (fun x y ↦ H.Adj x y n) :=
@@ -60,12 +58,12 @@ protected theorem Adj.adj_sub {H : G.SubTemporalGraph} {u v : V} {t : ℕ} (h : 
 protected theorem Adj.ne {H : SubTemporalGraph G} (hl : G.IsLoopless) {x y : V} {n : ℕ}
     (h : H.Adj x y n) :
     x ≠ y :=
-  h.adj_sub.ne hl
+  (H.adj_sub h).ne hl
 
 protected theorem Adj.ne' {H : SubTemporalGraph G} (hl : G.IsLoopless) {x y : V} {n : ℕ}
     (h : H.Adj x y n) :
     y ≠ x :=
-  h.adj_sub.ne' hl
+  (H.adj_sub h).ne' hl
 
 protected theorem Adj.fst_mem {H : G.SubTemporalGraph} {u v : V} {t : ℕ} (h : H.Adj u v t) :
     u ∈ H.Verts :=
@@ -97,7 +95,7 @@ theorem coe_adj_sub (H : SubTemporalGraph G) (x y : H.Verts) (n : ℕ) (h : H.co
 
 -- Given `h : H.Adj u v t`, then `h.coe : H.coe.Adj ⟨u, _⟩ ⟨v, _⟩ t`.
 protected theorem Adj.coe {H : G.SubTemporalGraph} {x y : V} {n : ℕ} (h : H.Adj x y n) :
-    H.coe.Adj ⟨x, h.fst_mem⟩ ⟨y, h.snd_mem⟩ n :=
+    H.coe.Adj ⟨x, H.edge_vert h⟩ ⟨y, H.edge_vert' h⟩ n :=
   h
 
 -- NOTE(refactor): `IsSubtempgraph` was renamed/reworked into `IsSubgraph`/`IsSubgraphOf` in
@@ -118,34 +116,6 @@ def IsSpanning (H : SubTemporalGraph G) : Prop :=
 theorem isSpanning_iff {H : SubTemporalGraph G} : H.IsSpanning ↔ H.Verts = Set.univ :=
   Set.eq_univ_iff_forall.symm
 
-/-- Coercion from `SubTemporalGraph G` to `TemporalGraph V`.  If `H` is a spanning
-subgraph, then `H.spanningCoe` yields an isomorphic graph.
-In general, this adds in all vertices from `V` as isolated vertices. -/
-@[simps]
-protected def spanningCoe (H : SubTemporalGraph G) : TemporalGraph V where
-  Adj := H.Adj
-
-theorem spanningCoe_isSymm (H : SubTemporalGraph G) (hs : H.IsSymm) : H.spanningCoe.IsSymm := hs
-
-theorem spanningCoe_isLoopless (H : SubTemporalGraph G) (hl : G.IsLoopless) :
-    H.spanningCoe.IsLoopless :=
-  H.loopless hl
-
-theorem Adj.of_spanningCoe {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
-    (h : H.spanningCoe.Adj x y n) : G.Adj x y n :=
-  H.adj_sub h
-
-lemma spanningCoe_le (H : SubTemporalGraph G) : H.spanningCoe ≤ G := H.adj_sub
-
-theorem spanningCoe_adj_iff {H : SubTemporalGraph G} {x y : V} {n : ℕ} :
-    H.spanningCoe.Adj x y n ↔ H.Adj x y n := by
-  simp only [spanningCoe_Adj]
-
-variable {H₁ : SubTemporalGraph G} {H₂ : SubTemporalGraph G}
-
-theorem spanningCoe_inj : H₁.spanningCoe = H₂.spanningCoe ↔ H₁.Adj = H₂.Adj := by
-  simp [SubTemporalGraph.spanningCoe]
-
 end Spanning
 
 section Props
@@ -160,19 +130,18 @@ lemma isSymm_iff_coe {H : SubTemporalGraph G} : H.IsSymm ↔ H.coe.IsSymm := by
   · intro h n x y h'
     exact h n (x := ⟨x, H.edge_vert h'⟩) (y := ⟨y, H.edge_vert' h'⟩) h'
 
-lemma isSymm_iff_spanningCoe {H : SubTemporalGraph G} : H.IsSymm ↔ H.spanningCoe.IsSymm := Iff.rfl
-
-def IsSimple (H : SubTemporalGraph G) : Prop :=
-  ∀ {x y : V} {n m : ℕ}, (H.Adj x y n ∧ H.Adj x y m) → n=m
+-- `IsSimple` is no longer redefined here; `H.IsSimple` resolves to `TemporalGraph.IsSimple
+-- H.toTemporalGraph`, whose binders are EXPLICIT (unlike the old implicit-binder local
+-- definition), so call sites below must supply `x y n m` explicitly.
 
 @[simp]
 lemma isSimple_iff_coe {H : SubTemporalGraph G} : H.IsSimple ↔ H.coe.IsSimple := by
-  unfold IsSimple TemporalGraph.IsSimple
+  unfold TemporalGraph.IsSimple
   constructor
   · intro h _ _ _ _ h'
-    exact h h'
+    exact h _ _ _ _ h'
   · intro h x y _ _ h'
-    exact h ⟨x, h'.1.fst_mem⟩ ⟨y, h'.1.snd_mem⟩ _ _ h'
+    exact h ⟨x, H.edge_vert h'.1⟩ ⟨y, H.edge_vert' h'.1⟩ _ _ h'
 
 def IsClique (H : SubTemporalGraph G) : Prop := ∀ (x y : H.Verts), x ≠ y → ∃ n, H.Adj x y n
 
@@ -181,28 +150,28 @@ lemma isClique_iff_coe {H : SubTemporalGraph G} : H.IsClique ↔ H.coe.IsClique 
   simp only [IsClique, ne_eq, Subtype.forall, Subtype.mk.injEq, TemporalGraph.IsClique,
     coe_Adj]
 
-def IsProper (H : SubTemporalGraph G) : Prop :=
-  ∀ {x y z : V} {n : ℕ}, H.Adj x y n ∧ H.Adj x z n → y=z
+-- `IsProper` is no longer redefined here; `H.IsProper` resolves to `TemporalGraph.IsProper
+-- H.toTemporalGraph`, whose binders are EXPLICIT, so call sites below supply `x y z n` explicitly.
 
 @[simp]
 lemma isProper_iff_coe {H : SubTemporalGraph G} : H.IsProper ↔ H.coe.IsProper := by
-  unfold IsProper TemporalGraph.IsProper
+  unfold TemporalGraph.IsProper
   constructor
-  · intro h _ _ _ _ h'
-    have := h h'
+  · intro h x y z n h'
+    have := h x y z n h'
     rw [Subtype.val_inj] at this
     assumption
   · intro h x y z n h'
-    have := h ⟨x, h'.1.fst_mem⟩ ⟨y, h'.1.snd_mem⟩ ⟨z, h'.2.snd_mem⟩ n h'
+    have := h ⟨x, H.edge_vert h'.1⟩ ⟨y, H.edge_vert' h'.1⟩ ⟨z, H.edge_vert' h'.2⟩ n h'
     rw [←Subtype.val_inj] at this
     assumption
 
-def IsHappy (H : SubTemporalGraph G) : Prop :=
-  H.IsSimple ∧ H.IsProper
+-- `IsHappy` is no longer redefined here; `H.IsHappy` resolves to `TemporalGraph.IsHappy
+-- H.toTemporalGraph`.
 
 @[simp]
 lemma isHappy_iff_coe {H : SubTemporalGraph G} : H.IsHappy ↔ H.coe.IsHappy := by
-  unfold IsHappy TemporalGraph.IsHappy
+  unfold TemporalGraph.IsHappy
   simp only [isSimple_iff_coe, isProper_iff_coe]
 
 instance [Finite V] {H : SubTemporalGraph G} : Finite H.Verts :=
@@ -231,12 +200,12 @@ lemma finite_incidenceSet_of_finite_simple {H : SubTemporalGraph G} [h : Finite 
     ∀ (x : H.Verts), (H.IncidenceSet x).Finite := by
   intro x
   apply Set.Finite.of_injOn (f := fun p : V × ℕ => p.1) (t := H.Verts)
-  · intro ⟨y, n⟩ hadj ; exact hadj.snd_mem
+  · intro ⟨y, n⟩ hadj ; exact H.edge_vert' hadj
   · intro ⟨y, n⟩ hyn ⟨z, m⟩ hzm heq
     simp only at heq
     subst heq
     congr
-    exact h₁ ⟨hyn, hzm⟩
+    exact h₁ x y n m ⟨hyn, hzm⟩
   · exact h
 
 instance {H : SubTemporalGraph G} [Finite H.Verts] {h₀ : H.IsSimple} {x : H.Verts} :
@@ -279,7 +248,7 @@ theorem top_adj {x y : V} {n : ℕ} :
 
 theorem top_verts : (⊤ : SubTemporalGraph G).Verts = Set.univ := rfl
 
-theorem top_spanningCoe : (⊤ : SubTemporalGraph G).spanningCoe = G := rfl
+theorem top_toTemporalGraph : (⊤ : SubTemporalGraph G).toTemporalGraph = G := rfl
 
 theorem top_isSpanning : (⊤ : SubTemporalGraph G).IsSpanning := by
   simp [IsSpanning, top_verts]
@@ -349,10 +318,10 @@ instance : Preorder (SubTemporalGraph G) where
 instance : PartialOrder (SubTemporalGraph G) where
   le_antisymm A B h h' := by
     ext _ _ _
+    · exact ⟨h.right, h'.right⟩
     · constructor
       · intro h'' ; apply h.left ; assumption
       · intro h'' ; apply h'.left ; assumption
-    · exact ⟨h.right, h'.right⟩
 
 end Order
 
@@ -561,19 +530,16 @@ section EdgeProps
 
 variable {x y : V} {n : ℕ}
 
-def EarliestEdge (H : SubTemporalGraph G) (x y : V) (n : ℕ) : Prop :=
-  H.Adj x y n ∧ ∀ (z : V) (m : ℕ), H.Adj x z m → n ≤ m
+-- `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor` are no longer redefined here;
+-- `H.EarliestEdge` etc. resolve to the parent `TemporalGraph` versions on `H.toTemporalGraph`.
 
 lemma top_earliestEdge :
     (⊤ : SubTemporalGraph G).EarliestEdge x y n ↔ G.EarliestEdge x y n := by
-  simp [EarliestEdge, TemporalGraph.EarliestEdge, top_adj]
-
-def LatestEdge (H : SubTemporalGraph G) (x y : V) (n : ℕ) : Prop :=
-  H.Adj x y n ∧ ∀ (z : V) (m : ℕ), H.Adj x z m → m ≤ n
+  simp [TemporalGraph.EarliestEdge, top_adj]
 
 lemma top_latestEdge :
     (⊤ : SubTemporalGraph G).LatestEdge x y n ↔ G.LatestEdge x y n := by
-  simp [LatestEdge, TemporalGraph.LatestEdge, top_adj]
+  simp [TemporalGraph.LatestEdge, top_adj]
 
 @[simp]
 lemma earliestEdge_lt_of_proper {H : SubTemporalGraph G} {z : V} {m : ℕ}
@@ -586,20 +552,16 @@ lemma earliestEdge_lt_of_proper {H : SubTemporalGraph G} {z : V} {m : ℕ}
   apply hle.lt_of_ne
   by_contra h
   rw [←h] at h₂
-  absurd (h₀ ⟨h₁.left, h₂⟩)
+  absurd (h₀ x y z n ⟨h₁.left, h₂⟩)
   exact h₄
-
-def EarliestNeighbor (H : SubTemporalGraph G) (x y : V) : Prop := ∃ n, H.EarliestEdge x y n
 
 lemma top_earliestNeighbor :
     (⊤ : SubTemporalGraph G).EarliestNeighbor x y ↔ G.EarliestNeighbor x y := by
-  simp [EarliestNeighbor, TemporalGraph.EarliestNeighbor, top_earliestEdge]
-
-def LatestNeighbor (H : SubTemporalGraph G) (x y : V) : Prop := ∃ n, H.LatestEdge x y n
+  simp [TemporalGraph.EarliestNeighbor, top_earliestEdge]
 
 lemma top_latestNeighbor :
     (⊤ : SubTemporalGraph G).LatestNeighbor x y ↔ G.LatestNeighbor x y := by
-  simp [LatestNeighbor, TemporalGraph.LatestNeighbor, top_latestEdge]
+  simp [TemporalGraph.LatestNeighbor, top_latestEdge]
 
 lemma earliestEdge_exists_of_nonempty_finite_incidenceSet {H : SubTemporalGraph G}
     (h₀ : (H.IncidenceSet x).Nonempty)
@@ -608,7 +570,7 @@ lemma earliestEdge_exists_of_nonempty_finite_incidenceSet {H : SubTemporalGraph 
   haveI : Nonempty (H.IncidenceSet x) := Set.nonempty_coe_sort.mpr h₀
   have ⟨⟨⟨y, n⟩, hin⟩, hmin⟩ := h₁.exists_min (fun x ↦ x.1.2)
   use y, n
-  unfold EarliestEdge
+  unfold TemporalGraph.EarliestEdge
   constructor
   · trivial
   · intro z m hadj
@@ -624,7 +586,7 @@ lemma latestEdge_exists_of_nonempty_finite_incidenceSet {H : SubTemporalGraph G}
   haveI : Nonempty (H.IncidenceSet x) := Set.nonempty_coe_sort.mpr h₀
   have ⟨⟨⟨y, n⟩, hin⟩, hmax⟩ := h₁.exists_max (fun x ↦ x.1.2)
   use y, n
-  unfold LatestEdge
+  unfold TemporalGraph.LatestEdge
   constructor
   · trivial
   · intro z m hadj
@@ -660,7 +622,7 @@ lemma coe_earliestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
     (h₀ : H.EarliestEdge x y n) :
     H.coe.EarliestEdge x y n := by
   constructor
-  · exact h₀.left.coe
+  · exact Adj.coe h₀.left
   · intro _ _ h
     exact h₀.right _ _ h
 
@@ -671,7 +633,7 @@ lemma earliestEdge_of_coe {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
   constructor
   · exact h₀.left
   · intro _ _ h
-    exact h₀.right _ _ h.coe
+    exact h₀.right _ _ (Adj.coe h)
 
 lemma earliestEdge_of_graph_earliestEdge {H : SubTemporalGraph G}
     (h₀ : G.EarliestEdge x y n) (h₁ : H.Adj x y n) :
@@ -692,7 +654,7 @@ lemma coe_latestEdge {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
     (h₀ : H.LatestEdge x y n) :
     H.coe.LatestEdge x y n := by
   constructor
-  · exact h₀.left.coe
+  · exact Adj.coe h₀.left
   · intro _ _ h
     exact h₀.right _ _ h
 
@@ -703,7 +665,7 @@ lemma latestEdge_of_coe {H : SubTemporalGraph G} {x y : H.Verts} {n : ℕ}
   constructor
   · exact h₀.left
   · intro _ _ h
-    exact h₀.right _ _ h.coe
+    exact h₀.right _ _ (Adj.coe h)
 
 lemma latestEdge_of_graph_latestEdge {H : SubTemporalGraph G}
     (h₀ : G.LatestEdge x y n) (h₁ : H.Adj x y n) :
@@ -748,7 +710,7 @@ lemma neighborhoodSet_iff_coe {H : SubTemporalGraph G} {x : H.Verts} :
   · intro ⟨_, p⟩
     simp only [coe_Adj, Set.mem_image, Set.mem_setOf_eq, Subtype.exists, exists_and_left,
       exists_prop, exists_eq_right_right]
-    exact ⟨⟨_, p⟩, p.snd_mem⟩
+    exact ⟨⟨_, p⟩, H.edge_vert' p⟩
   · intro h
     simp only [coe_Adj, Set.mem_image, Set.mem_setOf_eq, Subtype.exists, exists_and_left,
       exists_prop, exists_eq_right_right] at h ⊢
@@ -778,12 +740,12 @@ theorem mem_edgeSet (H : SubTemporalGraph G) (hs : H.IsSymm) (hl : G.IsLoopless)
   · intro ⟨u, v, hadj⟩
     rcases Sym2.mem_iff.mp u.prop with heq | heq
     <;> rw [heq] at hadj
-    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_left (hadj.ne' hl)
+    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_left ((H.adj_sub hadj).ne' hl)
       rw [heq'] at hadj
       exact hadj
-    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_right (hadj.ne' hl)
+    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_right ((H.adj_sub hadj).ne' hl)
       rw [heq'] at hadj
-      exact hadj.symm hs
+      exact H.adj_symm hs hadj
   · exact SubTemporalGraph.Adj.mem_edgeSet
 
 @[simp]
@@ -805,7 +767,7 @@ lemma le_iff_edgeSet_and_verts {H H' : SubTemporalGraph G} (hs' : H'.IsSymm)
     · exact h.right
     · intro _ _ _ hadj
       rw [←mem_edgeSet _ hs' hl]
-      exact Set.mem_of_subset_of_mem h.left hadj.mem_edgeSet
+      exact Set.mem_of_subset_of_mem h.left (Adj.mem_edgeSet hadj)
 
 @[simp]
 lemma addEdgeSymm_edgeSet (H : SubTemporalGraph G) {x y : V} {n : ℕ}
@@ -871,7 +833,7 @@ lemma addVerts_edgeSet {H : SubTemporalGraph G} {s : Set V} :
   · have ⟨x, _, hx', y, _, hy', _⟩ := h
     use x, hx', y, hy'
   · have ⟨x, hx, y, hy, hadj⟩ := h
-    use x, Or.inl hadj.fst_mem, hx, y, Or.inl hadj.snd_mem
+    use x, Or.inl (H.edge_vert hadj), hx, y, Or.inl (H.edge_vert' hadj)
 
 lemma addVerts_edgeSet' {H : SubTemporalGraph G} (s : Set V) :
     (H.addVerts s).EdgeSet = H.EdgeSet := addVerts_edgeSet
@@ -880,9 +842,8 @@ instance {H : SubTemporalGraph G} {s : Set V} [h₀ : Finite H.EdgeSet] [Finite 
     Finite (H.addVerts s).EdgeSet := by
   simp only [addVerts_edgeSet, h₀]
 
-lemma spanningCoe_edgeSet_eq {H : SubTemporalGraph G} :
-    H.EdgeSet = H.spanningCoe.EdgeSet := by
-  simp [EdgeSet, TemporalGraph.EdgeSet]
+theorem edgeSet_toTemporalGraph {H : SubTemporalGraph G} :
+    H.EdgeSet = H.toTemporalGraph.EdgeSet := rfl
 
 def FootprintEdgeSet (H : SubTemporalGraph G) : Set (Sym2 V) :=
   {p | ∃ n : ℕ, ∃ x y : p, H.Adj x y n}
@@ -893,7 +854,7 @@ def FootprintEdgeSet (H : SubTemporalGraph G) : Set (Sym2 V) :=
 -- review (likely needs restating via `Footprint.Adj` or `SimpleGraph.fromRel` instead of
 -- `.edgeSet`).
 -- theorem FootprintEdgeSet_eq {H : SubTemporalGraph G} (hl : G.IsLoopless) :
---     H.spanningCoe.Footprint.edgeSet = H.FootprintEdgeSet := by
+--     H.toTemporalGraph.Footprint.edgeSet = H.FootprintEdgeSet := by
 --   sorry
 
 def EdgeSetToFootprintEdgeSet (H : SubTemporalGraph G) : H.EdgeSet → H.FootprintEdgeSet :=
@@ -920,15 +881,15 @@ lemma edgeSetToFootprintEdgeSet_injective (H : SubTemporalGraph G) (hs : H.IsSym
   simp only [EdgeSetToFootprintEdgeSet, Subtype.mk.injEq] at h
   ext
   · apply Sym2.ext_iff.mp h
-  · refine h₀ ⟨hadj, ?_⟩
-    have hxs := x.1.1.mem_and_mem_iff (hadj.adj_sub.ne hl) |>.mp ⟨a.prop, b.prop⟩
-    have hys := y.1.1.mem_and_mem_iff (hadj'.adj_sub.ne hl) |>.mp ⟨a'.prop, b'.prop⟩
+  · refine h₀ a b x.1.2 y.1.2 ⟨hadj, ?_⟩
+    have hxs := x.1.1.mem_and_mem_iff ((H.adj_sub hadj).ne hl) |>.mp ⟨a.prop, b.prop⟩
+    have hys := y.1.1.mem_and_mem_iff ((H.adj_sub hadj').ne hl) |>.mp ⟨a'.prop, b'.prop⟩
     rw [hxs, hys] at h
     rcases Sym2.eq_iff.mp h with heq | heq
     · rw [heq.1.symm, heq.2.symm] at hadj'
       exact hadj'
     · rw [heq.1.symm, heq.2.symm] at hadj'
-      exact hadj'.symm hs
+      exact H.adj_symm hs hadj'
 
 lemma edgeSetToFootprintEdgeSet_bijective (H : SubTemporalGraph G) (hs : H.IsSymm)
     (hl : G.IsLoopless)
@@ -954,12 +915,12 @@ lemma size_of_simple (H : SubTemporalGraph G)
   apply Fintype.card_of_bijective (f := H.EdgeSetToFootprintEdgeSet)
   exact H.edgeSetToFootprintEdgeSet_bijective hs hl h₀
 
-lemma size_of_spanningCoe (H : SubTemporalGraph G)
+lemma size_of_toTemporalGraph (H : SubTemporalGraph G)
     [Fintype H.EdgeSet]
-    [Fintype H.spanningCoe.EdgeSet] :
-    H.size = H.spanningCoe.size := by
+    [Fintype H.toTemporalGraph.EdgeSet] :
+    H.size = H.toTemporalGraph.size := by
   unfold size TemporalGraph.size
-  simp only [spanningCoe_edgeSet_eq]
+  rw [←Nat.card_eq_fintype_card, ←Nat.card_eq_fintype_card, edgeSet_toTemporalGraph]
 
 -- NOTE(refactor): `Finite → Fintype` isn't automatic in Mathlib (avoids diamonds); the `Finite`
 -- instance above no longer chains into a `Fintype` one on its own once `hs`/`hl` are plain
@@ -1035,31 +996,32 @@ protected def lift_subTemporalGraph_walk {H : SubTemporalGraph G} {H' : SubTempo
   | Single h' => Single (h.right h')
   | Step p h' hle =>
     Step (p.lift_subTemporalGraph_walk h)
-      (h.right h').coe
+      (SubTemporalGraph.Adj.coe (h.right h'))
       hle
 
 @[coe]
-protected def lift_spanningCoe_walk {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
-    H.spanningCoe.NonemptyTemporalWalk x n y m → H.coe.NonemptyTemporalWalk x n y m
-  | Single h => @Single H.Verts H.coe x y n (SubTemporalGraph.spanningCoe_adj_iff.mp h)
+protected def lift_toTemporalGraph_walk {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
+    H.toTemporalGraph.NonemptyTemporalWalk x n y m → H.coe.NonemptyTemporalWalk x n y m
+  | Single h => @Single H.Verts H.coe x y n h
   | @Step _ _ _ y' _ _ m' _ p' h' hle' =>
-      @Step H.Verts H.coe x ⟨y', h'.fst_mem⟩ y n m' m
-        (p'.lift_spanningCoe_walk)
-        (SubTemporalGraph.spanningCoe_adj_iff.mp h') hle'
+      @Step H.Verts H.coe x ⟨y', H.edge_vert h'⟩ y n m' m
+        (p'.lift_toTemporalGraph_walk)
+        h' hle'
 
 instance {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
-    Coe (H.spanningCoe.NonemptyTemporalWalk x n y m) (H.coe.NonemptyTemporalWalk x n y m) where
-  coe p := p.lift_spanningCoe_walk
+    Coe (H.toTemporalGraph.NonemptyTemporalWalk x n y m) (H.coe.NonemptyTemporalWalk x n y m) where
+  coe p := p.lift_toTemporalGraph_walk
 
 @[coe]
-protected def lift_walk_spanningCoe {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
-    H.coe.NonemptyTemporalWalk x n y m → H.spanningCoe.NonemptyTemporalWalk ↑x n ↑y m
+protected def lift_walk_toTemporalGraph {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
+    H.coe.NonemptyTemporalWalk x n y m → H.toTemporalGraph.NonemptyTemporalWalk ↑x n ↑y m
   | Single h => Single h
-  | Step p h h' => Step p.lift_walk_spanningCoe h h'
+  | Step p h h' => Step p.lift_walk_toTemporalGraph h h'
 
 instance {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
-    Coe (H.coe.NonemptyTemporalWalk x n y m) (H.spanningCoe.NonemptyTemporalWalk ↑x n ↑y m) where
-  coe p := p.lift_walk_spanningCoe
+    Coe (H.coe.NonemptyTemporalWalk x n y m)
+      (H.toTemporalGraph.NonemptyTemporalWalk ↑x n ↑y m) where
+  coe p := p.lift_walk_toTemporalGraph
 
 end NonemptyTemporalWalk
 
@@ -1087,8 +1049,8 @@ protected def lift_subtempgraph_walk' {H' : SubTemporalGraph G} {x y : H.Verts} 
   | Nonempty p => Nonempty <| p.lift_subTemporalGraph_walk h
 
 @[coe]
-protected def lift_spanningCoe_walk {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ}
-    (w : H.spanningCoe.TemporalWalk ↑x n ↑y m) : H.coe.TemporalWalk x n y m := by
+protected def lift_toTemporalGraph_walk {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ}
+    (w : H.toTemporalGraph.TemporalWalk ↑x n ↑y m) : H.coe.TemporalWalk x n y m := by
   obtain ⟨xv, hx⟩ := x
   obtain ⟨yv, hy⟩ := y
   simp only at w ⊢
@@ -1096,21 +1058,21 @@ protected def lift_spanningCoe_walk {H : SubTemporalGraph G} {x y : H.Verts} {n 
   | Empty =>
     exact .Empty
   | Nonempty p =>
-    exact .Nonempty p.lift_spanningCoe_walk
+    exact .Nonempty p.lift_toTemporalGraph_walk
 
 instance {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
-    Coe (H.spanningCoe.TemporalWalk x n y m) (H.coe.TemporalWalk x n y m) where
-  coe p := p.lift_spanningCoe_walk
+    Coe (H.toTemporalGraph.TemporalWalk x n y m) (H.coe.TemporalWalk x n y m) where
+  coe p := p.lift_toTemporalGraph_walk
 
 @[coe]
-protected def lift_walk_spanningCoe {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
-    H.coe.TemporalWalk x n y m → H.spanningCoe.TemporalWalk ↑x n ↑y m
+protected def lift_walk_toTemporalGraph {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
+    H.coe.TemporalWalk x n y m → H.toTemporalGraph.TemporalWalk ↑x n ↑y m
   | Empty => Empty
-  | Nonempty p => Nonempty p.lift_walk_spanningCoe
+  | Nonempty p => Nonempty p.lift_walk_toTemporalGraph
 
 instance {H : SubTemporalGraph G} {x y : H.Verts} {n m : ℕ} :
-    Coe (H.coe.TemporalWalk x n y m) (H.spanningCoe.TemporalWalk ↑x n ↑y m) where
-  coe p := p.lift_walk_spanningCoe
+    Coe (H.coe.TemporalWalk x n y m) (H.toTemporalGraph.TemporalWalk ↑x n ↑y m) where
+  coe p := p.lift_walk_toTemporalGraph
 
 
 end TemporalWalk
@@ -1119,13 +1081,21 @@ section SubgraphProps
 
 variable {V : Type u} {G : TemporalGraph V}
 
-@[simps]
+-- `@[simps!]` alone chokes on the `Adj` field here: it is given as the bare projection `H.Adj`
+-- of an opaque parameter `H`, so simps cannot unfold it any further to a constructor application.
+-- Restricting the auto-generated lemmas to `Verts` and restating `Adj` by hand avoids the issue.
+@[simps! Verts]
 def toSubTemporalGraph (H : TemporalGraph V) (h : H ≤ G) : G.SubTemporalGraph where
   Verts := Set.univ
   Adj := H.Adj
   adj_sub e := h e
   edge_vert _ := Set.mem_univ _
   edge_vert' _ := Set.mem_univ _
+
+@[simp]
+theorem toSubTemporalGraph_Adj (H : TemporalGraph V) (h : H ≤ G) {x y : V} {n : ℕ} :
+    (toSubTemporalGraph H h).Adj x y n ↔ H.Adj x y n :=
+  Iff.rfl
 
 theorem toSubgraph.isSpanning (H : TemporalGraph V) (h : H ≤ G) :
     (toSubTemporalGraph H h).IsSpanning :=
@@ -1138,7 +1108,7 @@ theorem toSubTemporalGraph_isSymm (H : TemporalGraph V) (hs : H.IsSymm) (h : H �
 def toSubgraphTop : G.SubTemporalGraph := ⊤
 
 /-- Create a `SubTemporalGraph G` from a set of edges, the edges not in `G.EdgeSet` are ignored. -/
-@[simps]
+@[simps!]
 def fromEdgeSet (G : TemporalGraph V) (s : Set ((Sym2 V) × ℕ)) :
     SubTemporalGraph G where
   Verts := {x | ∃ (p : s) , x ∈ p.1.1 }

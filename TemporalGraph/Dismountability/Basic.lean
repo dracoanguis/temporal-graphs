@@ -6,18 +6,56 @@ Authors: Ethan Bargaud-Arm
 import TemporalGraph.Basic
 import TemporalGraph.Subgraph
 
+/-!
+# Dismountability
+
+This module formalizes the *dismountability* argument of Casteigts, Peters & Schoeters,
+which underlies their `O(n log n)` spanner bound for temporal cliques: a clique with no
+dismountable vertex is small enough (via `vzero`) and structured enough (via the earliest/latest
+neighbor bijections) to sparsify inductively. See `Dismountability/Operations.lean` for the
+operations (`dismount`, `mount`, `twoHopMount`) that carry out the induction.
+
+A subgraph `H` partitions its vertices into `vminus` (vertices that are someone's earliest
+neighbor), `vplus` (vertices that are someone's latest neighbor) and `vzero` (neither). `H` is
+`Dismountable` when it is a clique with a vertex that is both an earliest and a latest neighbor;
+`TwoHopDismountable` weakens this to allow reaching such a vertex within two hops. When `H` is not
+two-hop-dismountable, the earliest/latest neighbor relations become bijections between `vminus`
+and `vplus` (`earliestNeighborFn`, `latestNeighborFn`), which forces `vzero` to be empty.
+
+## Main definitions
+
+* `TemporalGraph.Subgraph.Dismountable` : Theorem 2.1.
+* `TemporalGraph.Subgraph.vminus`, `vplus`, `vzero` : def 3.1, the partition of `H.verts`.
+* `TemporalGraph.Subgraph.TwoHopDismountable` : the two-hop weakening of `Dismountable`.
+* `TemporalGraph.Subgraph.earliestNeighborFn`, `latestNeighborFn` : the bijections between
+  `vminus` and `vplus` obtained when `H` is not two-hop-dismountable.
+
+## Main results
+
+* `TemporalGraph.Subgraph.partition_of_not_dismountable` : lemma 3.1, `vminus`, `vplus`, `vzero`
+  partition `H.verts`.
+* `TemporalGraph.Subgraph.vplus_ne_neighbor_of_not_twoHopDismountable`,
+  `vminus_ne_neighbor_of_not_twoHopDismountable` : lemma 3.2, distinct vertices of `vplus`
+  (resp. `vminus`) have distinct earliest (resp. latest) neighbors.
+* `TemporalGraph.Subgraph.earliestNeighborFn_bijective`, `latestNeighborFn_bijective` : the
+  bijections between `vminus` and `vplus`.
+* `TemporalGraph.Subgraph.vzero_empty_of_not_twoHopDismountable` : lemma 3.4, `vzero = ∅`.
+
+## References
+
+* Casteigts, Peters & Schoeters, *Temporal Cliques Admit Sparse Spanners*, ICALP 2019 / JCSS.
+-/
+
 universe u
 variable {V : Type u}
 
 namespace TemporalGraph
 
--- -- Theorem 2.1
--- def Dismountable (G : TemporalGraph V) :=
---   ∃ (x y z : V), G.EarliestNeighbor y x ∧ G.LatestNeighbor z x
-
 namespace Subgraph
 
 variable {G : TemporalGraph V}
+
+section Partition
 
 -- Theorem 2.1
 def Dismountable (H : Subgraph G) :=
@@ -123,6 +161,10 @@ lemma partition_of_not_dismountable {H : Subgraph G} (h : H.IsClique ∧ ¬H.Dis
           have hunin : u ∉ H.verts := by rw [←H.vunion_eq_univ] ; simp [huin, huin', huin'']
           contradiction
 
+end Partition
+
+section TwoHop
+
 def TwoHopDismountable (H : Subgraph G) :=
   H.IsClique
   ∧
@@ -222,6 +264,10 @@ lemma vminus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} (x y : H.vmi
         · constructor
           · rw [hzz'] at hle ; exact H.adj_symm hle.left
           · push_neg at ht ; apply ht.le
+
+end TwoHop
+
+section NeighborFunctions
 
 lemma earliestEdge_exists_of_finite_nontrivial_simple_clique {H : Subgraph G}
     [h₀ : Finite H.verts]
@@ -539,16 +585,9 @@ lemma existsUnique_vminus_latestEdge {H : Subgraph G}
   have heq' := h₀ y x n q'.2 ⟨hle.left, hadj⟩
   exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heq, heq'.symm⟩
 
--- -- TODO: PERfect matching
--- lemma earliestEdge_perfectMatching {H : Subgraph G}
---     [Finite H.verts]
---     [Nontrivial H.verts]
---     (h₀ : H.IsSimple)
---     (h₁ : H.IsClique)
---     (h₂ : H.IsProper)
---     (h₃ : ¬H.TwoHopDismountable) :
---     H.coe.fromEdgeSet
+end NeighborFunctions
 
+section VzeroEmpty
 
 -- lemma 3.4
 lemma vzero_empty_of_not_twoHopDismountable {H : Subgraph G}
@@ -618,6 +657,8 @@ lemma vzero_empty_of_not_twoHopDismountable {H : Subgraph G}
           absurd hz'in
           rw [←heq] at hx
           exact (vzero_mem z' hx).left
+
+end VzeroEmpty
 
 end Subgraph
 

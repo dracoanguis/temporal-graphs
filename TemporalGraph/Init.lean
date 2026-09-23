@@ -6,6 +6,10 @@ Authors: Ethan Bargaud-Arm
 import Mathlib.Init
 import Aesop
 
-/- from Mathlib/Combinatorics/SimpleGraph/Init.lean -/
+/-!
+# Temporal Graph Automation
+
+Declares the `TemporalGraph` aesop rule set for automation in temporal graph proofs.
+-/
 
 declare_aesop_rule_sets [TemporalGraph]

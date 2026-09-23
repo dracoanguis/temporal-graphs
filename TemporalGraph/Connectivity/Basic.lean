@@ -5,6 +5,24 @@ Authors: Ethan Bargaud-Arm
 -/
 import TemporalGraph.TemporalWalk
 
+/-!
+# Reachability and Connectivity
+
+Defines reachability in temporal graphs: vertex `y` is reachable from `x` if there exists
+a temporal walk from `x` to `y`. Note that `Reachable` is **directional even for symmetric
+graphs**, since walk times must be non-decreasing.
+
+## Main definitions
+* `Reachable` : Existence of a temporal walk between two vertices
+* `TemporallyConnected` : Every pair of vertices is mutually reachable
+* `IsSpanner` : A subgraph that preserves reachability (commented out pending design review)
+
+## Main results
+* `reachable_of_self` : Every vertex reaches itself
+* `temporallyConnected_of_isClique` : Cliques are temporally connected
+* `reachable_of_earliestEdge`, `reachable_of_latestEdge` : Reachability preservation lemmas
+-/
+
 universe u
 variable {V : Type u}
 

@@ -6,12 +6,35 @@ Authors: Ethan Bargaud-Arm
 import TemporalGraph.Connectivity.Basic
 import TemporalGraph.Subgraph
 
+/-!
+# Subgraph Reachability and Spanners
+
+Extends reachability and connectivity concepts to subgraphs. Defines spanner types:
+`IsSpanner` (reachability-preserving), `IsSpannerOf` (one subgraph as spanner of another),
+and `IsTCSpanner` (temporally connected spanner).
+
+## Main definitions
+* `Reachable` : Reachability within a subgraph
+* `IsSpanner` : A spanning subgraph that preserves reachability
+* `IsSpannerOf` : One subgraph spanning and preserving reachability in another
+* `TemporallyConnected` : All vertex pairs are mutually reachable within a subgraph
+* `IsTCSpanner` : A temporally connected spanner
+
+## Main results
+* `reachable_of_subgraph_reachable` : Reachability in subgraph implies reachability in parent
+* `reachable_of_le_reachable` : Reachability preserved under subgraph inclusion
+* `reachable_of_*Edge` : Reachability preservation via earliest/latest edges
+* `TCspanner_iff_TC` : Existence of a TC-spanner characterizes temporal connectivity
+-/
+
 universe u
 variable {V : Type u} {G : TemporalGraph V}
 
 namespace TemporalGraph
 
 namespace Subgraph
+
+section Reachability
 
 @[simp]
 def Reachable (H : Subgraph G) (x y : H.verts) : Prop := H.coe.Reachable x y
@@ -26,6 +49,9 @@ lemma reachable_iff_toTemporalGraph {H : Subgraph G} {x y : H.verts} :
   · intro ⟨n, m, ⟨w⟩⟩
     exact ⟨n, m, ⟨↑w⟩⟩
 
+end Reachability
+
+section Spanners
 
 /-- A `Subgraph` is a spanner of it's original graph `G`, if it's spanning and every
 vertices as the same Reachability as in `G`. -/
@@ -50,6 +76,10 @@ def IsSpannerOf (H : Subgraph G) (H' : Subgraph G) : Prop :=
   H ≤ H' ∧ ∃ heq : H.verts = H'.verts, ∀ u v : H'.verts , H'.Reachable u v →
   H.Reachable ⟨u, by simp only [heq, Subtype.coe_prop]⟩
               ⟨v, by simp only [heq, Subtype.coe_prop]⟩
+
+end Spanners
+
+section TemporalConnectivity
 
 /-- Every vertex can reach every vertex in the `Subgraph`. -/
 def TemporallyConnected (H : Subgraph G) : Prop := ∀ x y : H.verts , H.Reachable x y
@@ -90,6 +120,9 @@ theorem isTCSpanner_iff_isSpanner_and_TC {H : Subgraph G} :
   intro htc _ x hx y hy _
   exact htc ⟨x, hx⟩ ⟨y, hy⟩
 
+end TemporalConnectivity
+
+section ReachabilityPreservation
 
 @[simp]
 lemma reachable_of_subgraph_reachable {H : Subgraph G} :
@@ -200,6 +233,8 @@ theorem TCspanner_iff_TC :
       intro x y
       exact hspanner.right ↑x ↑y <| h_tc x y
     exact ⟨⊤, ⟨top_isSpanning, h'_tc⟩⟩
+
+end ReachabilityPreservation
 
 end Subgraph
 end TemporalGraph

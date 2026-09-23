@@ -5,6 +5,21 @@ Authors: Ethan Bargaud-Arm
 -/
 import TemporalGraph.Basic
 
+/-!
+# Nonempty Temporal Walks
+
+Defines `NonemptyTemporalWalk`, an inductive type for temporal walks that are guaranteed
+to contain at least one edge. Times must be non-decreasing along the walk.
+
+## Main definitions
+* `NonemptyTemporalWalk` : A walk with at least one edge and non-decreasing times
+* `length` : The number of edges in a walk
+* `support` : The list of vertices visited
+* `arcs` : The list of directed edges (as triples `V × V × ℕ`)
+* `append` : Concatenate two compatible walks
+* `prepend` : Add an edge at the start of a walk
+-/
+
 universe u
 
 namespace TemporalGraph

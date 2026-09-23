@@ -5,6 +5,20 @@ Authors: Ethan Bargaud-Arm
 -/
 import TemporalGraph.NonemptyTemporalWalk
 
+/-!
+# Temporal Walks
+
+Defines `TemporalWalk`, an inductive type for temporal walks that may be empty. It wraps
+`NonemptyTemporalWalk` or represents an empty walk at a single vertex and time.
+
+## Main definitions
+* `TemporalWalk` : A (possibly empty) walk with non-decreasing times
+* `length` : The number of edges
+* `support` : The list of vertices visited
+* `arcs` : The list of directed edges
+* `temporalWalkSet` : The set of all walks between two vertices
+-/
+
 universe u
 
 variable {V : Type u} {G : TemporalGraph V}

@@ -6,6 +6,40 @@ Authors: Ethan Bargaud-Arm
 import TemporalGraph.Init
 import Mathlib
 
+/-!
+# Temporal graphs
+
+This module defines temporal graphs on a vertex type `V`: a relation `Adj : V → V → ℕ → Prop`
+recording, for each pair of vertices, the times at which an edge between them exists. Unlike
+Mathlib's `SimpleGraph`, no symmetry or irreflexivity is bundled into the structure —
+`TemporalGraph` carries only `Adj`. Symmetry and looplessness are instead the type classes
+`IsSymm` and `IsLoopless`, resolved by instance search wherever a result needs them
+(`[G.IsSymm]`, `[G.IsLoopless]`), rather than threaded as explicit hypotheses. Constructions that
+preserve one of these properties (`symmetrize`, `fromEdgeSet`, `Subgraph.induce`, …) declare a
+matching instance, so resolution finds it automatically, including through several layers of
+construction.
+
+There are two notions of edge set. `arcSet`/`arcSize` are the oriented world's: an arc is an
+ordered pair of endpoints with a time, and membership characterizes adjacency unconditionally.
+`edgeSet`/`size` are the symmetric world's: an edge is an unordered pair (`Sym2 V`) with a time,
+and its clean characterization `mem_edgeSet` needs `[G.IsSymm]` (the unconditional
+`mem_edgeSet_iff_or` holds regardless, but only as a disjunction of the two orientations).
+
+## Main definitions
+
+* `TemporalGraph.IsSymm`, `TemporalGraph.IsLoopless` : symmetry and looplessness, as classes.
+* `TemporalGraph.IsClique`, `TemporalGraph.IsSimple`, `TemporalGraph.IsProper`,
+  `TemporalGraph.IsHappy` : the graph predicates from Casteigts–Peters–Schoeters.
+* `TemporalGraph.EarliestEdge`, `TemporalGraph.LatestEdge`, `TemporalGraph.EarliestNeighbor`,
+  `TemporalGraph.LatestNeighbor` : the earliest/latest edge and neighbor of a vertex.
+* `TemporalGraph.arcSet`, `TemporalGraph.edgeSet` : the oriented and symmetric edge sets.
+* `TemporalGraph.symmetrize`, `TemporalGraph.fromArcSet`, `TemporalGraph.fromEdgeSet` : graph
+  builders.
+
+## References
+
+* Casteigts, Peters & Schoeters, *Temporal Cliques Admit Sparse Spanners*, ICALP 2019 / JCSS.
+-/
 
 macro (name := aesop_temporal_graph) "aesop_temporal_graph" c:Aesop.tactic_clause* : tactic =>
   `(tactic|
@@ -72,6 +106,8 @@ protected theorem Adj.ne' [G.IsLoopless] (h : G.Adj x y n) : y ≠ x :=
 
 end Adjacency
 
+section Definitions
+
 /-- The footprint of a TemporalGraph is a Digraph representing the underlying
 directed edges unlabelled by time. -/
 def footprint (G : TemporalGraph V) : Digraph V :=
@@ -107,7 +143,9 @@ def EarliestNeighbor (G : TemporalGraph V) (x y : V) : Prop := ∃ n : ℕ, G.Ea
 /-- *y* is a *latest neighbor* of *x* -/
 def LatestNeighbor (G : TemporalGraph V) (x y : V) : Prop := ∃ n : ℕ, G.LatestEdge x y n
 
-section Order
+end Definitions
+
+section Inclusion
 
 variable {X Y : Type u}
 
@@ -125,6 +163,10 @@ structure IsSubgraphOf {P : Y → Prop} {P' : Y → Prop} (G : TemporalGraph {x 
 
 instance : Coe (TemporalGraph V) (TemporalGraph {x : V // True}) where
   coe G := ⟨fun x y n => G.Adj x y n⟩
+
+end Inclusion
+
+section Order
 
 /-- `G` is a *spanning* subgraph of `H`: same vertices, fewer adjacencies. This is the relation
 behind `≤`. Beware for readers coming from Mathlib: `SimpleGraph.IsSubgraph` names this very
@@ -161,11 +203,6 @@ theorem mem_neighborSet (G : TemporalGraph V) (x y : V) :
     y ∈ G.neighborSet x ↔ ∃ n : ℕ, G.Adj x y n :=
   Iff.rfl
 
--- instance NeighborSet.memDecidable (G : TemporalGraph V) (v : V)
--- [DecidableRel (λ x y↦ ∃ t, G.Adj x y t)] :
-    -- DecidablePred (· ∈ G.NeighborSet v) :=
-  -- inferInstanceAs <| DecidablePred (Adj G v)
-
 end neighborSet
 
 section arcSet
@@ -180,6 +217,21 @@ def arcSet (G : TemporalGraph V) : Set (V × V × ℕ) :=
 theorem mem_arcSet (G : TemporalGraph V) {x y : V} {n : ℕ} :
     (x, y, n) ∈ G.arcSet ↔ G.Adj x y n :=
   Iff.rfl
+
+/-- Build a temporal graph from a set of arcs. Oriented: nothing is assumed, and nothing is
+symmetrized — see `fromEdgeSet` for the symmetric counterpart. -/
+def fromArcSet (s : Set (V × V × ℕ)) : TemporalGraph V where
+  Adj x y n := (x, y, n) ∈ s
+
+@[simp]
+theorem fromArcSet_adj {s : Set (V × V × ℕ)} {x y : V} {n : ℕ} :
+    (fromArcSet s).Adj x y n ↔ (x, y, n) ∈ s :=
+  Iff.rfl
+
+@[simp]
+theorem arcSet_fromArcSet (s : Set (V × V × ℕ)) : (fromArcSet (V := V) s).arcSet = s := by
+  ext ⟨x, y, n⟩
+  rfl
 
 end arcSet
 
@@ -225,7 +277,7 @@ def arcSize (G : TemporalGraph V) [Fintype G.arcSet] := Fintype.card G.arcSet
 
 end Size
 
-section Construction
+section Symmetrize
 
 variable {G : TemporalGraph V}
 
@@ -257,20 +309,9 @@ theorem symmetrize_eq_self (G : TemporalGraph V) [G.IsSymm] : G.symmetrize = G :
 theorem symmetrize_le {H : TemporalGraph V} [H.IsSymm] (h : G ≤ H) : G.symmetrize ≤ H :=
   fun hadj ↦ Or.elim hadj (fun hadj ↦ h hadj) fun hadj ↦ (h hadj).symm
 
-/-- Build a temporal graph from a set of arcs. Oriented: nothing is assumed, and nothing is
-symmetrized — see `fromEdgeSet` for the symmetric counterpart. -/
-def fromArcSet (s : Set (V × V × ℕ)) : TemporalGraph V where
-  Adj x y n := (x, y, n) ∈ s
+end Symmetrize
 
-@[simp]
-theorem fromArcSet_adj {s : Set (V × V × ℕ)} {x y : V} {n : ℕ} :
-    (fromArcSet s).Adj x y n ↔ (x, y, n) ∈ s :=
-  Iff.rfl
-
-@[simp]
-theorem arcSet_fromArcSet (s : Set (V × V × ℕ)) : (fromArcSet (V := V) s).arcSet = s := by
-  ext ⟨x, y, n⟩
-  rfl
+section FromEdgeSet
 
 /-- Build a temporal graph from a set of unordered edges. Symmetric by construction: an
 unordered pair is read in both directions. -/
@@ -291,6 +332,6 @@ theorem edgeSet_fromEdgeSet (s : Set ((Sym2 V) × ℕ)) : (fromEdgeSet (V := V) 
   induction p using Sym2.ind with
   | _ x y => simp
 
-end Construction
+end FromEdgeSet
 
 end TemporalGraph

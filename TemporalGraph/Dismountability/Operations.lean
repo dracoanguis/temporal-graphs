@@ -7,6 +7,31 @@ import TemporalGraph.Basic
 import TemporalGraph.Subgraph
 import TemporalGraph.Connectivity.Subgraph
 
+/-!
+# Dismounting and mounting
+
+This module carries out the inductive step of Casteigts, Peters & Schoeters's spanner
+construction (Theorem 2.1): given a spanner of a clique with a vertex removed, extend it back to
+a spanner of the whole clique by re-attaching that vertex through the few edges that made it
+dismountable (or two-hop-dismountable) in the first place.
+
+* `dismount` removes a single vertex from a subgraph.
+* `mount` adds a vertex back with (at most) its earliest and latest edge, for the one-hop case.
+* `twoHopMount` adds a vertex back reached through an intermediate vertex on each side, for the
+  two-hop case (`Dismountability/Basic.lean`'s `TwoHopDismountable`).
+
+## Main results
+
+* `TemporalGraph.Subgraph.dismountability` : dismounting and re-mounting through the earliest and
+  latest edge preserves being a spanner, adding at most 2 edges (`mount_size`).
+* `TemporalGraph.Subgraph.twoHopDismountability` : the two-hop analogue, adding at most 4 edges
+  (`twoHopMount_size`).
+
+## References
+
+* Casteigts, Peters & Schoeters, *Temporal Cliques Admit Sparse Spanners*, ICALP 2019 / JCSS.
+-/
+
 universe u
 variable {V : Type u} {G : TemporalGraph V}
 
@@ -228,7 +253,7 @@ theorem dismountability {H H' : Subgraph G} {x : H.verts} {y z : H'.verts} {n m 
 
 end Mount
 
-section Mount2
+section TwoHopMount
 
 def twoHopMount (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
     [G.IsSymm]
@@ -498,7 +523,7 @@ theorem twoHopDismountability {H H' : Subgraph G} {x : H.verts} {y y' z z' : H'.
     intro u v _
     simpa using htc ⟨u, by grind only⟩ ⟨v, by grind only⟩
 
-end Mount2
+end TwoHopMount
 
 end Subgraph
 

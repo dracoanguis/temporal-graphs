@@ -32,7 +32,7 @@ fields of the structure.
 
 | File | Contents |
 |---|---|
-| `TemporalGraph/Init.lean` | The `LooplessTemporalGraph` aesop rule-set used by the `aesop_temporal_graph` macro |
+| `TemporalGraph/Init.lean` | The `TemporalGraph` aesop rule-set used by the `aesop_temporal_graph` macro |
 | `TemporalGraph/Basic.lean` | `TemporalGraph V`; the `IsSymm`/`IsLoopless` classes; `IsSimple`/`IsProper`/`IsHappy`/`IsClique`; `Footprint` (→ `Digraph`); earliest/latest edges and neighbors; `IsSubgraph`/`IsSpanningSubgraph`; `NeighborhoodSet`; `ArcSet`/`arcSize` (oriented world); `EdgeSet`/`size` (symmetric world, need `[IsSymm]` and `[IsLoopless]`) |
 | `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Non-strict, time-non-decreasing temporal walks (journeys), split into nonempty/empty variants |
 | `TemporalGraph/SubTemporalGraph.lean` | The `SubTemporalGraph` type, which extends `TemporalGraph V`, adding fields `Verts`/proofs `adj_sub`/`edge_vert`/`edge_vert'`; its coercion `coe` to `TemporalGraph H.Verts`; inherited predicates `IsSymm`/`IsSimple`/`IsProper`/`IsHappy` and earliest/latest edge/neighbor definitions; the subgraph-specific `IsClique`/`NeighborhoodSet`/`EdgeSet`/`size`/`IncidenceSet`; and the `addVerts`/`addEdge`/`addEdgeSymm`/`deleteVerts` operations |

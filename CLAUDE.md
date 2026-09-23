@@ -32,7 +32,7 @@ besoin de le répéter ici.
 
 | Fichier | Rôle | Analogue Mathlib |
 |---|---|---|
-| `TemporalGraph/Init.lean` | Rule-set aesop `LooplessTemporalGraph` (nom hérité, voir Conventions) | `SimpleGraph/Init.lean` |
+| `TemporalGraph/Init.lean` | Rule-set aesop `TemporalGraph`, utilisé par la macro `aesop_temporal_graph` | `SimpleGraph/Init.lean` |
 | `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `Footprint` (→ `Digraph`), `NeighborhoodSet`, `ArcSet`/`arcSize` (monde orienté), `EdgeSet`/`size` (monde symétrique, demande `[IsSymm]` et `[IsLoopless]`) | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
 | `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Marches temporelles non strictes, à temps croissant | `SimpleGraph.Walk` |
 | `TemporalGraph/SubTemporalGraph.lean` | Sous-graphe temporel : `SubTemporalGraph` étend `TemporalGraph V`, ajoutant `Verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `IsClique`/`NeighborhoodSet`/`EdgeSet`/`size`/`IncidenceSet` ; treillis borné, `induce`/`deleteVerts`/`addVerts`/`addEdge`/`addEdgeSymm` | `SimpleGraph.Subgraph` |
@@ -125,9 +125,7 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
   le lemme corpus du parent s'applique à `H.Adj` gratuitement précisément parce que le type n'en
   distingue plus l'adjacence du sous-graphe de celle d'un graphe.
 - Automatisation via la macro `aesop_temporal_graph`, qui utilise le rule-set aesop
-  `LooplessTemporalGraph` déclaré dans `Init.lean` — ce nom de rule-set est resté sur l'ancien
-  nom du type ; à renommer plus tard si on veut de la cohérence stricte, mais ce n'est pas
-  bloquant (c'est juste une étiquette de rule-set, pas une référence de type).
+  `TemporalGraph` déclaré dans `Init.lean`.
 
 ## Repères papier ↔ code
 

@@ -44,7 +44,7 @@
 
 -- #check (triangle.induce ({u : Fin 3 | u ≠ 3})).Adj
 
-import TemporalGraph.SubTemporalGraph
+import TemporalGraph.Subgraph
 
 open TemporalGraph
 

@@ -32,7 +32,7 @@ variable {V : Type u}
 
 /-- Symmetry is a class rather than a plain predicate, so that it is carried by instance
 resolution instead of being threaded by hand: constructions that preserve it declare an instance
-(see `SubTemporalGraph.induce`, `addEdgeSymm`, `mount`), and results that need it take `[G.IsSymm]`.
+(see `Subgraph.induce`, `addEdgeSymm`, `mount`), and results that need it take `[G.IsSymm]`.
 Mirrors the `symm` field of Mathlib's `SimpleGraph`, without bundling it into the data. -/
 class IsSymm (G : TemporalGraph V) : Prop where
   symm : ∀ n : ℕ, Symmetric (fun x y => G.Adj x y n)
@@ -141,7 +141,7 @@ lemma le_iff_adj {G H : TemporalGraph V} :
   .rfl
 
 @[simp]
-theorem isSpanningSubTemporalGraph_eq_le :
+theorem isSpanningSubgraph_eq_le :
     (IsSpanningSubgraph : TemporalGraph V -> TemporalGraph V -> Prop) =
     (· ≤ ·) :=
   rfl

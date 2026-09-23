@@ -215,29 +215,33 @@ end ArcSet
 
 section EdgeSet
 
-/-- The unordered edges of `G`, with their time. Counting these is the symmetric world's
-convention: see `ArcSet` for the oriented one, and note that `mem_edgeSet`, which is what makes
-this set usable, needs `[G.IsSymm]` and `[G.IsLoopless]`. -/
+/-- The unordered edges of `G`, with their time: a pair `(p, n)` belongs when `p` is the
+unordered pair of the endpoints of an arc at time `n`. Note that this asks `p` to *be* such a
+pair, not merely to have its endpoints among them — quantifying over the members of `p` would
+also admit `s(x, y)` whenever `G` has a loop at `x`, which is why a looplessness hypothesis used
+to be needed to use this set at all. -/
 def EdgeSet (G : TemporalGraph V) : Set ((Sym2 V) × ℕ) :=
-  {(p, n) | ∃ x y : p, G.Adj x y n}
+  {(p, n) | ∃ x y, p = s(x,y) ∧ G.Adj x y n}
+
+/-- Membership in `EdgeSet`, with no hypothesis: an unordered pair carries an edge exactly when
+one of its two orientations is an arc. For a symmetric graph the two disjuncts collapse — see
+`mem_edgeSet`. -/
+theorem mem_edgeSet_iff_or (G : TemporalGraph V) {x y : V} {n : ℕ} :
+    (s(x,y), n) ∈ G.EdgeSet ↔ G.Adj x y n ∨ G.Adj y x n := by
+  constructor
+  · rintro ⟨a, b, hp, hadj⟩
+    rcases Sym2.eq_iff.mp hp with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · exact Or.inl hadj
+    · exact Or.inr hadj
+  · rintro (h | h)
+    · exact ⟨x, y, rfl, h⟩
+    · exact ⟨y, x, Sym2.eq_swap, h⟩
 
 @[simp]
-theorem mem_edgeSet (G : TemporalGraph V) [G.IsSymm] [G.IsLoopless] {x y : V} {n : ℕ} :
+theorem mem_edgeSet (G : TemporalGraph V) [G.IsSymm] {x y : V} {n : ℕ} :
     (s(x,y), n) ∈ G.EdgeSet ↔ G.Adj x y n := by
-  apply Iff.intro
-  · intro ⟨u, v, hadj⟩
-    rcases Sym2.mem_iff.mp u.prop with heq | heq
-    <;> rw [heq] at hadj
-    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_left hadj.ne'
-      rw [heq'] at hadj
-      exact hadj
-    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_right hadj.ne'
-      rw [heq'] at hadj
-      exact hadj.symm
-  · intro hadj
-    have hin : x ∈ s(x,y) := Sym2.mem_iff.mpr <| Or.inl <| Eq.refl x
-    have hin' : y ∈ s(x,y) := Sym2.mem_iff.mpr <| Or.inr <| Eq.refl y
-    exact ⟨⟨x, hin⟩, ⟨⟨y, hin'⟩, hadj⟩⟩
+  rw [mem_edgeSet_iff_or]
+  exact or_iff_left_iff_imp.mpr fun h ↦ h.symm
 
 end EdgeSet
 
@@ -250,5 +254,73 @@ def size (G : TemporalGraph V) [Fintype G.EdgeSet] := Fintype.card G.EdgeSet
 def arcSize (G : TemporalGraph V) [Fintype G.ArcSet] := Fintype.card G.ArcSet
 
 end Size
+
+section Construction
+
+variable {G : TemporalGraph V}
+
+/-- The *symmetrization* of `G`: an arc in either direction becomes an edge in both. It is the
+smallest symmetric temporal graph above `G`. -/
+def symmetrize (G : TemporalGraph V) : TemporalGraph V where
+  Adj x y n := G.Adj x y n ∨ G.Adj y x n
+
+@[simp]
+theorem symmetrize_adj {x y : V} {n : ℕ} :
+    G.symmetrize.Adj x y n ↔ G.Adj x y n ∨ G.Adj y x n :=
+  Iff.rfl
+
+instance symmetrize_isSymm (G : TemporalGraph V) : G.symmetrize.IsSymm :=
+  ⟨fun _ _ _ h ↦ Or.symm h⟩
+
+/-- Symmetrizing adds no loop, so it preserves looplessness. -/
+instance symmetrize_isLoopless (G : TemporalGraph V) [G.IsLoopless] : G.symmetrize.IsLoopless :=
+  ⟨fun _ ↦ ⟨fun _ h ↦ Or.elim h (fun h ↦ G.irrefl h) fun h ↦ G.irrefl h⟩⟩
+
+theorem le_symmetrize (G : TemporalGraph V) : G ≤ G.symmetrize := fun h ↦ Or.inl h
+
+/-- A symmetric graph is its own symmetrization. -/
+theorem symmetrize_eq_self (G : TemporalGraph V) [G.IsSymm] : G.symmetrize = G := by
+  ext x y n
+  exact ⟨fun h ↦ Or.elim h id fun h ↦ h.symm, Or.inl⟩
+
+/-- `G.symmetrize` is the least symmetric graph above `G`. -/
+theorem symmetrize_le {H : TemporalGraph V} [H.IsSymm] (h : G ≤ H) : G.symmetrize ≤ H :=
+  fun hadj ↦ Or.elim hadj (fun hadj ↦ h hadj) fun hadj ↦ (h hadj).symm
+
+/-- Build a temporal graph from a set of arcs. Oriented: nothing is assumed, and nothing is
+symmetrized — see `fromEdgeSet` for the symmetric counterpart. -/
+def fromArcSet (s : Set (V × V × ℕ)) : TemporalGraph V where
+  Adj x y n := (x, y, n) ∈ s
+
+@[simp]
+theorem fromArcSet_adj {s : Set (V × V × ℕ)} {x y : V} {n : ℕ} :
+    (fromArcSet s).Adj x y n ↔ (x, y, n) ∈ s :=
+  Iff.rfl
+
+@[simp]
+theorem arcSet_fromArcSet (s : Set (V × V × ℕ)) : (fromArcSet (V := V) s).ArcSet = s := by
+  ext ⟨x, y, n⟩
+  rfl
+
+/-- Build a temporal graph from a set of unordered edges. Symmetric by construction: an
+unordered pair is read in both directions. -/
+def fromEdgeSet (s : Set ((Sym2 V) × ℕ)) : TemporalGraph V where
+  Adj x y n := (s(x,y), n) ∈ s
+
+@[simp]
+theorem fromEdgeSet_adj {s : Set ((Sym2 V) × ℕ)} {x y : V} {n : ℕ} :
+    (fromEdgeSet s).Adj x y n ↔ (s(x,y), n) ∈ s :=
+  Iff.rfl
+
+instance fromEdgeSet_isSymm (s : Set ((Sym2 V) × ℕ)) : (fromEdgeSet (V := V) s).IsSymm :=
+  ⟨fun _ _ _ h ↦ by simpa [Sym2.eq_swap] using h⟩
+
+@[simp]
+theorem edgeSet_fromEdgeSet (s : Set ((Sym2 V) × ℕ)) : (fromEdgeSet (V := V) s).EdgeSet = s := by
+  ext ⟨p, n⟩
+  induction p using Sym2.ind with
+  | _ x y => simp
+
+end Construction
 
 end TemporalGraph

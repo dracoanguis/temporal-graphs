@@ -724,42 +724,23 @@ end NeighborHoodSet
 
 section EdgeSet
 
-def EdgeSet (H : SubTemporalGraph G) : Set ((Sym2 V) × ℕ) :=
-  {(p, n) | ∃ x y : p, H.Adj x y n}
+-- `EdgeSet` is no longer redefined here: `SubTemporalGraph` now `extends TemporalGraph V`, so
+-- `H.EdgeSet` resolves through generalized field notation to `TemporalGraph.EdgeSet
+-- H.toTemporalGraph` — the fixed, hypothesis-free definition from `Basic.lean`.
 
--- The `Adj → EdgeSet` direction is orientation-free: it just exhibits `x` and `y` as members of
--- `s(x,y)`, so it needs neither symmetry of `H` nor looplessness of `G`.
+-- The `Adj → EdgeSet` direction is orientation-free: it needs neither symmetry of `H` nor
+-- looplessness of `G` (it is just the `Or.inl` direction of `mem_edgeSet_iff_or`).
 protected theorem Adj.mem_edgeSet {H : SubTemporalGraph G} {x y : V} {n : ℕ} (h : H.Adj x y n) :
     (s(x,y), n) ∈ H.EdgeSet :=
-  ⟨⟨x, Sym2.mem_iff.mpr <| Or.inl <| Eq.refl x⟩,
-    ⟨y, Sym2.mem_iff.mpr <| Or.inr <| Eq.refl y⟩, h⟩
-
--- `EdgeSet` is `Sym2`-valued, i.e. unordered: recognizing `s(x,y)` as an edge of `H` from the
--- reversed orientation genuinely needs `H` to be symmetric.
-@[simp]
-theorem mem_edgeSet (H : SubTemporalGraph G) [H.IsSymm] [G.IsLoopless]
-    {x y : V} {n : ℕ} :
-    (s(x,y), n) ∈ H.EdgeSet ↔ H.Adj x y n := by
-  apply Iff.intro
-  · intro ⟨u, v, hadj⟩
-    rcases Sym2.mem_iff.mp u.prop with heq | heq
-    <;> rw [heq] at hadj
-    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_left (H.adj_sub hadj).ne'
-      rw [heq'] at hadj
-      exact hadj
-    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_right (H.adj_sub hadj).ne'
-      rw [heq'] at hadj
-      exact H.adj_symm hadj
-  · exact SubTemporalGraph.Adj.mem_edgeSet
+  H.mem_edgeSet_iff_or.mpr (Or.inl h)
 
 @[simp]
 lemma edgeSet_le {H : SubTemporalGraph G} {H' : SubTemporalGraph G} (h₀ : H ≤ H') :
     H.EdgeSet ⊆ H'.EdgeSet := by
-  intro _ ⟨_, _, h⟩
-  exact ⟨_, _, h₀.right h⟩
+  intro _ ⟨x, y, hp, h⟩
+  exact ⟨x, y, hp, h₀.right h⟩
 
-lemma le_iff_edgeSet_and_verts {H H' : SubTemporalGraph G} [H'.IsSymm]
-    [G.IsLoopless] :
+lemma le_iff_edgeSet_and_verts {H H' : SubTemporalGraph G} [H'.IsSymm] :
     H ≤ H' ↔ H.EdgeSet ⊆ H'.EdgeSet ∧ H.Verts ⊆ H'.Verts := by
   constructor
   · intro h
@@ -770,53 +751,31 @@ lemma le_iff_edgeSet_and_verts {H H' : SubTemporalGraph G} [H'.IsSymm]
     constructor
     · exact h.right
     · intro _ _ _ hadj
-      rw [←mem_edgeSet H']
+      rw [←H'.mem_edgeSet]
       exact Set.mem_of_subset_of_mem h.left (Adj.mem_edgeSet hadj)
 
 @[simp]
 lemma addEdgeSymm_edgeSet (H : SubTemporalGraph G) {x y : V} {n : ℕ}
-    [G.IsSymm] [G.IsLoopless]
+    [G.IsSymm]
     {h₀ : G.Adj x y n}
     {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts} :
     (H.addEdgeSymm h₀ h₁).EdgeSet = insert ⟨s(x,y), n⟩ H.EdgeSet := by
-  unfold addEdgeSymm EdgeSet
-  simp only [Subtype.exists, exists_prop]
-  ext a
-  apply Iff.intro
-  <;> intro h
-  · have ⟨b, hb, c, hc, hadj⟩ := h
-    apply Or.elim3 hadj
-    <;> intro h'
-    · apply Or.inr
-      use b, hb, c, hc
-    · apply Or.inl ; apply Prod.ext
-      · rw [h'.1.symm, h'.2.1.symm] at h₀ ⊢
-        exact a.1.mem_and_mem_iff h₀.ne |>.mp ⟨hb, hc⟩
-      · simp only [h']
-    · apply Or.inl ; apply Prod.ext
-      · rw [h'.1.symm, h'.2.1.symm] at h₀ ⊢
-        exact a.1.mem_and_mem_iff h₀.ne |>.mp ⟨hc, hb⟩
-      · simp only [h']
-  · apply Or.elim h
-    <;> intro h
-    · have hx : x ∈ a.1 := by simp only [h, Sym2.mem_iff, true_or]
-      have hy : y ∈ a.1 := by simp only [h, Sym2.mem_iff, or_true]
-      use x, hx, y, hy
-      apply Or.inr ; apply Or.inl
-      simp only [h, and_self]
-    · have ⟨b, hb, c, hc, hadj⟩ := h
-      use b, hb, c, hc
-      exact Or.inl hadj
+  ext ⟨p, n'⟩
+  induction p using Sym2.ind with
+  | _ a b =>
+    simp only [Set.mem_insert_iff, Prod.mk.injEq, TemporalGraph.mem_edgeSet_iff_or, addEdgeSymm,
+      Sym2.eq_iff]
+    tauto
 
 lemma addEdgeSymm_edgeSet' (H : SubTemporalGraph G) {x y : V} {n : ℕ}
-    [G.IsSymm] [G.IsLoopless]
+    [G.IsSymm]
     (h₀ : G.Adj x y n)
     (h₁ : x ∈ H.Verts ∧ y ∈ H.Verts) :
     (H.addEdgeSymm h₀ h₁).EdgeSet = insert ⟨s(x,y), n⟩ H.EdgeSet :=
   H.addEdgeSymm_edgeSet
 
 instance {H : SubTemporalGraph G} [h : Finite H.EdgeSet] {x y : V} {n : ℕ}
-    [G.IsSymm] [G.IsLoopless]
+    [G.IsSymm]
     {h₀ : G.Adj x y n}
     {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts} :
     Finite (H.addEdgeSymm h₀ h₁).EdgeSet := by
@@ -830,14 +789,12 @@ instance {H : SubTemporalGraph G} [h : Finite H.EdgeSet] {x y : V} {n : ℕ}
 @[simp]
 lemma addVerts_edgeSet {H : SubTemporalGraph G} {s : Set V} :
     (H.addVerts s).EdgeSet = H.EdgeSet := by
-  simp only [EdgeSet, addVerts, induce, Set.mem_union, exists_and_left, Subtype.exists, exists_prop]
-  ext a
-  apply Iff.intro
-  <;> intro h
-  · have ⟨x, _, hx', y, _, hy', _⟩ := h
-    use x, hx', y, hy'
-  · have ⟨x, hx, y, hy, hadj⟩ := h
-    use x, Or.inl (H.edge_vert hadj), hx, y, Or.inl (H.edge_vert' hadj)
+  ext ⟨p, n'⟩
+  constructor
+  · rintro ⟨a, b, hp, _, _, hadj⟩
+    exact ⟨a, b, hp, hadj⟩
+  · rintro ⟨a, b, hp, hadj⟩
+    exact ⟨a, b, hp, Or.inl (H.edge_vert hadj), Or.inl (H.edge_vert' hadj), hadj⟩
 
 lemma addVerts_edgeSet' {H : SubTemporalGraph G} (s : Set V) :
     (H.addVerts s).EdgeSet = H.EdgeSet := addVerts_edgeSet
@@ -846,11 +803,11 @@ instance {H : SubTemporalGraph G} {s : Set V} [h₀ : Finite H.EdgeSet] [Finite 
     Finite (H.addVerts s).EdgeSet := by
   simp only [addVerts_edgeSet, h₀]
 
-theorem edgeSet_toTemporalGraph {H : SubTemporalGraph G} :
-    H.EdgeSet = H.toTemporalGraph.EdgeSet := rfl
+-- `edgeSet_toTemporalGraph` is gone: `H.EdgeSet` now resolves through generalized field
+-- notation to `H.toTemporalGraph.EdgeSet` directly, making the old statement a tautology.
 
 def FootprintEdgeSet (H : SubTemporalGraph G) : Set (Sym2 V) :=
-  {p | ∃ n : ℕ, ∃ x y : p, H.Adj x y n}
+  {p | ∃ n x y, p = s(x,y) ∧ H.Adj x y n}
 
 -- NOTE(refactor): `Footprint` now returns a Mathlib `Digraph` (Basic.lean's "Relation rework"),
 -- which has no `edgeSet` (directed graphs don't have unordered edges) — unlike the old
@@ -862,41 +819,32 @@ def FootprintEdgeSet (H : SubTemporalGraph G) : Set (Sym2 V) :=
 --   sorry
 
 def EdgeSetToFootprintEdgeSet (H : SubTemporalGraph G) : H.EdgeSet → H.FootprintEdgeSet :=
-  fun x ↦ ⟨x.val.fst, ⟨x.val.snd, by
-    have ⟨a, b, hadj⟩ := x.2
-    use a, b
-  ⟩⟩
+  fun x ↦ ⟨x.val.fst, by
+    obtain ⟨a, b, hp, hadj⟩ := x.2
+    exact ⟨x.val.snd, a, b, hp, hadj⟩⟩
 
 lemma edgeSetToFootprintEdgeSet_surjective (H : SubTemporalGraph G) :
     Function.Surjective H.EdgeSetToFootprintEdgeSet := by
   intro x
-  simp only [Subtype.exists, Prod.exists]
-  have ⟨n, a, b ,hadj⟩ := x.prop
-  use x.1, n, ⟨a, b, hadj⟩
-  simp only [EdgeSetToFootprintEdgeSet, Subtype.coe_eta]
+  obtain ⟨n, a, b, hp, hadj⟩ := x.prop
+  exact ⟨⟨(x.1, n), a, b, hp, hadj⟩, rfl⟩
 
 lemma edgeSetToFootprintEdgeSet_injective (H : SubTemporalGraph G) [H.IsSymm]
-    [G.IsLoopless]
     (h₀ : H.IsSimple) :
     Function.Injective H.EdgeSetToFootprintEdgeSet := by
   intro x y h
-  have ⟨a, b, hadj⟩ := x.prop
-  have ⟨a', b', hadj'⟩ := y.prop
+  obtain ⟨a, b, hp, hadj⟩ := x.2
+  obtain ⟨a', b', hp', hadj'⟩ := y.2
   simp only [EdgeSetToFootprintEdgeSet, Subtype.mk.injEq] at h
   ext
   · apply Sym2.ext_iff.mp h
-  · refine h₀ a b x.1.2 y.1.2 ⟨hadj, ?_⟩
-    have hxs := x.1.1.mem_and_mem_iff (H.adj_sub hadj).ne |>.mp ⟨a.prop, b.prop⟩
-    have hys := y.1.1.mem_and_mem_iff (H.adj_sub hadj').ne |>.mp ⟨a'.prop, b'.prop⟩
-    rw [hxs, hys] at h
-    rcases Sym2.eq_iff.mp h with heq | heq
+  · rcases Sym2.eq_iff.mp (hp.symm.trans (h.trans hp')) with heq | heq
     · rw [heq.1.symm, heq.2.symm] at hadj'
-      exact hadj'
+      exact h₀ a b x.1.2 y.1.2 ⟨hadj, hadj'⟩
     · rw [heq.1.symm, heq.2.symm] at hadj'
-      exact H.adj_symm hadj'
+      exact h₀ a b x.1.2 y.1.2 ⟨hadj, H.adj_symm hadj'⟩
 
 lemma edgeSetToFootprintEdgeSet_bijective (H : SubTemporalGraph G) [H.IsSymm]
-    [G.IsLoopless]
     (h₀ : H.IsSimple) :
     Function.Bijective H.EdgeSetToFootprintEdgeSet :=
   ⟨H.edgeSetToFootprintEdgeSet_injective h₀, H.edgeSetToFootprintEdgeSet_surjective⟩
@@ -913,24 +861,20 @@ lemma size_of_simple (H : SubTemporalGraph G)
     [Fintype H.EdgeSet]
     [Fintype H.FootprintEdgeSet]
     [H.IsSymm]
-    [G.IsLoopless]
     (h₀ : H.IsSimple) :
     H.size = Fintype.card H.FootprintEdgeSet := by
   apply Fintype.card_of_bijective (f := H.EdgeSetToFootprintEdgeSet)
   exact H.edgeSetToFootprintEdgeSet_bijective h₀
 
 lemma size_of_toTemporalGraph (H : SubTemporalGraph G)
-    [Fintype H.EdgeSet]
-    [Fintype H.toTemporalGraph.EdgeSet] :
-    H.size = H.toTemporalGraph.size := by
-  unfold size TemporalGraph.size
-  rw [←Nat.card_eq_fintype_card, ←Nat.card_eq_fintype_card, edgeSet_toTemporalGraph]
+    [Fintype H.EdgeSet] :
+    H.size = H.toTemporalGraph.size := rfl
 
 -- NOTE(refactor): `Finite → Fintype` isn't automatic in Mathlib (avoids diamonds), so the
 -- `Finite` instance above does not chain into a `Fintype` one on its own: callers must supply
 -- the `Fintype` instance explicitly.
 theorem addEdgeSymm_size (H : SubTemporalGraph G) {x y : V} {n : ℕ}
-    [H.IsSymm] [G.IsSymm] [G.IsLoopless]
+    [H.IsSymm] [G.IsSymm]
     {h₀ : G.Adj x y n}
     {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts}
     {h₂ : ¬H.Adj x y n}
@@ -941,7 +885,7 @@ theorem addEdgeSymm_size (H : SubTemporalGraph G) {x y : V} {n : ℕ}
 
 @[simp]
 theorem addEdgeSymm_size_le (H : SubTemporalGraph G) {x y : V} {n : ℕ}
-    [G.IsSymm] [G.IsLoopless]
+    [G.IsSymm]
     {h₀ : G.Adj x y n}
     {h₁ : x ∈ H.Verts ∧ y ∈ H.Verts}
     [Fintype H.EdgeSet] [Fintype (H.addEdgeSymm h₀ h₁).EdgeSet] :
@@ -954,7 +898,7 @@ theorem addEdgeSymm_size_le (H : SubTemporalGraph G) {x y : V} {n : ℕ}
   assumption
 
 theorem addEdgeSymm_size_le' (H : SubTemporalGraph G) {x y : V} {n : ℕ}
-    [G.IsSymm] [G.IsLoopless]
+    [G.IsSymm]
     (h₀ : G.Adj x y n)
     (h₁ : x ∈ H.Verts ∧ y ∈ H.Verts)
     [Fintype H.EdgeSet] [Fintype (H.addEdgeSymm h₀ h₁).EdgeSet] :
@@ -1111,6 +1055,13 @@ instance toSubTemporalGraph_isSymm (H : TemporalGraph V) [hs : H.IsSymm] (h : H 
 
 def toSubgraphTop : G.SubTemporalGraph := ⊤
 
+-- `fromEdgeSet` lives in the `SubTemporalGraph` namespace (unlike `TemporalGraph.fromEdgeSet` in
+-- `Basic.lean`, which builds a plain, symmetrized `TemporalGraph`): dot notation `G.fromEdgeSet`
+-- always resolves to the `Basic.lean` one, so this constructor must be called qualified, as
+-- `SubTemporalGraph.fromEdgeSet G s` — matching Mathlib's `SimpleGraph.fromEdgeSet` precedent for
+-- the graph-level name.
+namespace SubTemporalGraph
+
 /-- Create a `SubTemporalGraph G` from a set of edges, the edges not in `G.EdgeSet` are ignored. -/
 @[simps!]
 def fromEdgeSet (G : TemporalGraph V) (s : Set ((Sym2 V) × ℕ)) :
@@ -1133,7 +1084,7 @@ def fromEdgeSet (G : TemporalGraph V) (s : Set ((Sym2 V) × ℕ)) :
     exact h.2.1
 
 instance fromEdgeSet_isSymm (G : TemporalGraph V) [G.IsSymm] (s : Set ((Sym2 V) × ℕ)) :
-    (G.fromEdgeSet s).IsSymm := by
+    (fromEdgeSet G s).IsSymm := by
   constructor
   intro _ _ _ h
   simp only [fromEdgeSet, Subtype.exists, exists_and_left, exists_prop, Prod.exists, ↓existsAndEq,
@@ -1145,29 +1096,20 @@ instance fromEdgeSet_isSymm (G : TemporalGraph V) [G.IsSymm] (s : Set ((Sym2 V) 
 @[simp]
 theorem fromEdgeSet_eq {G : TemporalGraph V} [G.IsSymm] [G.IsLoopless]
     {s : Set ((Sym2 V) × ℕ)} (h₀ : s ⊆ G.EdgeSet) :
-    (G.fromEdgeSet s).EdgeSet = s := by
-  simp only [SubTemporalGraph.EdgeSet, fromEdgeSet, Subtype.exists, exists_prop, Prod.exists,
-    exists_and_right, ↓existsAndEq, true_and]
-  ext a
+    (fromEdgeSet G s).EdgeSet = s := by
+  ext ⟨p, n⟩
   constructor
-  · simp only [Set.mem_setOf_eq, forall_exists_index, and_imp]
-    intro x hx y hy b hb hbx hby hG
-    have heq : a.1=b := by
-      apply a.1.eq_of_ne_mem hG.ne
-      <;> trivial
-    rwa [←heq] at hb
+  · rintro ⟨x, y, hp, a, hxa, hya, hna, hG⟩
+    have heq : a.1.1 = s(x, y) := a.1.1.mem_and_mem_iff hG.ne |>.mp ⟨hxa, hya⟩
+    have hpa : (p, n) = a.1 := Prod.ext (hp.trans heq.symm) hna
+    rw [hpa]
+    exact a.2
   · intro ha
-    simp only [Set.mem_setOf_eq]
-    obtain ⟨⟨x, y⟩, n⟩ := a
-    use x
-    simp only [Sym2.mem_iff, true_or, exists_eq_or_imp, TemporalGraph.irrefl, and_false,
-      exists_false, ↓existsAndEq, true_and, false_or]
-    use s(x,y)
-    simp only [Sym2.mem_iff, true_or, or_true, ha, true_and]
-    rw [←TemporalGraph.mem_edgeSet G]
-    have : (s(x,y), n) ∈ s := by simp only [ha]
-    apply Set.mem_of_subset_of_mem h₀ this
+    obtain ⟨x, y⟩ := p
+    exact ⟨x, y, rfl, ⟨(s(x,y), n), ha⟩, Sym2.mem_iff.mpr (Or.inl rfl),
+      Sym2.mem_iff.mpr (Or.inr rfl), rfl, G.mem_edgeSet.mp (h₀ ha)⟩
 
+end SubTemporalGraph
 
 end SubgraphProps
 

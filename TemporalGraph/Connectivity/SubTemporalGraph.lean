@@ -17,8 +17,8 @@ namespace SubTemporalGraph
 def Reachable (H : SubTemporalGraph G) (x y : H.Verts) : Prop := H.coe.Reachable x y
 
 @[simp]
-lemma reachable_iff_spanningCoe {H : SubTemporalGraph G} {x y : H.Verts} :
-    H.Reachable x y ↔ H.spanningCoe.Reachable x y := by
+lemma reachable_iff_toTemporalGraph {H : SubTemporalGraph G} {x y : H.Verts} :
+    H.Reachable x y ↔ H.toTemporalGraph.Reachable x y := by
   unfold Reachable
   constructor
   · intro ⟨n, m, ⟨w⟩⟩
@@ -67,14 +67,15 @@ lemma temporallyConnected_iff {H : SubTemporalGraph G} :
     rw [TemporalGraph.TemporallyConnected] at h
     trivial
 
-lemma spanningCoe_temporallyConnected_of_spanning_temporallyConnected {H : SubTemporalGraph G} :
-    H.TemporallyConnected ∧ H.IsSpanning → H.spanningCoe.TemporallyConnected := by
+lemma toTemporalGraph_temporallyConnected_of_spanning_temporallyConnected
+    {H : SubTemporalGraph G} :
+    H.TemporallyConnected ∧ H.IsSpanning → H.toTemporalGraph.TemporallyConnected := by
   unfold TemporallyConnected IsSpanning
   intro h
   unfold TemporalGraph.TemporallyConnected
   have h' := h.left
   intro x y
-  simp only [reachable_iff_spanningCoe] at h'
+  simp only [reachable_iff_toTemporalGraph] at h'
   apply h' ⟨x, h.right x⟩ ⟨y, h.right y⟩
 
 /-- The `SubTemporalGraph` `H` is a temporally connected spanner of `G`
@@ -176,7 +177,7 @@ lemma top_isSpanner : (⊤ : SubTemporalGraph G).IsSpanner := by
   · intro ⟨x, hx⟩ ⟨y, hy⟩ ⟨n, ⟨m, ⟨tw⟩⟩⟩
     cases tw with
     | Empty => apply reachable_of_self
-    | Nonempty p => use n, m ; exact ⟨p.lift_spanningCoe_walk⟩
+    | Nonempty p => use n, m ; exact ⟨p.lift_toTemporalGraph_walk⟩
 
 /-- A temporal graph admits a spanner if and only if it is Temporally Connected -/
 @[simp]

@@ -33,7 +33,7 @@ fields of the structure.
 | File | Contents |
 |---|---|
 | `TemporalGraph/Init.lean` | The `LooplessTemporalGraph` aesop rule-set used by the `aesop_temporal_graph` macro |
-| `TemporalGraph/Basic.lean` | `TemporalGraph V`; the `IsSymm`/`IsLoopless` predicates; `IsSimple`/`IsProper`/`IsHappy`/`IsClique`; `Footprint` (→ `Digraph`); earliest/latest edges and neighbors; `IsSubgraph`/`IsSpanningSubgraph`; `NeighborhoodSet`/`EdgeSet`/`size` |
+| `TemporalGraph/Basic.lean` | `TemporalGraph V`; the `IsSymm`/`IsLoopless` classes; `IsSimple`/`IsProper`/`IsHappy`/`IsClique`; `Footprint` (→ `Digraph`); earliest/latest edges and neighbors; `IsSubgraph`/`IsSpanningSubgraph`; `NeighborhoodSet`; `ArcSet`/`arcSize` (oriented world); `EdgeSet`/`size` (symmetric world, need `[IsSymm]` and `[IsLoopless]`) |
 | `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Non-strict, time-non-decreasing temporal walks (journeys), split into nonempty/empty variants |
 | `TemporalGraph/SubTemporalGraph.lean` | The `SubTemporalGraph` type, which extends `TemporalGraph V`, adding fields `Verts`/proofs `adj_sub`/`edge_vert`/`edge_vert'`; its coercion `coe` to `TemporalGraph H.Verts`; inherited predicates `IsSymm`/`IsSimple`/`IsProper`/`IsHappy` and earliest/latest edge/neighbor definitions; the subgraph-specific `IsClique`/`NeighborhoodSet`/`EdgeSet`/`size`/`IncidenceSet`; and the `addVerts`/`addEdge`/`addEdgeSymm`/`deleteVerts` operations |
 | `TemporalGraph/Connectivity/Basic.lean`, `TemporalGraph/Connectivity/SubTemporalGraph.lean` | `Reachable`, temporal connectivity, and temporal spanners (`IsSpanner`/`IsTCSpanner`) |
@@ -81,13 +81,17 @@ stops at `SubTemporalGraph` and silently skips `Connectivity/` and `Dismountabil
 
 This library is under active development alongside the thesis. `TemporalGraph` and
 `SubTemporalGraph` follow an unbundled design: both types carry only data (`Adj`, and `Verts` for
-a subgraph), while symmetry and irreflexivity are external predicates (`IsSymm`/`IsLoopless`)
-passed as explicit hypotheses wherever needed. This departs from Mathlib's `SimpleGraph`, which
-bundles `symm` and `loopless` as structure fields; the motivation is to state each result with
-exactly the hypotheses it uses, and to let a subgraph be oriented. `SubTemporalGraph` now extends
-`TemporalGraph`, eliminating duplication: `IsSymm`, `IsSimple`, `IsProper`, `IsHappy`,
-`EarliestEdge`, `LatestEdge`, `EarliestNeighbor` and `LatestNeighbor` are now inherited through
-the parent projection `toTemporalGraph`, not redefined.
+a subgraph). Symmetry and irreflexivity are expressed as type classes (`IsSymm`/`IsLoopless`),
+passed via instance resolution rather than explicit hypotheses — results that need them take
+`[G.IsSymm]` or `[G.IsLoopless]`, and constructions that preserve them declare instances. This
+departs from Mathlib's `SimpleGraph`, which bundles `symm` and `loopless` as structure fields;
+the motivation is to avoid threading hypotheses through 82 declarations only to use them in 13,
+and to let a subgraph be oriented. `SubTemporalGraph` now extends `TemporalGraph`, eliminating
+duplication: `IsSymm`, `IsSimple`, `IsProper`, `IsHappy`, `EarliestEdge`, `LatestEdge`,
+`EarliestNeighbor` and `LatestNeighbor` are now inherited through the parent projection
+`toTemporalGraph`, not redefined. The oriented world has its own edge measure: `ArcSet` and
+`arcSize` count ordered pairs (no hypothesis), while `EdgeSet` and `size` count unordered edges
+(require `[IsSymm]` and `[IsLoopless]`).
 
 Every module typechecks and the library contains no `sorry`.
 

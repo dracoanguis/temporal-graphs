@@ -33,22 +33,31 @@ besoin de le répéter ici.
 | Fichier | Rôle | Analogue Mathlib |
 |---|---|---|
 | `TemporalGraph/Init.lean` | Rule-set aesop `LooplessTemporalGraph` (nom hérité, voir Conventions) | `SimpleGraph/Init.lean` |
-| `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), prédicats `IsSymm`/`IsLoopless`/`IsSimple`/`IsClique`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `Footprint` (→ `Digraph`), `NeighborhoodSet`, `EdgeSet`, `size` | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
+| `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `Footprint` (→ `Digraph`), `NeighborhoodSet`, `ArcSet`/`arcSize` (monde orienté), `EdgeSet`/`size` (monde symétrique, demande `[IsSymm]` et `[IsLoopless]`) | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
 | `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Marches temporelles non strictes, à temps croissant | `SimpleGraph.Walk` |
 | `TemporalGraph/SubTemporalGraph.lean` | Sous-graphe temporel : `SubTemporalGraph` étend `TemporalGraph V`, ajoutant `Verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `IsClique`/`NeighborhoodSet`/`EdgeSet`/`size`/`IncidenceSet` ; treillis borné, `induce`/`deleteVerts`/`addVerts`/`addEdge`/`addEdgeSymm` | `SimpleGraph.Subgraph` |
 | `TemporalGraph/Connectivity/Basic.lean`, `Connectivity/SubTemporalGraph.lean` | `Reachable`, `TemporallyConnected`, spanners (`IsSpanner`, `IsTCSpanner`) | `SimpleGraph.Connectivity` |
 | `TemporalGraph/Dismountability/Basic.lean` | `Dismountable`, `TwoHopDismountable`, partition `Vminus`/`Vplus`/`Vzero`, bijections earliest/latest-neighbor — correspond au Théorème 2.1 et aux Lemmes 3.1–3.4 du papier | — |
 | `TemporalGraph/Dismountability/Operations.lean` | Opérations `dismount`/`mount`/`twoHopMount` et leurs théorèmes de correction (`dismountability`, `twoHopDismountability`) | — |
-| `TemporalGraph.lean` (racine) | Fichier de démo/scratch, largement commenté ; seul module atteint par `lake build` (voir ci-dessous) | — |
+| `TemporalGraph.lean` (racine) | Fichier de démo/scratch, largement commenté ; le graphe `Square` y porte ses propriétés comme instances | — |
 
 ## État actuel : refactor terminé
 
 La bibliothèque a été entièrement refondue selon le pattern **unbundled** : aucune structure ne
-porte de champs pour les propriétés algébriques (symétrie, looplessness), ceux-ci sont toujours
-des prédicats externes passés explicitement en hypothèse.
+porte de champs pour les propriétés algébriques (symétrie, looplessness). Ces dernières sont
+maintenant des **classes de type** — `IsSymm`, `IsLoopless` — résolues par le système d'instances
+plutôt que filetées en hypothèses explicites à travers 82 déclarations (dont seules 13 les
+utilisaient vraiment).
 
-- `TemporalGraph V` : type nu (`Adj : V → V → ℕ → Prop` seul) + prédicats externes `IsSymm` /
-  `IsLoopless` / `IsSimple` / etc. (voir `Basic.lean`)
+- `TemporalGraph V` : type nu (`Adj : V → V → ℕ → Prop` seul) + classes `IsSymm` / `IsLoopless`
+  (voir `Basic.lean`)
+- **Classes et instances** : tout résultat qui a besoin de symétrie ou looplessness les prend en
+  instance — `[G.IsSymm]`, `[G.IsLoopless]` — plutôt qu'en hypothèse nommée. Chaque construction
+  qui préserve l'une de ces propriétés déclare une instance correspondante (`induce`,
+  `addVerts`, `deleteVerts`, `addEdgeSymm`, `fromEdgeSet`, `toSubTemporalGraph`, `coe`, `top`,
+  `bot`, `mount`, `twoHopMount`), si bien que la résolution les trouve en cascade — y compris à
+  travers le terme à quatre couches que `twoHopMount` construit. Une instance unique de `loopless`
+  en déduit la looplessness de tout sous-graphe.
 - `SubTemporalGraph G` : s'étend maintenant de `TemporalGraph V`, héritant de son champ `Adj`.
   Huit définitions qui existaient identiquement aux deux niveaux (`IsSymm`, `IsSimple`,
   `IsProper`, `IsHappy`, `EarliestEdge`, `LatestEdge`, `EarliestNeighbor`, `LatestNeighbor`)
@@ -61,9 +70,14 @@ des prédicats externes passés explicitement en hypothèse.
   pour un objet orienté, et les six constructions le prouvent sans symétrie. Conséquence :
   `[Fact G.IsSymm]` disparaît entièrement du dépôt, `⊤ : SubTemporalGraph G` et `BoundedOrder`
   redeviennent inconditionnels.
+- **Deux ensembles d'arêtes** : `ArcSet : Set (V × V × ℕ)` et `arcSize` comptent les arcs
+  (paires ordonnées) sans aucune hypothèse — c'est le monde orienté. `EdgeSet : Set (Sym2 V × ℕ)`
+  et `size` comptent les arêtes non orientées ; `mem_edgeSet` demande `[G.IsSymm]` et
+  `[G.IsLoopless]` — c'est le monde symétrique.
 - `addEdge` a été généralisé pour ajouter une SEULE orientation, sans aucune hypothèse de
   symétrie ; `addEdgeSymm` (l'ancien `addEdge`, corps de définition inchangé) ajoute les deux
-  orientations, requiert `G.IsSymm`, et reste celui qu'utilisent `mount`/`twoHopMount`.
+  orientations, perd son argument de symétrie (résolu maintenant en instance), et reste celui
+  qu'utilisent `mount`/`twoHopMount`.
 - `spanningCoe` a été supprimé, remplacé par la projection héritée `toTemporalGraph`. Les lemmes
   ont été renommés en conséquence : `top_spanningCoe` → `top_toTemporalGraph`,
   `spanningCoe_edgeSet_eq` → `edgeSet_toTemporalGraph`, `size_of_spanningCoe` →
@@ -79,21 +93,34 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
 
 ## Conventions de nommage/style observées
 
-- Dot-notation façon Mathlib : `protected theorem Adj.ne`, `Adj.symm`, etc. Les hypothèses de
-  propriété se placent avant l'argument principal, pour que `h.symm hs` fonctionne.
-- Attributs `@[ext]`, `@[simp]` posés comme dans les fichiers `SimpleGraph`. En revanche **ne pas
-  poser `@[symm]` sur un lemme portant une hypothèse latérale** (comme `adj_symm (hs : …)`) :
-  vérifié expérimentalement, la tactique `symm` ne sait pas décharger cette hypothèse — même
-  présente dans le contexte local — elle la laisse en métavariable non assignée et la déclaration
-  échoue plus tard au noyau (`(kernel) declaration has metavariables`). Utiliser la forme
-  explicite `h.symm hs`. Le `@[symm]` restant sur `TemporalGraph.adj_symm` (`Basic.lean`) est un
-  piège latent de même nature.
-- Arêtes non orientées représentées par `Sym2 V` ; `EdgeSet : Set (Sym2 V × ℕ)`.
+### Propriétés comme classes
+
+- `IsSymm` et `IsLoopless` sont des **classes de type**, résolues en instances plutôt que filetées
+  en hypothèses nommées. Les résultats qui en ont besoin prennent `[G.IsSymm]` / `[G.IsLoopless]`
+  au lieu d'une hypothèse `(hs : G.IsSymm)`.
+- Les accesseurs gardent leur forme moins l'argument : `h.symm hs` → `h.symm`, `H.adj_symm hs h`
+  → `H.adj_symm h`, `G.irrefl hl` → `G.irrefl`, `h.ne hl` → `h.ne`, `H.mem_edgeSet hsH hl` →
+  `H.mem_edgeSet`.
+- **Instances** : `addEdgeSymm`, `mount` et `twoHopMount` ont perdu leur argument de symétrie
+  (`H.addEdgeSymm hs h h₁` → `H.addEdgeSymm h h₁`). Chaque construction qui préserve la symétrie
+  ou la looplessness déclare une instance correspondante ; la résolution la trouve en cascade.
+- `@[symm]` s'applique à nouveau à `adj_symm` : l'argument est une instance (résolue), pas une
+  hypothèse latérale (métavariable non assignée). Le piège historique — **ne pas mettre `@[symm]`
+  sur un lemme avec une hypothèse latérale** — ne s'applique plus à celui-ci, mais reste vrai pour
+  tout lemme avec un argument non-instance nécessaire pour fermer la preuve.
+
+### Autres conventions
+
+- Dot-notation façon Mathlib : `protected theorem Adj.ne`, etc. (pour les lemmes récursif sur
+  l'adjacence).
+- Attributs `@[ext]`, `@[simp]` posés comme dans les fichiers `SimpleGraph`.
+- Arêtes non orientées représentées par `Sym2 V` ; `EdgeSet : Set (Sym2 V × ℕ)` (monde symétrique) ;
+  `ArcSet : Set (V × V × ℕ)` (monde orienté).
 - **Conséquence de l'héritage dans `SubTemporalGraph`** : depuis que `H.Adj x y n` est le
   `Adj` du parent `TemporalGraph`, les lemmes du namespace `SubTemporalGraph.Adj.*` ne sont
   PLUS accessibles via notation pointée sur une preuve `h : H.Adj x y n`. Il faut écrire
-  explicitement `H.adj_sub h`, `H.edge_vert h`, `H.edge_vert' h`, `H.adj_symm hs h` (et non
-  `h.adj_sub`, `h.fst_mem`, `h.snd_mem`, `h.symm hs`). Les formes qualifiées complètes
+  explicitement `H.adj_sub h`, `H.edge_vert h`, `H.edge_vert' h`, `H.adj_symm h` (et non
+  `h.adj_sub`, `h.fst_mem`, `h.snd_mem`, `h.symm`). Les formes qualifiées complètes
   (`SubTemporalGraph.Adj.snd_mem h`) continuent de fonctionner. C'est le revers de la médaille :
   le lemme corpus du parent s'applique à `H.Adj` gratuitement précisément parce que le type n'en
   distingue plus l'adjacence du sous-graphe de celle d'un graphe.
@@ -122,10 +149,11 @@ garder cette convention : un commentaire citant le numéro exact du théorème/l
 
 - Le toolchain Lean (`lean`, `lake`, `elan`) est dans `~/.elan/bin`, pas forcément sur le `PATH`
   d'un sous-shell : utiliser `~/.elan/bin/lake ...` au besoin.
-- `lake build` : build complet (échoue actuellement à cause de `TemporalGraph.lean`, voir
-  ci-dessus).
-- `lake env lean TemporalGraph/<Fichier>.lean` : typechecker un fichier isolé sans dépendre du
-  reste — utile tant que le refactor n'est pas terminé.
+- `lake build` : build complet, vert, et il couvre bien tous les modules depuis l'ajout des
+  `globs` au `lakefile.toml`.
+- `lake build TemporalGraph.Dismountability.Operations` : un module précis, avec ses dépendances.
+- `lake env lean TemporalGraph/<Fichier>.lean` : typechecker un fichier isolé (demande que les
+  `.olean` de ses dépendances existent déjà).
 - CI GitHub Actions existante (ne pas modifier sans raison) : `lean_action_ci.yml` (build +
   docgen), `create-release.yml` (tag de release sur changement de `lean-toolchain`),
   `update.yml` (PR/issue automatique sur mise à jour Mathlib).

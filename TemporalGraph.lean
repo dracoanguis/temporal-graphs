@@ -69,14 +69,14 @@ def Square : TemporalGraph (Fin 4) := {
     | _ => False
 }
 
-lemma Square_isSymm : Square.IsSymm := by
+instance Square_isSymm : Square.IsSymm := ⟨by
   intro n x y h
   simp only [Square] at h ⊢
-  split at h <;> aesop
+  split at h <;> aesop⟩
 
-lemma Square_isLoopless : Square.IsLoopless := fun t => by
+instance Square_isLoopless : Square.IsLoopless := ⟨fun t => by
   simp only [Square]
-  split <;> constructor <;> aesop
+  split <;> constructor <;> aesop⟩
 
 lemma square_clique : Square.IsClique
 := by

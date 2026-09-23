@@ -2,7 +2,7 @@
 \label{chap:dismountability}
 
 \noindent\textbf{Note.} As in the previous two chapters, the declarations
-below are pending the \texttt{LooplessTemporalGraph} $\to$
+below are pending the \texttt{TemporalGraph} $\to$
 \texttt{TemporalGraph} rename; \texttt{\textbackslash lean\{\}} tags are
 marked \texttt{TODO post-rename} and left without \texttt{\textbackslash
 leanok}. Formalized in \texttt{TemporalGraph/Dismountability/Basic.lean} and
@@ -17,7 +17,7 @@ different numbering here.
   \label{def:dismountable}
   \uses{def:sub-spanning-clique,def:earliest-latest-neighbor}
   % TODO post-rename
-  \lean{LooplessTemporalGraph.SubTemporalGraph.Dismountable}
+  \lean{TemporalGraph.Subgraph.Dismountable}
   A clique sub-temporal-graph $H$ of $G$ \emph{is dismountable} if it has a
   vertex that is simultaneously an earliest neighbor of some vertex and a
   latest neighbor of some (possibly different) vertex of $H$.
@@ -27,9 +27,9 @@ different numbering here.
   \label{def:vminus-vplus-vzero}
   \uses{def:dismountable}
   % TODO post-rename
-  \lean{LooplessTemporalGraph.SubTemporalGraph.Vminus}
-  \lean{LooplessTemporalGraph.SubTemporalGraph.Vplus}
-  \lean{LooplessTemporalGraph.SubTemporalGraph.Vzero}
+  \lean{TemporalGraph.Subgraph.vminus}
+  \lean{TemporalGraph.Subgraph.vplus}
+  \lean{TemporalGraph.Subgraph.vzero}
   For $H$ a sub-temporal-graph of $G$: $V^-(H)$ is the set of vertices that
   are an earliest neighbor of some vertex of $H$; $V^+(H)$ is the set of
   vertices that are a latest neighbor of some vertex of $H$; and
@@ -40,7 +40,7 @@ different numbering here.
   \label{lem:partition-not-dismountable}
   \uses{def:dismountable,def:vminus-vplus-vzero}
   % TODO post-rename
-  \lean{LooplessTemporalGraph.SubTemporalGraph.partition_of_not_dismountable}
+  \lean{TemporalGraph.Subgraph.partition_of_not_dismountable}
   If $H$ is a clique that is not dismountable, then $V^-(H)$, $V^+(H)$,
   $V^0(H)$ partition $\mathrm{Verts}(H)$.
 \end{lemma}
@@ -49,18 +49,18 @@ different numbering here.
   \label{def:two-hop-dismountable}
   \uses{def:dismountable}
   % TODO post-rename
-  \lean{LooplessTemporalGraph.SubTemporalGraph.TwoHopDismountable}
+  \lean{TemporalGraph.Subgraph.TwoHopDismountable}
   A variant of dismountability allowing the witnessing vertices to be
   identified up to a two-hop condition; every dismountable clique is
-  two-hop dismountable (\lean{LooplessTemporalGraph.SubTemporalGraph.twoHopDismountable_of_dismountable}).
+  two-hop dismountable (\lean{TemporalGraph.Subgraph.twoHopDismountable_of_dismountable}).
 \end{definition}
 
 \begin{lemma}[$V^+$/$V^-$ are not neighbors --- lemma 3.2]
   \label{lem:vplus-vminus-not-neighbors}
   \uses{def:two-hop-dismountable,def:vminus-vplus-vzero}
   % TODO post-rename
-  \lean{LooplessTemporalGraph.SubTemporalGraph.vplus_ne_neighbor_of_not_twoHopHismountable}
-  \lean{LooplessTemporalGraph.SubTemporalGraph.vminus_ne_neighbor_of_not_twoHopDismountable}
+  \lean{TemporalGraph.Subgraph.vplus_ne_neighbor_of_not_twoHopDismountable}
+  \lean{TemporalGraph.Subgraph.vminus_ne_neighbor_of_not_twoHopDismountable}
   If $H$ is not two-hop dismountable, no two distinct vertices of $V^+(H)$
   (resp.\ $V^-(H)$) are neighbors of each other via the earliest/latest edge
   structure witnessing their membership.
@@ -70,7 +70,7 @@ different numbering here.
   \label{lem:vzero-empty}
   \uses{lem:vplus-vminus-not-neighbors}
   % TODO post-rename
-  \lean{LooplessTemporalGraph.SubTemporalGraph.vzero_empty_of_not_twoHopDismountable}
+  \lean{TemporalGraph.Subgraph.vzero_empty_of_not_twoHopDismountable}
   If $H$ is a clique that is not two-hop dismountable, then $V^0(H) =
   \emptyset$, i.e.\ every vertex is an earliest or a latest neighbor of some
   vertex.
@@ -80,9 +80,9 @@ different numbering here.
   \label{def:dismount-mount}
   \uses{def:dismountable}
   % TODO post-rename
-  \lean{LooplessTemporalGraph.SubTemporalGraph.dismount}
-  \lean{LooplessTemporalGraph.SubTemporalGraph.mount}
-  \lean{LooplessTemporalGraph.SubTemporalGraph.twoHopMount}
+  \lean{TemporalGraph.Subgraph.dismount}
+  \lean{TemporalGraph.Subgraph.mount}
+  \lean{TemporalGraph.Subgraph.twoHopMount}
   $H.\mathrm{dismount}(x)$ removes vertex $x$ from $H$ (a special case of
   \texttt{deleteVerts}). $H.\mathrm{mount}(x, \dots)$ (resp.\
   $\mathrm{twoHopMount}$) is the corresponding reconstruction operation used
@@ -93,9 +93,9 @@ different numbering here.
   \label{thm:dismountability}
   \uses{def:dismount-mount,def:spanner}
   % TODO post-rename
-  \lean{LooplessTemporalGraph.SubTemporalGraph.mount_tc}
-  \lean{LooplessTemporalGraph.SubTemporalGraph.dismountability}
-  \lean{LooplessTemporalGraph.SubTemporalGraph.twoHopDismountability}
+  \lean{TemporalGraph.Subgraph.mount_tc}
+  \lean{TemporalGraph.Subgraph.dismountability}
+  \lean{TemporalGraph.Subgraph.twoHopDismountability}
   If $H'$ is a TC-spanner of $H.\mathrm{dismount}(x)$, then mounting $x$
   back onto $H'$ yields a TC-spanner of $H$ (and similarly for
   \texttt{twoHopMount}).

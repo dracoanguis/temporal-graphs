@@ -2,7 +2,7 @@
 \label{chap:walks}
 
 \noindent\textbf{Note.} The declarations below still reference the pre-split
-type \texttt{LooplessTemporalGraph}, which was replaced by
+type \texttt{TemporalGraph}, which was replaced by
 \texttt{TemporalGraph} together with the standalone predicates
 \texttt{IsSymm}/\texttt{IsLoopless} (see \texttt{CLAUDE.md} for the state of
 this refactor). Their \texttt{\textbackslash lean\{\}} tags are left without
@@ -19,9 +19,9 @@ least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
 \begin{definition}[Temporal walk]
   \label{def:temporal-walk}
   \uses{def:temporal-graph}
-  % TODO post-rename: verify namespace (currently LooplessTemporalGraph.TemporalWalk)
-  \lean{LooplessTemporalGraph.TemporalWalk}
-  \lean{LooplessTemporalGraph.NonemptyTemporalWalk}
+  % TODO post-rename: verify namespace (currently TemporalGraph.TemporalWalk)
+  \lean{TemporalGraph.TemporalWalk}
+  \lean{TemporalGraph.NonemptyTemporalWalk}
   A \emph{temporal walk} from $x$ at time $n$ to $y$ at time $m$ is either
   the empty walk (when $x = y$, $n = m$) or a non-empty temporal walk: a
   sequence of edges $(x_0,x_1,t_1), (x_1,x_2,t_2), \dots$ with
@@ -32,9 +32,9 @@ least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
   \label{lem:nondecreasing-time}
   \uses{def:temporal-walk}
   % TODO post-rename: verify name (currently
-  % LooplessTemporalGraph.TemporalWalk.nondecreasing_time /
-  % LooplessTemporalGraph.NonemptyTemporalWalk.nondecreasing_time)
-  \lean{LooplessTemporalGraph.TemporalWalk.nondecreasing_time}
+  % TemporalGraph.TemporalWalk.nondecreasing_time /
+  % TemporalGraph.NonemptyTemporalWalk.nondecreasing_time)
+  \lean{TemporalGraph.TemporalWalk.nondecreasing_time}
   A temporal walk from $x$ at time $n$ to $y$ at time $m$ satisfies
   $n \le m$.
 \end{lemma}
@@ -42,9 +42,9 @@ least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
 \begin{definition}[Reachability, temporal connectivity]
   \label{def:reachable}
   \uses{def:temporal-walk}
-  % TODO post-rename: verify namespace (currently LooplessTemporalGraph.Reachable)
-  \lean{LooplessTemporalGraph.Reachable}
-  \lean{LooplessTemporalGraph.TemporallyConnected}
+  % TODO post-rename: verify namespace (currently TemporalGraph.Reachable)
+  \lean{TemporalGraph.Reachable}
+  \lean{TemporalGraph.TemporallyConnected}
   $y$ is \emph{reachable} from $x$ in $G$ if there is a non-empty temporal
   walk from $x$ to $y$ (at some times $n \le m$). $G$ \emph{is temporally
   connected} if every vertex is reachable from every other vertex.
@@ -54,7 +54,7 @@ least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
   \label{lem:clique-temporally-connected}
   \uses{def:reachable,def:is-simple-clique}
   % TODO post-rename: verify name (currently
-  % LooplessTemporalGraph.temporallyConnected_of_isClique)
-  \lean{LooplessTemporalGraph.temporallyConnected_of_isClique}
+  % TemporalGraph.temporallyConnected_of_isClique)
+  \lean{TemporalGraph.temporallyConnected_of_isClique}
   Every temporal clique is temporally connected.
 \end{lemma}

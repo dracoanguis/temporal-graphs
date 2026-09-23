@@ -58,9 +58,64 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
 \begin{definition}[Spanning sub-temporal-graph order]
   \label{def:spanning-order}
   \uses{def:temporal-graph}
-  \lean{TemporalGraph.IsSpanningSubTemporalGraph}
+  \lean{TemporalGraph.IsSpanningSubgraph}
   \leanok
   $G$ is a \emph{spanning sub-temporal-graph} of $H$ (written $G \le H$) if
   every edge of $G$ is an edge of $H$: $\mathrm{Adj}_G(x,y,n) \Rightarrow
   \mathrm{Adj}_H(x,y,n)$ for all $x,y,n$.
+\end{definition}
+
+\begin{definition}[General sub-temporal-graph]
+  \label{def:is-subgraph-of}
+  \uses{def:temporal-graph}
+  \lean{TemporalGraph.IsSubgraphOf}
+  \leanok
+  Let $P, P'$ be predicates on $V$. A temporal graph $G$ carried by the
+  vertices satisfying $P$ is a \emph{sub-temporal-graph} of $H$, carried by
+  those satisfying $P'$, when $P$ implies $P'$ and every edge of $G$ is an
+  edge of $H$ between the corresponding vertices. This is the general
+  inclusion: it compares graphs living on two different vertex subsets, and
+  Definition~\ref{def:spanning-order} is its special case $P = P'$.
+\end{definition}
+
+\begin{definition}[Arcs and edges]
+  \label{def:arcset-edgeset}
+  \uses{def:temporal-graph,def:is-symm-loopless}
+  \lean{TemporalGraph.arcSet}
+  \lean{TemporalGraph.edgeSet}
+  \lean{TemporalGraph.mem_edgeSet_iff_or}
+  \leanok
+  The \emph{arcs} of $G$ are the triples $(x,y,n)$ with $\mathrm{Adj}_G(x,y,n)$:
+  an oriented notion, counted by $\mathrm{arcSize}$. The \emph{edges} of $G$
+  are unordered: pairs $(\{x,y\}, n)$ such that $\mathrm{Adj}_G(x,y,n)$ or
+  $\mathrm{Adj}_G(y,x,n)$, counted by $\mathrm{size}$. An unordered pair is
+  therefore an edge exactly when one of its orientations is an arc, with no
+  hypothesis; when $G$ is symmetric the two orientations coincide and
+  membership reduces to $\mathrm{Adj}_G(x,y,n)$.
+\end{definition}
+
+\begin{definition}[Symmetrization]
+  \label{def:symmetrize}
+  \uses{def:temporal-graph,def:is-symm-loopless,def:spanning-order}
+  \lean{TemporalGraph.symmetrize}
+  \lean{TemporalGraph.le_symmetrize}
+  \lean{TemporalGraph.symmetrize_le}
+  \leanok
+  The \emph{symmetrization} of $G$ has $\mathrm{Adj}(x,y,n)$ whenever
+  $\mathrm{Adj}_G(x,y,n)$ or $\mathrm{Adj}_G(y,x,n)$. It is symmetric, it lies
+  above $G$, and it lies below every symmetric graph above $G$ — that is, it is
+  the least symmetric temporal graph above $G$. It adds no loop, so it
+  preserves looplessness.
+\end{definition}
+
+\begin{definition}[Building a temporal graph]
+  \label{def:from-arc-edge-set}
+  \uses{def:arcset-edgeset}
+  \lean{TemporalGraph.fromArcSet}
+  \lean{TemporalGraph.fromEdgeSet}
+  \leanok
+  A set of arcs yields a temporal graph directly, with no symmetry assumed. A
+  set of unordered edges yields one that is symmetric by construction, each
+  pair being read in both directions; its edge set is the set one started
+  from.
 \end{definition}

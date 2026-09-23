@@ -2,7 +2,7 @@
 \label{chap:spanners}
 
 \noindent\textbf{Note.} As in Chapter~\ref{chap:walks}, the declarations
-below are pending the \texttt{LooplessTemporalGraph} $\to$
+below are pending the \texttt{TemporalGraph} $\to$
 \texttt{TemporalGraph} rename; \texttt{\textbackslash lean\{\}} tags are
 marked \texttt{TODO post-rename} and left without \texttt{\textbackslash
 leanok}. Formalized in \texttt{TemporalGraph/SubTemporalGraph.lean} and
@@ -13,8 +13,8 @@ leanok}. Formalized in \texttt{TemporalGraph/SubTemporalGraph.lean} and
   \label{def:sub-temporal-graph}
   \uses{def:temporal-graph}
   % TODO post-rename: verify namespace (currently
-  % LooplessTemporalGraph.SubTemporalGraph)
-  \lean{LooplessTemporalGraph.SubTemporalGraph}
+  % TemporalGraph.Subgraph)
+  \lean{TemporalGraph.Subgraph}
   A \emph{sub-temporal-graph} $H$ of a temporal graph $G$ is a choice of
   vertex subset $\mathrm{Verts}(H) \subseteq V$ together with an edge
   relation on it that is compatible with (a restriction of) $G$'s edges.
@@ -24,8 +24,8 @@ leanok}. Formalized in \texttt{TemporalGraph/SubTemporalGraph.lean} and
   \label{def:sub-spanning-clique}
   \uses{def:sub-temporal-graph}
   % TODO post-rename
-  \lean{LooplessTemporalGraph.SubTemporalGraph.IsSpanning}
-  \lean{LooplessTemporalGraph.SubTemporalGraph.IsClique}
+  \lean{TemporalGraph.Subgraph.IsSpanning}
+  \lean{TemporalGraph.Subgraph.IsClique}
   $H$ \emph{is spanning} in $G$ if $\mathrm{Verts}(H) = V$. $H$ \emph{is a
   clique} if every pair of distinct vertices of $H$ is joined by an edge of
   $H$ at some time.
@@ -35,10 +35,10 @@ leanok}. Formalized in \texttt{TemporalGraph/SubTemporalGraph.lean} and
   \label{def:spanner}
   \uses{def:sub-spanning-clique,def:reachable}
   % TODO post-rename: verify namespace (currently
-  % LooplessTemporalGraph.SubTemporalGraph.IsSpanner, defined in
+  % TemporalGraph.Subgraph.IsSpanner, defined in
   % Connectivity/SubTemporalGraph.lean)
-  \lean{LooplessTemporalGraph.SubTemporalGraph.IsSpanner}
-  \lean{LooplessTemporalGraph.SubTemporalGraph.IsTCSpanner}
+  \lean{TemporalGraph.Subgraph.IsSpanner}
+  \lean{TemporalGraph.Subgraph.IsTCSpanner}
   A spanning sub-temporal-graph $H$ of $G$ \emph{is a spanner} if it
   preserves reachability between all pairs of vertices of $G$: $x$ reaches
   $y$ in $H$ whenever $x$ reaches $y$ in $G$. $H$ \emph{is a TC-spanner} if
@@ -49,6 +49,6 @@ leanok}. Formalized in \texttt{TemporalGraph/SubTemporalGraph.lean} and
   \label{lem:tcspanner-iff-tc}
   \uses{def:spanner}
   % TODO post-rename
-  \lean{LooplessTemporalGraph.SubTemporalGraph.TCspanner_iff_TC}
+  \lean{TemporalGraph.Subgraph.TCspanner_iff_TC}
   $G$ admits a TC-spanner if and only if $G$ is temporally connected.
 \end{lemma}

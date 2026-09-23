@@ -35,7 +35,7 @@ besoin de le répéter ici.
 | `TemporalGraph/Init.lean` | Rule-set aesop `LooplessTemporalGraph` (nom hérité, voir Conventions) | `SimpleGraph/Init.lean` |
 | `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), prédicats `IsSymm`/`IsLoopless`/`IsSimple`/`IsClique`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `Footprint` (→ `Digraph`), `NeighborhoodSet`, `EdgeSet`, `size` | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
 | `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Marches temporelles non strictes, à temps croissant | `SimpleGraph.Walk` |
-| `TemporalGraph/SubTemporalGraph.lean` | Sous-graphe temporel (`Verts`+`Adj`+preuves `adj_sub`/`edge_vert`/`edge_vert'`), coercions, prédicat `IsSymm` (unbundlé), treillis borné, `induce`/`deleteVerts`/`addVerts`/`addEdge`/`addEdgeSymm` | `SimpleGraph.Subgraph` |
+| `TemporalGraph/SubTemporalGraph.lean` | Sous-graphe temporel : `SubTemporalGraph` étend `TemporalGraph V`, ajoutant `Verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `IsClique`/`NeighborhoodSet`/`EdgeSet`/`size`/`IncidenceSet` ; treillis borné, `induce`/`deleteVerts`/`addVerts`/`addEdge`/`addEdgeSymm` | `SimpleGraph.Subgraph` |
 | `TemporalGraph/Connectivity/Basic.lean`, `Connectivity/SubTemporalGraph.lean` | `Reachable`, `TemporallyConnected`, spanners (`IsSpanner`, `IsTCSpanner`) | `SimpleGraph.Connectivity` |
 | `TemporalGraph/Dismountability/Basic.lean` | `Dismountable`, `TwoHopDismountable`, partition `Vminus`/`Vplus`/`Vzero`, bijections earliest/latest-neighbor — correspond au Théorème 2.1 et aux Lemmes 3.1–3.4 du papier | — |
 | `TemporalGraph/Dismountability/Operations.lean` | Opérations `dismount`/`mount`/`twoHopMount` et leurs théorèmes de correction (`dismountability`, `twoHopDismountability`) | — |
@@ -49,15 +49,26 @@ des prédicats externes passés explicitement en hypothèse.
 
 - `TemporalGraph V` : type nu (`Adj : V → V → ℕ → Prop` seul) + prédicats externes `IsSymm` /
   `IsLoopless` / `IsSimple` / etc. (voir `Basic.lean`)
-- `SubTemporalGraph G` : le champ de preuve `symm` a disparu, la symétrie s'exprime via le
-  prédicat externe `SubTemporalGraph.IsSymm`, et un sous-graphe peut donc être orienté. Comme
-  `Adj.snd_mem` se déduisait de `symm`, la structure gagne en échange un champ de données
-  `edge_vert' : Adj x y n → y ∈ Verts` — l'invariant correct pour un objet orienté, et les six
-  constructions le prouvent sans symétrie. Conséquence : `[Fact G.IsSymm]` disparaît entièrement
-  du dépôt, `⊤ : SubTemporalGraph G` et `BoundedOrder` redeviennent inconditionnels.
+- `SubTemporalGraph G` : s'étend maintenant de `TemporalGraph V`, héritant de son champ `Adj`.
+  Huit définitions qui existaient identiquement aux deux niveaux (`IsSymm`, `IsSimple`,
+  `IsProper`, `IsHappy`, `EarliestEdge`, `LatestEdge`, `EarliestNeighbor`, `LatestNeighbor`)
+  sont donc supprimées de `SubTemporalGraph` ; elles sont maintenant héritées par
+  la notation de champ généralisée via la projection `toTemporalGraph`. Restent définis en
+  `SubTemporalGraph` les prédicats/définitions qui quantifient sur `H.Verts` : `IsClique`,
+  `NeighborhoodSet`, `EdgeSet`, `size`, `IncidenceSet`. Le champ de preuve `symm` a disparu : un
+  sous-graphe peut donc être orienté. Comme `Adj.snd_mem` se déduisait de `symm`, la structure
+  gagne en échange un champ de données `edge_vert' : Adj x y n → y ∈ Verts` — l'invariant correct
+  pour un objet orienté, et les six constructions le prouvent sans symétrie. Conséquence :
+  `[Fact G.IsSymm]` disparaît entièrement du dépôt, `⊤ : SubTemporalGraph G` et `BoundedOrder`
+  redeviennent inconditionnels.
 - `addEdge` a été généralisé pour ajouter une SEULE orientation, sans aucune hypothèse de
   symétrie ; `addEdgeSymm` (l'ancien `addEdge`, corps de définition inchangé) ajoute les deux
   orientations, requiert `G.IsSymm`, et reste celui qu'utilisent `mount`/`twoHopMount`.
+- `spanningCoe` a été supprimé, remplacé par la projection héritée `toTemporalGraph`. Les lemmes
+  ont été renommés en conséquence : `top_spanningCoe` → `top_toTemporalGraph`,
+  `spanningCoe_edgeSet_eq` → `edgeSet_toTemporalGraph`, `size_of_spanningCoe` →
+  `size_of_toTemporalGraph`, `lift_spanningCoe_walk` → `lift_toTemporalGraph_walk`,
+  `lift_walk_spanningCoe` → `lift_walk_toTemporalGraph`.
 
 Chaque module typecheck et il n'existe aucun `sorry`. **Piège de vérification corrigé au passage** :
 le `lean_lib` n'avait pas de `globs`, si bien que `lake build` ne compilait que le module racine et
@@ -78,6 +89,14 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
   explicite `h.symm hs`. Le `@[symm]` restant sur `TemporalGraph.adj_symm` (`Basic.lean`) est un
   piège latent de même nature.
 - Arêtes non orientées représentées par `Sym2 V` ; `EdgeSet : Set (Sym2 V × ℕ)`.
+- **Conséquence de l'héritage dans `SubTemporalGraph`** : depuis que `H.Adj x y n` est le
+  `Adj` du parent `TemporalGraph`, les lemmes du namespace `SubTemporalGraph.Adj.*` ne sont
+  PLUS accessibles via notation pointée sur une preuve `h : H.Adj x y n`. Il faut écrire
+  explicitement `H.adj_sub h`, `H.edge_vert h`, `H.edge_vert' h`, `H.adj_symm hs h` (et non
+  `h.adj_sub`, `h.fst_mem`, `h.snd_mem`, `h.symm hs`). Les formes qualifiées complètes
+  (`SubTemporalGraph.Adj.snd_mem h`) continuent de fonctionner. C'est le revers de la médaille :
+  le lemme corpus du parent s'applique à `H.Adj` gratuitement précisément parce que le type n'en
+  distingue plus l'adjacence du sous-graphe de celle d'un graphe.
 - Automatisation via la macro `aesop_temporal_graph`, qui utilise le rule-set aesop
   `LooplessTemporalGraph` déclaré dans `Init.lean` — ce nom de rule-set est resté sur l'ancien
   nom du type ; à renommer plus tard si on veut de la cohérence stricte, mais ce n'est pas

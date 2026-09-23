@@ -35,7 +35,7 @@ fields of the structure.
 | `TemporalGraph/Init.lean` | The `LooplessTemporalGraph` aesop rule-set used by the `aesop_temporal_graph` macro |
 | `TemporalGraph/Basic.lean` | `TemporalGraph V`; the `IsSymm`/`IsLoopless` predicates; `IsSimple`/`IsProper`/`IsHappy`/`IsClique`; `Footprint` (→ `Digraph`); earliest/latest edges and neighbors; `IsSubgraph`/`IsSpanningSubgraph`; `NeighborhoodSet`/`EdgeSet`/`size` |
 | `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Non-strict, time-non-decreasing temporal walks (journeys), split into nonempty/empty variants |
-| `TemporalGraph/SubTemporalGraph.lean` | The unbundled `SubTemporalGraph` type with fields `Verts`/`Adj`/proofs, its coercions back to a `TemporalGraph`, symmetry predicate `IsSymm`, spanning predicates, and the `addVerts`/`addEdge`/`addEdgeSymm`/`deleteVerts` operations |
+| `TemporalGraph/SubTemporalGraph.lean` | The `SubTemporalGraph` type, which extends `TemporalGraph V`, adding fields `Verts`/proofs `adj_sub`/`edge_vert`/`edge_vert'`; its coercion `coe` to `TemporalGraph H.Verts`; inherited predicates `IsSymm`/`IsSimple`/`IsProper`/`IsHappy` and earliest/latest edge/neighbor definitions; the subgraph-specific `IsClique`/`NeighborhoodSet`/`EdgeSet`/`size`/`IncidenceSet`; and the `addVerts`/`addEdge`/`addEdgeSymm`/`deleteVerts` operations |
 | `TemporalGraph/Connectivity/Basic.lean`, `TemporalGraph/Connectivity/SubTemporalGraph.lean` | `Reachable`, temporal connectivity, and temporal spanners (`IsSpanner`/`IsTCSpanner`) |
 | `TemporalGraph/Dismountability/Basic.lean` | Earliest/latest-edge extension lemmas; the `Dismountable`/`TwoHopDismountable` properties; the vertex sets `Vminus`/`Vplus`/`Vzero` and their characterization (Lemmas/Theorems 3.1–3.4 of Casteigts–Peters–Schoeters) |
 | `TemporalGraph/Dismountability/Operations.lean` | The `dismount`/`mount`/`twoHopMount` operations and their correctness theorems (`dismountability`, `twoHopDismountability`) |
@@ -79,12 +79,15 @@ stops at `SubTemporalGraph` and silently skips `Connectivity/` and `Dismountabil
 
 ## Status
 
-This library is under active development alongside the thesis. Both `TemporalGraph` and
-`SubTemporalGraph` follow an unbundled design: the types carry only data (`Adj`, and `Verts` for
+This library is under active development alongside the thesis. `TemporalGraph` and
+`SubTemporalGraph` follow an unbundled design: both types carry only data (`Adj`, and `Verts` for
 a subgraph), while symmetry and irreflexivity are external predicates (`IsSymm`/`IsLoopless`)
 passed as explicit hypotheses wherever needed. This departs from Mathlib's `SimpleGraph`, which
 bundles `symm` and `loopless` as structure fields; the motivation is to state each result with
-exactly the hypotheses it uses, and to let a subgraph be oriented.
+exactly the hypotheses it uses, and to let a subgraph be oriented. `SubTemporalGraph` now extends
+`TemporalGraph`, eliminating duplication: `IsSymm`, `IsSimple`, `IsProper`, `IsHappy`,
+`EarliestEdge`, `LatestEdge`, `EarliestNeighbor` and `LatestNeighbor` are now inherited through
+the parent projection `toTemporalGraph`, not redefined.
 
 Every module typechecks and the library contains no `sorry`.
 

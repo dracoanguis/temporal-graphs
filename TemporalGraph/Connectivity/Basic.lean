@@ -63,7 +63,7 @@ theorem temporallyConnected_of_isClique (G : TemporalGraph V) :
     exact reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨NonemptyTemporalWalk.Single h'⟩⟩
   · simp_all [reachable_of_self]
 
-lemma reachable_of_earliestEdge {x y : V} {n : ℕ} {G : TemporalGraph V} (hs : G.IsSymm)
+lemma reachable_of_earliestEdge {x y : V} {n : ℕ} {G : TemporalGraph V} [G.IsSymm]
     (h : G.EarliestEdge x y n) :
     ∀ z : V, G.Reachable x z → G.Reachable y z := by
   rw [EarliestEdge] at h
@@ -71,19 +71,19 @@ lemma reachable_of_earliestEdge {x y : V} {n : ℕ} {G : TemporalGraph V} (hs : 
   cases p with
   | Empty =>
     apply reachable_of_nonempty_NonemptyTemporalWalk ;
-    exact ⟨_, _, ⟨NonemptyTemporalWalk.Single (h.left.symm hs)⟩⟩
+    exact ⟨_, _, ⟨NonemptyTemporalWalk.Single h.left.symm⟩⟩
   | Nonempty p =>
     have hst : n ≤ m := NonemptyTemporalWalk.EarliestEdge.time_bound_of_edge p h
-    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.prepend (h.left.symm hs) hst⟩⟩
+    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.prepend h.left.symm hst⟩⟩
 
-lemma reachable_of_extended_earliestEdge {x y z : V} {n m : ℕ} {G : TemporalGraph V} (hs : G.IsSymm)
+lemma reachable_of_extended_earliestEdge {x y z : V} {n m : ℕ} {G : TemporalGraph V} [G.IsSymm]
     (h₀ : G.EarliestEdge x y n)
     (h₁ : G.Adj z y m)
     (h₂ : m ≤ n) :
     ∀ a : V, G.Reachable x a → G.Reachable z a := by
   intro _ ⟨k, _, ⟨p⟩⟩
   let p' : NonemptyTemporalWalk z m x n :=
-    NonemptyTemporalWalk.Single h₁ |>.Step (h₀.left.symm hs) h₂
+    NonemptyTemporalWalk.Single h₁ |>.Step h₀.left.symm h₂
   cases p with
   | Empty =>
       apply reachable_of_nonempty_NonemptyTemporalWalk ;
@@ -92,7 +92,7 @@ lemma reachable_of_extended_earliestEdge {x y z : V} {n m : ℕ} {G : TemporalGr
     have h : n ≤ k := NonemptyTemporalWalk.EarliestEdge.time_bound_of_edge p h₀
     exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p'.append p h⟩⟩
 
-lemma reachable_of_latestEdge {x y : V} {n : ℕ} {G : TemporalGraph V} (hs : G.IsSymm)
+lemma reachable_of_latestEdge {x y : V} {n : ℕ} {G : TemporalGraph V} [G.IsSymm]
     (h : G.LatestEdge x y n) :
     ∀ z : V, G.Reachable z x → G.Reachable z y := by
   intro _ ⟨_, m, ⟨p⟩⟩
@@ -100,10 +100,10 @@ lemma reachable_of_latestEdge {x y : V} {n : ℕ} {G : TemporalGraph V} (hs : G.
   | Empty =>
     exact reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨NonemptyTemporalWalk.Single h.left⟩⟩
   | Nonempty p =>
-    have het : m ≤ n := NonemptyTemporalWalk.LatestEdge.time_bound_of_edge hs p h
+    have het : m ≤ n := NonemptyTemporalWalk.LatestEdge.time_bound_of_edge p h
     exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.Step h.left het⟩⟩
 
-lemma reachable_of_extended_latestEdge {x y z : V} {n m : ℕ} {G : TemporalGraph V} (hs : G.IsSymm)
+lemma reachable_of_extended_latestEdge {x y z : V} {n m : ℕ} {G : TemporalGraph V} [G.IsSymm]
     (h₀ : G.LatestEdge x y n)
     (h₁ : G.Adj y z m)
     (h₂ : n ≤ m) :
@@ -115,7 +115,7 @@ lemma reachable_of_extended_latestEdge {x y z : V} {n m : ℕ} {G : TemporalGrap
       apply reachable_of_nonempty_NonemptyTemporalWalk ;
       use  n, m, p'
   | Nonempty p =>
-    have h : k ≤ n := NonemptyTemporalWalk.LatestEdge.time_bound_of_edge hs p h₀
+    have h : k ≤ n := NonemptyTemporalWalk.LatestEdge.time_bound_of_edge p h₀
     exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.append p' h⟩⟩
 
 end TemporalGraph

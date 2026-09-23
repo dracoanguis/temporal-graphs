@@ -30,40 +30,45 @@ namespace TemporalGraph
 
 variable {V : Type u}
 
-def IsSymm (G : TemporalGraph V) : Prop :=
-  ∀ n : ℕ, Symmetric (fun x y => G.Adj x y n)
+/-- Symmetry is a class rather than a plain predicate, so that it is carried by instance
+resolution instead of being threaded by hand: constructions that preserve it declare an instance
+(see `SubTemporalGraph.induce`, `addEdgeSymm`, `mount`), and results that need it take `[G.IsSymm]`.
+Mirrors the `symm` field of Mathlib's `SimpleGraph`, without bundling it into the data. -/
+class IsSymm (G : TemporalGraph V) : Prop where
+  symm : ∀ n : ℕ, Symmetric (fun x y => G.Adj x y n)
 
-def IsLoopless (G : TemporalGraph V) : Prop :=
-  ∀ n : ℕ, Std.Irrefl (fun x y => G.Adj x y n)
+/-- Looplessness, as a class; see `IsSymm` for the rationale. -/
+class IsLoopless (G : TemporalGraph V) : Prop where
+  loopless : ∀ n : ℕ, Std.Irrefl (fun x y => G.Adj x y n)
 
 @[simp]
-protected theorem irrefl {G : TemporalGraph V} (hl : G.IsLoopless) {x : V} {n : ℕ} : ¬G.Adj x x n :=
-  (hl n).irrefl x
+protected theorem irrefl {G : TemporalGraph V} [hl : G.IsLoopless] {x : V} {n : ℕ} :
+    ¬G.Adj x x n :=
+  (hl.loopless n).irrefl x
 
 section Adjacency
 
 variable {G : TemporalGraph V} {x y : V} {n : ℕ}
 
-theorem adj_comm (hs : G.IsSymm) (x y : V) (n : ℕ) : G.Adj x y n ↔ G.Adj y x n :=
-  ⟨fun x => hs n x, fun x => hs n x⟩
+theorem adj_comm [hs : G.IsSymm] (x y : V) (n : ℕ) : G.Adj x y n ↔ G.Adj y x n :=
+  ⟨fun h => hs.symm n h, fun h => hs.symm n h⟩
 
--- No `@[symm]`: the `symm` tactic cannot discharge the `hs` side hypothesis, it leaves it as an
--- unassigned metavariable and the declaration then fails in the kernel. Use `h.symm hs`.
-theorem adj_symm (hs : G.IsSymm) (h : G.Adj x y n) : G.Adj y x n :=
-  hs n h
+@[symm]
+theorem adj_symm [hs : G.IsSymm] (h : G.Adj x y n) : G.Adj y x n :=
+  hs.symm n h
 
-theorem Adj.symm (hs : G.IsSymm) (h : G.Adj x y n) : G.Adj y x n :=
-  hs n h
+theorem Adj.symm [hs : G.IsSymm] (h : G.Adj x y n) : G.Adj y x n :=
+  hs.symm n h
 
-theorem ne_of_adj (hl : G.IsLoopless) (h : G.Adj x y n) : x ≠ y := by
+theorem ne_of_adj [G.IsLoopless] (h : G.Adj x y n) : x ≠ y := by
   rintro rfl
-  exact G.irrefl hl h
+  exact G.irrefl h
 
-protected theorem Adj.ne (hl : G.IsLoopless) (h : G.Adj x y n) : x ≠ y :=
-  G.ne_of_adj hl h
+protected theorem Adj.ne [G.IsLoopless] (h : G.Adj x y n) : x ≠ y :=
+  G.ne_of_adj h
 
-protected theorem Adj.ne' (hl : G.IsLoopless) (h : G.Adj x y n) : y ≠ x :=
-  (h.ne hl).symm
+protected theorem Adj.ne' [G.IsLoopless] (h : G.Adj x y n) : y ≠ x :=
+  h.ne.symm
 
 end Adjacency
 
@@ -201,18 +206,18 @@ def EdgeSet (G : TemporalGraph V) : Set ((Sym2 V) × ℕ) :=
   {(p, n) | ∃ x y : p, G.Adj x y n}
 
 @[simp]
-theorem mem_edgeSet (G : TemporalGraph V) (hs : G.IsSymm) (hl : G.IsLoopless) {x y : V} {n : ℕ} :
+theorem mem_edgeSet (G : TemporalGraph V) [G.IsSymm] [G.IsLoopless] {x y : V} {n : ℕ} :
     (s(x,y), n) ∈ G.EdgeSet ↔ G.Adj x y n := by
   apply Iff.intro
   · intro ⟨u, v, hadj⟩
     rcases Sym2.mem_iff.mp u.prop with heq | heq
     <;> rw [heq] at hadj
-    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_left (hadj.ne' hl)
+    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_left hadj.ne'
       rw [heq'] at hadj
       exact hadj
-    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_right (hadj.ne' hl)
+    · have heq' := Sym2.mem_iff.mp v.prop |>.resolve_right hadj.ne'
       rw [heq'] at hadj
-      exact hadj.symm hs
+      exact hadj.symm
   · intro hadj
     have hin : x ∈ s(x,y) := Sym2.mem_iff.mpr <| Or.inl <| Eq.refl x
     have hin' : y ∈ s(x,y) := Sym2.mem_iff.mpr <| Or.inr <| Eq.refl y

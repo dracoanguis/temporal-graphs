@@ -54,20 +54,28 @@ A [blueprint](blueprint/) documents the mathematical content and its Lean formal
 status (definitions, theorems, dependency graph). Its Python environment is a
 [uv](https://docs.astral.sh/uv/) project ([`blueprint/pyproject.toml`](blueprint/pyproject.toml),
 locked by `blueprint/uv.lock`): `uv run` creates `blueprint/.venv` on first use, so there is no
-manual venv step. The HTML version is rendered by plasTeX alone, with **no TeX distribution**: the
-only TeX program plasTeX needs, `kpsewhich` (to resolve `\input{macros/...}`), is provided by the
-uv project itself ([`blueprint/plastex_kpsewhich/`](blueprint/plastex_kpsewhich/), installed into
-`blueprint/.venv/bin`). The one system requirement is `graphviz` (`brew install graphviz`), which
-`pygraphviz` links against for the dependency graph.
+manual venv step. Nothing TeX-related is installed outside that environment:
 
-From the repository root:
+- the HTML version is rendered by plasTeX alone. The only TeX program plasTeX needs,
+  `kpsewhich` (to resolve `\input{macros/...}`), is a small script of the uv project
+  ([`blueprint/blueprint_tools/`](blueprint/blueprint_tools/), installed into `blueprint/.venv/bin`);
+- the PDF version uses xelatex from a pinned [TinyTeX](https://yihui.org/tinytex/) that
+  `uv run --project blueprint install-tinytex` downloads once into `blueprint/.venv/tinytex`
+  (about 250 MB, plus the few LaTeX packages `print.tex` needs). The environment's `latexmk`
+  script runs it, so deleting `blueprint/.venv` removes TeX too.
+
+The one system requirement is `graphviz` (`brew install graphviz`), which `pygraphviz` links
+against for the dependency graph. From the repository root:
 
     uv run --project blueprint leanblueprint web          # HTML → blueprint/web/index.html
+    uv run --project blueprint install-tinytex            # once, before the first PDF build
+    uv run --project blueprint leanblueprint pdf          # PDF  → blueprint/print/print.pdf
     uv run --project blueprint leanblueprint checkdecls   # declarations exist (after `lake build`)
     uv run --project blueprint leanblueprint serve        # preview the HTML version locally
 
-`checkdecls` is a Lake dependency of this package, used only for that check. The PDF version
-(`leanblueprint pdf`) is not supported by this setup, since it runs `latexmk`.
+`checkdecls` is a Lake dependency of this package, used only for that check. If a PDF build
+fails, delete `blueprint/print/` before retrying: latexmk otherwise refuses to rerun after an
+error.
 
 ## API documentation
 

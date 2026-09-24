@@ -176,9 +176,12 @@ garder cette convention : un commentaire citant le numéro exact du théorème/l
 - Blueprint : projet uv dans `blueprint/` (`pyproject.toml` + `uv.lock`, pas de
   `requirements.txt`). Depuis la racine : `uv run --project blueprint leanblueprint web|checkdecls`.
   plasTeX seul, **aucune distribution TeX** : le `kpsewhich` dont plasTeX a besoin est fourni par
-  le projet uv (`blueprint/plastex_kpsewhich/`, script installé dans `blueprint/.venv/bin`). Sans
+  le projet uv (`blueprint/blueprint_tools/`, script installé dans `blueprint/.venv/bin`). Sans
   lui, plasTeX ne trouve pas `macros/common` et plante avec `TypeError: unhashable type:
-  'definition'`. `leanblueprint pdf` (latexmk) n'est pas pris en charge.
+  'definition'`. PDF : `uv run --project blueprint install-tinytex` (une fois ; TinyTeX épinglé,
+  xelatex, dans `blueprint/.venv/tinytex`), puis `leanblueprint pdf`. Le script `latexmk` du venv
+  met TinyTeX en tête du PATH. pytinytex n'est pas utilisable : il cherche un `.tgz` macOS alors
+  que TinyTeX ≥ v2026.09 publie des `.tar.xz`.
 - Doc API : projet Lake séparé `docbuild/` (miroir de celui de `docgen-action`, `packagesDir`
   partagé avec la racine) : `cd docbuild && DOCGEN_SRC=file lake build TemporalGraph:docs`.
   `DOCGEN_SRC=file` est obligatoire en local : le défaut `github` échoue sur le remote GitLab.

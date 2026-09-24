@@ -1,11 +1,7 @@
 \chapter{Dismountability}
 \label{chap:dismountability}
 
-\noindent\textbf{Note.} As in the previous two chapters, the declarations
-below are pending the \texttt{TemporalGraph} $\to$
-\texttt{TemporalGraph} rename; \texttt{\textbackslash lean\{\}} tags are
-marked \texttt{TODO post-rename} and left without \texttt{\textbackslash
-leanok}. Formalized in \texttt{TemporalGraph/Dismountability/Basic.lean} and
+\noindent Formalized in \texttt{TemporalGraph/Dismountability/Basic.lean} and
 \texttt{TemporalGraph/Dismountability/Operations.lean}. Numbering follows
 Casteigts, Peters \& Schoeters, \emph{Temporal Cliques Admit Sparse
 Spanners}, ICALP 2019 / JCSS, exactly as recorded in this repository's
@@ -16,8 +12,8 @@ different numbering here.
 \begin{definition}[Dismountable clique --- Theorem 2.1]
   \label{def:dismountable}
   \uses{def:sub-spanning-clique,def:earliest-latest-neighbor}
-  % TODO post-rename
   \lean{TemporalGraph.Subgraph.Dismountable}
+  \leanok
   A clique sub-temporal-graph $H$ of $G$ \emph{is dismountable} if it has a
   vertex that is simultaneously an earliest neighbor of some vertex and a
   latest neighbor of some (possibly different) vertex of $H$.
@@ -26,10 +22,10 @@ different numbering here.
 \begin{definition}[$V^-$, $V^+$, $V^0$ --- def 3.1]
   \label{def:vminus-vplus-vzero}
   \uses{def:dismountable}
-  % TODO post-rename
   \lean{TemporalGraph.Subgraph.vminus}
   \lean{TemporalGraph.Subgraph.vplus}
   \lean{TemporalGraph.Subgraph.vzero}
+  \leanok
   For $H$ a sub-temporal-graph of $G$: $V^-(H)$ is the set of vertices that
   are an earliest neighbor of some vertex of $H$; $V^+(H)$ is the set of
   vertices that are a latest neighbor of some vertex of $H$; and
@@ -39,64 +35,200 @@ different numbering here.
 \begin{lemma}[Partition of non-dismountable cliques --- lemma 3.1]
   \label{lem:partition-not-dismountable}
   \uses{def:dismountable,def:vminus-vplus-vzero}
-  % TODO post-rename
   \lean{TemporalGraph.Subgraph.partition_of_not_dismountable}
+  \leanok
   If $H$ is a clique that is not dismountable, then $V^-(H)$, $V^+(H)$,
   $V^0(H)$ partition $\mathrm{Verts}(H)$.
+\end{lemma}
+
+\begin{lemma}[Vertex set decomposition]
+  \label{lem:vminus-vplus-vzero-decomp}
+  \uses{def:vminus-vplus-vzero}
+  \lean{TemporalGraph.Subgraph.vminus_sub_verts}
+  \lean{TemporalGraph.Subgraph.vplus_sub_verts}
+  \lean{TemporalGraph.Subgraph.vzero_sub_verts}
+  \lean{TemporalGraph.Subgraph.vunion_eq_univ}
+  \leanok
+  All three sets $V^-(H)$, $V^+(H)$, $V^0(H)$ are subsets of
+  $\mathrm{Verts}(H)$, and their union is all of $\mathrm{Verts}(H)$.
+\end{lemma}
+
+\begin{lemma}[Dismountability via intersection]
+  \label{lem:dismountable-iff-intersection}
+  \uses{def:dismountable,def:vminus-vplus-vzero}
+  \lean{TemporalGraph.Subgraph.nonempty_vplus_inter_vminus_iff_dismountable}
+  \leanok
+  A clique $H$ is dismountable exactly when $V^+(H) \cap V^-(H) \neq
+  \emptyset$ — there exists a vertex that is both a latest and an earliest
+  neighbor.
 \end{lemma}
 
 \begin{definition}[Two-hop dismountable]
   \label{def:two-hop-dismountable}
   \uses{def:dismountable}
-  % TODO post-rename
   \lean{TemporalGraph.Subgraph.TwoHopDismountable}
+  \leanok
   A variant of dismountability allowing the witnessing vertices to be
-  identified up to a two-hop condition; every dismountable clique is
-  two-hop dismountable (\lean{TemporalGraph.Subgraph.twoHopDismountable_of_dismountable}).
+  identified up to a two-hop condition: a clique $H$ is \emph{two-hop
+  dismountable} if there exists a vertex $x$ such that either $x$ is an
+  earliest neighbor of some vertex, or some vertex two-hop-reaches $x$ via an
+  earliest edge, and similarly for latest neighbors. Every dismountable
+  clique is two-hop dismountable.
 \end{definition}
 
 \begin{lemma}[$V^+$/$V^-$ are not neighbors --- lemma 3.2]
   \label{lem:vplus-vminus-not-neighbors}
   \uses{def:two-hop-dismountable,def:vminus-vplus-vzero}
-  % TODO post-rename
   \lean{TemporalGraph.Subgraph.vplus_ne_neighbor_of_not_twoHopDismountable}
   \lean{TemporalGraph.Subgraph.vminus_ne_neighbor_of_not_twoHopDismountable}
+  \leanok
   If $H$ is not two-hop dismountable, no two distinct vertices of $V^+(H)$
   (resp.\ $V^-(H)$) are neighbors of each other via the earliest/latest edge
-  structure witnessing their membership.
+  structure witnessing their membership: distinct vertices in $V^+(H)$ have
+  distinct latest neighbors, and distinct vertices in $V^-(H)$ have distinct
+  earliest neighbors.
+\end{lemma}
+
+\begin{lemma}[Vertex sets are finite]
+  \label{lem:partition-finite}
+  \uses{def:vminus-vplus-vzero}
+  \lean{TemporalGraph.Subgraph.vminus_sub_verts}
+  \lean{TemporalGraph.Subgraph.vplus_sub_verts}
+  \lean{TemporalGraph.Subgraph.vzero_sub_verts}
+  \leanok
+  When $H$ has finitely many vertices, $V^-(H)$, $V^+(H)$, and $V^0(H)$ are
+  all finite.
 \end{lemma}
 
 \begin{lemma}[$V^0$ is empty --- lemma 3.4]
   \label{lem:vzero-empty}
-  \uses{lem:vplus-vminus-not-neighbors}
-  % TODO post-rename
+  \uses{lem:vplus-vminus-not-neighbors,def:vminus-vplus-vzero,def:is-simple-clique,def:is-proper}
   \lean{TemporalGraph.Subgraph.vzero_empty_of_not_twoHopDismountable}
-  If $H$ is a clique that is not two-hop dismountable, then $V^0(H) =
-  \emptyset$, i.e.\ every vertex is an earliest or a latest neighbor of some
-  vertex.
+  \leanok
+  If $H$ is a finite, nontrivial, simple, proper clique that is not
+  two-hop dismountable, then $V^0(H) = \emptyset$: every vertex is an
+  earliest or a latest neighbor of some vertex.
 \end{lemma}
+
+\section*{Bijections and cardinality (Theorem 3.3 corollary)}
+
+\begin{lemma}[Earliest edges are finitely witnessed]
+  \label{lem:earliestEdge-exists-finite-clique}
+  \uses{def:is-simple-clique,def:incidence-set}
+  \lean{TemporalGraph.Subgraph.earliestEdge_exists_of_finite_nontrivial_simple_clique}
+  \lean{TemporalGraph.Subgraph.latestEdge_exists_of_finite_nontrivial_simple_clique}
+  \leanok
+  If $H$ is finite, nontrivial, and a simple clique, then every vertex has an
+  earliest and a latest edge.
+\end{lemma}
+
+\begin{lemma}[Earliest edges are uniquely witnessed in proper cliques]
+  \label{lem:earliestEdge-unique-proper-clique}
+  \uses{def:is-proper,def:is-simple-clique}
+  \lean{TemporalGraph.Subgraph.earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique}
+  \lean{TemporalGraph.Subgraph.latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique}
+  \leanok
+  If $H$ is finite, nontrivial, simple, and proper, then each vertex has a
+  unique earliest (resp.\ latest) edge.
+\end{lemma}
+
+\begin{definition}[Earliest/latest neighbor functions]
+  \label{def:neighbor-functions}
+  \uses{lem:earliestEdge-unique-proper-clique}
+  \lean{TemporalGraph.Subgraph.earliestNeighborFn}
+  \lean{TemporalGraph.Subgraph.latestNeighborFn}
+  \leanok
+  Given a finite, nontrivial, simple, proper clique $H$, define
+  $\mathrm{f_{ee}} : V^+(H) \to V^-(H)$ and
+  $\mathrm{f_{le}} : V^-(H) \to V^+(H)$ as the functions that map each vertex
+  to its unique earliest (resp.\ latest) neighbor.
+\end{definition}
+
+\begin{lemma}[Neighbor functions characterize membership]
+  \label{lem:neighbor-fn-eq}
+  \uses{def:neighbor-functions,def:earliest-latest-neighbor}
+  \lean{TemporalGraph.Subgraph.earliestNeighborFn_eq}
+  \lean{TemporalGraph.Subgraph.latestNeighborFn_eq}
+  \leanok
+  The equality $\mathrm{f_{ee}}(x) = y$ is equivalent to $H.\mathrm{EarliestNeighbor}(x, y)$ for $x
+  \in V^+(H)$ and $y \in V^-(H)$, and similarly for $\mathrm{f_{le}}$.
+\end{lemma}
+
+\begin{lemma}[Neighbor functions are injective outside two-hop dismountability]
+  \label{lem:neighbor-fn-injective}
+  \uses{def:neighbor-functions,def:two-hop-dismountable,lem:vplus-vminus-not-neighbors}
+  \lean{TemporalGraph.Subgraph.earliestNeighborFn_injective}
+  \lean{TemporalGraph.Subgraph.latestNeighborFn_injective}
+  \leanok
+  When $H$ is symmetric and not two-hop dismountable, both
+  $\mathrm{f_{ee}}$ and $\mathrm{f_{le}}$ are injective.
+\end{lemma}
+
+\begin{lemma}[Cardinality bounds from injectivity]
+  \label{lem:card-bounds}
+  \uses{lem:neighbor-fn-injective}
+  \lean{TemporalGraph.Subgraph.vplus_card_le_vminus_card}
+  \lean{TemporalGraph.Subgraph.vminus_card_le_vplus_card}
+  \leanok
+  For a symmetric, non-two-hop-dismountable clique $H$:
+  $$|V^+(H)| \le |V^-(H)| \quad \text{and} \quad |V^-(H)| \le |V^+(H)|$$
+  so the cardinalities are equal.
+\end{lemma}
+
+\begin{theorem}[Neighbor functions are bijections]
+  \label{thm:neighbor-fn-bijective}
+  \uses{lem:neighbor-fn-injective,lem:card-bounds}
+  \lean{TemporalGraph.Subgraph.earliestNeighborFn_bijective}
+  \lean{TemporalGraph.Subgraph.latestNeighborFn_bijective}
+  \leanok
+  When $H$ is finite, nontrivial, simple, proper, symmetric, and not
+  two-hop dismountable, both $\mathrm{f_{ee}} : V^+(H) \to V^-(H)$ and
+  $\mathrm{f_{le}} : V^-(H) \to V^+(H)$ are bijections.
+\end{theorem}
+
+\section*{Dismounting and mounting operations}
 
 \begin{definition}[Dismount / mount]
   \label{def:dismount-mount}
-  \uses{def:dismountable}
-  % TODO post-rename
+  \uses{def:sub-temporal-graph,def:vminus-vplus-vzero}
   \lean{TemporalGraph.Subgraph.dismount}
   \lean{TemporalGraph.Subgraph.mount}
   \lean{TemporalGraph.Subgraph.twoHopMount}
-  $H.\mathrm{dismount}(x)$ removes vertex $x$ from $H$ (a special case of
-  \texttt{deleteVerts}). $H.\mathrm{mount}(x, \dots)$ (resp.\
-  $\mathrm{twoHopMount}$) is the corresponding reconstruction operation used
-  to transfer a spanner of the dismounted clique back to $H$.
+  \leanok
+  $H.\mathrm{dismount}(x)$ removes vertex $x$ from $H$ (special case of
+  deletion). $H.\mathrm{mount}(x, y, z, n, m)$ reconstructs a subgraph by
+  adding $x$ back with edges $y \to x$ at time $n$ and $z \to x$ at time $m$.
+  $H.\mathrm{twoHopMount}(x, y', y, z', z, n', n, m', m)$ adds $x$ along a
+  two-hop path: $x \to y'$ at $n'$, $y' \to y$ at $n$, and symmetrically for
+  $z$.
 \end{definition}
+
+\begin{lemma}[Dismounted cliques remain cliques]
+  \label{lem:dismount-clique}
+  \uses{def:dismount-mount}
+  \lean{TemporalGraph.Subgraph.dismount_clique}
+  \leanok
+  Dismounting a vertex from a clique yields a clique.
+\end{lemma}
+
+\begin{lemma}[Mount operations increase edge count]
+  \label{lem:mount-size}
+  \uses{def:dismount-mount,def:arcset-edgeset}
+  \lean{TemporalGraph.Subgraph.mount_size}
+  \lean{TemporalGraph.Subgraph.twoHopMount_size}
+  \leanok
+  Mounting a single vertex adds at most 2 edges to the edge set;
+  two-hop mounting adds at most 4 edges.
+\end{lemma}
 
 \begin{theorem}[Dismount/mount preserves spanning correctness]
   \label{thm:dismountability}
-  \uses{def:dismount-mount,def:spanner}
-  % TODO post-rename
-  \lean{TemporalGraph.Subgraph.mount_tc}
+  \uses{def:dismount-mount,def:spanner,def:sub-spanning-clique}
   \lean{TemporalGraph.Subgraph.dismountability}
   \lean{TemporalGraph.Subgraph.twoHopDismountability}
-  If $H'$ is a TC-spanner of $H.\mathrm{dismount}(x)$, then mounting $x$
-  back onto $H'$ yields a TC-spanner of $H$ (and similarly for
-  \texttt{twoHopMount}).
+  \leanok
+  Let $H$ be a clique and $H'$ a spanning sub-temporal-graph of
+  $H.\mathrm{dismount}(x)$. If $H'$ is a TC-spanner of the dismounted graph,
+  then mounting $x$ back (via $\mathrm{mount}$ or $\mathrm{twoHopMount}$) with
+  the appropriate edges from $H$ yields a TC-spanner of $H$ itself.
 \end{theorem}

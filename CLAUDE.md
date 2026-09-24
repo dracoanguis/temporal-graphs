@@ -108,7 +108,8 @@ Chaque module typecheck et il n'existe aucun `sorry`. **Piège de vérification 
 le `lean_lib` n'avait pas de `globs`, si bien que `lake build` ne compilait que le module racine et
 ses imports — ce qui s'arrête à `SubTemporalGraph`. `Connectivity/*` et `Dismountability/*`
 n'étaient donc jamais construits, ni en local ni en CI. Le `lakefile.toml` déclare désormais
-`globs = ["TemporalGraph.+"]` : un `lake build` nu couvre tout. Si un doute subsiste sur un module
+`globs = ["TemporalGraph.*"]` : un `lake build` nu couvre tout, racine comprise (`.+` ne prend
+que les sous-modules stricts et saute la racine `TemporalGraph`, que `checkdecls` importe). Si un doute subsiste sur un module
 précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Operations`).
 
 ## Conventions de nommage/style observées
@@ -172,6 +173,20 @@ garder cette convention : un commentaire citant le numéro exact du théorème/l
 - `lake build TemporalGraph.Dismountability.Operations` : un module précis, avec ses dépendances.
 - `lake env lean TemporalGraph/<Fichier>.lean` : typechecker un fichier isolé (demande que les
   `.olean` de ses dépendances existent déjà).
+- Blueprint : projet uv dans `blueprint/` (`pyproject.toml` + `uv.lock`, pas de
+  `requirements.txt`). Depuis la racine : `uv run --project blueprint leanblueprint web|checkdecls`.
+  plasTeX seul, **aucune distribution TeX** : le `kpsewhich` dont plasTeX a besoin est fourni par
+  le projet uv (`blueprint/plastex_kpsewhich/`, script installé dans `blueprint/.venv/bin`). Sans
+  lui, plasTeX ne trouve pas `macros/common` et plante avec `TypeError: unhashable type:
+  'definition'`. `leanblueprint pdf` (latexmk) n'est pas pris en charge.
+- Doc API : projet Lake séparé `docbuild/` (miroir de celui de `docgen-action`, `packagesDir`
+  partagé avec la racine) : `cd docbuild && DOCGEN_SRC=file lake build TemporalGraph:docs`.
+  `DOCGEN_SRC=file` est obligatoire en local : le défaut `github` échoue sur le remote GitLab.
+  Premier lancement : environ 3 h, sans aucune compilation. doc-gen4 extrait les `:docInfo` de
+  tout Mathlib dans un SQLite, et aucune option ne l'évite. Les lancements suivants sont
+  incrémentaux, en quelques minutes. Ne pas supprimer `docbuild/.lake`. Garder le `rev` de doc-gen4
+  égal au tag de `lean-toolchain`.
+- `lake build` n'accepte pas `-j` dans cette version de lake.
 - CI GitHub Actions existante (ne pas modifier sans raison) : `lean_action_ci.yml` (build +
   docgen), `create-release.yml` (tag de release sur changement de `lean-toolchain`),
   `update.yml` (PR/issue automatique sur mise à jour Mathlib).

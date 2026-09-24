@@ -15,6 +15,12 @@ weak.linter.style.emptyline=false
 name = "mathlib"
 scope = "leanprover-community"
 
+# Used by `leanblueprint checkdecls` to check that the declarations named in
+# the blueprint exist.
+[[require]]
+name = "checkdecls"
+git = "https://github.com/PatrickMassot/checkdecls.git"
+
 [[lean_lib]]
 name = "TemporalGraph"
-globs = ["TemporalGraph.+"]
+globs = ["TemporalGraph.*"]

@@ -7,3 +7,7 @@
 /blueprint/print/*.out
 /blueprint/print/*.toc
 /blueprint/.venv/
+/docbuild/.lake/
+/blueprint/lean_decls
+/blueprint/src/web.paux
+__pycache__/

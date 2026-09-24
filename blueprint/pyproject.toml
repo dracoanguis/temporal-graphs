@@ -1,0 +1,21 @@
+# Python environment for building the blueprint with leanblueprint (plasTeX), managed by uv.
+# `uv run leanblueprint web` creates `.venv/` and installs the locked dependencies on first use;
+# no TeX distribution is needed. See the Blueprint section of the README.
+[project]
+name = "temporal-graphs-blueprint"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["leanblueprint==0.0.20"]
+
+# plasTeX needs `kpsewhich` to resolve `\input{macros/...}`; this one ships with the
+# environment instead of coming from a global TeX install (see plastex_kpsewhich/).
+[project.scripts]
+kpsewhich = "plastex_kpsewhich:main"
+
+[build-system]
+requires = ["uv_build>=0.12,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "plastex_kpsewhich"
+module-root = ""

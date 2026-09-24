@@ -1,0 +1,20 @@
+# Separate Lake project that builds the API documentation with doc-gen4, so that
+# the library itself does not depend on doc-gen4. It mirrors the project that
+# leanprover-community/docgen-action generates in CI. `packagesDir` shares the
+# parent's packages, so Mathlib's build (from `lake exe cache get`) is reused.
+# Keep the doc-gen4 `rev` equal to the toolchain in ../lean-toolchain.
+# Usage, from this directory: `lake build TemporalGraph:docs`; output lands in
+# `.lake/build/doc/`.
+name = "docbuild"
+reservoir = false
+version = "0.1.0"
+packagesDir = "../.lake/packages"
+
+[[require]]
+scope = "leanprover"
+name = "doc-gen4"
+rev = "v4.29.0-rc6"
+
+[[require]]
+name = "temporal-graph"
+path = "../"

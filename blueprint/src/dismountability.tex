@@ -102,7 +102,7 @@ different numbering here.
 
 \begin{lemma}[$V^0$ is empty --- lemma 3.4]
   \label{lem:vzero-empty}
-  \uses{lem:vplus-vminus-not-neighbors,def:vminus-vplus-vzero,def:is-simple-clique,def:is-proper}
+  \uses{lem:vplus-vminus-not-neighbors,def:vminus-vplus-vzero,def:is-simple-clique,def:is-proper-happy}
   \lean{TemporalGraph.Subgraph.vzero_empty_of_not_twoHopDismountable}
   \leanok
   If $H$ is a finite, nontrivial, simple, proper clique that is not
@@ -124,7 +124,7 @@ different numbering here.
 
 \begin{lemma}[Earliest edges are uniquely witnessed in proper cliques]
   \label{lem:earliestEdge-unique-proper-clique}
-  \uses{def:is-proper,def:is-simple-clique}
+  \uses{def:is-proper-happy,def:is-simple-clique}
   \lean{TemporalGraph.Subgraph.earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique}
   \lean{TemporalGraph.Subgraph.latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique}
   \leanok

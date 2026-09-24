@@ -150,8 +150,8 @@ theorem mount_tc (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [H.IsSymm]
   · intro heq ; apply hy'.elim
     <;> conv => rhs ; lhs ; lhs ; rw [heq]
     · intro heq'
+      -- `reachable_of_self` is `@[refl]`, so the `rfl` that `rw` attempts already closes this.
       conv => rhs ; lhs ; rw [heq']
-      simpa using @TemporalGraph.reachable_of_self _ ((mount H x h₀ h₁).coe) ⟨x, _⟩
     · intro hy'₀
       have hy'₁ : y' ∈ (mount H x h₀ h₁).verts := by simp [hy']
       apply @reachable_of_earliestEdge _ _ (mount H x h₀ h₁) ⟨y, _⟩ ⟨x, _⟩ n inferInstance h₂

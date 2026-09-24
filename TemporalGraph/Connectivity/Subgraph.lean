@@ -174,7 +174,6 @@ lemma reachable_of_extended_latestEdge {H : Subgraph G} {x y z : H.verts} {n m :
   intro a h
   exact H.coe.reachable_of_extended_latestEdge (coe_latestEdge h₀) h₁ h₂ a h
 
-@[simp]
 protected lemma temporallyConnected_of_TCSpanner (H : Subgraph G) :
     H.IsTCSpanner → G.TemporallyConnected := by
   intro ⟨h_span, h_tc⟩

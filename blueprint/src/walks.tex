@@ -1,16 +1,6 @@
 \chapter{Walks and reachability}
 \label{chap:walks}
 
-\noindent\textbf{Note.} The declarations below still reference the pre-split
-type \texttt{TemporalGraph}, which was replaced by
-\texttt{TemporalGraph} together with the standalone predicates
-\texttt{IsSymm}/\texttt{IsLoopless} (see \texttt{CLAUDE.md} for the state of
-this refactor). Their \texttt{\textbackslash lean\{\}} tags are left without
-\texttt{\textbackslash leanok} and are marked \texttt{TODO post-rename}: they
-must be re-verified against the source once the corresponding files build
-again.
-\bigskip
-
 A \emph{temporal walk} is a sequence of edges whose times are
 non-decreasing; a \emph{non-empty} temporal walk additionally requires at
 least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
@@ -19,22 +9,37 @@ least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
 \begin{definition}[Temporal walk]
   \label{def:temporal-walk}
   \uses{def:temporal-graph}
-  % TODO post-rename: verify namespace (currently TemporalGraph.TemporalWalk)
   \lean{TemporalGraph.TemporalWalk}
   \lean{TemporalGraph.NonemptyTemporalWalk}
+  \leanok
   A \emph{temporal walk} from $x$ at time $n$ to $y$ at time $m$ is either
   the empty walk (when $x = y$, $n = m$) or a non-empty temporal walk: a
   sequence of edges $(x_0,x_1,t_1), (x_1,x_2,t_2), \dots$ with
   $x_0 = x$, times non-decreasing, ending at $y$ at time $m$.
 \end{definition}
 
+\begin{definition}[Length, support, arcs of a walk]
+  \label{def:walk-invariants}
+  \uses{def:temporal-walk}
+  \lean{TemporalGraph.TemporalWalk.length}
+  \lean{TemporalGraph.TemporalWalk.support}
+  \lean{TemporalGraph.TemporalWalk.arcs}
+  \lean{TemporalGraph.NonemptyTemporalWalk.length}
+  \lean{TemporalGraph.NonemptyTemporalWalk.support}
+  \lean{TemporalGraph.NonemptyTemporalWalk.arcs}
+  \leanok
+  The \emph{length} of a temporal walk is its number of edges; its
+  \emph{support} is the list of vertices it visits, in order; its
+  \emph{arcs} is the list of directed edges $(x_i, x_{i+1}, t_{i+1})$ it
+  traverses.
+\end{definition}
+
 \begin{lemma}[Non-decreasing time]
   \label{lem:nondecreasing-time}
   \uses{def:temporal-walk}
-  % TODO post-rename: verify name (currently
-  % TemporalGraph.TemporalWalk.nondecreasing_time /
-  % TemporalGraph.NonemptyTemporalWalk.nondecreasing_time)
   \lean{TemporalGraph.TemporalWalk.nondecreasing_time}
+  \lean{TemporalGraph.NonemptyTemporalWalk.nondecreasing_time}
+  \leanok
   A temporal walk from $x$ at time $n$ to $y$ at time $m$ satisfies
   $n \le m$.
 \end{lemma}
@@ -42,9 +47,9 @@ least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
 \begin{definition}[Reachability, temporal connectivity]
   \label{def:reachable}
   \uses{def:temporal-walk}
-  % TODO post-rename: verify namespace (currently TemporalGraph.Reachable)
   \lean{TemporalGraph.Reachable}
   \lean{TemporalGraph.TemporallyConnected}
+  \leanok
   $y$ is \emph{reachable} from $x$ in $G$ if there is a non-empty temporal
   walk from $x$ to $y$ (at some times $n \le m$). $G$ \emph{is temporally
   connected} if every vertex is reachable from every other vertex.
@@ -53,8 +58,35 @@ least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
 \begin{lemma}[Cliques are temporally connected]
   \label{lem:clique-temporally-connected}
   \uses{def:reachable,def:is-simple-clique}
-  % TODO post-rename: verify name (currently
-  % TemporalGraph.temporallyConnected_of_isClique)
   \lean{TemporalGraph.temporallyConnected_of_isClique}
+  \leanok
   Every temporal clique is temporally connected.
+\end{lemma}
+
+\begin{lemma}[Reachability through an earliest edge]
+  \label{lem:reachable-of-earliestEdge}
+  \uses{def:reachable,def:earliest-latest-neighbor}
+  \lean{TemporalGraph.reachable_of_earliestEdge}
+  \lean{TemporalGraph.reachable_of_extended_earliestEdge}
+  \leanok
+  Assume $G$ is symmetric. If $(x,y,n)$ is the earliest edge of $x$
+  (Definition~\ref{def:earliest-latest-neighbor}), every vertex reachable
+  from $x$ is also reachable from $y$: prepend the edge $y \to x$ at time
+  $n$ (using symmetry) to a walk out of $x$, which stays non-decreasing
+  since $n$ is a lower bound on all of $x$'s times. More generally, if some
+  vertex $z$ has an edge to $y$ at a time $m \le n$, then $z$ too reaches
+  everything $x$ reaches, via $z \to y \to x \to \cdots$.
+\end{lemma}
+
+\begin{lemma}[Reachability through a latest edge]
+  \label{lem:reachable-of-latestEdge}
+  \uses{def:reachable,def:earliest-latest-neighbor}
+  \lean{TemporalGraph.reachable_of_latestEdge}
+  \lean{TemporalGraph.reachable_of_extended_latestEdge}
+  \leanok
+  Dually: assume $G$ is symmetric. If $(x,y,n)$ is the latest edge of $x$,
+  every vertex that reaches $x$ also reaches $y$: append the edge $x \to y$
+  at time $n$, an upper bound on all of $x$'s times. More generally, if $y$
+  has an edge to some vertex $z$ at a time $m \ge n$, then everything that
+  reaches $x$ also reaches $z$, via $\cdots \to x \to y \to z$.
 \end{lemma}

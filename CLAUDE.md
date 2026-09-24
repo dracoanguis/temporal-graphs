@@ -27,6 +27,19 @@ besoin de le répéter ici.
 - Une fois le travail validé, fusionner le(s) commit(s) du worktree dans `monde-apres`
   (fast-forward) et pousser `origin/monde-apres` — ne pas laisser une branche `worktree-<nom>`
   orpheline comme livrable final poussé sur le remote.
+- **Piège coûteux : un worktree neuf n'hérite pas du cache de build de Mathlib.** Chaque worktree
+  possède son propre `.lake/packages/mathlib/.lake/build`, vide à la création. Un `lake build`
+  lancé là recompile donc **Mathlib en entier** — plusieurs heures, pas les ~9 minutes d'un build
+  incrémental du dépôt principal. Symptôme : la sortie du build mentionne des fichiers
+  `Mathlib/...` au lieu des seuls modules `TemporalGraph/`. Remède, quand la révision de Mathlib
+  est la même des deux côtés (`git -C .lake/packages/mathlib rev-parse HEAD` pour comparer) :
+  ```
+  rsync -a --delete <dépôt-principal>/.lake/packages/mathlib/.lake/build/ \
+                    <worktree>/.lake/packages/mathlib/.lake/build/
+  ```
+  Environ 6 Go, deux à trois minutes, contre des heures de compilation. `lake exe cache get` est
+  l'alternative canonique si le réseau est disponible. Toujours vérifier après coup que le nombre
+  de `.olean` correspond entre les deux arbres.
 
 ## Carte du dépôt
 

@@ -140,7 +140,6 @@ lemma reachable_of_le_reachable {H : Subgraph G} {H' : Subgraph G}
   intro _ _ ⟨n, m, ⟨p⟩⟩
   exact ⟨n, m, ⟨p.lift_subtempgraph_walk' h⟩⟩
 
-@[simp]
 lemma reachable_of_earliestEdge {H : Subgraph G} {x y : H.verts} {n : ℕ}
     [H.IsSymm] (h₀ : H.EarliestEdge x y n) :
     ∀ z : H.verts, H.Reachable x z → H.Reachable y z := by
@@ -156,7 +155,6 @@ lemma reachable_of_extended_earliestEdge {H : Subgraph G} {x y z : H.verts} {n m
   intro a h
   exact H.coe.reachable_of_extended_earliestEdge (coe_earliestEdge h₀) h₁ h₂ a h
 
-@[simp]
 lemma reachable_of_latestEdge {H : Subgraph G} {x y : H.verts} {n : ℕ}
     [H.IsSymm] (h₀ : H.LatestEdge x y n) :
     ∀ z : H.verts, H.Reachable z x → H.Reachable z y := by

@@ -37,6 +37,7 @@ theorem reachable_of_nonempty_NonemptyTemporalWalk {G : TemporalGraph V} {x y : 
   intro ⟨n, m, ⟨h⟩⟩
   use n, m, ↑h
 
+@[refl]
 theorem reachable_of_self {G : TemporalGraph V} (x : V) : G.Reachable x x := by
   use 0, 0, TemporalWalk.Empty
 

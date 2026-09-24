@@ -267,13 +267,11 @@ lemma finite_incidenceSet_of_finite_simple {H : Subgraph G} [h : Finite H.verts]
     exact h₁ x y n m ⟨hyn, hzm⟩
   · exact h
 
-lemma finite_incidenceSet_of_simple (H : Subgraph G) [Finite H.verts] (h₀ : H.IsSimple)
-    (x : H.verts) : Finite (H.incidenceSet x) :=
-  finite_incidenceSet_of_finite_simple h₀ x
-
-/-- Noncomputable: obtained from `finite_incidenceSet_of_simple` via `Classical.choice`.
-Useful for stating cardinalities of incidence sets (`Fintype.card`), not for computing with them. -/
-noncomputable lemma fintype_incidenceSet_of_simple (H : Subgraph G) [Finite H.verts]
+/-- Noncomputable: obtained from `finite_incidenceSet_of_finite_simple` via `Classical.choice`.
+Useful for stating cardinalities of incidence sets (`Fintype.card`), not for computing with them.
+This is deliberately not an instance: `h₀` cannot be synthesised, so an instance carrying it could
+never fire. -/
+noncomputable def fintypeIncidenceSetOfSimple (H : Subgraph G) [Finite H.verts]
     (h₀ : H.IsSimple) (x : H.verts) : Fintype (H.incidenceSet x) :=
   (finite_incidenceSet_of_finite_simple h₀ x).fintype
 

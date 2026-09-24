@@ -8,12 +8,34 @@ Chapter~\ref{chap:dismountability}.
 
 \begin{theorem}[$O(n \log n)$ spanner for temporal cliques]
   \label{thm:main-spanner-bound}
-  \uses{thm:dismountability,lem:vzero-empty,def:spanner}
+  \uses{thm:dismountability,thm:neighbor-fn-bijective,lem:vzero-empty,def:spanner,def:sub-spanning-clique}
   Every temporal clique on $n$ vertices admits a temporally-connected
   spanner (Definition~\ref{def:spanner}) with $O(n \log n)$ edges.
 \end{theorem}
 
-\noindent\textbf{Status.} Stated, not proved: no Lean declaration exists yet
-for this theorem. It is expected to follow from repeated dismounting
-(Chapter~\ref{chap:dismountability}) driving a recursion on the clique
-size, following Casteigts, Peters \& Schoeters (ICALP 2019 / JCSS).
+\section*{Proof strategy}
+
+The proof uses a recursive argument via \emph{dismounting}:
+\begin{enumerate}
+\item
+  Choose a dismountable vertex $x$ (guaranteed to exist if the clique is not
+  a base case). If none exists, then either the clique is small (fitting in
+  the base case), or $|V^+(H)| = |V^-(H)|$ exactly (Theorem
+  ~\ref{thm:neighbor-fn-bijective}), tightly constraining the clique's size.
+\item
+  Recursively construct a TC-spanner of $H \setminus \{x\}$.
+\item
+  Use the mount/twoHopMount operations (Theorem~\ref{thm:dismountability})
+  to reconstruct a TC-spanner of the full clique, adding $O(1)$ edges per
+  vertex removed.
+\item
+  The recursion depth is $O(\log n)$ by a careful charging argument that
+  exploits the $V^-$/$V^+$ bijection, yielding $O(n \log n)$ total edges.
+\end{enumerate}
+
+\noindent\textbf{Status.} The high-level theorem is stated but not yet proved
+in Lean. The machinery required (Chapters~\ref{chap:model} through
+\ref{chap:dismountability}) is fully formalized and provides all the
+necessary lemmas. The final formalization is expected to instantiate the
+recursive strategy above in Lean, drawing on Casteigts, Peters \& Schoeters,
+\emph{Temporal Cliques Admit Sparse Spanners}, ICALP 2019 / JCSS.

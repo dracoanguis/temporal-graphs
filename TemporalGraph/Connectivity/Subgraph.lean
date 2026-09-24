@@ -124,7 +124,6 @@ end TemporalConnectivity
 
 section ReachabilityPreservation
 
-@[simp]
 lemma reachable_of_subgraph_reachable {H : Subgraph G} :
     ∀ x y : H.verts, H.Reachable x y → G.Reachable ↑x ↑y := by
   intro _ _ h

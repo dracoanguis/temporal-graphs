@@ -40,6 +40,40 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   vertices is joined by an edge at some time.
 \end{definition}
 
+\begin{definition}[Footprint]
+  \label{def:footprint}
+  \uses{def:temporal-graph}
+  \lean{TemporalGraph.footprint}
+  \leanok
+  The \emph{footprint} of $G$ is the (time-forgetting) directed graph on $V$
+  obtained by keeping an arc $x \to y$ whenever $x$ and $y$ are adjacent at
+  some time. It is an ordinary (non-temporal) directed graph, a Mathlib
+  \texttt{Digraph}.
+\end{definition}
+
+\begin{lemma}[Clique iff complete footprint]
+  \label{lem:isClique-iff-footprint-complete}
+  \uses{def:is-simple-clique,def:footprint}
+  \lean{TemporalGraph.isClique_iff_footprint_isComplete}
+  \leanok
+  $G$ is a clique exactly when its footprint is complete, i.e.\ every two
+  distinct vertices of $V$ are adjacent in the footprint.
+\end{lemma}
+
+\begin{definition}[Proper, happy]
+  \label{def:is-proper-happy}
+  \uses{def:temporal-graph}
+  \lean{TemporalGraph.IsProper}
+  \lean{TemporalGraph.IsHappy}
+  \leanok
+  $G$ \emph{is proper} if, at any given time, a vertex has at most one
+  out-neighbor (i.e.\ $\mathrm{Adj}_G(x,y,n) \wedge \mathrm{Adj}_G(x,z,n)
+  \Rightarrow y = z$). $G$ \emph{is happy} if it is both simple
+  (Definition~\ref{def:is-simple-clique}) and proper: between any ordered
+  pair there is at most one time of adjacency, and at any given time a
+  vertex has at most one out-neighbor.
+\end{definition}
+
 \begin{definition}[Earliest / latest neighbor]
   \label{def:earliest-latest-neighbor}
   \uses{def:temporal-graph}
@@ -84,14 +118,17 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   \lean{TemporalGraph.arcSet}
   \lean{TemporalGraph.edgeSet}
   \lean{TemporalGraph.mem_edgeSet_iff_or}
+  \lean{TemporalGraph.arcSize}
+  \lean{TemporalGraph.size}
   \leanok
   The \emph{arcs} of $G$ are the triples $(x,y,n)$ with $\mathrm{Adj}_G(x,y,n)$:
-  an oriented notion, counted by $\mathrm{arcSize}$. The \emph{edges} of $G$
-  are unordered: pairs $(\{x,y\}, n)$ such that $\mathrm{Adj}_G(x,y,n)$ or
-  $\mathrm{Adj}_G(y,x,n)$, counted by $\mathrm{size}$. An unordered pair is
-  therefore an edge exactly when one of its orientations is an arc, with no
-  hypothesis; when $G$ is symmetric the two orientations coincide and
-  membership reduces to $\mathrm{Adj}_G(x,y,n)$.
+  an oriented notion, counted (when finite) by $\mathrm{arcSize}$. The
+  \emph{edges} of $G$ are unordered: pairs $(\{x,y\}, n)$ such that
+  $\mathrm{Adj}_G(x,y,n)$ or $\mathrm{Adj}_G(y,x,n)$, counted by
+  $\mathrm{size}$. An unordered pair is therefore an edge exactly when one of
+  its orientations is an arc, with no hypothesis; when $G$ is symmetric the
+  two orientations coincide and membership reduces to
+  $\mathrm{Adj}_G(x,y,n)$.
 \end{definition}
 
 \begin{definition}[Symmetrization]

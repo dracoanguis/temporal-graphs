@@ -267,6 +267,12 @@ instance {H : Subgraph G} [Finite H.verts] {h₀ : H.IsSimple} {x : H.verts} :
     Finite (H.incidenceSet x) :=
   finite_incidenceSet_of_finite_simple h₀ x
 
+/-- Noncomputable: obtained from the `Finite` instance above via `Classical.choice`. Useful for
+stating cardinalities of incidence sets (`Fintype.card`), not for computing with them. -/
+noncomputable instance {H : Subgraph G} [Finite H.verts] {h₀ : H.IsSimple} {x : H.verts} :
+    Fintype (H.incidenceSet x) :=
+  (finite_incidenceSet_of_finite_simple h₀ x).fintype
+
 lemma nonempty_incidenceSet_of_nontrivial_clique {H : Subgraph G} [h : Nontrivial H.verts]
     (h₁ : H.IsClique) :
     ∀ x : H.verts, (H.incidenceSet x).Nonempty := by

@@ -72,6 +72,11 @@ lemma vminus_sub_verts {H : Subgraph G} : H.vminus ⊆ H.verts := by
 instance {H : Subgraph G} [h : Finite H.verts] : Finite H.vminus :=
   Set.Finite.subset (H.verts.finite_coe_iff.mp h) vminus_sub_verts
 
+/-- Noncomputable: obtained from the `Finite` instance above via `Classical.choice`. Useful for
+stating cardinalities of `vminus` (`Fintype.card`), not for computing with them. -/
+noncomputable instance {H : Subgraph G} [Finite H.verts] : Fintype H.vminus :=
+  Fintype.ofFinite _
+
 -- def 3.1
 def vplus (H : Subgraph G) : Set V := {x : V | ∃ y : V, H.LatestNeighbor y x}
 
@@ -83,6 +88,11 @@ lemma vplus_sub_verts {H : Subgraph G} : H.vplus ⊆ H.verts := by
 instance {H : Subgraph G} [h : Finite H.verts] : Finite H.vplus :=
   Set.Finite.subset (H.verts.finite_coe_iff.mp h) vplus_sub_verts
 
+/-- Noncomputable: obtained from the `Finite` instance above via `Classical.choice`. Useful for
+stating cardinalities of `vplus` (`Fintype.card`), not for computing with them. -/
+noncomputable instance {H : Subgraph G} [Finite H.verts] : Fintype H.vplus :=
+  Fintype.ofFinite _
+
 -- def 3.1
 def vzero (H : Subgraph G) : Set V := H.verts \ (H.vminus ∪ H.vplus)
 
@@ -93,6 +103,11 @@ lemma vzero_sub_verts {H : Subgraph G} : H.vzero ⊆ H.verts := by
 
 instance {H : Subgraph G} [h : Finite H.verts] : Finite H.vzero :=
   Set.Finite.subset (H.verts.finite_coe_iff.mp h) vzero_sub_verts
+
+/-- Noncomputable: obtained from the `Finite` instance above via `Classical.choice`. Useful for
+stating cardinalities of `vzero` (`Fintype.card`), not for computing with them. -/
+noncomputable instance {H : Subgraph G} [Finite H.verts] : Fintype H.vzero :=
+  Fintype.ofFinite _
 
 lemma vzero_mem {H : Subgraph G} : ∀ x : V, x ∈ H.vzero → x ∉ H.vminus ∧ x ∉ H.vplus := by
   intro _ hx
@@ -410,9 +425,9 @@ lemma vplus_card_le_vminus_card {H : Subgraph G}
     (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable)
     [H.IsSymm] :
-    @Fintype.card H.vplus (Fintype.ofFinite _) ≤ @Fintype.card H.vminus (Fintype.ofFinite _) :=
-  @Fintype.card_le_of_injective _ _ (Fintype.ofFinite _) (Fintype.ofFinite _)
-    (earliestNeighborFn h₀ h₁ h₂) (earliestNeighborFn_injective h₀ h₁ h₂ h₃)
+    Fintype.card H.vplus ≤ Fintype.card H.vminus :=
+  Fintype.card_le_of_injective (earliestNeighborFn h₀ h₁ h₂)
+    (earliestNeighborFn_injective h₀ h₁ h₂ h₃)
 
 lemma existsUnique_latestNeighbor {H : Subgraph G}
     [Finite H.verts]
@@ -489,9 +504,9 @@ lemma vminus_card_le_vplus_card {H : Subgraph G}
     (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable)
     [H.IsSymm] :
-    @Fintype.card H.vminus (Fintype.ofFinite _) ≤ @Fintype.card H.vplus (Fintype.ofFinite _) :=
-  @Fintype.card_le_of_injective _ _ (Fintype.ofFinite _) (Fintype.ofFinite _)
-    (latestNeighborFn h₀ h₁ h₂) (latestNeighborFn_injective h₀ h₁ h₂ h₃)
+    Fintype.card H.vminus ≤ Fintype.card H.vplus :=
+  Fintype.card_le_of_injective (latestNeighborFn h₀ h₁ h₂)
+    (latestNeighborFn_injective h₀ h₁ h₂ h₃)
 
 lemma vminus_card_eq_vplus_card {H : Subgraph G}
     [Finite H.verts]
@@ -501,7 +516,7 @@ lemma vminus_card_eq_vplus_card {H : Subgraph G}
     (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable)
     [H.IsSymm] :
-    @Fintype.card H.vminus (Fintype.ofFinite _) = @Fintype.card H.vplus (Fintype.ofFinite _) :=
+    Fintype.card H.vminus = Fintype.card H.vplus :=
   Nat.le_antisymm (vminus_card_le_vplus_card h₀ h₁ h₂ h₃)
     (vplus_card_le_vminus_card h₀ h₁ h₂ h₃)
 
@@ -514,8 +529,7 @@ lemma earliestNeighborFn_bijective {H : Subgraph G}
     (h₃ : ¬H.TwoHopDismountable)
     [H.IsSymm] :
     Function.Bijective (earliestNeighborFn h₀ h₁ h₂) := by
-  apply Iff.mpr <| @Fintype.bijective_iff_injective_and_card _ _
-    (Fintype.ofFinite _) (Fintype.ofFinite _) (earliestNeighborFn h₀ h₁ h₂)
+  apply Iff.mpr <| Fintype.bijective_iff_injective_and_card (earliestNeighborFn h₀ h₁ h₂)
   constructor
   · exact earliestNeighborFn_injective h₀ h₁ h₂ h₃
   · exact (vminus_card_eq_vplus_card h₀ h₁ h₂ h₃).symm
@@ -529,8 +543,7 @@ lemma latestNeighborFn_bijective {H : Subgraph G}
     (h₃ : ¬H.TwoHopDismountable)
     [H.IsSymm] :
     Function.Bijective (latestNeighborFn h₀ h₁ h₂) := by
-  apply Iff.mpr <| @Fintype.bijective_iff_injective_and_card _ _
-    (Fintype.ofFinite H.vminus) (Fintype.ofFinite H.vplus) (latestNeighborFn h₀ h₁ h₂)
+  apply Iff.mpr <| Fintype.bijective_iff_injective_and_card (latestNeighborFn h₀ h₁ h₂)
   constructor
   · exact latestNeighborFn_injective h₀ h₁ h₂ h₃
   · exact vminus_card_eq_vplus_card h₀ h₁ h₂ h₃

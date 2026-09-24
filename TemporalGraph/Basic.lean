@@ -75,7 +75,7 @@ class IsSymm (G : TemporalGraph V) : Prop where
 class IsLoopless (G : TemporalGraph V) : Prop where
   loopless : ∀ n : ℕ, Std.Irrefl (fun x y => G.Adj x y n)
 
-@[simp]
+@[simp, aesop safe (rule_sets := [TemporalGraph])]
 protected theorem irrefl {G : TemporalGraph V} [hl : G.IsLoopless] {x : V} {n : ℕ} :
     ¬G.Adj x x n :=
   (hl.loopless n).irrefl x

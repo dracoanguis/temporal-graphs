@@ -91,7 +91,7 @@ suffices at every use site, however deeply the subgraph is built up. -/
 instance loopless (H : Subgraph G) [G.IsLoopless] : H.IsLoopless :=
   ⟨fun _ ↦ ⟨fun _ h ↦ G.irrefl (H.adj_sub h)⟩⟩
 
-@[simp]
+@[simp, aesop safe (rule_sets := [TemporalGraph])]
 protected theorem irrefl {H : Subgraph G} [G.IsLoopless] {x : V} {n : ℕ} :
     ¬H.Adj x x n :=
   TemporalGraph.irrefl
@@ -106,11 +106,13 @@ theorem adj_symm (H : Subgraph G) [hs : H.IsSymm] {x y : V} {n : ℕ} (h : H.Adj
     H.Adj y x n :=
   hs.symm n h
 
+@[aesop safe (rule_sets := [TemporalGraph]), symm]
 protected theorem Adj.symm {H : Subgraph G} [hs : H.IsSymm] {x y : V} {n : ℕ}
     (h : H.Adj x y n) :
     H.Adj y x n :=
   hs.symm n h
 
+@[aesop safe (rule_sets := [TemporalGraph])]
 protected theorem Adj.adj_sub {H : G.Subgraph} {u v : V} {t : ℕ} (h : H.Adj u v t) :
     G.Adj u v t :=
   H.adj_sub h
@@ -125,10 +127,12 @@ protected theorem Adj.ne' {H : Subgraph G} [G.IsLoopless] {x y : V} {n : ℕ}
     y ≠ x :=
   (H.adj_sub h).ne'
 
+@[aesop safe (rule_sets := [TemporalGraph])]
 protected theorem Adj.fst_mem {H : G.Subgraph} {u v : V} {t : ℕ} (h : H.Adj u v t) :
     u ∈ H.verts :=
   H.edge_vert h
 
+@[aesop safe (rule_sets := [TemporalGraph])]
 protected theorem Adj.snd_mem {H : G.Subgraph} {x y : V} {n : ℕ} (h : H.Adj x y n) :
     y ∈ H.verts :=
   H.edge_vert' h
@@ -263,14 +267,14 @@ lemma finite_incidenceSet_of_finite_simple {H : Subgraph G} [h : Finite H.verts]
     exact h₁ x y n m ⟨hyn, hzm⟩
   · exact h
 
-instance {H : Subgraph G} [Finite H.verts] {h₀ : H.IsSimple} {x : H.verts} :
-    Finite (H.incidenceSet x) :=
+lemma finite_incidenceSet_of_simple (H : Subgraph G) [Finite H.verts] (h₀ : H.IsSimple)
+    (x : H.verts) : Finite (H.incidenceSet x) :=
   finite_incidenceSet_of_finite_simple h₀ x
 
-/-- Noncomputable: obtained from the `Finite` instance above via `Classical.choice`. Useful for
-stating cardinalities of incidence sets (`Fintype.card`), not for computing with them. -/
-noncomputable instance {H : Subgraph G} [Finite H.verts] {h₀ : H.IsSimple} {x : H.verts} :
-    Fintype (H.incidenceSet x) :=
+/-- Noncomputable: obtained from `finite_incidenceSet_of_simple` via `Classical.choice`.
+Useful for stating cardinalities of incidence sets (`Fintype.card`), not for computing with them. -/
+noncomputable lemma fintype_incidenceSet_of_simple (H : Subgraph G) [Finite H.verts]
+    (h₀ : H.IsSimple) (x : H.verts) : Fintype (H.incidenceSet x) :=
   (finite_incidenceSet_of_finite_simple h₀ x).fintype
 
 lemma nonempty_incidenceSet_of_nontrivial_clique {H : Subgraph G} [h : Nontrivial H.verts]

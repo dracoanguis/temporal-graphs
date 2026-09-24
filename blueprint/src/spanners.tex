@@ -1,44 +1,192 @@
 \chapter{Sub-temporal-graphs and spanners}
 \label{chap:spanners}
 
-\noindent\textbf{Note.} As in Chapter~\ref{chap:walks}, the declarations
-below are pending the \texttt{TemporalGraph} $\to$
-\texttt{TemporalGraph} rename; \texttt{\textbackslash lean\{\}} tags are
-marked \texttt{TODO post-rename} and left without \texttt{\textbackslash
-leanok}. Formalized in \texttt{TemporalGraph/SubTemporalGraph.lean} and
-\texttt{TemporalGraph/Connectivity/SubTemporalGraph.lean}.
-\bigskip
+Formalized in \texttt{TemporalGraph/Subgraph.lean} (general subgraph theory)
+and \texttt{TemporalGraph/Connectivity/Subgraph.lean} (reachability and
+spanners at the subgraph level).
 
 \begin{definition}[Sub-temporal-graph]
   \label{def:sub-temporal-graph}
   \uses{def:temporal-graph}
-  % TODO post-rename: verify namespace (currently
-  % TemporalGraph.Subgraph)
   \lean{TemporalGraph.Subgraph}
+  \leanok
   A \emph{sub-temporal-graph} $H$ of a temporal graph $G$ is a choice of
   vertex subset $\mathrm{Verts}(H) \subseteq V$ together with an edge
-  relation on it that is compatible with (a restriction of) $G$'s edges.
+  relation on it that is compatible with (a restriction of) $G$'s edges. In
+  the library, $H$ literally \emph{is} a temporal graph on $V$ (extending
+  Definition~\ref{def:temporal-graph}) together with $\mathrm{Verts}(H)$ and
+  proofs that every one of its edges is one of $G$'s and has both endpoints
+  in $\mathrm{Verts}(H)$; in particular $H$ need not be symmetric even when
+  $G$ is.
 \end{definition}
 
 \begin{definition}[Spanning, clique sub-temporal-graph]
   \label{def:sub-spanning-clique}
   \uses{def:sub-temporal-graph}
-  % TODO post-rename
   \lean{TemporalGraph.Subgraph.IsSpanning}
   \lean{TemporalGraph.Subgraph.IsClique}
+  \leanok
   $H$ \emph{is spanning} in $G$ if $\mathrm{Verts}(H) = V$. $H$ \emph{is a
   clique} if every pair of distinct vertices of $H$ is joined by an edge of
   $H$ at some time.
 \end{definition}
 
+\begin{definition}[Order on sub-temporal-graphs]
+  \label{def:subgraph-order}
+  \uses{def:sub-temporal-graph}
+  \lean{TemporalGraph.Subgraph.top_toTemporalGraph}
+  \leanok
+  Sub-temporal-graphs of $G$ are ordered by inclusion: $H \le H'$ when
+  $\mathrm{Verts}(H) \subseteq \mathrm{Verts}(H')$ and every edge of $H$ is
+  one of $H'$ — the analogue, one level down, of
+  Definition~\ref{def:spanning-order}. This makes the sub-temporal-graphs of
+  $G$ a bounded partial order: the bottom element $\bot$ is the empty
+  sub-temporal-graph, and the top element $\top$ is $G$ itself, seen as a
+  sub-temporal-graph of itself on all of $V$.
+\end{definition}
+
+\begin{lemma}[Order via edge sets and vertex sets]
+  \label{lem:subgraph-le-iff-edgeSet-verts}
+  \uses{def:subgraph-order,def:arcset-edgeset}
+  \lean{TemporalGraph.Subgraph.le_iff_edgeSet_and_verts}
+  \leanok
+  When $H'$ is symmetric, $H \le H'$ exactly when
+  $\mathrm{EdgeSet}(H) \subseteq \mathrm{EdgeSet}(H')$ and
+  $\mathrm{Verts}(H) \subseteq \mathrm{Verts}(H')$.
+\end{lemma}
+
+\begin{definition}[Induced, added, deleted sub-temporal-graphs]
+  \label{def:subgraph-induce-delete-add}
+  \uses{def:sub-temporal-graph}
+  \lean{TemporalGraph.Subgraph.IsInduced}
+  \lean{TemporalGraph.Subgraph.induce}
+  \lean{TemporalGraph.Subgraph.deleteVerts}
+  \lean{TemporalGraph.Subgraph.addVerts}
+  \leanok
+  $H$ \emph{is induced} if every $G$-edge between two vertices of $H$ is
+  already an edge of $H$. Given $s \subseteq V$, the sub-temporal-graph
+  $H[s]$ \emph{induced by $H$ on $s$} has vertex set $s$ and keeps exactly
+  the edges of $H$ whose both endpoints lie in $s$; it is always a
+  sub-temporal-graph of $G$, whether or not $s \subseteq \mathrm{Verts}(H)$.
+  Deleting $s$ from $H$ is $H[\mathrm{Verts}(H) \setminus s]$; adding $s$ to
+  $H$ is $H[\mathrm{Verts}(H) \cup s]$ — both special cases of induction,
+  and both below, resp.\ above, $H$ in the order of
+  Definition~\ref{def:subgraph-order}.
+\end{definition}
+
+\begin{definition}[Adding a single edge]
+  \label{def:subgraph-addEdge}
+  \uses{def:sub-temporal-graph}
+  \lean{TemporalGraph.Subgraph.addEdge}
+  \lean{TemporalGraph.Subgraph.addEdgeSymm}
+  \leanok
+  Given an edge $(x,y,n)$ of $G$ with $x, y \in \mathrm{Verts}(H)$: adding it
+  to $H$ in one direction ($\mathrm{addEdge}$) needs no hypothesis on $G$ or
+  $H$ at all, and inserts only the arc $x \to y$ at time $n$. Adding it in
+  both directions at once ($\mathrm{addEdgeSymm}$) needs $G$ symmetric, to
+  find the reverse arc $y \to x$ back in $G$.
+\end{definition}
+
+\begin{definition}[Incidence set]
+  \label{def:incidence-set}
+  \uses{def:sub-temporal-graph}
+  \lean{TemporalGraph.Subgraph.incidenceSet}
+  \leanok
+  The \emph{incidence set} of $x$ in $H$ is the set of pairs $(y,n)$ such
+  that $H.\mathrm{Adj}(x,y,n)$: $x$'s out-neighbors, each paired with a time
+  witnessing the edge.
+\end{definition}
+
+\begin{lemma}[Earliest / latest edge from a finite incidence set]
+  \label{lem:earliest-latest-edge-exists}
+  \uses{def:incidence-set,def:earliest-latest-neighbor}
+  \lean{TemporalGraph.Subgraph.earliestEdge_exists_of_nonempty_finite_incidenceSet}
+  \lean{TemporalGraph.Subgraph.latestEdge_exists_of_nonempty_finite_incidenceSet}
+  \leanok
+  If $x$'s incidence set in $H$ is nonempty and finite, $x$ has an earliest
+  edge in $H$; dually, it has a latest edge. (A nonempty finite set of times
+  has a minimum and a maximum.) Combined with
+  Definition~\ref{def:sub-spanning-clique}, a finite nontrivial simple
+  clique gives every vertex both an earliest and a latest edge — the
+  starting point of Chapter~\ref{chap:dismountability}.
+\end{lemma}
+
+\begin{definition}[Footprint edge set]
+  \label{def:subgraph-footprint-edgeSet}
+  \uses{def:sub-temporal-graph}
+  \lean{TemporalGraph.Subgraph.footprintEdgeSet}
+  \leanok
+  The \emph{footprint edge set} of $H$ forgets time directly into unordered
+  pairs: it is the set of $\{x,y\} \in \mathrm{Sym2}\,V$ such that
+  $H.\mathrm{Adj}(x,y,n)$ for some $n$ — the same forgetful step as
+  Definition~\ref{def:footprint}'s footprint digraph, but landing on
+  $\mathrm{Sym2}\,V$ (matching the shape of $\mathrm{EdgeSet}$ without the
+  time component) rather than on a directed graph.
+\end{definition}
+
+\begin{lemma}[Edges and footprint edges are in bijection]
+  \label{lem:edgeSet-footprint-bijective}
+  \uses{def:subgraph-footprint-edgeSet,def:arcset-edgeset,def:is-simple-clique}
+  \lean{TemporalGraph.Subgraph.edgeSetToFootprintEdgeSet_bijective}
+  \leanok
+  If $H$ is symmetric and simple, the map from $\mathrm{EdgeSet}(H)$ to
+  $H$'s footprint edge set, forgetting the time component, is a bijection:
+  simplicity guarantees each unordered pair of $H$-adjacent vertices carries
+  a single time. In particular the two notions of size agree in this case
+  (\lean{TemporalGraph.Subgraph.size_of_simple}).
+\end{lemma}
+
+\begin{definition}[Matching]
+  \label{def:subgraph-matching}
+  \uses{def:sub-temporal-graph,def:sub-spanning-clique}
+  \lean{TemporalGraph.Subgraph.IsMatching}
+  \lean{TemporalGraph.Subgraph.IsPerfectMatching}
+  \leanok
+  $M$ \emph{is a matching} if every vertex of $\mathrm{Verts}(M)$ has exactly
+  one outgoing $M$-arc (a unique pair $(y,n)$ with $M.\mathrm{Adj}(x,y,n)$).
+  $M$ \emph{is a perfect matching} if it is a matching and is spanning.
+\end{definition}
+
+\begin{definition}[Building a sub-temporal-graph]
+  \label{def:subgraph-toSubgraph-fromEdgeSet}
+  \uses{def:sub-temporal-graph,def:spanning-order,def:arcset-edgeset}
+  \lean{TemporalGraph.toSubgraph}
+  \lean{TemporalGraph.Subgraph.fromEdgeSet}
+  \leanok
+  Any temporal graph $H$ with $H \le G$ (Definition~\ref{def:spanning-order})
+  gives a spanning sub-temporal-graph of $G$ with the same adjacency,
+  licensed by $H \le G$. Dually, a set of unordered edges yields a
+  sub-temporal-graph of $G$: its vertices are those touched by an edge of
+  the set, and its adjacencies are exactly the members of the set that
+  already are edges of $G$ — the sub-temporal-graph analogue of
+  Definition~\ref{def:from-arc-edge-set}'s $\mathrm{fromEdgeSet}$.
+\end{definition}
+
+\begin{definition}[Reachability and spanning for sub-temporal-graphs]
+  \label{def:subgraph-reachable-tc-spannerOf}
+  \uses{def:sub-temporal-graph,def:reachable}
+  \lean{TemporalGraph.Subgraph.Reachable}
+  \lean{TemporalGraph.Subgraph.TemporallyConnected}
+  \lean{TemporalGraph.Subgraph.IsSpannerOf}
+  \leanok
+  $H$'s own reachability and temporal connectivity
+  (Definition~\ref{def:reachable}) are those of the temporal graph on
+  $\mathrm{Verts}(H)$ obtained by restricting $H$'s adjacency to its own
+  vertices. Given two sub-temporal-graphs $H, H'$ of $G$: $H$ \emph{is a
+  spanner of} $H'$ if $H \le H'$, they share the same vertex set, and every
+  pair reachable in $H'$ remains reachable in $H$ — the sub-temporal-graph
+  analogue, one level down, of Definition~\ref{def:spanner} below, and the
+  relation used by the dismount/mount operations of
+  Chapter~\ref{chap:dismountability} to transfer a spanner of a smaller
+  clique back onto the original one.
+\end{definition}
+
 \begin{definition}[Temporal spanner]
   \label{def:spanner}
-  \uses{def:sub-spanning-clique,def:reachable}
-  % TODO post-rename: verify namespace (currently
-  % TemporalGraph.Subgraph.IsSpanner, defined in
-  % Connectivity/SubTemporalGraph.lean)
+  \uses{def:sub-spanning-clique,def:reachable,def:subgraph-reachable-tc-spannerOf}
   \lean{TemporalGraph.Subgraph.IsSpanner}
   \lean{TemporalGraph.Subgraph.IsTCSpanner}
+  \leanok
   A spanning sub-temporal-graph $H$ of $G$ \emph{is a spanner} if it
   preserves reachability between all pairs of vertices of $G$: $x$ reaches
   $y$ in $H$ whenever $x$ reaches $y$ in $G$. $H$ \emph{is a TC-spanner} if
@@ -48,7 +196,7 @@ leanok}. Formalized in \texttt{TemporalGraph/SubTemporalGraph.lean} and
 \begin{lemma}[TC-spanner exists iff temporally connected]
   \label{lem:tcspanner-iff-tc}
   \uses{def:spanner}
-  % TODO post-rename
   \lean{TemporalGraph.Subgraph.TCspanner_iff_TC}
+  \leanok
   $G$ admits a TC-spanner if and only if $G$ is temporally connected.
 \end{lemma}

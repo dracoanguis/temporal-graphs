@@ -132,7 +132,6 @@ lemma reachable_of_subgraph_reachable {H : Subgraph G} :
   rw [reachable_iff_nonempty_univ]
   exact ⟨n, ⟨m, ⟨p, h⟩⟩⟩
 
-@[simp]
 lemma reachable_of_le_reachable {H : Subgraph G} {H' : Subgraph G}
     (h : H ≤ H') :
     ∀ x y : H.verts, H.Reachable x y → H'.Reachable

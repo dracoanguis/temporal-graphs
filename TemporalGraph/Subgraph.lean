@@ -101,22 +101,23 @@ theorem adj_comm (H : Subgraph G) [hs : H.IsSymm] (x y : V) (n : ℕ) :
     H.Adj x y n ↔ H.Adj y x n :=
   ⟨fun h ↦ hs.symm n h, fun h ↦ hs.symm n h⟩
 
--- No `@[symm]`: `TemporalGraph.adj_symm` already carries the attribute, but that doesn't help —
--- the `symm` tactic cannot discharge a `@[symm]` lemma's instance argument (here `[G.IsSymm]`),
--- so it fails to synthesize it and the kernel then rejects the resulting proof term
--- ("declaration has metavariables"). This holds already for `TemporalGraph.adj_symm` on plain
--- graphs, not just here. Use `h.symm` (or `Adj.symm`) directly instead of the `symm` tactic.
+-- No attribute here: symmetry is handled once, on `TemporalGraph.adj_symm` (see `Basic.lean`),
+-- which applies to `H.Adj` since it *is* `H.toTemporalGraph.Adj`.
 theorem adj_symm (H : Subgraph G) [hs : H.IsSymm] {x y : V} {n : ℕ} (h : H.Adj x y n) :
     H.Adj y x n :=
   hs.symm n h
 
-@[aesop safe (rule_sets := [TemporalGraph]), symm]
+-- No aesop/`symm` attribute: as a `safe` apply rule it made aesop loop;
+-- see `TemporalGraph.adj_symm`.
 protected theorem Adj.symm {H : Subgraph G} [hs : H.IsSymm] {x y : V} {n : ℕ}
     (h : H.Adj x y n) :
     H.Adj y x n :=
   hs.symm n h
 
-@[aesop safe (rule_sets := [TemporalGraph])]
+-- `forward` rules: from `h : H.Adj u v t` aesop adds `G.Adj u v t`, `u ∈ H.verts`, `v ∈ H.verts`.
+-- As `apply` rules they misfired: `adj_sub`'s conclusion `G.Adj u v t` matches any adjacency goal
+-- and spawns an endless chain of subgraphs, and `fst_mem` got committed to on `v ∈ H.verts`.
+@[aesop safe forward (rule_sets := [TemporalGraph])]
 protected theorem Adj.adj_sub {H : G.Subgraph} {u v : V} {t : ℕ} (h : H.Adj u v t) :
     G.Adj u v t :=
   H.adj_sub h
@@ -131,12 +132,12 @@ protected theorem Adj.ne' {H : Subgraph G} [G.IsLoopless] {x y : V} {n : ℕ}
     y ≠ x :=
   (H.adj_sub h).ne'
 
-@[aesop safe (rule_sets := [TemporalGraph])]
+@[aesop safe forward (rule_sets := [TemporalGraph])]
 protected theorem Adj.fst_mem {H : G.Subgraph} {u v : V} {t : ℕ} (h : H.Adj u v t) :
     u ∈ H.verts :=
   H.edge_vert h
 
-@[aesop safe (rule_sets := [TemporalGraph])]
+@[aesop safe forward (rule_sets := [TemporalGraph])]
 protected theorem Adj.snd_mem {H : G.Subgraph} {x y : V} {n : ℕ} (h : H.Adj x y n) :
     y ∈ H.verts :=
   H.edge_vert' h

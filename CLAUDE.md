@@ -141,16 +141,23 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
   construction qui préserve
   la symétrie ou la looplessness déclare une instance correspondante ; la résolution la trouve en
   cascade.
-- **`@[symm]` sur `adj_symm` : la promesse initiale ne tient pas.** L'attribut est bien présent
-  sur `TemporalGraph.adj_symm` (`Basic.lean`) et sur `TemporalGraph.Subgraph.Adj.symm`
-  (`Subgraph.lean`), mais l'argument de symétrie de ces lemmes est maintenant une **instance**
-  (`[G.IsSymm]`/`[H.IsSymm]`), pas une hypothèse nommée — et vérification faite en Lean, la
-  tactique `symm` ne synthétise pas les arguments d'instance d'un lemme `@[symm]` : elle laisse
-  une métavariable non assignée, et le noyau rejette la preuve (`declaration has metavariables`),
-  même sur un graphe non orienté ordinaire. **Ne pas utiliser la tactique `symm` sur un but
-  `Adj`** ; utiliser le terme `h.symm` / `G.adj_symm h` à la place. Piège apparenté vérifié :
-  `aesop (rule_sets := [TemporalGraph])` boucle (timeout) sur un but de symétrie de sous-graphe,
-  parce que `TemporalGraph.Subgraph.Adj.symm` est une règle `safe`.
+- **Tactique `symm` : pas d'attribut `@[symm]`, deux `macro_rules` à la place** (`Basic.lean`,
+  après `Adj.symm`). La tactique `symm` native ne synthétise pas l'argument d'instance
+  `[G.IsSymm]` d'un lemme `@[symm]` : elle laisse une métavariable et le noyau rejette la preuve
+  (`declaration has metavariables`), même sur un graphe simple. Les `macro_rules` font passer
+  `symm` par `apply TemporalGraph.adj_symm` et `symm at h` par
+  `replace h := TemporalGraph.adj_symm h`, ce qui synthétise l'instance. Sur tout autre but (`=`,
+  …), la macro échoue et Lean retombe sur le `symm` natif. **Ne jamais remettre `@[symm]` sur un
+  lemme qui prend une instance** ; `attribute [-symm]` est d'ailleurs refusé par Lean.
+- **Règles aesop du rule-set `TemporalGraph` : `forward`, pas `apply`, pour tout lemme de la forme
+  `H.Adj … → …`.** `adj_symm`, `Subgraph.Adj.adj_sub`, `Adj.fst_mem` et `Adj.snd_mem` sont des
+  règles `safe forward` : à partir d'une hypothèse `h : H.Adj u v t`, aesop ajoute une fois
+  `H.Adj v u t` (avec `[IsSymm]`), `G.Adj u v t`, `u ∈ H.verts` et `v ∈ H.verts`. En règles
+  `apply`, elles cassaient aesop, vérifié en Lean : `adj_sub` (conclusion `G.Adj u v t`)
+  s'unifiait avec n'importe quel but d'adjacence en inventant un sous-graphe `?H`, d'où une
+  chaîne infinie et un timeout ; la symétrie en `apply` boucle ; et `fst_mem`, `safe` donc sans
+  retour arrière, était choisi à tort sur un but `v ∈ H.verts`. `Subgraph.Adj.symm` n'a plus
+  aucun attribut.
 
 ### Autres conventions
 

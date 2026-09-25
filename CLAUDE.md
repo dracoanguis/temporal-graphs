@@ -51,6 +51,24 @@ besoin de le répéter ici.
   - **Jamais de `lake update`, de `lake exe cache get!` ni de changement de `lake-manifest.json` /
     `lean-toolchain` depuis un worktree** : cela modifierait les paquets du dépôt principal. Une
     montée de version de Mathlib se fait dans le dépôt principal, hors session parallèle.
+  - **Procédure de montée de version** (rodée le 2026-09-25, `v4.29.0-rc6` → `v4.35.0-rc3`) :
+    1. prendre comme cible la toolchain de Mathlib `master` (`curl -sL
+       https://raw.githubusercontent.com/leanprover-community/mathlib4/master/lean-toolchain`) ;
+    2. **arrêter d'abord tous les serveurs Lean de l'ancienne toolchain** sur le dépôt (VS Code,
+       lean-lsp-mcp : `lake serve`, `lean --server`, et leurs workers orphelins). Sinon leur
+       `lake setup-file` recharge l'ancien manifeste et remet chaque paquet sur son ancienne
+       révision pendant la mise à jour. Symptôme : `lake update` échoue dans le hook de Mathlib, en
+       compilant `Cache/Requests.lean` (`Missing cases: Lake.PackageEntrySrc.path`), et les
+       checkouts de `.lake/packages/*` ne correspondent plus à `lake-manifest.json` ;
+    3. écrire le nouveau `lean-toolchain`, puis `lake update` (le hook récupère le cache Mathlib) ;
+       vérifier que chaque checkout correspond au manifeste ;
+    4. `lake build`, puis corriger les ruptures d'API et les dépréciations ;
+    5. `docbuild/` partage `.lake/packages` : y aligner le `rev` de doc-gen4 et lancer
+       `MATHLIB_NO_CACHE_ON_UPDATE=1 lake update` (sans build), sinon son manifeste épinglerait
+       l'ancien Mathlib, et un `lake build` dans `docbuild` le remettrait en place pour tout le
+       monde. Supprimer ensuite le `docbuild/lean-toolchain` que `lake update` recrée. Les
+       `:docInfo` de Mathlib dans `docbuild/.lake` deviennent obsolètes : le prochain build de la
+       documentation reprend les ~3 h.
   - Avant de supprimer un worktree : arrêter les serveurs Lean qui y tournent (`lake serve`,
     `lean --server` dont le cwd est le worktree) et retirer le lien (`rm .lake/packages`) par
     précaution, puis `git worktree remove`.
@@ -251,7 +269,12 @@ référence.
   tout Mathlib dans un SQLite, et aucune option ne l'évite. Les lancements suivants sont
   incrémentaux, en quelques minutes. Ne pas supprimer `docbuild/.lake`. Garder le `rev` de doc-gen4
   égal au tag de `lean-toolchain`.
-- `lake build` n'accepte pas `-j` dans cette version de lake.
+- `lake build` n'accepte pas `-j` (vérifié en `v4.29.0-rc6`).
+- **Réécrire un ensemble sous `Fintype.card`** : `rw`/`simp` avec une égalité d'ensembles (par
+  exemple `addEdge_edgeSet`, `mount_edgeSet`) ne passent plus sous `Fintype.card ↑S`, dont
+  l'instance dépend de `S`. Il faut d'abord passer en `Nat.card` (`← Nat.card_eq_fintype_card`),
+  qui ne voit que le type, puis réécrire, puis conclure avec `Set.ncard_*` via
+  `Nat.card_coe_set_eq`.
 - CI GitHub Actions existante (ne pas modifier sans raison) : `lean_action_ci.yml` (build +
   docgen), `create-release.yml` (tag de release sur changement de `lean-toolchain`),
   `update.yml` (PR/issue automatique sur mise à jour Mathlib).

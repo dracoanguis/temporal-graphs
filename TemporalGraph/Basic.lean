@@ -113,6 +113,13 @@ directed edges unlabelled by time. -/
 def footprint (G : TemporalGraph V) : Digraph V :=
   { Adj := fun x y => ∃ n, G.Adj x y n }
 
+def simpleFootprint (G : TemporalGraph V) (hs : G.IsSymm) (hl : G.IsLoopless) : SimpleGraph V :=
+  {
+    Adj := fun x y => ∃ n, G.Adj x y n
+    loopless := ⟨by simp⟩
+    symm _ _ := fun ⟨n, h⟩ => ⟨n, hs.symm n h⟩
+  }
+
 def IsSimple (G : TemporalGraph V) : Prop :=
   ∀ (x y : V) (n m : ℕ), G.Adj x y n ∧ G.Adj x y m → n=m
 

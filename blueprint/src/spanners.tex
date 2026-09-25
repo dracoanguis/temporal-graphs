@@ -77,13 +77,13 @@ spanners at the subgraph level).
 \begin{definition}[Adding a single edge]
   \label{def:subgraph-addEdge}
   \uses{def:sub-temporal-graph}
+  \lean{TemporalGraph.Subgraph.addArc}
   \lean{TemporalGraph.Subgraph.addEdge}
-  \lean{TemporalGraph.Subgraph.addEdgeSymm}
   \leanok
   Given an edge $(x,y,n)$ of $G$ with $x, y \in \mathrm{Verts}(H)$: adding it
-  to $H$ in one direction ($\mathrm{addEdge}$) needs no hypothesis on $G$ or
+  to $H$ in one direction ($\mathrm{addArc}$) needs no hypothesis on $G$ or
   $H$ at all, and inserts only the arc $x \to y$ at time $n$. Adding it in
-  both directions at once ($\mathrm{addEdgeSymm}$) needs $G$ symmetric, to
+  both directions at once ($\mathrm{addEdge}$) needs $G$ symmetric, to
   find the reverse arc $y \to x$ back in $G$.
 \end{definition}
 

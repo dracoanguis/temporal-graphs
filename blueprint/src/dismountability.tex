@@ -2,14 +2,17 @@
 \label{chap:dismountability}
 
 \noindent Formalized in \texttt{TemporalGraph/Dismountability/Basic.lean} and
-\texttt{TemporalGraph/Dismountability/Operations.lean}. Numbering follows
-Casteigts, Peters \& Schoeters, \emph{Temporal Cliques Admit Sparse
-Spanners}, ICALP 2019 / JCSS, exactly as recorded in this repository's
-\texttt{CLAUDE.md} (\S~Repères papier \(\leftrightarrow\) code) — do not introduce a
-different numbering here.
+\texttt{TemporalGraph/Dismountability/Operations.lean}. The dismountability
+technique originates with Casteigts, Peters \& Schoeters, \emph{Temporal
+Cliques Admit Sparse Spanners}, ICALP 2019 / JCSS. The numbering of the
+definitions, lemmas, and theorems below instead follows the more recent
+treatment by Daniele Carnevale, Arnaud Casteigts \& Timothée Corsini,
+\emph{Dismountability in Temporal Cliques Revisited}, SAND 2025 (LIPIcs 330,
+6:1--6:18, doi:10.4230/LIPIcs.SAND.2025.6, arXiv:2502.01321) — abbreviated
+SAND below — do not introduce a different numbering here.
 \bigskip
 
-\begin{definition}[Dismountable clique --- Theorem 2.1]
+\begin{definition}[Dismountable clique --- SAND \S~2, hypothesis of Theorem 1]
   \label{def:dismountable}
   \uses{def:sub-spanning-clique,def:earliest-latest-neighbor}
   \lean{TemporalGraph.Subgraph.Dismountable}
@@ -19,7 +22,7 @@ different numbering here.
   latest neighbor of some (possibly different) vertex of $H$.
 \end{definition}
 
-\begin{definition}[$V^-$, $V^+$, $V^0$ --- def 3.1]
+\begin{definition}[$V^-$, $V^+$, $V^0$ --- SAND \S~3.1]
   \label{def:vminus-vplus-vzero}
   \uses{def:dismountable}
   \lean{TemporalGraph.Subgraph.vminus}
@@ -32,7 +35,7 @@ different numbering here.
   $V^0(H) = \mathrm{Verts}(H) \setminus (V^-(H) \cup V^+(H))$.
 \end{definition}
 
-\begin{lemma}[Partition of non-dismountable cliques --- lemma 3.1]
+\begin{lemma}[Partition of non-dismountable cliques --- SAND Lemma 2]
   \label{lem:partition-not-dismountable}
   \uses{def:dismountable,def:vminus-vplus-vzero}
   \lean{TemporalGraph.Subgraph.partition_of_not_dismountable}
@@ -63,7 +66,7 @@ different numbering here.
   neighbor.
 \end{lemma}
 
-\begin{definition}[Two-hop dismountable]
+\begin{definition}[Two-hop dismountable --- SAND \S~2.1]
   \label{def:two-hop-dismountable}
   \uses{def:dismountable}
   \lean{TemporalGraph.Subgraph.TwoHopDismountable}
@@ -76,17 +79,23 @@ different numbering here.
   clique is two-hop dismountable.
 \end{definition}
 
-\begin{lemma}[$V^+$/$V^-$ are not neighbors --- lemma 3.2]
+\begin{lemma}[Dismountable implies two-hop dismountable]
+  \label{lem:twoHop-of-dismountable}
+  \uses{def:dismountable,def:two-hop-dismountable}
+  \lean{TemporalGraph.Subgraph.twoHopDismountable_of_dismountable}
+  \leanok
+  Every dismountable clique is two-hop dismountable.
+\end{lemma}
+
+\begin{lemma}[$V^+$/$V^-$ are not neighbors --- SAND Lemma 3]
   \label{lem:vplus-vminus-not-neighbors}
-  \uses{def:two-hop-dismountable,def:vminus-vplus-vzero}
+  \uses{def:two-hop-dismountable,def:vminus-vplus-vzero,def:is-symm-loopless}
   \lean{TemporalGraph.Subgraph.vplus_ne_neighbor_of_not_twoHopDismountable}
   \lean{TemporalGraph.Subgraph.vminus_ne_neighbor_of_not_twoHopDismountable}
   \leanok
-  If $H$ is not two-hop dismountable, no two distinct vertices of $V^+(H)$
-  (resp.\ $V^-(H)$) are neighbors of each other via the earliest/latest edge
-  structure witnessing their membership: distinct vertices in $V^+(H)$ have
-  distinct latest neighbors, and distinct vertices in $V^-(H)$ have distinct
-  earliest neighbors.
+  If $H$ is a symmetric clique that is not two-hop dismountable, then
+  distinct vertices of $V^+(H)$ have distinct earliest neighbors, and
+  distinct vertices of $V^-(H)$ have distinct latest neighbors.
 \end{lemma}
 
 \begin{lemma}[Vertex sets are finite]
@@ -100,17 +109,17 @@ different numbering here.
   all finite.
 \end{lemma}
 
-\begin{lemma}[$V^0$ is empty --- lemma 3.4]
+\begin{lemma}[$V^0$ is empty --- SAND Lemma 5]
   \label{lem:vzero-empty}
-  \uses{lem:vplus-vminus-not-neighbors,def:vminus-vplus-vzero,def:is-simple-clique,def:is-proper-happy}
+  \uses{lem:vplus-vminus-not-neighbors,def:vminus-vplus-vzero,def:is-simple-clique,def:is-proper-happy,def:is-symm-loopless}
   \lean{TemporalGraph.Subgraph.vzero_empty_of_not_twoHopDismountable}
   \leanok
-  If $H$ is a finite, nontrivial, simple, proper clique that is not
-  two-hop dismountable, then $V^0(H) = \emptyset$: every vertex is an
+  If $H$ is a finite, nontrivial, simple, proper, symmetric clique that is
+  not two-hop dismountable, then $V^0(H) = \emptyset$: every vertex is an
   earliest or a latest neighbor of some vertex.
 \end{lemma}
 
-\section*{Bijections and cardinality (Theorem 3.3 corollary)}
+\section*{Bijections and cardinality (SAND Corollary 4)}
 
 \begin{lemma}[Earliest edges are finitely witnessed]
   \label{lem:earliestEdge-exists-finite-clique}
@@ -164,18 +173,19 @@ different numbering here.
   $\mathrm{f_{ee}}$ and $\mathrm{f_{le}}$ are injective.
 \end{lemma}
 
-\begin{lemma}[Cardinality bounds from injectivity]
+\begin{lemma}[Cardinality bounds from injectivity --- SAND Corollary 4 (3)]
   \label{lem:card-bounds}
   \uses{lem:neighbor-fn-injective}
   \lean{TemporalGraph.Subgraph.vplus_card_le_vminus_card}
   \lean{TemporalGraph.Subgraph.vminus_card_le_vplus_card}
+  \lean{TemporalGraph.Subgraph.vminus_card_eq_vplus_card}
   \leanok
   For a symmetric, non-two-hop-dismountable clique $H$:
   $$|V^+(H)| \le |V^-(H)| \quad \text{and} \quad |V^-(H)| \le |V^+(H)|$$
-  so the cardinalities are equal.
+  so the cardinalities are equal: $|V^-(H)| = |V^+(H)|$.
 \end{lemma}
 
-\begin{theorem}[Neighbor functions are bijections]
+\begin{theorem}[Neighbor functions are bijections --- SAND Corollary 4]
   \label{thm:neighbor-fn-bijective}
   \uses{lem:neighbor-fn-injective,lem:card-bounds}
   \lean{TemporalGraph.Subgraph.earliestNeighborFn_bijective}
@@ -185,6 +195,20 @@ different numbering here.
   two-hop dismountable, both $\mathrm{f_{ee}} : V^+(H) \to V^-(H)$ and
   $\mathrm{f_{le}} : V^-(H) \to V^+(H)$ are bijections.
 \end{theorem}
+
+\begin{lemma}[Perfect matchings between $V^-$ and $V^+$ --- SAND Corollary 4 (1)--(2)]
+  \label{lem:vminus-vplus-matchings}
+  \uses{thm:neighbor-fn-bijective,def:vminus-vplus-vzero,def:earliest-latest-neighbor}
+  \lean{TemporalGraph.Subgraph.existsUnique_vplus_earliestEdge}
+  \lean{TemporalGraph.Subgraph.existsUnique_vminus_latestEdge}
+  \leanok
+  Under the same hypotheses, the earliest/latest-edge structure gives a
+  perfect matching in each direction: every vertex $x \in V^-(H)$ has a
+  unique pair $(y, n) \in V^+(H) \times \mathbb{N}$ with $y$'s earliest edge
+  to $x$ at time $n$; dually, every vertex $x \in V^+(H)$ has a unique pair
+  $(y, n) \in V^-(H) \times \mathbb{N}$ with $y$'s latest edge to $x$ at time
+  $n$.
+\end{lemma}
 
 \section*{Dismounting and mounting operations}
 
@@ -221,7 +245,7 @@ different numbering here.
   two-hop mounting adds at most 4 edges.
 \end{lemma}
 
-\begin{theorem}[Dismount/mount preserves spanning correctness]
+\begin{theorem}[Dismount/mount preserves spanning correctness --- SAND Theorem 1 (1-hop), \S~2.1 (2-hop)]
   \label{thm:dismountability}
   \uses{def:dismount-mount,def:spanner,def:sub-spanning-clique}
   \lean{TemporalGraph.Subgraph.dismountability}

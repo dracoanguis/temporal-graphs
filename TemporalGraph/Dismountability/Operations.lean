@@ -10,10 +10,11 @@ import TemporalGraph.Connectivity.Subgraph
 /-!
 # Dismounting and mounting
 
-This module carries out the inductive step of Casteigts, Peters & Schoeters's spanner
-construction (Theorem 2.1): given a spanner of a clique with a vertex removed, extend it back to
-a spanner of the whole clique by re-attaching that vertex through the few edges that made it
-dismountable (or two-hop-dismountable) in the first place.
+This module carries out the inductive step of the spanner construction from Carnevale, Casteigts
+& Corsini's revisited dismountability argument (SAND 2025, Theorem 1), originally due to
+Casteigts, Peters & Schoeters (CPS, ICALP 2019 / JCSS): given a spanner of a clique with a vertex
+removed, extend it back to a spanner of the whole clique by re-attaching that vertex through the
+few edges that made it dismountable (or two-hop-dismountable) in the first place.
 
 * `dismount` removes a single vertex from a subgraph.
 * `mount` adds a vertex back with (at most) its earliest and latest edge, for the one-hop case.
@@ -22,14 +23,18 @@ dismountable (or two-hop-dismountable) in the first place.
 
 ## Main results
 
-* `TemporalGraph.Subgraph.dismountability` : dismounting and re-mounting through the earliest and
-  latest edge preserves being a spanner, adding at most 2 edges (`mount_size`).
-* `TemporalGraph.Subgraph.twoHopDismountability` : the two-hop analogue, adding at most 4 edges
-  (`twoHopMount_size`).
+* `TemporalGraph.Subgraph.dismountability` : SAND 2025, Theorem 1 (1-hop dismountability);
+  dismounting and re-mounting through the earliest and latest edge preserves being a spanner,
+  adding at most 2 edges (`mount_size`).
+* `TemporalGraph.Subgraph.twoHopDismountability` : SAND 2025, §2.1 (the 2-hop case, unnumbered
+  in SAND); the two-hop analogue, adding at most 4 edges (`twoHopMount_size`).
 
 ## References
 
-* Casteigts, Peters & Schoeters, *Temporal Cliques Admit Sparse Spanners*, ICALP 2019 / JCSS.
+* Carnevale, Casteigts & Corsini, *Dismountability in Temporal Cliques Revisited*, SAND 2025,
+  LIPIcs 330, 6:1–6:18, doi:10.4230/LIPIcs.SAND.2025.6, arXiv:2502.01321.
+* Casteigts, Peters & Schoeters, *Temporal Cliques Admit Sparse Spanners*, ICALP 2019 / JCSS
+  (original source of the argument).
 -/
 
 universe u
@@ -80,7 +85,7 @@ lemma mount_verts {H : Subgraph G} {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm
     (mount H x h₀ h₁).verts = H.verts ∪ {x} := by
   rw [mount, addEdge_verts, addEdge_verts, addVerts_verts]
 
--- `mount` is a plain `def`, so instance resolution cannot see the `addEdgeSymm`/`addVerts`
+-- `mount` is a plain `def`, so instance resolution cannot see the `addEdge`/`addVerts`
 -- layers it is built from; this instance unfolds it once and hands the goal back to resolution.
 instance mount_isSymm {H : Subgraph G} {x : V} {y z : H.verts} {n m : ℕ} [H.IsSymm]
     [G.IsSymm]
@@ -278,8 +283,8 @@ lemma twoHopMount_verts (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ}
     (H.twoHopMount x h₀ h₁ h₂ h₃).verts = H.verts ∪ {x} := by
   simp only [twoHopMount, addEdge_verts, induce_verts, Set.union_singleton]
 
--- Same as `mount_isSymm`: resolution stops at the `def`, so unfold the four `addEdgeSymm`
--- layers once and let the `addEdgeSymm_isSymm`/`addVerts_isSymm` instances take over.
+-- Same as `mount_isSymm`: resolution stops at the `def`, so unfold the four `addEdge`
+-- layers once and let the `addEdge_isSymm`/`addVerts_isSymm` instances take over.
 instance twoHopMount_isSymm (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
     [H.IsSymm] [G.IsSymm]
     (h₀ : G.Adj x y' n')
@@ -313,7 +318,7 @@ lemma twoHopMount_edgeSet (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : �
   simp [twoHopMount, addEdgeSymm_edgeSet, addVerts_edgeSet]
 
 -- The four edges below are the ones `twoHopMount` inserts directly, so each is obtained by
--- lifting `addEdgeSymm_edge` along the later `addEdgeSymm_le` layers: no symmetry needed.
+-- lifting `addEdge_edge` along the later `addEdge_le` layers: no symmetry needed.
 lemma twoHopMount_edge {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
     [G.IsSymm]
     {h₀ : G.Adj x y' n'}

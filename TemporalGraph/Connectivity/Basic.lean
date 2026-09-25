@@ -15,7 +15,11 @@ graphs**, since walk times must be non-decreasing.
 ## Main definitions
 * `Reachable` : Existence of a temporal walk between two vertices
 * `TemporallyConnected` : Every pair of vertices is mutually reachable
-* `IsSpanner` : A subgraph that preserves reachability (commented out pending design review)
+
+`IsSpanner`/`IsTCSpanner` are commented out here, pending a design review (see the
+`NOTE(refactor)` next to `Subgraph.isSpanner_iff_coe` in `Connectivity/Subgraph.lean` for why).
+The currently usable spanner notions are `Subgraph.IsSpanner`, `Subgraph.IsSpannerOf` and
+`Subgraph.IsTCSpanner`, defined in that same file.
 
 ## Main results
 * `reachable_of_self` : Every vertex reaches itself

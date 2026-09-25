@@ -15,7 +15,7 @@ Mathlib's `SimpleGraph.Subgraph`, symmetry is not a field: a subgraph may be ori
 symmetric world is entered by assuming `[H.IsSymm]`.
 
 This file defines `TemporalGraph.Subgraph`, its bounded order, the constructions that build one
-(`induce`, `deleteVerts`, `addVerts`, `addEdge`, `addEdgeSymm`, `toSubgraph`, `fromEdgeSet`), and
+(`induce`, `deleteVerts`, `addVerts`, `addArc`, `addEdge`, `toSubgraph`, `fromEdgeSet`), and
 the subgraph counterparts of the vertex- and edge-indexed notions of `TemporalGraph.Basic`.
 
 ## Main definitions
@@ -29,9 +29,10 @@ the subgraph counterparts of the vertex- and edge-indexed notions of `TemporalGr
 * `TemporalGraph.Subgraph.neighborSet`, `TemporalGraph.Subgraph.incidenceSet`,
   `TemporalGraph.Subgraph.size`, `TemporalGraph.Subgraph.order` : the counting notions.
 * `TemporalGraph.Subgraph.induce`, `TemporalGraph.Subgraph.deleteVerts`,
-  `TemporalGraph.Subgraph.addVerts`, `TemporalGraph.Subgraph.addEdge`,
-  `TemporalGraph.Subgraph.addEdgeSymm` : the constructions turning a subgraph into another one.
-  `addEdge` adds a single orientation and needs no symmetry; `addEdgeSymm` adds both.
+  `TemporalGraph.Subgraph.addVerts`, `TemporalGraph.Subgraph.addArc`,
+  `TemporalGraph.Subgraph.addEdge` : the constructions turning a subgraph into another one.
+  `addArc` adds a single orientation and needs no symmetry; `addEdge` adds both, and needs
+  `[G.IsSymm]`.
 * `TemporalGraph.toSubgraph`, `TemporalGraph.Subgraph.fromEdgeSet` : the constructions producing a
   subgraph from a temporal graph below `G`, resp. from a set of edges.
 
@@ -100,8 +101,11 @@ theorem adj_comm (H : Subgraph G) [hs : H.IsSymm] (x y : V) (n : ℕ) :
     H.Adj x y n ↔ H.Adj y x n :=
   ⟨fun h ↦ hs.symm n h, fun h ↦ hs.symm n h⟩
 
--- No `@[symm]`: `TemporalGraph.adj_symm` already carries the attribute and applies here, since
--- `H.Adj` *is* `H.toTemporalGraph.Adj`.
+-- No `@[symm]`: `TemporalGraph.adj_symm` already carries the attribute, but that doesn't help —
+-- the `symm` tactic cannot discharge a `@[symm]` lemma's instance argument (here `[G.IsSymm]`),
+-- so it fails to synthesize it and the kernel then rejects the resulting proof term
+-- ("declaration has metavariables"). This holds already for `TemporalGraph.adj_symm` on plain
+-- graphs, not just here. Use `h.symm` (or `Adj.symm`) directly instead of the `symm` tactic.
 theorem adj_symm (H : Subgraph G) [hs : H.IsSymm] {x y : V} {n : ℕ} (h : H.Adj x y n) :
     H.Adj y x n :=
   hs.symm n h
@@ -507,7 +511,7 @@ section AddEdge
 variable {x y : V} {n : ℕ}
 
 /-- Add the single, oriented edge `(x, y)` at time `n`. Needs no symmetry whatsoever: use
-`addEdgeSymm` to add both orientations at once. -/
+`addEdge` to add both orientations at once. -/
 def addArc (H : Subgraph G) (h : G.Adj x y n)
     (h₁ : x ∈ H.verts ∧ y ∈ H.verts) :
     Subgraph G where
@@ -532,7 +536,7 @@ def addArc (H : Subgraph G) (h : G.Adj x y n)
     · intro h' ; exact H.adj_sub h'
     · intro h' ; rwa [h'.left, h'.right.left, h'.right.right]
 
-/-- Add both orientations of the edge between `x` and `y` at time `n`. Unlike `addEdge` this
+/-- Add both orientations of the edge between `x` and `y` at time `n`. Unlike `addArc` this
 needs `G.IsSymm`, to see the reversed orientation back in `G`. -/
 def addEdge (H : Subgraph G) [G.IsSymm] (h : G.Adj x y n)
     (h₁ : x ∈ H.verts ∧ y ∈ H.verts) :
@@ -605,7 +609,7 @@ theorem addEdge_edge [G.IsSymm] : (addEdge H h h₁).Adj x y n :=
 @[simp]
 theorem addEdge_verts [G.IsSymm] : (addEdge H h h₁).verts = H.verts := rfl
 
-/-- The oriented `addEdge` is the weaker of the two constructions. -/
+/-- The oriented `addArc` is the weaker of the two constructions. -/
 theorem addArc_le_addEdge [G.IsSymm] : addArc H h h₁ ≤ addEdge H h h₁ :=
   ⟨subset_rfl, fun hadj ↦ hadj.elim Or.inl (fun h' ↦ Or.inr <| Or.inl h')⟩
 

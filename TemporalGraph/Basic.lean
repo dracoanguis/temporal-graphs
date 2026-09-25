@@ -29,7 +29,8 @@ and its clean characterization `mem_edgeSet` needs `[G.IsSymm]` (the uncondition
 
 * `TemporalGraph.IsSymm`, `TemporalGraph.IsLoopless` : symmetry and looplessness, as classes.
 * `TemporalGraph.IsClique`, `TemporalGraph.IsSimple`, `TemporalGraph.IsProper`,
-  `TemporalGraph.IsHappy` : the graph predicates from Casteigts–Peters–Schoeters.
+  `TemporalGraph.IsHappy` : the graph predicates used by Casteigts–Peters–Schoeters and by
+  Carnevale–Casteigts–Corsini (see References).
 * `TemporalGraph.EarliestEdge`, `TemporalGraph.LatestEdge`, `TemporalGraph.EarliestNeighbor`,
   `TemporalGraph.LatestNeighbor` : the earliest/latest edge and neighbor of a vertex.
 * `TemporalGraph.arcSet`, `TemporalGraph.edgeSet` : the oriented and symmetric edge sets.
@@ -38,7 +39,11 @@ and its clean characterization `mem_edgeSet` needs `[G.IsSymm]` (the uncondition
 
 ## References
 
-* Casteigts, Peters & Schoeters, *Temporal Cliques Admit Sparse Spanners*, ICALP 2019 / JCSS.
+* Carnevale, Casteigts & Corsini, *Dismountability in Temporal Cliques Revisited*, SAND 2025
+  (LIPIcs 330, doi:10.4230/LIPIcs.SAND.2025.6, arXiv:2502.01321) — the main reference for the
+  current development of this library.
+* Casteigts, Peters & Schoeters, *Temporal Cliques Admit Sparse Spanners*, ICALP 2019 / JCSS 2021
+  — the original source of the dismountability technique.
 -/
 
 macro (name := aesop_temporal_graph) "aesop_temporal_graph" c:Aesop.tactic_clause* : tactic =>
@@ -66,7 +71,7 @@ variable {V : Type u}
 
 /-- Symmetry is a class rather than a plain predicate, so that it is carried by instance
 resolution instead of being threaded by hand: constructions that preserve it declare an instance
-(see `Subgraph.induce`, `addEdgeSymm`, `mount`), and results that need it take `[G.IsSymm]`.
+(see `Subgraph.induce`, `Subgraph.addEdge`, `mount`), and results that need it take `[G.IsSymm]`.
 Mirrors the `symm` field of Mathlib's `SimpleGraph`, without bundling it into the data. -/
 class IsSymm (G : TemporalGraph V) : Prop where
   symm : ∀ n : ℕ, Symmetric (fun x y => G.Adj x y n)
@@ -113,6 +118,10 @@ directed edges unlabelled by time. -/
 def footprint (G : TemporalGraph V) : Digraph V :=
   { Adj := fun x y => ∃ n, G.Adj x y n }
 
+/-- The footprint of `G` as a genuine `SimpleGraph`: same underlying adjacency as `footprint`
+(an edge regardless of time), but packaged with the symmetry and irreflexivity proofs that
+`SimpleGraph` bundles as fields. Unlike most of this file, `hs`/`hl` are taken as explicit
+arguments rather than `[G.IsSymm]`/`[G.IsLoopless]` instances. -/
 def simpleFootprint (G : TemporalGraph V) (hs : G.IsSymm) (hl : G.IsLoopless) : SimpleGraph V :=
   {
     Adj := fun x y => ∃ n, G.Adj x y n

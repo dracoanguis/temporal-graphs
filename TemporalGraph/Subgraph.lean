@@ -508,7 +508,7 @@ variable {x y : V} {n : ℕ}
 
 /-- Add the single, oriented edge `(x, y)` at time `n`. Needs no symmetry whatsoever: use
 `addEdgeSymm` to add both orientations at once. -/
-def addEdge (H : Subgraph G) (h : G.Adj x y n)
+def addArc (H : Subgraph G) (h : G.Adj x y n)
     (h₁ : x ∈ H.verts ∧ y ∈ H.verts) :
     Subgraph G where
   verts := H.verts
@@ -534,7 +534,7 @@ def addEdge (H : Subgraph G) (h : G.Adj x y n)
 
 /-- Add both orientations of the edge between `x` and `y` at time `n`. Unlike `addEdge` this
 needs `G.IsSymm`, to see the reversed orientation back in `G`. -/
-def addEdgeSymm (H : Subgraph G) [G.IsSymm] (h : G.Adj x y n)
+def addEdge (H : Subgraph G) [G.IsSymm] (h : G.Adj x y n)
     (h₁ : x ∈ H.verts ∧ y ∈ H.verts) :
     Subgraph G where
   verts := H.verts
@@ -566,52 +566,52 @@ variable {H : Subgraph G} {h : G.Adj x y n}
   {h₁ : x ∈ H.verts ∧ y ∈ H.verts}
 
 @[simp]
-theorem addEdge_le : H ≤ addEdge H h h₁ := by
+theorem addArc_le : H ≤ addArc H h h₁ := by
   constructor
   · intro _ hx
     exact hx
   · intro _ _ _ hadj
     exact Or.inl hadj
 
-theorem addEdge_le' (H : Subgraph G) (h : G.Adj x y n)
+theorem addArc_le' (H : Subgraph G) (h : G.Adj x y n)
+    (h₁ : x ∈ H.verts ∧ y ∈ H.verts) :
+    H ≤ addArc H h h₁ :=
+  addArc_le
+
+@[simp]
+theorem addArc_arc : (addArc H h h₁).Adj x y n :=
+  Or.inr ⟨rfl, rfl, rfl⟩
+
+@[simp]
+theorem addArc_verts : (addArc H h h₁).verts = H.verts := rfl
+
+@[simp]
+theorem addEdge_le [G.IsSymm] : H ≤ addEdge H h h₁ := by
+  constructor
+  · intro _ hx
+    exact hx
+  · intro _ _ _ hadj
+    exact Or.inl hadj
+
+theorem addEdge_le' (H : Subgraph G) [G.IsSymm] (h : G.Adj x y n)
     (h₁ : x ∈ H.verts ∧ y ∈ H.verts) :
     H ≤ addEdge H h h₁ :=
   addEdge_le
 
 @[simp]
-theorem addEdge_edge : (addEdge H h h₁).Adj x y n :=
-  Or.inr ⟨rfl, rfl, rfl⟩
-
-@[simp]
-theorem addEdge_verts : (addEdge H h h₁).verts = H.verts := rfl
-
-@[simp]
-theorem addEdgeSymm_le [G.IsSymm] : H ≤ addEdgeSymm H h h₁ := by
-  constructor
-  · intro _ hx
-    exact hx
-  · intro _ _ _ hadj
-    exact Or.inl hadj
-
-theorem addEdgeSymm_le' (H : Subgraph G) [G.IsSymm] (h : G.Adj x y n)
-    (h₁ : x ∈ H.verts ∧ y ∈ H.verts) :
-    H ≤ addEdgeSymm H h h₁ :=
-  addEdgeSymm_le
-
-@[simp]
-theorem addEdgeSymm_edge [G.IsSymm] : (addEdgeSymm H h h₁).Adj x y n :=
+theorem addEdge_edge [G.IsSymm] : (addEdge H h h₁).Adj x y n :=
   Or.inr <| Or.inl ⟨rfl, rfl, rfl⟩
 
 @[simp]
-theorem addEdgeSymm_verts [G.IsSymm] : (addEdgeSymm H h h₁).verts = H.verts := rfl
+theorem addEdge_verts [G.IsSymm] : (addEdge H h h₁).verts = H.verts := rfl
 
 /-- The oriented `addEdge` is the weaker of the two constructions. -/
-theorem addEdge_le_addEdgeSymm [G.IsSymm] : addEdge H h h₁ ≤ addEdgeSymm H h h₁ :=
+theorem addArc_le_addEdge [G.IsSymm] : addArc H h h₁ ≤ addEdge H h h₁ :=
   ⟨subset_rfl, fun hadj ↦ hadj.elim Or.inl (fun h' ↦ Or.inr <| Or.inl h')⟩
 
-instance addEdgeSymm_isSymm (H : Subgraph G) [G.IsSymm] [hsH : H.IsSymm]
+instance addEdge_isSymm (H : Subgraph G) [G.IsSymm] [hsH : H.IsSymm]
     (h : G.Adj x y n) (h₁ : x ∈ H.verts ∧ y ∈ H.verts) :
-    (addEdgeSymm H h h₁).IsSymm := by
+    (addEdge H h h₁).IsSymm := by
   constructor
   intro m _ _ hadj
   apply hadj.elim3
@@ -818,11 +818,11 @@ lemma addEdgeSymm_edgeSet (H : Subgraph G) {x y : V} {n : ℕ}
     [G.IsSymm]
     {h₀ : G.Adj x y n}
     {h₁ : x ∈ H.verts ∧ y ∈ H.verts} :
-    (H.addEdgeSymm h₀ h₁).edgeSet = insert ⟨s(x,y), n⟩ H.edgeSet := by
+    (H.addEdge h₀ h₁).edgeSet = insert ⟨s(x,y), n⟩ H.edgeSet := by
   ext ⟨p, n'⟩
   induction p using Sym2.ind with
   | _ a b =>
-    simp only [Set.mem_insert_iff, Prod.mk.injEq, TemporalGraph.mem_edgeSet_iff_or, addEdgeSymm,
+    simp only [Set.mem_insert_iff, Prod.mk.injEq, TemporalGraph.mem_edgeSet_iff_or, addEdge,
       Sym2.eq_iff]
     tauto
 
@@ -830,14 +830,14 @@ lemma addEdgeSymm_edgeSet' (H : Subgraph G) {x y : V} {n : ℕ}
     [G.IsSymm]
     (h₀ : G.Adj x y n)
     (h₁ : x ∈ H.verts ∧ y ∈ H.verts) :
-    (H.addEdgeSymm h₀ h₁).edgeSet = insert ⟨s(x,y), n⟩ H.edgeSet :=
+    (H.addEdge h₀ h₁).edgeSet = insert ⟨s(x,y), n⟩ H.edgeSet :=
   H.addEdgeSymm_edgeSet
 
 instance {H : Subgraph G} [h : Finite H.edgeSet] {x y : V} {n : ℕ}
     [G.IsSymm]
     {h₀ : G.Adj x y n}
     {h₁ : x ∈ H.verts ∧ y ∈ H.verts} :
-    Finite (H.addEdgeSymm h₀ h₁).edgeSet := by
+    Finite (H.addEdge h₀ h₁).edgeSet := by
   conv =>
     rhs ; rw [H.addEdgeSymm_edgeSet, ←Set.union_singleton]
   apply Set.Finite.union
@@ -928,8 +928,8 @@ theorem addEdgeSymm_size (H : Subgraph G) {x y : V} {n : ℕ}
     {h₀ : G.Adj x y n}
     {h₁ : x ∈ H.verts ∧ y ∈ H.verts}
     {h₂ : ¬H.Adj x y n}
-    [Fintype H.edgeSet] [Fintype (H.addEdgeSymm h₀ h₁).edgeSet] :
-    (H.addEdgeSymm h₀ h₁).size = H.size + 1 := by
+    [Fintype H.edgeSet] [Fintype (H.addEdge h₀ h₁).edgeSet] :
+    (H.addEdge h₀ h₁).size = H.size + 1 := by
   simp only [size, H.addEdgeSymm_edgeSet, H.mem_edgeSet, h₂, not_false_eq_true,
     Set.card_insert]
 
@@ -938,10 +938,10 @@ theorem addEdgeSymm_size_le (H : Subgraph G) {x y : V} {n : ℕ}
     [G.IsSymm]
     {h₀ : G.Adj x y n}
     {h₁ : x ∈ H.verts ∧ y ∈ H.verts}
-    [Fintype H.edgeSet] [Fintype (H.addEdgeSymm h₀ h₁).edgeSet] :
-    (H.addEdgeSymm h₀ h₁).size ≤ H.size + 1 := by
+    [Fintype H.edgeSet] [Fintype (H.addEdge h₀ h₁).edgeSet] :
+    (H.addEdge h₀ h₁).size ≤ H.size + 1 := by
   unfold size
-  have h : (H.addEdgeSymm h₀ h₁).edgeSet = H.edgeSet ∪ {(s(x,y), n)} := by
+  have h : (H.addEdge h₀ h₁).edgeSet = H.edgeSet ∪ {(s(x,y), n)} := by
     simp only [H.addEdgeSymm_edgeSet, Set.union_singleton]
   have h' := Set.card_union_le H.edgeSet {(s(x,y), n)}
   simp only [h, Nat.card_eq_fintype_card, Set.card_singleton] at h' ⊢
@@ -951,8 +951,8 @@ theorem addEdgeSymm_size_le' (H : Subgraph G) {x y : V} {n : ℕ}
     [G.IsSymm]
     (h₀ : G.Adj x y n)
     (h₁ : x ∈ H.verts ∧ y ∈ H.verts)
-    [Fintype H.edgeSet] [Fintype (H.addEdgeSymm h₀ h₁).edgeSet] :
-    Fintype.card (H.addEdgeSymm h₀ h₁).edgeSet ≤ Fintype.card H.edgeSet + 1 := by
+    [Fintype H.edgeSet] [Fintype (H.addEdge h₀ h₁).edgeSet] :
+    Fintype.card (H.addEdge h₀ h₁).edgeSet ≤ Fintype.card H.edgeSet + 1 := by
   exact H.addEdgeSymm_size_le
 
 @[simp]

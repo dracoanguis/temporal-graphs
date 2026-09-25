@@ -71,14 +71,14 @@ def mount (H : Subgraph G) {y z : H.verts} {n m : ℕ} (x : V) [G.IsSymm]
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
     G.Subgraph :=
-((H.addVerts {x}).addEdgeSymm h₀ (by simp)).addEdgeSymm h₁ (by simp)
+((H.addVerts {x}).addEdge h₀ (by simp)).addEdge h₁ (by simp)
 
 @[simp]
 lemma mount_verts {H : Subgraph G} {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
     (mount H x h₀ h₁).verts = H.verts ∪ {x} := by
-  rw [mount, addEdgeSymm_verts, addEdgeSymm_verts, addVerts_verts]
+  rw [mount, addEdge_verts, addEdge_verts, addVerts_verts]
 
 -- `mount` is a plain `def`, so instance resolution cannot see the `addEdgeSymm`/`addVerts`
 -- layers it is built from; this instance unfolds it once and hands the goal back to resolution.
@@ -101,7 +101,7 @@ lemma mount_edge (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
     (mount H x h₀ h₁).Adj x y n := by
-  simp only [mount, addEdgeSymm, induce_verts, Set.union_singleton, induce_Adj,
+  simp only [mount, addEdge, induce_verts, Set.union_singleton, induce_Adj,
     Set.mem_insert_iff, true_or, true_and, and_true, and_self, or_true]
 
 lemma mount_edge' (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
@@ -109,7 +109,7 @@ lemma mount_edge' (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm
     (h₁ : G.Adj z x m) :
     (mount H x h₀ h₁).Adj z x m := by
   rw [mount]
-  apply addEdgeSymm_edge
+  apply addEdge_edge
 
 lemma mount_le {H : Subgraph G} {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
     {h₀ : G.Adj y x n}
@@ -117,8 +117,8 @@ lemma mount_le {H : Subgraph G} {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
     H ≤ H.mount x h₀ h₁ := by
   unfold mount
   have h := addVerts_le' H {x}
-  have h' := h.trans <| addEdgeSymm_le' (H.addVerts {x}) h₀ (by simp)
-  exact le_trans h' addEdgeSymm_le
+  have h' := h.trans <| addEdge_le' (H.addVerts {x}) h₀ (by simp)
+  exact le_trans h' addEdge_le
 
 @[simp]
 lemma mount_edgeSet (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
@@ -263,10 +263,10 @@ def twoHopMount (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
     (h₃ : G.Adj z' z m) :
     G.Subgraph :=
   H.addVerts {x}
-    |>.addEdgeSymm h₀ (by simp)
-    |>.addEdgeSymm h₁ (by simp)
-    |>.addEdgeSymm h₂ (by simp)
-    |>.addEdgeSymm h₃ (by simp)
+    |>.addEdge h₀ (by simp)
+    |>.addEdge h₁ (by simp)
+    |>.addEdge h₂ (by simp)
+    |>.addEdge h₃ (by simp)
 
 @[simp]
 lemma twoHopMount_verts (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
@@ -276,7 +276,7 @@ lemma twoHopMount_verts (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ}
     (h₂ : G.Adj x z' m')
     (h₃ : G.Adj z' z m) :
     (H.twoHopMount x h₀ h₁ h₂ h₃).verts = H.verts ∪ {x} := by
-  simp only [twoHopMount, addEdgeSymm_verts, induce_verts, Set.union_singleton]
+  simp only [twoHopMount, addEdge_verts, induce_verts, Set.union_singleton]
 
 -- Same as `mount_isSymm`: resolution stops at the `def`, so unfold the four `addEdgeSymm`
 -- layers once and let the `addEdgeSymm_isSymm`/`addVerts_isSymm` instances take over.
@@ -322,7 +322,7 @@ lemma twoHopMount_edge {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} 
     {h₃ : G.Adj z' z m} :
     (H.twoHopMount x h₀ h₁ h₂ h₃).Adj x y' n' := by
   rw [twoHopMount]
-  exact addEdgeSymm_le.right <| addEdgeSymm_le.right <| addEdgeSymm_le.right addEdgeSymm_edge
+  exact addEdge_le.right <| addEdge_le.right <| addEdge_le.right addEdge_edge
 
 lemma twoHopMount_edge' {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
     [G.IsSymm]
@@ -332,7 +332,7 @@ lemma twoHopMount_edge' {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ}
     {h₃ : G.Adj z' z m} :
     (H.twoHopMount x h₀ h₁ h₂ h₃).Adj x z' m' := by
   rw [twoHopMount]
-  exact addEdgeSymm_le.right addEdgeSymm_edge
+  exact addEdge_le.right addEdge_edge
 
 lemma twoHopMount_edge'' {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
     [G.IsSymm]
@@ -342,7 +342,7 @@ lemma twoHopMount_edge'' {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ
     {h₃ : G.Adj z' z m} :
     (H.twoHopMount x h₀ h₁ h₂ h₃).Adj y' y n := by
   rw [twoHopMount]
-  exact addEdgeSymm_le.right <| addEdgeSymm_le.right addEdgeSymm_edge
+  exact addEdge_le.right <| addEdge_le.right addEdge_edge
 
 lemma twoHopMount_edge''' {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
     [G.IsSymm]
@@ -352,7 +352,7 @@ lemma twoHopMount_edge''' {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : �
     {h₃ : G.Adj z' z m} :
     (H.twoHopMount x h₀ h₁ h₂ h₃).Adj z' z m := by
   rw [twoHopMount]
-  exact addEdgeSymm_edge
+  exact addEdge_edge
 
 @[simp]
 lemma twoHopMount_le {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
@@ -363,10 +363,10 @@ lemma twoHopMount_le {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x
     {h₃ : G.Adj z' z m} :
     H ≤ H.twoHopMount x h₀ h₁ h₂ h₃ :=
   addVerts_le' H {x}
-    |>.trans (addEdgeSymm_le' _ h₀ (by simp))
-    |>.trans (addEdgeSymm_le' _ h₁ (by simp))
-    |>.trans (addEdgeSymm_le' _ h₂ (by simp))
-    |>.trans (addEdgeSymm_le' _ h₃ (by simp))
+    |>.trans (addEdge_le' _ h₀ (by simp))
+    |>.trans (addEdge_le' _ h₁ (by simp))
+    |>.trans (addEdge_le' _ h₂ (by simp))
+    |>.trans (addEdge_le' _ h₃ (by simp))
 
 theorem twoHopMount_TC (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
     [H.IsSymm] [G.IsSymm]

@@ -34,26 +34,44 @@ besoin de le répéter ici.
 - Une fois le travail validé, fusionner le(s) commit(s) du worktree dans `monde-apres`
   (fast-forward) et pousser `origin/monde-apres` — ne pas laisser une branche `worktree-<nom>`
   orpheline comme livrable final poussé sur le remote.
-- **Piège coûteux : un worktree neuf n'hérite pas du cache de build de Mathlib.** Chaque worktree
-  possède son propre `.lake/packages/mathlib/.lake/build`, vide à la création. Un `lake build`
-  lancé là recompile donc **Mathlib en entier** — plusieurs heures, pas les ~9 minutes d'un build
-  incrémental du dépôt principal. Symptôme : la sortie du build mentionne des fichiers
-  `Mathlib/...` au lieu des seuls modules `TemporalGraph/`. **Remède à lancer systématiquement
-  juste après chaque `EnterWorktree`** :
+- **Worktrees : partager `.lake/packages` avec le dépôt principal, jamais en recopier le contenu.**
+  Un worktree neuf n'a pas de Mathlib compilé ; un `lake build` nu y recompilerait **Mathlib en
+  entier** (plusieurs heures ; symptôme : la sortie mentionne des modules `Mathlib/...` au lieu des
+  seuls `TemporalGraph/`). **Remède à lancer systématiquement juste après chaque `EnterWorktree`**
+  (et le `merge --ff-only` ci-dessus), depuis la racine du worktree :
   ```
-  ~/.elan/bin/lake exe cache get
+  rm -rf .lake/packages && mkdir -p .lake && \
+    ln -s /Users/arme/Project/temporal-graphs/.lake/packages .lake/packages
   ```
-  Mesuré : une trentaine de secondes, sans téléchargement, parce que `~/.cache/mathlib` est déjà
-  peuplé sur cette machine et partagé entre tous les worktrees. À défaut — cache local absent ou
-  réseau coupé — on peut recopier les artefacts du dépôt principal, à condition que la révision de
-  Mathlib soit identique des deux côtés (`git -C .lake/packages/mathlib rev-parse HEAD` pour
-  comparer) :
-  ```
-  rsync -a --delete <dépôt-principal>/.lake/packages/mathlib/.lake/build/ \
-                    <worktree>/.lake/packages/mathlib/.lake/build/
-  ```
-  Environ 6 Go et deux à trois minutes, donc nettement moins bon que `cache get`. Dans les deux cas,
-  vérifier ensuite que le nombre de `.olean` correspond entre les deux arbres.
+  Le worktree lit alors **les mêmes fichiers** (mêmes inodes) que `monde-apres` : zéro Go de disque,
+  pas de `cache get`, et surtout le cache de pages de macOS est partagé. Mesuré (2026-09-25) : build
+  complet du worktree en ~1 min, `lake env lean` sans erreur, et `monde-apres` rejoue toujours
+  Mathlib sans rien recompiler. Seul `.lake/build` (les ~11 modules du projet) reste propre au
+  worktree. Règles qui en découlent :
+  - **Jamais de `lake update`, de `lake exe cache get!` ni de changement de `lake-manifest.json` /
+    `lean-toolchain` depuis un worktree** : cela modifierait les paquets du dépôt principal. Une
+    montée de version de Mathlib se fait dans le dépôt principal, hors session parallèle.
+  - Avant de supprimer un worktree : arrêter les serveurs Lean qui y tournent (`lake serve`,
+    `lean --server` dont le cwd est le worktree) et retirer le lien (`rm .lake/packages`) par
+    précaution, puis `git worktree remove`.
+- **Pourquoi c'est la bonne méthode — diagnostic mesuré le 2026-09-25.** L'ancienne méthode
+  (`lake exe cache get` par worktree) donnait à chaque worktree sa **propre copie** de ~7 Go de
+  `.olean`. Le goulot n'est pas le CPU mais la mémoire : chaque processus Lean qui importe Mathlib
+  occupe ~5 Go (mmap des `.olean`), et compiler un module du projet prenait 88–105 s de temps réel
+  pour 3–5 s de CPU (> 200 k défauts de page, swap plein à 9,5 Go sur 24 Go de RAM). Avec des
+  copies distinctes, travailler dans un worktree évince du cache de pages la copie de
+  `monde-apres`, qu'il faut relire au retour : c'est le « tout ralentit quand on revient dans
+  `monde-apres` ». Les serveurs Lean restés vivants sur d'anciens worktrees (VS Code,
+  lean-lsp-mcp) aggravent la pression : les arrêter, et supprimer les worktrees fusionnés dès
+  qu'ils ne servent plus.
+- **Piste écartée : `enableArtifactCache = true` dans `lakefile.toml`.** Le cache d'artefacts de
+  Lake (`~/.elan/toolchains/<toolchain>/lake/cache`) partage bien les builds entre checkouts
+  (reconstruction du projet en 28 s au lieu de 12 min 33 s), mais le réglage de la racine est hérité
+  par toutes les dépendances, dont les `.olean` ne sont alors plus matérialisés dans leurs
+  `build/` : l'éditeur fonctionne (via `lake setup-file`), mais tout ce qui passe par `LEAN_PATH`
+  casse — `lake env lean`, `lake exe checkdecls`, et vraisemblablement doc-gen4.
+  `restoreAllArtifacts = true` ne corrige que le paquet racine, pas Mathlib/Batteries/Aesop. Ne pas
+  l'activer.
 
 ## Carte du dépôt
 

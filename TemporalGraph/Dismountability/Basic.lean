@@ -131,14 +131,14 @@ lemma vunion_eq_univ {H : Subgraph G} : H.vminus ∪ H.vplus ∪ H.vzero = H.ver
 lemma nonempty_vplus_inter_vminus_iff_dismountable (H : Subgraph G) :
     H.IsClique ∧ (H.vplus ∩ H.vminus).Nonempty ↔ H.Dismountable := by
   rw [Dismountable, Set.nonempty_def, vminus, vplus]
-  simp only [Set.mem_inter_iff, Set.mem_setOf_eq, exists_and_left, exists_and_right, And.comm]
+  simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, exists_and_left, exists_and_right, And.comm]
 
 -- SAND 2025, Lemma 2
 lemma partition_of_not_dismountable {H : Subgraph G} (h : H.IsClique ∧ ¬H.Dismountable) :
     ∀ x ∈ H.verts, ∃! s ∈ ({H.vminus, H.vplus, H.vzero} : Set (Set V)), x ∈ s := by
   have ⟨hClique, hnDis⟩ := h
   conv at hnDis => rhs ; rw [←nonempty_vplus_inter_vminus_iff_dismountable]
-  push_neg at hnDis
+  push Not at hnDis
   have hnDis := hnDis hClique
   simp only [Set.ext_iff, Set.mem_inter_iff, Set.mem_empty_iff_false, iff_false] at hnDis
   have hnDis' := hnDis
@@ -180,7 +180,7 @@ lemma partition_of_not_dismountable {H : Subgraph G} (h : H.IsClique ∧ ¬H.Dis
           assumption'
           all_goals intro _ ; contradiction
         · intro hin
-          push_neg at hempty ; rw [Set.nonempty_def] at hempty
+          push Not at hempty ; rw [Set.nonempty_def] at hempty
           have hunin : u ∉ H.verts := by rw [←H.vunion_eq_univ] ; simp [huin, huin', huin'']
           contradiction
 
@@ -250,7 +250,7 @@ lemma vplus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} (x y : H.vplu
         · assumption
         · constructor
           · rw [hzz'] at hee ; exact H.adj_symm hee.left
-          · push_neg at ht ; apply ht.le
+          · push Not at ht ; apply ht.le
     · apply Or.inl ; assumption
 
 -- SAND 2025, Lemma 3
@@ -287,7 +287,7 @@ lemma vminus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} (x y : H.vmi
         · assumption
         · constructor
           · rw [hzz'] at hle ; exact H.adj_symm hle.left
-          · push_neg at ht ; apply ht.le
+          · push Not at ht ; apply ht.le
 
 end TwoHop
 

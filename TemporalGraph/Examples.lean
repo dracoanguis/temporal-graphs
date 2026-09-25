@@ -40,8 +40,8 @@ lemma square_clique : square.IsClique
 := by
   intro u v _
   match u, v with
-  | 0, 1 => simp [square] ; use 1
-  | 1, 0 => simp [square] ; use 1
+  | 0, 1 => use 1 ; simp [square]
+  | 1, 0 => use 1 ; simp [square]
   | 0, 2 => use 2 ; simp [square]
   | 2, 0 => use 2 ; simp [square]
   | 0, 3 => use 3 ; simp [square]
@@ -49,7 +49,7 @@ lemma square_clique : square.IsClique
   | 2, 1 => use 3 ; simp [square]
   | 1, 3 => use 2 ; simp [square]
   | 2, 3 => use 4 ; simp [square]
-  | 3, 0 => simp [square] ; use 3
-  | 3, 1 => simp [square] ; use 2
-  | 3, 2 => simp [square] ; use 4
+  | 3, 0 => use 3 ; simp [square]
+  | 3, 1 => use 2 ; simp [square]
+  | 3, 2 => use 4 ; simp [square]
   | 3, 3 => aesop_temporal_graph

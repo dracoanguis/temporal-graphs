@@ -52,12 +52,12 @@ lemma dismount_clique (H : Subgraph G) (x : V) (h₀ : H.IsClique) :
     (H.dismount x).IsClique := by
   unfold IsClique dismount
   intro ⟨y, hy⟩ ⟨z, hz⟩ hne
-  simp only [induce_verts, Set.mem_diff, Set.mem_singleton_iff] at hy hz
+  simp only [induce_verts, Set.mem_sdiff, Set.mem_singleton_iff] at hy hz
   have hy' : y ∈ H.verts := hy.1
   have hz' : z ∈ H.verts := hz.1
   have ⟨n, hadj⟩ := h₀ ⟨y, hy'⟩ ⟨z, hz'⟩ (by grind only)
   use n
-  simp only [induce_Adj, Set.mem_diff, hy', Set.mem_singleton_iff, true_and, hz', hadj, and_true]
+  simp only [induce_Adj, Set.mem_sdiff, hy', Set.mem_singleton_iff, true_and, hz', hadj, and_true]
   exact ⟨hy.2, hz.2⟩
 
 @[simp]
@@ -187,10 +187,11 @@ theorem mount_size {H : Subgraph G} [Fintype H.edgeSet] {x : V} {y z : H.verts} 
     {h₁ : G.Adj z x m}
     [Fintype (H.mount x h₀ h₁).edgeSet] :
     Fintype.card (H.mount x h₀ h₁).edgeSet ≤ Fintype.card H.edgeSet + 2 := by
-  conv => lhs ; simp only [H.mount_edgeSet]
-  rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card]
+  -- Rewrite the edge set only once under `Nat.card`: under `Fintype.card` it clashes with the
+  -- `Fintype` instance that depends on it.
+  rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card, H.mount_edgeSet]
   have hle₀ : Nat.card ({(s(↑z, x), m), (s(↑y, x), n)} : Set ((Sym2 V) × ℕ)) ≤ 2 := by
-    simp only [Nat.card_eq_fintype_card, ←Set.union_singleton]
+    simp only [←Set.union_singleton]
     have h : 2 = 1 + 1 := by simp only [Nat.reduceAdd]
     have h' : Fintype.card ({(s(↑z, x), m)} : Set (Sym2 V × ℕ)) = 1 := by simp
     have h'' : Fintype.card ({(s(↑y, x), n)} : Set (Sym2 V × ℕ)) = 1 := by simp
@@ -212,7 +213,7 @@ theorem dismountability {H H' : Subgraph G} {x : H.verts} {y z : H'.verts} {n m 
     (h₅ : H'.IsSpannerOf (H.dismount x)) :
     H'.mount x h₁ h₂ |>.IsSpannerOf H := by
   have heq : (H'.mount x h₁ h₂).verts = H.verts := by simp only [mount_verts, h₅.right.choose,
-    induce_verts, Set.union_singleton, Subtype.coe_prop, Set.insert_diff_self_of_mem]
+    induce_verts, Set.union_singleton, Subtype.coe_prop, Set.insert_sdiff_self_of_mem]
   have hle : H'.mount x h₁ h₂ ≤ H := by
     apply le_iff_edgeSet_and_verts.mpr
     constructor
@@ -230,7 +231,7 @@ theorem dismountability {H H' : Subgraph G} {x : H.verts} {y z : H'.verts} {n m 
           apply h₃.left
         grind
     · simp only [mount_verts, h₅.right.choose, induce_verts, Set.union_singleton, Subtype.coe_prop,
-      Set.insert_diff_self_of_mem, subset_refl]
+      Set.insert_sdiff_self_of_mem, subset_refl]
   have htc : (H'.mount x h₁ h₂).TemporallyConnected := by
     apply mount_tc H'
     · apply earliestEdge_of_ge _ h₃
@@ -444,8 +445,7 @@ theorem twoHopMount_size {H : Subgraph G} [Fintype H.edgeSet] {y y' z z' : H.ver
     {h₃ : G.Adj z' z m}
     [Fintype (H.twoHopMount x h₀ h₁ h₂ h₃).edgeSet] :
     Fintype.card (H.twoHopMount x h₀ h₁ h₂ h₃).edgeSet ≤ Fintype.card H.edgeSet + 4 := by
-  conv => lhs ; simp only [H.twoHopMount_edgeSet x h₀ h₁ h₂ h₃]
-  rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card]
+  rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card, H.twoHopMount_edgeSet x h₀ h₁ h₂ h₃]
   have hle₀ :
       Nat.card ({(s(↑z', ↑z), m), (s(x, ↑z'), m'),
       (s(↑y', ↑y), n), (s(x, ↑y'), n')} : Set ((Sym2 V) × ℕ)) ≤ 4 := by

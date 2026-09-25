@@ -298,7 +298,7 @@ lemma earliestEdge_exists_of_nonempty_finite_incidenceSet {x : V} {H : Subgraph 
     (h₀ : (H.incidenceSet x).Nonempty)
     (h₁ : (H.incidenceSet x).Finite) :
     ∃ (y : V) (n : ℕ), H.EarliestEdge x y n := by
-  haveI : Nonempty (H.incidenceSet x) := Set.nonempty_coe_sort.mpr h₀
+  have : Nonempty (H.incidenceSet x) := Set.nonempty_coe_sort.mpr h₀
   have ⟨⟨⟨y, n⟩, hin⟩, hmin⟩ := h₁.exists_min (fun x ↦ x.1.2)
   use y, n
   unfold TemporalGraph.EarliestEdge
@@ -314,7 +314,7 @@ lemma latestEdge_exists_of_nonempty_finite_incidenceSet {x : V} {H : Subgraph G}
     (h₀ : (H.incidenceSet x).Nonempty)
     (h₁ : (H.incidenceSet x).Finite) :
     ∃ (z : V) (m : ℕ), H.LatestEdge x z m := by
-  haveI : Nonempty (H.incidenceSet x) := Set.nonempty_coe_sort.mpr h₀
+  have : Nonempty (H.incidenceSet x) := Set.nonempty_coe_sort.mpr h₀
   have ⟨⟨⟨y, n⟩, hin⟩, hmax⟩ := h₁.exists_max (fun x ↦ x.1.2)
   use y, n
   unfold TemporalGraph.LatestEdge
@@ -406,7 +406,7 @@ instance : Preorder (Subgraph G) where
         · assumption
         · constructor
           · exact h.left.right
-          · have h := h.right ; dsimp [LE.le] at h ; push_neg at h
+          · have h := h.right ; dsimp [LE.le] at h ; push Not at h
             exact h h'.symm.subset
       · intro h' ; left ; constructor
         · assumption
@@ -464,10 +464,10 @@ lemma deleteVerts_verts (H : Subgraph G) (s : Set V) :
 
 @[simp]
 theorem deleteVerts_le {H : Subgraph G} {s : Set V} : (H.deleteVerts s) ≤ H := by
-  constructor <;> simp [Set.diff_subset]
+  constructor <;> simp
 
 theorem deleteVerts_le' (H : Subgraph G) (s : Set V) : (H.deleteVerts s) ≤ H := by
-  constructor <;> simp [Set.diff_subset]
+  constructor <;> simp
 
 instance deleteVerts_isSymm (H : Subgraph G) [H.IsSymm] (s : Set V) :
     (H.deleteVerts s).IsSymm :=
@@ -776,11 +776,11 @@ lemma neighborhoodSet_iff_coe {H : Subgraph G} {x : H.verts} :
   ext y
   constructor
   · intro ⟨_, p⟩
-    simp only [coe_Adj, Set.mem_image, Set.mem_setOf_eq, Subtype.exists, exists_and_left,
+    simp only [coe_Adj, Set.mem_image, Set.mem_ofPred_eq, Subtype.exists, exists_and_left,
       exists_prop, exists_eq_right_right]
     exact ⟨⟨_, p⟩, H.edge_vert' p⟩
   · intro h
-    simp only [coe_Adj, Set.mem_image, Set.mem_setOf_eq, Subtype.exists, exists_and_left,
+    simp only [coe_Adj, Set.mem_image, Set.mem_ofPred_eq, Subtype.exists, exists_and_left,
       exists_prop, exists_eq_right_right] at h ⊢
     exact h.1
 
@@ -935,8 +935,12 @@ theorem addEdge_size (H : Subgraph G) {x y : V} {n : ℕ}
     {h₂ : ¬H.Adj x y n}
     [Fintype H.edgeSet] [Fintype (H.addEdge h₀ h₁).edgeSet] :
     (H.addEdge h₀ h₁).size = H.size + 1 := by
-  simp only [size, H.addEdge_edgeSet, H.mem_edgeSet, h₂, not_false_eq_true,
-    Set.card_insert]
+  -- Through `Nat.card`, which only sees the type: rewriting the edge set under `Fintype.card`
+  -- would clash with the `Fintype` instance that depends on it.
+  unfold size
+  rw [← Nat.card_eq_fintype_card, ← Nat.card_eq_fintype_card, H.addEdge_edgeSet,
+    Nat.card_coe_set_eq, Nat.card_coe_set_eq]
+  exact Set.ncard_insert_of_notMem fun hm ↦ h₂ (H.mem_edgeSet.mp hm)
 
 @[simp]
 theorem addEdge_size_le (H : Subgraph G) {x y : V} {n : ℕ}
@@ -946,11 +950,9 @@ theorem addEdge_size_le (H : Subgraph G) {x y : V} {n : ℕ}
     [Fintype H.edgeSet] [Fintype (H.addEdge h₀ h₁).edgeSet] :
     (H.addEdge h₀ h₁).size ≤ H.size + 1 := by
   unfold size
-  have h : (H.addEdge h₀ h₁).edgeSet = H.edgeSet ∪ {(s(x,y), n)} := by
-    simp only [H.addEdge_edgeSet, Set.union_singleton]
-  have h' := Set.card_union_le H.edgeSet {(s(x,y), n)}
-  simp only [h, Nat.card_eq_fintype_card, Set.card_singleton] at h' ⊢
-  assumption
+  rw [← Nat.card_eq_fintype_card, ← Nat.card_eq_fintype_card, H.addEdge_edgeSet,
+    Nat.card_coe_set_eq, Nat.card_coe_set_eq]
+  exact Set.ncard_insert_le _ _
 
 theorem addEdge_size_le' (H : Subgraph G) {x y : V} {n : ℕ}
     [G.IsSymm]

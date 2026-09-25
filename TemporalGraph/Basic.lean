@@ -138,7 +138,7 @@ def simpleFootprint (G : TemporalGraph V) (hs : G.IsSymm) (hl : G.IsLoopless) : 
   {
     Adj := fun x y => ∃ n, G.Adj x y n
     loopless := ⟨by simp⟩
-    symm _ _ := fun ⟨n, h⟩ => ⟨n, hs.symm n h⟩
+    symm := ⟨fun _ _ ⟨n, h⟩ => ⟨n, hs.symm n h⟩⟩
   }
 
 def IsSimple (G : TemporalGraph V) : Prop :=

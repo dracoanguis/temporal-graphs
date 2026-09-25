@@ -131,7 +131,7 @@ lemma mount_edgeSet (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [G.IsSy
     (h₀ : G.Adj y x n)
     (h₁ : G.Adj z x m) :
     (H.mount x h₀ h₁).edgeSet = H.edgeSet ∪ {⟨s(z,x), m⟩, ⟨s(y,x), n⟩} := by
-  simp [mount, addEdgeSymm_edgeSet, addVerts_edgeSet]
+  simp [mount, addEdge_edgeSet, addVerts_edgeSet]
 
 theorem mount_tc (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [H.IsSymm]
     [G.IsSymm]
@@ -315,7 +315,7 @@ lemma twoHopMount_edgeSet (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : �
     (h₃ : G.Adj z' z m) :
     (H.twoHopMount x h₀ h₁ h₂ h₃).edgeSet =
     H.edgeSet ∪ {⟨s(z', z), m⟩,  ⟨s(x, z'), m'⟩, ⟨s(y',y), n⟩, ⟨s(x,y'), n'⟩} := by
-  simp [twoHopMount, addEdgeSymm_edgeSet, addVerts_edgeSet]
+  simp [twoHopMount, addEdge_edgeSet, addVerts_edgeSet]
 
 -- The four edges below are the ones `twoHopMount` inserts directly, so each is obtained by
 -- lifting `addEdge_edge` along the later `addEdge_le` layers: no symmetry needed.

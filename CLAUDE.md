@@ -107,12 +107,10 @@ utilisaient vraiment).
   aucune hypothèse de symétrie, s'appelle maintenant `addArc` (l'ancien `addEdge` générique), et
   le constructeur à deux orientations qui demande `[G.IsSymm]` s'appelle maintenant `addEdge`
   (l'ancien `addEdgeSymm`, corps de définition inchangé, argument de symétrie perdu au profit de
-  l'instance) — et reste celui qu'utilisent `mount`/`twoHopMount`. **Les noms de lemmes n'ont pas
-  suivi** : ils portent toujours le suffixe `addEdgeSymm` (`addEdgeSymm_edgeSet`,
-  `addEdgeSymm_edgeSet'`, `addEdgeSymm_size`, `addEdgeSymm_size_le`, `addEdgeSymm_size_le'` dans
-  `Subgraph.lean`, `addEdgeSymm_reachability` dans `Connectivity/Subgraph.lean` ; l'instance,
-  elle, a bien été renommée `addEdge_isSymm`) — un décalage de nommage à garder en tête tant qu'il
-  n'est pas corrigé.
+  l'instance) — et reste celui qu'utilisent `mount`/`twoHopMount`. Les lemmes ont suivi :
+  `addEdge_edgeSet`, `addEdge_edgeSet'`, `addEdge_size`, `addEdge_size_le`, `addEdge_size_le'`
+  (`Subgraph.lean`), `addEdge_reachability` (`Connectivity/Subgraph.lean`) et l'instance
+  `addEdge_isSymm` ; plus aucun nom ne porte le suffixe `addEdgeSymm`.
 - `spanningCoe` a été supprimé, remplacé par la projection héritée `toTemporalGraph`. Les lemmes
   ont été renommés en conséquence : `top_spanningCoe` → `top_toTemporalGraph`,
   `size_of_spanningCoe` → `size_of_toTemporalGraph`, `lift_spanningCoe_walk` →

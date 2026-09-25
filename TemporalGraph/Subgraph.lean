@@ -818,7 +818,7 @@ lemma le_iff_edgeSet_and_verts {H H' : Subgraph G} [H'.IsSymm] :
       exact Set.mem_of_subset_of_mem h.left (Adj.mem_edgeSet hadj)
 
 @[simp]
-lemma addEdgeSymm_edgeSet (H : Subgraph G) {x y : V} {n : ℕ}
+lemma addEdge_edgeSet (H : Subgraph G) {x y : V} {n : ℕ}
     [G.IsSymm]
     {h₀ : G.Adj x y n}
     {h₁ : x ∈ H.verts ∧ y ∈ H.verts} :
@@ -830,12 +830,12 @@ lemma addEdgeSymm_edgeSet (H : Subgraph G) {x y : V} {n : ℕ}
       Sym2.eq_iff]
     tauto
 
-lemma addEdgeSymm_edgeSet' (H : Subgraph G) {x y : V} {n : ℕ}
+lemma addEdge_edgeSet' (H : Subgraph G) {x y : V} {n : ℕ}
     [G.IsSymm]
     (h₀ : G.Adj x y n)
     (h₁ : x ∈ H.verts ∧ y ∈ H.verts) :
     (H.addEdge h₀ h₁).edgeSet = insert ⟨s(x,y), n⟩ H.edgeSet :=
-  H.addEdgeSymm_edgeSet
+  H.addEdge_edgeSet
 
 instance {H : Subgraph G} [h : Finite H.edgeSet] {x y : V} {n : ℕ}
     [G.IsSymm]
@@ -843,7 +843,7 @@ instance {H : Subgraph G} [h : Finite H.edgeSet] {x y : V} {n : ℕ}
     {h₁ : x ∈ H.verts ∧ y ∈ H.verts} :
     Finite (H.addEdge h₀ h₁).edgeSet := by
   conv =>
-    rhs ; rw [H.addEdgeSymm_edgeSet, ←Set.union_singleton]
+    rhs ; rw [H.addEdge_edgeSet, ←Set.union_singleton]
   apply Set.Finite.union
   · exact h
   · simp only [Set.finite_singleton]
@@ -927,18 +927,18 @@ lemma size_of_toTemporalGraph (H : Subgraph G)
 -- NOTE(refactor): `Finite → Fintype` isn't automatic in Mathlib (avoids diamonds), so the
 -- `Finite` instance above does not chain into a `Fintype` one on its own: callers must supply
 -- the `Fintype` instance explicitly.
-theorem addEdgeSymm_size (H : Subgraph G) {x y : V} {n : ℕ}
+theorem addEdge_size (H : Subgraph G) {x y : V} {n : ℕ}
     [H.IsSymm] [G.IsSymm]
     {h₀ : G.Adj x y n}
     {h₁ : x ∈ H.verts ∧ y ∈ H.verts}
     {h₂ : ¬H.Adj x y n}
     [Fintype H.edgeSet] [Fintype (H.addEdge h₀ h₁).edgeSet] :
     (H.addEdge h₀ h₁).size = H.size + 1 := by
-  simp only [size, H.addEdgeSymm_edgeSet, H.mem_edgeSet, h₂, not_false_eq_true,
+  simp only [size, H.addEdge_edgeSet, H.mem_edgeSet, h₂, not_false_eq_true,
     Set.card_insert]
 
 @[simp]
-theorem addEdgeSymm_size_le (H : Subgraph G) {x y : V} {n : ℕ}
+theorem addEdge_size_le (H : Subgraph G) {x y : V} {n : ℕ}
     [G.IsSymm]
     {h₀ : G.Adj x y n}
     {h₁ : x ∈ H.verts ∧ y ∈ H.verts}
@@ -946,18 +946,18 @@ theorem addEdgeSymm_size_le (H : Subgraph G) {x y : V} {n : ℕ}
     (H.addEdge h₀ h₁).size ≤ H.size + 1 := by
   unfold size
   have h : (H.addEdge h₀ h₁).edgeSet = H.edgeSet ∪ {(s(x,y), n)} := by
-    simp only [H.addEdgeSymm_edgeSet, Set.union_singleton]
+    simp only [H.addEdge_edgeSet, Set.union_singleton]
   have h' := Set.card_union_le H.edgeSet {(s(x,y), n)}
   simp only [h, Nat.card_eq_fintype_card, Set.card_singleton] at h' ⊢
   assumption
 
-theorem addEdgeSymm_size_le' (H : Subgraph G) {x y : V} {n : ℕ}
+theorem addEdge_size_le' (H : Subgraph G) {x y : V} {n : ℕ}
     [G.IsSymm]
     (h₀ : G.Adj x y n)
     (h₁ : x ∈ H.verts ∧ y ∈ H.verts)
     [Fintype H.edgeSet] [Fintype (H.addEdge h₀ h₁).edgeSet] :
     Fintype.card (H.addEdge h₀ h₁).edgeSet ≤ Fintype.card H.edgeSet + 1 := by
-  exact H.addEdgeSymm_size_le
+  exact H.addEdge_size_le
 
 @[simp]
 theorem addVerts_size {H : Subgraph G} {s : Set V}

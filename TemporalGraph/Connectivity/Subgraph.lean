@@ -185,7 +185,7 @@ theorem addVerts_reachability {s : Set V} {H : Subgraph G} :
     ∀ x y : H.verts, H.Reachable x y → (H.addVerts s).Reachable ⟨x, by simp⟩ ⟨y, by simp⟩ := by
   exact reachable_of_le_reachable addVerts_le
 
-theorem addEdgeSymm_reachability {x y : V} {n : ℕ} {H : Subgraph G} [G.IsSymm]
+theorem addEdge_reachability {x y : V} {n : ℕ} {H : Subgraph G} [G.IsSymm]
     {h : G.Adj x y n} {h₁ : x ∈ H.verts ∧ y ∈ H.verts} :
     ∀ x y : H.verts, H.Reachable x y → (H.addEdge h h₁).Reachable x y := by
   exact reachable_of_le_reachable addEdge_le

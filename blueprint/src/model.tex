@@ -156,3 +156,58 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   pair being read in both directions; its edge set is the set one started
   from.
 \end{definition}
+
+\section{Bipartite temporal graphs and bi-cliques}
+\label{sec:bipartite}
+
+\begin{definition}[Bipartiteness]
+  \label{def:is-bipartite}
+  \uses{def:temporal-graph}
+  \lean{TemporalGraph.IsBipartiteWith}
+  \lean{TemporalGraph.IsBipartite}
+  \leanok
+  A temporal graph $G$ \emph{is bipartite} relative to a pair of disjoint sets
+  $(s, t)$ of vertices if every edge of $G$ connects a vertex in $s$ to a
+  vertex in $t$ (in either direction, with no symmetry required). The
+  \emph{witness} is a pair of such sets; $G$ \emph{is bipartite} if such a
+  pair exists.
+\end{definition}
+
+\begin{definition}[Between (cut edges)]
+  \label{def:between}
+  \uses{def:temporal-graph}
+  \lean{TemporalGraph.between}
+  \leanok
+  The temporal graph \emph{between} two sets of vertices $s$ and $t$ is the
+  restriction of $G$ to arcs that connect a vertex in $s$ to a vertex in $t$
+  (in either direction).
+\end{definition}
+
+\begin{definition}[Temporal bi-clique]
+  \label{def:is-biclique}
+  \uses{def:is-bipartite}
+  \lean{TemporalGraph.IsBicliqueWith}
+  \lean{TemporalGraph.IsBiclique}
+  \lean{TemporalGraph.completeBipartite}
+  \leanok
+  A temporal graph $G$ is a \emph{temporal bi-clique} relative to $(s, t)$ if
+  it is bipartite with witness $(s, t)$ and, moreover, every vertex in $s$ has
+  an edge to every vertex in $t$ at some time. When the two parts exhaust all
+  vertices, $G$ \emph{is a bi-clique}. The \emph{complete bipartite} temporal
+  graph on the disjoint union $\alpha \sqcup \beta$ with edge times given by a function $f :
+  \alpha \to \beta \to \mathbb{N}$ is the temporal bi-clique where all such
+  edges are present at their designated times. (SAND 2025, \S1.1: ``Temporal
+  bi-cliques are defined analogously, except that the footprint is a complete
+  bipartite graph.'')
+\end{definition}
+
+\begin{lemma}[Bipartiteness via simple footprint]
+  \label{lem:is-bipartite-iff-footprint}
+  \uses{def:is-bipartite,def:footprint}
+  \lean{TemporalGraph.isBipartiteWith_iff_simpleFootprint}
+  \leanok
+  A symmetric, loopless temporal graph $G$ is bipartite with witness $(s,
+  t)$ exactly when its simple footprint (the underlying undirected static
+  graph) is bipartite with the same witness. This provides a bridge to
+  Mathlib's \texttt{SimpleGraph.IsBipartiteWith}.
+\end{lemma}

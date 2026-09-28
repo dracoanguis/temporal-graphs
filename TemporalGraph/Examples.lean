@@ -26,14 +26,14 @@ def square : TemporalGraph (Fin 4) := {
     | _ => False
 }
 
-instance square_isSymm : square.IsSymm := ⟨by
+instance square_isSymm : square.IsSymm := .of_adj (by
   intro n x y h
   simp only [square] at h ⊢
-  split at h <;> aesop⟩
+  split at h <;> aesop)
 
-instance square_isLoopless : square.IsLoopless := ⟨fun t => by
-  simp only [square]
-  split <;> constructor <;> aesop⟩
+instance square_isLoopless : square.IsLoopless := ⟨fun t => ⟨fun x => by
+  simp only [TemporalGraph.adjAt, square]
+  split <;> aesop⟩⟩
 
 /-- The square graph is a complete temporal clique. -/
 lemma square_clique : square.IsClique

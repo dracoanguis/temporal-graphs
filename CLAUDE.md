@@ -169,6 +169,18 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
 - `IsSymm` et `IsLoopless` sont des **classes de type**, résolues en instances plutôt que filetées
   en hypothèses nommées. Les résultats qui en ont besoin prennent `[G.IsSymm]` / `[G.IsLoopless]`
   au lieu d'une hypothèse `(hs : G.IsSymm)`.
+- **Champs sur `Std.Symm` / `Std.Irrefl`, comme `SimpleGraph`.** `IsSymm.symm : ∀ n, Std.Symm
+  (G.adjAt n)` et `IsLoopless.loopless : ∀ n, Std.Irrefl (G.adjAt n)`, où
+  `abbrev adjAt G n := fun x y => G.Adj x y n` est la tranche temporelle. Conventions :
+  - **construire** un `IsSymm` avec `IsSymm.of_adj fun n x y h ↦ …` (ou `refine .of_adj ?_`), jamais
+    avec des constructeurs anonymes imbriqués ;
+  - **utiliser** `adj_symm`/`Adj.symm`/`adj_comm`, pas le champ ; le champ ne sert que si la
+    symétrie est une hypothèse explicite : `(hs.symm n).symm _ _ h` ;
+  - **API de Mathlib** : les instances `IsSymm.stdSymm`/`IsLoopless.stdIrrefl` exposent chaque
+    tranche. Le temps étant le dernier argument, un lemme à relation implicite ne la trouve pas sur
+    `G.Adj a b n` (l'unification d'ordre supérieur échoue) : nommer la relation
+    (`comm_of (G.adjAt n)`, `Std.Symm.iff (r := G.adjAt n) a b`, `symm_of (G.adjAt n) h`,
+    `irrefl_of (G.adjAt n) a`) ou énoncer le but avec `adjAt`.
 - Les accesseurs gardent leur forme moins l'argument : `h.symm hs` → `h.symm`, `H.adj_symm hs h`
   → `H.adj_symm h`, `G.irrefl hl` → `G.irrefl`, `h.ne hl` → `h.ne`, `H.mem_edgeSet hsH hl` →
   `H.mem_edgeSet`.

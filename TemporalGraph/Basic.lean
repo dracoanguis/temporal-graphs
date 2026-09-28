@@ -69,16 +69,44 @@ namespace TemporalGraph
 
 variable {V : Type u}
 
+/-- The time-`n` slice of the adjacency, as a binary relation on vertices. It is an `abbrev`, so
+`G.adjAt n x y` and `G.Adj x y n` are interchangeable; naming the relation is what lets Mathlib's
+API on relations apply: time comes last in `G.Adj x y n`, so the relation is not a subterm of an
+adjacency and lemmas with an implicit relation (`Std.Symm.iff`, `comm`, …) cannot infer it. Name
+it instead: `comm_of (G.adjAt n)`, `Std.Symm.iff (r := G.adjAt n) x y`, or state the goal with
+`adjAt`. -/
+abbrev adjAt (G : TemporalGraph V) (n : ℕ) : V → V → Prop := fun x y => G.Adj x y n
+
 /-- Symmetry is a class rather than a plain predicate, so that it is carried by instance
 resolution instead of being threaded by hand: constructions that preserve it declare an instance
 (see `Subgraph.induce`, `Subgraph.addEdge`, `mount`), and results that need it take `[G.IsSymm]`.
-Mirrors the `symm` field of Mathlib's `SimpleGraph`, without bundling it into the data. -/
+Mirrors the `symm : Std.Symm Adj` field of Mathlib's `SimpleGraph`, time slice by time slice,
+without bundling it into the data.
+
+Build it with `IsSymm.of_adj`, and use it through `adj_symm`/`Adj.symm`/`adj_comm` rather than
+through the field; the instance `IsSymm.stdSymm` exposes each slice as a `Std.Symm` relation. -/
 class IsSymm (G : TemporalGraph V) : Prop where
-  symm : ∀ n : ℕ, Symmetric (fun x y => G.Adj x y n)
+  symm : ∀ n : ℕ, Std.Symm (G.adjAt n)
 
 /-- Looplessness, as a class; see `IsSymm` for the rationale. -/
 class IsLoopless (G : TemporalGraph V) : Prop where
-  loopless : ∀ n : ℕ, Std.Irrefl (fun x y => G.Adj x y n)
+  loopless : ∀ n : ℕ, Std.Irrefl (G.adjAt n)
+
+/-- Each time slice of a symmetric graph is a `Std.Symm` relation, which gives access to Mathlib's
+API on symmetric relations (`Std.Symm.iff`, `comm_of`, `symm_of`, `rel_congr`, …). -/
+instance IsSymm.stdSymm {G : TemporalGraph V} [hs : G.IsSymm] (n : ℕ) : Std.Symm (G.adjAt n) :=
+  hs.symm n
+
+/-- Each time slice of a loopless graph is a `Std.Irrefl` relation. -/
+instance IsLoopless.stdIrrefl {G : TemporalGraph V} [hl : G.IsLoopless] (n : ℕ) :
+    Std.Irrefl (G.adjAt n) :=
+  hl.loopless n
+
+/-- Build `IsSymm` from the unfolded statement, without nested anonymous constructors. The
+binder order `n ⦃x y⦄` is that of the former `Symmetric` field. -/
+theorem IsSymm.of_adj {G : TemporalGraph V} (h : ∀ n ⦃x y⦄, G.Adj x y n → G.Adj y x n) :
+    G.IsSymm :=
+  ⟨fun n ↦ ⟨fun _ _ hxy ↦ h n hxy⟩⟩
 
 @[simp, aesop safe (rule_sets := [TemporalGraph])]
 protected theorem irrefl {G : TemporalGraph V} [hl : G.IsLoopless] {x : V} {n : ℕ} :
@@ -90,7 +118,7 @@ section Adjacency
 variable {G : TemporalGraph V} {x y : V} {n : ℕ}
 
 theorem adj_comm [hs : G.IsSymm] (x y : V) (n : ℕ) : G.Adj x y n ↔ G.Adj y x n :=
-  ⟨fun h => hs.symm n h, fun h => hs.symm n h⟩
+  (hs.symm n).iff x y
 
 -- Not `@[symm]`: the `symm` tactic does not synthesize the `[G.IsSymm]` instance argument of a
 -- `@[symm]` lemma, so the kernel rejects the resulting proof. The `macro_rules` below route the
@@ -98,10 +126,10 @@ theorem adj_comm [hs : G.IsSymm] (x y : V) (n : ℕ) : G.Adj x y n ↔ G.Adj y x
 -- from `h : G.Adj x y n` it adds `G.Adj y x n` once, where an `apply` rule would loop.
 @[aesop safe forward (rule_sets := [TemporalGraph])]
 theorem adj_symm [hs : G.IsSymm] (h : G.Adj x y n) : G.Adj y x n :=
-  hs.symm n h
+  (hs.symm n).symm x y h
 
-theorem Adj.symm [hs : G.IsSymm] (h : G.Adj x y n) : G.Adj y x n :=
-  hs.symm n h
+theorem Adj.symm [G.IsSymm] (h : G.Adj x y n) : G.Adj y x n :=
+  adj_symm h
 
 /-- `symm` on an adjacency goal `G.Adj x y n`, through `apply` so that `[G.IsSymm]` is
 synthesized. Other goals fall back to the built-in `symm`. -/
@@ -138,7 +166,7 @@ def simpleFootprint (G : TemporalGraph V) (hs : G.IsSymm) (hl : G.IsLoopless) : 
   {
     Adj := fun x y => ∃ n, G.Adj x y n
     loopless := ⟨by simp⟩
-    symm := ⟨fun _ _ ⟨n, h⟩ => ⟨n, hs.symm n h⟩⟩
+    symm := ⟨fun _ _ ⟨n, h⟩ => ⟨n, (hs.symm n).symm _ _ h⟩⟩
   }
 
 def IsSimple (G : TemporalGraph V) : Prop :=
@@ -320,7 +348,7 @@ theorem symmetrize_adj {x y : V} {n : ℕ} :
   Iff.rfl
 
 instance symmetrize_isSymm (G : TemporalGraph V) : G.symmetrize.IsSymm :=
-  ⟨fun _ _ _ h ↦ Or.symm h⟩
+  .of_adj fun _ _ _ h ↦ Or.symm h
 
 /-- Symmetrizing adds no loop, so it preserves looplessness. -/
 instance symmetrize_isLoopless (G : TemporalGraph V) [G.IsLoopless] : G.symmetrize.IsLoopless :=
@@ -352,7 +380,7 @@ theorem fromEdgeSet_adj {s : Set ((Sym2 V) × ℕ)} {x y : V} {n : ℕ} :
   Iff.rfl
 
 instance fromEdgeSet_isSymm (s : Set ((Sym2 V) × ℕ)) : (fromEdgeSet (V := V) s).IsSymm :=
-  ⟨fun _ _ _ h ↦ by simpa [Sym2.eq_swap] using h⟩
+  .of_adj fun _ _ _ h ↦ by simpa [Sym2.eq_swap] using h
 
 @[simp]
 theorem edgeSet_fromEdgeSet (s : Set ((Sym2 V) × ℕ)) : (fromEdgeSet (V := V) s).edgeSet = s := by

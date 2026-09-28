@@ -97,22 +97,22 @@ protected theorem irrefl {H : Subgraph G} [G.IsLoopless] {x : V} {n : ℕ} :
     ¬H.Adj x x n :=
   TemporalGraph.irrefl
 
-theorem adj_comm (H : Subgraph G) [hs : H.IsSymm] (x y : V) (n : ℕ) :
+theorem adj_comm (H : Subgraph G) [H.IsSymm] (x y : V) (n : ℕ) :
     H.Adj x y n ↔ H.Adj y x n :=
-  ⟨fun h ↦ hs.symm n h, fun h ↦ hs.symm n h⟩
+  TemporalGraph.adj_comm x y n
 
 -- No attribute here: symmetry is handled once, on `TemporalGraph.adj_symm` (see `Basic.lean`),
 -- which applies to `H.Adj` since it *is* `H.toTemporalGraph.Adj`.
-theorem adj_symm (H : Subgraph G) [hs : H.IsSymm] {x y : V} {n : ℕ} (h : H.Adj x y n) :
+theorem adj_symm (H : Subgraph G) [H.IsSymm] {x y : V} {n : ℕ} (h : H.Adj x y n) :
     H.Adj y x n :=
-  hs.symm n h
+  TemporalGraph.adj_symm h
 
 -- No aesop/`symm` attribute: as a `safe` apply rule it made aesop loop;
 -- see `TemporalGraph.adj_symm`.
-protected theorem Adj.symm {H : Subgraph G} [hs : H.IsSymm] {x y : V} {n : ℕ}
+protected theorem Adj.symm {H : Subgraph G} [H.IsSymm] {x y : V} {n : ℕ}
     (h : H.Adj x y n) :
     H.Adj y x n :=
-  hs.symm n h
+  TemporalGraph.adj_symm h
 
 -- `forward` rules: from `h : H.Adj u v t` aesop adds `G.Adj u v t`, `u ∈ H.verts`, `v ∈ H.verts`.
 -- As `apply` rules they misfired: `adj_sub`'s conclusion `G.Adj u v t` matches any adjacency goal
@@ -147,8 +147,8 @@ protected theorem Adj.snd_mem {H : G.Subgraph} {x y : V} {n : ℕ} (h : H.Adj x 
 protected def coe (H : Subgraph G) : TemporalGraph H.verts where
   Adj x y n := H.Adj x y n
 
-instance coe_isSymm (H : Subgraph G) [hs : H.IsSymm] : H.coe.IsSymm :=
-  ⟨fun n _ _ h ↦ hs.symm n h⟩
+instance coe_isSymm (H : Subgraph G) [H.IsSymm] : H.coe.IsSymm :=
+  .of_adj fun _ _ _ h ↦ H.adj_symm h
 
 instance coe_isLoopless (H : Subgraph G) [G.IsLoopless] : H.coe.IsLoopless :=
   ⟨fun _ ↦ ⟨fun _ h ↦ G.irrefl (H.adj_sub h)⟩⟩
@@ -190,9 +190,10 @@ section Props
 lemma isSymm_iff_coe {H : Subgraph G} : H.IsSymm ↔ H.coe.IsSymm := by
   constructor
   · intro h
-    exact ⟨fun n _ _ h' ↦ h.symm n h'⟩
+    exact IsSymm.of_adj fun n _ _ h' ↦ (h.symm n).symm _ _ h'
   · intro h
-    exact ⟨fun n x y h' ↦ h.symm n (x := ⟨x, H.edge_vert h'⟩) (y := ⟨y, H.edge_vert' h'⟩) h'⟩
+    exact IsSymm.of_adj fun n x y h' ↦
+      (h.symm n).symm (⟨x, H.edge_vert h'⟩) (⟨y, H.edge_vert' h'⟩) h'
 
 -- `IsSimple` is no longer redefined here; `H.IsSimple` resolves to `TemporalGraph.IsSimple
 -- H.toTemporalGraph`, whose binders are EXPLICIT (unlike the old implicit-binder local
@@ -365,7 +366,7 @@ instance : Bot G.Subgraph where
     edge_vert' := False.elim
   }
 
-instance bot_isSymm : (⊥ : Subgraph G).IsSymm := ⟨fun _ _ _ ↦ id⟩
+instance bot_isSymm : (⊥ : Subgraph G).IsSymm := .of_adj fun _ _ _ ↦ id
 
 /-- `H ≤ H'` when `H`'s vertices are among `H'`'s and every adjacency of `H` is one of `H'`.
 Written directly into the instance, as `SimpleGraph.Subgraph` does, rather than through a named
@@ -442,9 +443,9 @@ def induce (H : G.Subgraph) (s : Set V) : G.Subgraph where
   edge_vert h := h.1
   edge_vert' h := h.2.1
 
-instance induce_isSymm (H : G.Subgraph) [hs : H.IsSymm] (s : Set V) :
+instance induce_isSymm (H : G.Subgraph) [H.IsSymm] (s : Set V) :
     (H.induce s).IsSymm :=
-  ⟨fun n _ _ h ↦ ⟨h.2.1, h.1, hs.symm n h.2.2⟩⟩
+  .of_adj fun _ _ _ h ↦ ⟨h.2.1, h.1, TemporalGraph.adj_symm h.2.2⟩
 
 lemma isInduced_of_top_induce {s : Set V} :
     (induce (⊤ : Subgraph G) s).IsInduced := by
@@ -614,13 +615,13 @@ theorem addEdge_verts [G.IsSymm] : (addEdge H h h₁).verts = H.verts := rfl
 theorem addArc_le_addEdge [G.IsSymm] : addArc H h h₁ ≤ addEdge H h h₁ :=
   ⟨subset_rfl, fun hadj ↦ hadj.elim Or.inl (fun h' ↦ Or.inr <| Or.inl h')⟩
 
-instance addEdge_isSymm (H : Subgraph G) [G.IsSymm] [hsH : H.IsSymm]
+instance addEdge_isSymm (H : Subgraph G) [G.IsSymm] [H.IsSymm]
     (h : G.Adj x y n) (h₁ : x ∈ H.verts ∧ y ∈ H.verts) :
     (addEdge H h h₁).IsSymm := by
-  constructor
+  refine IsSymm.of_adj ?_
   intro m _ _ hadj
   apply hadj.elim3
-  · intro h' ; exact Or.inl <| hsH.symm m h'
+  · intro h' ; exact Or.inl <| TemporalGraph.adj_symm h'
   · intro h' ; exact Or.inr <| Or.inr h'
   · intro h' ; exact Or.inr <| Or.inl h'
 
@@ -1144,7 +1145,7 @@ def fromEdgeSet (G : TemporalGraph V) (s : Set ((Sym2 V) × ℕ)) :
 
 instance fromEdgeSet_isSymm (G : TemporalGraph V) [G.IsSymm] (s : Set ((Sym2 V) × ℕ)) :
     (fromEdgeSet G s).IsSymm := by
-  constructor
+  refine IsSymm.of_adj ?_
   intro _ _ _ h
   simp only [fromEdgeSet, Subtype.exists, exists_and_left, exists_prop, Prod.exists, ↓existsAndEq,
     true_and] at ⊢ h

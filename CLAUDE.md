@@ -189,14 +189,15 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
   construction qui préserve
   la symétrie ou la looplessness déclare une instance correspondante ; la résolution la trouve en
   cascade.
-- **Tactique `symm` : pas d'attribut `@[symm]`, deux `macro_rules` à la place** (`Basic.lean`,
-  après `Adj.symm`). La tactique `symm` native ne synthétise pas l'argument d'instance
-  `[G.IsSymm]` d'un lemme `@[symm]` : elle laisse une métavariable et le noyau rejette la preuve
-  (`declaration has metavariables`), même sur un graphe simple. Les `macro_rules` font passer
-  `symm` par `apply TemporalGraph.adj_symm` et `symm at h` par
-  `replace h := TemporalGraph.adj_symm h`, ce qui synthétise l'instance. Sur tout autre but (`=`,
-  …), la macro échoue et Lean retombe sur le `symm` natif. **Ne jamais remettre `@[symm]` sur un
-  lemme qui prend une instance** ; `attribute [-symm]` est d'ailleurs refusé par Lean.
+- **Tactique `symm` : inutilisable sur `Adj`, et c'est voulu.** Aucun lemme n'est `@[symm]` et il
+  n'y a pas de `macro_rules` (retirée : Mathlib n'étend pas `symm` ainsi, et ses lemmes `Std.Symm`
+  ne sont pas `@[symm]` non plus). Sur un but `Adj`/`adjAt`, `symm` répond proprement « No
+  applicable symmetry lemma » ; écrire le terme `h.symm` / `adj_symm h`. **Ne jamais mettre
+  `@[symm]` sur un lemme qui prend une instance** (`[G.IsSymm]` ou `[Std.Symm (G.adjAt n)]`) : la
+  tactique ne synthétise pas l'instance et le noyau rejette la preuve (`declaration has
+  metavariables`, lean4#9997, PR de correction #13047 non fusionnée). `attribute [-symm]` est
+  d'ailleurs refusé par Lean. Quand #13047 sera fusionnée, `@[symm]` sur `adj_symm` deviendra
+  possible.
 - **Règles aesop du rule-set `TemporalGraph` : `forward`, pas `apply`, pour tout lemme de la forme
   `H.Adj … → …`.** `adj_symm`, `Subgraph.Adj.adj_sub`, `Adj.fst_mem` et `Adj.snd_mem` sont des
   règles `safe forward` : à partir d'une hypothèse `h : H.Adj u v t`, aesop ajoute une fois

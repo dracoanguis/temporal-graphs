@@ -121,23 +121,15 @@ theorem adj_comm [hs : G.IsSymm] (x y : V) (n : ℕ) : G.Adj x y n ↔ G.Adj y x
   (hs.symm n).iff x y
 
 -- Not `@[symm]`: the `symm` tactic does not synthesize the `[G.IsSymm]` instance argument of a
--- `@[symm]` lemma, so the kernel rejects the resulting proof. The `macro_rules` below route the
--- `symm` tactic through `apply`/`adj_symm` instead. For aesop, symmetry is a `forward` rule:
--- from `h : G.Adj x y n` it adds `G.Adj y x n` once, where an `apply` rule would loop.
+-- `@[symm]` lemma, so the kernel would reject the resulting proof (lean4#9997). Use the terms
+-- `h.symm` / `adj_symm h` instead of the tactic. For aesop, symmetry is a `forward` rule: from
+-- `h : G.Adj x y n` it adds `G.Adj y x n` once, where an `apply` rule would loop.
 @[aesop safe forward (rule_sets := [TemporalGraph])]
 theorem adj_symm [hs : G.IsSymm] (h : G.Adj x y n) : G.Adj y x n :=
   (hs.symm n).symm x y h
 
 theorem Adj.symm [G.IsSymm] (h : G.Adj x y n) : G.Adj y x n :=
   adj_symm h
-
-/-- `symm` on an adjacency goal `G.Adj x y n`, through `apply` so that `[G.IsSymm]` is
-synthesized. Other goals fall back to the built-in `symm`. -/
-macro_rules | `(tactic| symm) => `(tactic| apply TemporalGraph.adj_symm)
-
-/-- `symm at h` for an adjacency hypothesis `h : G.Adj x y n`; other hypotheses fall back to the
-built-in `symm at`. -/
-macro_rules | `(tactic| symm at $h:ident) => `(tactic| replace $h := TemporalGraph.adj_symm $h)
 
 theorem ne_of_adj [G.IsLoopless] (h : G.Adj x y n) : x ≠ y := by
   rintro rfl

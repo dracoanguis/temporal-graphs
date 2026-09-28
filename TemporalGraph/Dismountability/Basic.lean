@@ -692,9 +692,7 @@ section biclique
 lemma biclique_of_not_twoHopDismountable {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
-    (h₀ : H.IsSimple)
     (h₁ : H.IsClique H.verts)
-    (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable)
     [H.IsSymm] :
     (H.between H.vminus H.vplus).IsBicliqueWith H.vminus H.vplus := by

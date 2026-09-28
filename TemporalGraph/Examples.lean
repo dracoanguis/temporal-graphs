@@ -40,7 +40,7 @@ instance square_isLoopless : square.IsLoopless := ⟨fun t => ⟨fun x => by
   split <;> aesop⟩⟩
 
 /-- The square graph is a complete temporal clique. -/
-lemma square_clique : square.IsClique Set.univ := by
+lemma square_clique : square.IsCliqueGraph := by
   intro u _ v _ h
   match u, v with
   | 0, 1 => use 1 ; simp [square]

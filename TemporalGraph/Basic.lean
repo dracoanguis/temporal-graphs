@@ -173,6 +173,11 @@ abbrev IsClique (G : TemporalGraph V) (S : Set V) : Prop :=
 lemma isClique_iff_footprint_isComplete {G : TemporalGraph V} {S : Set V} :
     G.IsClique S ↔ S.Pairwise G.footprint.Adj := Iff.rfl
 
+/-- `G` is a temporal clique graph: every two distinct vertices are joined by an arc at some
+time. Shorthand for `G.IsClique Set.univ`. On a subgraph `H`, use `H.IsCliqueSubgraph`
+instead: the inherited `H.IsCliqueGraph` asks for a clique on all of `V`. -/
+abbrev IsCliqueGraph (G : TemporalGraph V) : Prop := G.IsClique Set.univ
+
 def IsProper (G : TemporalGraph V) : Prop :=
   ∀ x y z : V, ∀ n : ℕ, G.Adj x y n ∧ G.Adj x z n → y = z
 

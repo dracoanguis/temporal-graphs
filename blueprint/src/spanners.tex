@@ -24,9 +24,10 @@ spanners at the subgraph level).
   \label{def:sub-spanning-clique}
   \uses{def:sub-temporal-graph,def:is-simple-clique}
   \lean{TemporalGraph.Subgraph.IsSpanning}
+  \lean{TemporalGraph.Subgraph.IsCliqueSubgraph}
   \leanok
   $H$ \emph{is spanning} in $G$ if $\mathrm{Verts}(H) = V$. $H$ \emph{is a
-  clique} if its vertex set $\mathrm{Verts}(H)$ forms a clique in $H$ itself
+  clique} (or a \emph{clique subgraph} via \texttt{IsCliqueSubgraph}) if its vertex set $\mathrm{Verts}(H)$ forms a clique in $H$ itself
   (Definition~\ref{def:is-simple-clique}): every pair of distinct vertices of
   $\mathrm{Verts}(H)$ is joined by an edge of $H$ at some time.
 \end{definition}

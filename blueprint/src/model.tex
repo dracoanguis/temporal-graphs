@@ -33,12 +33,13 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   \uses{def:temporal-graph}
   \lean{TemporalGraph.IsSimple}
   \lean{TemporalGraph.IsClique}
+  \lean{TemporalGraph.IsCliqueGraph}
   \leanok
   $G$ \emph{is simple} if between any two vertices there is at most one edge
   at a given time (i.e.\ $\mathrm{Adj}_G(x,y,n) \wedge \mathrm{Adj}_G(x,y,m)
   \Rightarrow n = m$). A set $S$ of vertices \emph{forms a clique} in $G$ if
   every pair of distinct vertices in $S$ is joined by an edge of $G$ at some
-  time; $G$ \emph{is a clique} when $S$ is the set of all vertices.
+  time; $G$ \emph{is a clique graph} (\texttt{IsCliqueGraph}) when $S$ is the set of all vertices.
 \end{definition}
 
 \begin{definition}[Footprint]

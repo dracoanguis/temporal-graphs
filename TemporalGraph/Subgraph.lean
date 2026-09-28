@@ -27,7 +27,7 @@ the subgraph counterparts of the vertex- and edge-indexed notions of `TemporalGr
 * `TemporalGraph.Subgraph.IsMatching`, `TemporalGraph.Subgraph.IsPerfectMatching` : the
   predicates quantifying over `H.verts`. `IsClique` needs no `Subgraph` duplicate: it already
   takes a `Set V` argument, so `H.IsClique H.verts` resolves through the inherited
-  `TemporalGraph.IsClique`.
+  `TemporalGraph.IsClique`; `TemporalGraph.Subgraph.IsCliqueSubgraph` abbreviates it.
 * `TemporalGraph.Subgraph.neighborSet`, `TemporalGraph.Subgraph.incidenceSet`,
   `TemporalGraph.Subgraph.size`, `TemporalGraph.Subgraph.order` : the counting notions.
 * `TemporalGraph.Subgraph.induce`, `TemporalGraph.Subgraph.deleteVerts`,
@@ -210,8 +210,13 @@ lemma isSimple_iff_coe {H : Subgraph G} : H.IsSimple ↔ H.coe.IsSimple := by
   · intro h x y _ _ h'
     exact h ⟨x, H.edge_vert h'.1⟩ ⟨y, H.edge_vert' h'.1⟩ _ _ h'
 
+/-- `H` is a clique on its own vertex set. Shorthand for `H.IsClique H.verts`. Deliberately not
+named `IsClique`: that would shadow the inherited `TemporalGraph.IsClique`, so that
+`H.IsClique S` stops resolving and both versions print as `H.IsClique`. -/
+abbrev IsCliqueSubgraph (H : Subgraph G) : Prop := H.IsClique H.verts
+
 @[simp]
-lemma isClique_iff_coe {H : Subgraph G} : H.IsClique H.verts ↔ H.coe.IsClique Set.univ := by
+lemma isClique_iff_coe {H : Subgraph G} : H.IsCliqueSubgraph ↔ H.coe.IsCliqueGraph := by
   constructor
   · intro h x _ y _ hne
     exact h x.2 y.2 (fun heq ↦ hne (Subtype.ext heq))
@@ -286,7 +291,7 @@ noncomputable def fintypeIncidenceSetOfSimple (H : Subgraph G) [Finite H.verts]
   (finite_incidenceSet_of_finite_simple h₀ x).fintype
 
 lemma nonempty_incidenceSet_of_nontrivial_clique {H : Subgraph G} [h : Nontrivial H.verts]
-    (h₁ : H.IsClique H.verts) :
+    (h₁ : H.IsCliqueSubgraph) :
     ∀ x : H.verts, (H.incidenceSet x).Nonempty := by
   intro x
   have ⟨y, z, hne⟩ := h.exists_pair_ne

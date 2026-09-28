@@ -77,8 +77,8 @@ def TemporallyConnected (G : TemporalGraph V) : Prop := ∀ x y : V, G.Reachable
   -- G.IsSpanner G' ∧ G'.TemporallyConnected
 
 theorem temporallyConnected_of_isClique (G : TemporalGraph V) :
-    G.IsClique Set.univ → G.TemporallyConnected := by
-  unfold IsClique TemporallyConnected
+    G.IsCliqueGraph → G.TemporallyConnected := by
+  unfold IsCliqueGraph IsClique TemporallyConnected
   intro h x y
   by_cases hdiff : x ≠ y
   · have ⟨n, h'⟩ := h (Set.mem_univ x) (Set.mem_univ y) hdiff

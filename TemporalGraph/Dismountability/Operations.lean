@@ -48,9 +48,9 @@ section Dismount
 
 abbrev dismount (H : Subgraph G) (x : V) := H.deleteVerts {x}
 
-lemma dismount_clique (H : Subgraph G) (x : V) (h₀ : H.IsClique H.verts) :
-    (H.dismount x).IsClique (H.dismount x).verts := by
-  unfold IsClique dismount
+lemma dismount_clique (H : Subgraph G) (x : V) (h₀ : H.IsCliqueSubgraph) :
+    (H.dismount x).IsCliqueSubgraph := by
+  unfold IsCliqueSubgraph IsClique dismount
   intro y hy z hz hne
   simp only [induce_verts, Set.mem_sdiff, Set.mem_singleton_iff] at hy hz
   have hy' : y ∈ H.verts := hy.1
@@ -205,7 +205,7 @@ theorem mount_size {H : Subgraph G} [Fintype H.edgeSet] {x : V} {y z : H.verts} 
 
 theorem dismountability {H H' : Subgraph G} {x : H.verts} {y z : H'.verts} {n m : ℕ}
     [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G.IsLoopless]
-    (h₀ : H.IsClique H.verts)
+    (h₀ : H.IsCliqueSubgraph)
     (h₁ : G.Adj y x n)
     (h₂ : G.Adj z x m)
     (h₃ : H.EarliestEdge y x n)
@@ -240,7 +240,7 @@ theorem dismountability {H H' : Subgraph G} {x : H.verts} {y z : H'.verts} {n m 
     · apply latestEdge_of_ge _ h₄
       · apply mount_edge'
       · trivial
-    · have htc : (H.dismount x).IsClique (H.dismount x).verts := by
+    · have htc : (H.dismount x).IsCliqueSubgraph := by
         apply dismount_clique
         exact h₀
       rw [isClique_iff_coe] at htc
@@ -465,7 +465,7 @@ theorem twoHopMount_size {H : Subgraph G} [Fintype H.edgeSet] {y y' z z' : H.ver
 theorem twoHopDismountability {H H' : Subgraph G} {x : H.verts} {y y' z z' : H'.verts}
     {n n' m m' : ℕ}
     [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G.IsLoopless]
-    (h₀ : H.IsClique H.verts)
+    (h₀ : H.IsCliqueSubgraph)
     (h₁ : G.Adj x y' n')
     (h₂ : G.Adj y' y n)
     (h₃ : G.Adj x z' m')
@@ -511,7 +511,7 @@ theorem twoHopDismountability {H H' : Subgraph G} {x : H.verts} {y y' z z' : H'.
         · exact twoHopMount_edge'''.symm
         · trivial
       · exact h₆.2.1
-    · have hclique : (H.dismount x).IsClique (H.dismount x).verts := by
+    · have hclique : (H.dismount x).IsCliqueSubgraph := by
         apply dismount_clique
         exact h₀
       rw [isClique_iff_coe] at hclique

@@ -98,8 +98,8 @@ besoin de le répéter ici.
 | `TemporalGraph/Init.lean` | Rule-set aesop `TemporalGraph`, utilisé par la macro `aesop_temporal_graph` | `SimpleGraph/Init.lean` |
 | `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, demande `IsSymm`/`IsLoopless` en hypothèses explicites), `neighborSet`, `arcSet`/`arcSize` (monde orienté), `edgeSet`/`size` (monde symétrique ; `mem_edgeSet` demande seulement `[IsSymm]`) | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
 | `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Marches temporelles non strictes, à temps croissant | `SimpleGraph.Walk` |
-| `TemporalGraph/Subgraph.lean` | Sous-graphe temporel : `TemporalGraph.Subgraph` étend `TemporalGraph V`, ajoutant `verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `IsClique`/`neighborSet`/`size`/`incidenceSet` (`edgeSet` est hérité de `TemporalGraph`, pas redéfini ici) ; treillis borné, `induce`/`deleteVerts`/`addVerts`/`addArc`/`addEdge` | `SimpleGraph.Subgraph` |
-| `TemporalGraph/Bipartite.lean` | Bipartition temporelle `IsBipartiteWith`/`IsBipartite` (ensembles explicites, sans hypothèse de symétrie, non classe), pont `isBipartiteWith_iff_simpleFootprint` vers Mathlib, restriction `between` aux arcs entre deux ensembles, bi-cliques temporelles `IsBicliqueWith`/`IsBiclique` (SAND 2025 §1.1), constructeur `completeBipartite` sur `α ⊕ β`, et au niveau `Subgraph` : `Subgraph.between`, `Subgraph.IsBiclique` | `SimpleGraph/Bipartite.lean` |
+| `TemporalGraph/Subgraph.lean` | Sous-graphe temporel : `TemporalGraph.Subgraph` étend `TemporalGraph V`, ajoutant `verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `neighborSet`/`size`/`incidenceSet` (`edgeSet` est hérité de `TemporalGraph`, pas redéfini ici) ; treillis borné, `induce`/`deleteVerts`/`addVerts`/`addArc`/`addEdge` | `SimpleGraph.Subgraph` |
+| `TemporalGraph/Bipartite.lean` | Bipartition temporelle `IsBipartiteWith`/`IsBipartite` (ensembles explicites, sans hypothèse de symétrie, non classe), pont `isBipartiteWith_iff_simpleFootprint` vers Mathlib, restriction `between` aux arcs entre deux ensembles, bi-cliques temporelles `IsBicliqueWith`/`IsBiclique` (SAND 2025 §1.1 ; prennent un ensemble de sommets), constructeur `completeBipartite` sur `α ⊕ β`, et au niveau `Subgraph` : `Subgraph.between` | `SimpleGraph/Bipartite.lean` |
 | `TemporalGraph/Connectivity/Basic.lean`, `Connectivity/Subgraph.lean` | `Reachable`, `TemporallyConnected` ; spanners au niveau `TemporalGraph.Subgraph` (`Subgraph.IsSpanner`, `Subgraph.IsSpannerOf`, `Subgraph.IsTCSpanner`) — les définitions `IsSpanner`/`IsTCSpanner` au niveau `TemporalGraph` dans `Connectivity/Basic.lean` sont commentées (en attente de revue) | `SimpleGraph.Connectivity` |
 | `TemporalGraph/Dismountability/Basic.lean` | `Dismountable`, `TwoHopDismountable`, partition `vminus`/`vplus`/`vzero`, bijections earliest/latest-neighbor — correspond aux Lemmes 2, 3, 5 et au Corollaire 4 de SAND 2025 | — |
 | `TemporalGraph/Dismountability/Operations.lean` | Opérations `dismount`/`mount`/`twoHopMount` et leurs théorèmes de correction (`dismountability`, `twoHopDismountability`) | — |
@@ -128,14 +128,22 @@ utilisaient vraiment).
   `IsProper`, `IsHappy`, `EarliestEdge`, `LatestEdge`, `EarliestNeighbor`, `LatestNeighbor`)
   sont donc supprimées de `Subgraph` ; elles sont maintenant héritées par
   la notation de champ généralisée via la projection `toTemporalGraph`. Restent définis en
-  `Subgraph` les prédicats/définitions qui quantifient sur `H.verts` : `IsClique`,
-  `neighborSet`, `size`, `incidenceSet` (`edgeSet` n'est PAS redéfini : il est hérité de
-  `TemporalGraph`, voir le commentaire près de `Subgraph.lean:865`). Le champ de preuve `symm` a
-  disparu : un sous-graphe peut donc être orienté. Comme `Adj.snd_mem` se déduisait de `symm`, la
-  structure gagne en échange un champ de données `edge_vert' : Adj x y n → y ∈ verts` —
-  l'invariant correct pour un objet orienté, et les six constructions le prouvent sans symétrie.
-  Conséquence : `[Fact G.IsSymm]` disparaît entièrement du dépôt, `⊤ : Subgraph G` et
-  `BoundedOrder` redeviennent inconditionnels.
+  `Subgraph` les prédicats/définitions qui quantifient sur `H.verts` : `neighborSet`, `size`,
+  `incidenceSet` (`edgeSet` n'est PAS redéfini : il est hérité de `TemporalGraph`, voir le
+  commentaire près de `Subgraph.lean:865`). Le champ de preuve `symm` a disparu : un sous-graphe
+  peut donc être orienté. Comme `Adj.snd_mem` se déduisait de `symm`, la structure gagne en
+  échange un champ de données `edge_vert' : Adj x y n → y ∈ verts` — l'invariant correct pour
+  un objet orienté, et les six constructions le prouvent sans symétrie. Conséquence : `[Fact
+  G.IsSymm]` disparaît entièrement du dépôt, `⊤ : Subgraph G` et `BoundedOrder` redeviennent
+  inconditionnels.
+- **Prédicats relatifs à un ensemble de sommets** : les prédicats qui quantifient sur les sommets
+  prennent un `Set V` en argument, comme `SimpleGraph.IsClique` dans Mathlib (`G.IsClique S`,
+  `G.IsBiclique S`). Leur version héritée est donc correcte sur un sous-graphe (`H.IsClique
+  H.verts`) et aucun doublon `Subgraph` n'est nécessaire ; `Subgraph.IsClique` et
+  `Subgraph.IsBiclique` ont été supprimés. Un prédicat « sur tout le type » redéfini dans
+  `Subgraph` s'affiche sous le même nom que l'hérité (`H.IsClique`) et produit des erreurs
+  incompréhensibles (« `H.IsClique` attendu, `H.IsClique` reçu »). `TemporallyConnected` n'a pas
+  encore suivi.
 - **Deux ensembles d'arêtes** : `arcSet : Set (V × V × ℕ)` et `arcSize` comptent les arcs
   (paires ordonnées) sans aucune hypothèse — c'est le monde orienté. `edgeSet : Set (Sym2 V × ℕ)`
   et `size` comptent les arêtes non orientées ; `mem_edgeSet` demande seulement `[G.IsSymm]`

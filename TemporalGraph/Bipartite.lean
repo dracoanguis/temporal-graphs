@@ -33,6 +33,11 @@ Corollary 12) is left to a future development.
 * `TemporalGraph.completeBipartite` : the labelled complete bipartite graph on `α ⊕ β`.
 * `TemporalGraph.Subgraph.between` : the subgraph-level counterpart of `between`.
 
+`IsBiclique`, like `IsClique`, takes the vertex set `S` it quantifies over as an explicit
+argument (Mathlib's convention), so it needs no `Subgraph`-level duplicate: `H.IsBiclique
+H.verts` resolves through the inherited `TemporalGraph.IsBiclique`, just as `H.IsClique H.verts`
+does.
+
 ## Main results
 
 * `TemporalGraph.isBipartiteWith_iff_simpleFootprint`,
@@ -187,7 +192,7 @@ end Between
 
 section IsBicliqueWith
 
-variable {G : TemporalGraph V} {s t : Set V} {v w : V}
+variable {G : TemporalGraph V} {S s t : Set V} {v w : V}
 
 /-- `G` is a temporal bi-clique on parts `s` and `t` (SAND 2025, §1.1): it is bipartite with these
 parts, and every vertex of `s` has an arc, at some time, to every vertex of `t`. Two fields rather
@@ -196,11 +201,11 @@ structure IsBicliqueWith (G : TemporalGraph V) (s t : Set V) : Prop where
   isBipartiteWith : G.IsBipartiteWith s t
   adj_of_mem ⦃v w : V⦄ : v ∈ s → w ∈ t → ∃ n, G.Adj v w n
 
-/-- `G` is a temporal bi-clique: its footprint is complete bipartite on the whole vertex type
-(covering matters here, unlike for `IsBipartite`, since an extra vertex must still see the other
-part). -/
-def IsBiclique (G : TemporalGraph V) : Prop :=
-  ∃ s t : Set V, s ∪ t = Set.univ ∧ G.IsBicliqueWith s t
+/-- `G` is a temporal bi-clique on the vertex set `S`: `S` splits into two parts covering it, with
+a bi-clique between them (covering matters here, unlike for `IsBipartite`, since an extra vertex
+must still see the other part). `G.IsBiclique Set.univ` is a bi-clique graph. -/
+def IsBiclique (G : TemporalGraph V) (S : Set V) : Prop :=
+  ∃ s t : Set V, s ∪ t = S ∧ G.IsBicliqueWith s t
 
 /-- The reverse-oriented arc from `w ∈ t` to `v ∈ s`, using symmetry directly rather than
 rebuilding the whole swapped bi-clique (compare `IsBicliqueWith.symm`). -/
@@ -216,12 +221,12 @@ theorem IsBicliqueWith.symm [G.IsSymm] (h : G.IsBicliqueWith s t) : G.IsBiclique
 
 /-- Restricting a clique to the arcs between two disjoint parts gives a temporal bi-clique on
 these parts (SAND 2025, the one-step link used by Corollary 12). -/
-theorem IsClique.between_isBicliqueWith (hc : G.IsClique) (h : Disjoint s t) :
-    (G.between s t).IsBicliqueWith s t where
+theorem IsClique.between_isBicliqueWith (hc : G.IsClique S) (hs : s ⊆ S) (ht : t ⊆ S)
+    (h : Disjoint s t) : (G.between s t).IsBicliqueWith s t where
   isBipartiteWith := between_isBipartiteWith h
   adj_of_mem v w hv hw := by
     have hvw : v ≠ w := by rintro rfl; exact Set.disjoint_left.mp h hv hw
-    obtain ⟨n, hadj⟩ := hc v w hvw
+    obtain ⟨n, hadj⟩ := hc (hs hv) (ht hw) hvw
     exact ⟨n, hadj, Or.inl ⟨hv, hw⟩⟩
 
 end IsBicliqueWith
@@ -294,7 +299,8 @@ theorem completeBipartite_isBicliqueWith (f : α → β → ℕ) :
     exact ⟨f a b, rfl⟩
 
 /-- `completeBipartite f` is a temporal bi-clique, covering the whole vertex type. -/
-theorem completeBipartite_isBiclique (f : α → β → ℕ) : (completeBipartite f).IsBiclique :=
+theorem completeBipartite_isBiclique (f : α → β → ℕ) :
+    (completeBipartite f).IsBiclique Set.univ :=
   ⟨_, _, by
     ext x
     cases x <;> simp, completeBipartite_isBicliqueWith f⟩
@@ -368,12 +374,6 @@ instance Subgraph.between_isSymm [H.IsSymm] : (H.between s t).IsSymm :=
   IsSymm.of_adj fun _ _ _ h ↦ by
     obtain ⟨hadj, hor⟩ := h
     exact ⟨TemporalGraph.adj_symm hadj, by tauto⟩
-
-/-- `H` is a temporal bi-clique on a partition of its own vertex set (the subgraph-level
-counterpart of `TemporalGraph.IsBiclique`, quantifying over `H.verts` as `Subgraph.IsClique`
-does). -/
-def Subgraph.IsBiclique (H : Subgraph G) : Prop :=
-  ∃ s t : Set V, s ∪ t = H.verts ∧ H.IsBicliqueWith s t
 
 end Subgraph
 

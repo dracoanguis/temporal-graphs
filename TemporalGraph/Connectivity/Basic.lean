@@ -77,12 +77,11 @@ def TemporallyConnected (G : TemporalGraph V) : Prop := ∀ x y : V, G.Reachable
   -- G.IsSpanner G' ∧ G'.TemporallyConnected
 
 theorem temporallyConnected_of_isClique (G : TemporalGraph V) :
-    G.IsClique → G.TemporallyConnected := by
+    G.IsClique Set.univ → G.TemporallyConnected := by
   unfold IsClique TemporallyConnected
   intro h x y
-  have h' := h x y
   by_cases hdiff : x ≠ y
-  · have ⟨n, h'⟩ := h' hdiff
+  · have ⟨n, h'⟩ := h (Set.mem_univ x) (Set.mem_univ y) hdiff
     exact reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨NonemptyTemporalWalk.Single h'⟩⟩
   · simp_all [reachable_of_self]
 

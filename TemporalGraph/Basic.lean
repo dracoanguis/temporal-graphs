@@ -164,12 +164,14 @@ def simpleFootprint (G : TemporalGraph V) (hs : G.IsSymm) (hl : G.IsLoopless) : 
 def IsSimple (G : TemporalGraph V) : Prop :=
   ∀ (x y : V) (n m : ℕ), G.Adj x y n ∧ G.Adj x y m → n=m
 
-def IsClique (G : TemporalGraph V) : Prop :=
-  ∀ x y : V, x ≠ y → ∃ t, G.Adj x y t
+/-- `S` is a temporal clique of `G`: every two distinct vertices of `S` are joined by an arc at
+some time (Mathlib's `SimpleGraph.IsClique`, with time). `G.IsClique Set.univ` is a clique
+graph. -/
+abbrev IsClique (G : TemporalGraph V) (S : Set V) : Prop :=
+  S.Pairwise fun x y ↦ ∃ n, G.Adj x y n
 
-lemma isClique_iff_footprint_isComplete {G : TemporalGraph V} :
-    G.IsClique ↔ Set.univ.Pairwise G.footprint.Adj := by
-  simp only [IsClique, ne_eq, Set.Pairwise, Set.mem_univ, footprint, forall_const]
+lemma isClique_iff_footprint_isComplete {G : TemporalGraph V} {S : Set V} :
+    G.IsClique S ↔ S.Pairwise G.footprint.Adj := Iff.rfl
 
 def IsProper (G : TemporalGraph V) : Prop :=
   ∀ x y z : V, ∀ n : ℕ, G.Adj x y n ∧ G.Adj x z n → y = z

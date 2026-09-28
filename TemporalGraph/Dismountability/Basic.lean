@@ -67,7 +67,7 @@ section Partition
 
 -- SAND 2025, §2: 1-hop dismountability (hypothesis of Theorem 1)
 def Dismountable (H : Subgraph G) :=
-  H.IsClique ∧ ∃ (x y z : V), H.EarliestNeighbor y x ∧ H.LatestNeighbor z x
+  H.IsClique H.verts ∧ ∃ (x y z : V), H.EarliestNeighbor y x ∧ H.LatestNeighbor z x
 
 -- SAND 2025, §3.1: V⁻, defined before Lemma 2
 def vminus (H : Subgraph G) : Set V := {x : V | ∃ y : V, H.EarliestNeighbor y x}
@@ -129,12 +129,12 @@ lemma vunion_eq_univ {H : Subgraph G} : H.vminus ∪ H.vplus ∪ H.vzero = H.ver
   simp [vzero]
 
 lemma nonempty_vplus_inter_vminus_iff_dismountable (H : Subgraph G) :
-    H.IsClique ∧ (H.vplus ∩ H.vminus).Nonempty ↔ H.Dismountable := by
+    H.IsClique H.verts ∧ (H.vplus ∩ H.vminus).Nonempty ↔ H.Dismountable := by
   rw [Dismountable, Set.nonempty_def, vminus, vplus]
   simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, exists_and_left, exists_and_right, And.comm]
 
 -- SAND 2025, Lemma 2
-lemma partition_of_not_dismountable {H : Subgraph G} (h : H.IsClique ∧ ¬H.Dismountable) :
+lemma partition_of_not_dismountable {H : Subgraph G} (h : H.IsClique H.verts ∧ ¬H.Dismountable) :
     ∀ x ∈ H.verts, ∃! s ∈ ({H.vminus, H.vplus, H.vzero} : Set (Set V)), x ∈ s := by
   have ⟨hClique, hnDis⟩ := h
   conv at hnDis => rhs ; rw [←nonempty_vplus_inter_vminus_iff_dismountable]
@@ -190,7 +190,7 @@ section TwoHop
 
 -- SAND 2025, §2.1: {1,2}-hop dismountability (k-hop, k ≤ 2)
 def TwoHopDismountable (H : Subgraph G) :=
-  H.IsClique
+  H.IsClique H.verts
   ∧
   (∃ x : V,
     ((∃ y : V, H.EarliestNeighbor y x)
@@ -212,14 +212,14 @@ lemma twoHopDismountable_of_dismountable {H : Subgraph G} (h : H.Dismountable) :
 
 @[simp]
 lemma not_dismountable_of_not_twoHopDismountable {H : Subgraph G}
-    (h : H.IsClique ∧ ¬H.TwoHopDismountable) :
+    (h : H.IsClique H.verts ∧ ¬H.TwoHopDismountable) :
     ¬H.Dismountable := by
   contrapose h
   simp only [h, twoHopDismountable_of_dismountable, not_true_eq_false, and_false, not_false_eq_true]
 
 -- SAND 2025, Lemma 3
 lemma vplus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} (x y : H.vplus)
-    (h₀ : ¬H.TwoHopDismountable) (h₁ : H.IsClique) (h₂ : x ≠ y) [H.IsSymm] :
+    (h₀ : ¬H.TwoHopDismountable) (h₁ : H.IsClique H.verts) (h₂ : x ≠ y) [H.IsSymm] :
     ∀ z z' : V, H.EarliestNeighbor x z ∧ H.EarliestNeighbor y z' → z ≠ z' := by
   simp only [EarliestNeighbor, ne_eq, and_imp, forall_exists_index]
   intro z z' n hee m hee' hzz'
@@ -255,7 +255,7 @@ lemma vplus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} (x y : H.vplu
 
 -- SAND 2025, Lemma 3
 lemma vminus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} (x y : H.vminus)
-    (h₀ : ¬H.TwoHopDismountable) (h₁ : H.IsClique) (h₂ : x ≠ y) [H.IsSymm] :
+    (h₀ : ¬H.TwoHopDismountable) (h₁ : H.IsClique H.verts) (h₂ : x ≠ y) [H.IsSymm] :
     ∀ z z' : V, H.LatestNeighbor x z ∧ H.LatestNeighbor y z' → z ≠ z' := by
   simp only [LatestNeighbor, ne_eq, and_imp, forall_exists_index]
   intro z z' n hle m hle' hzz'
@@ -297,7 +297,7 @@ lemma earliestEdge_exists_of_finite_nontrivial_simple_clique {H : Subgraph G}
     [h₀ : Finite H.verts]
     [h₁ : Nontrivial H.verts]
     (h₂ : H.IsSimple)
-    (h₃ : H.IsClique) :
+    (h₃ : H.IsClique H.verts) :
     ∀ (x : H.verts), ∃ (y : V) (n : ℕ), H.EarliestEdge x y n := by
   intro x
   have his₀ : (H.incidenceSet x).Nonempty := nonempty_incidenceSet_of_nontrivial_clique h₃ x
@@ -308,7 +308,7 @@ lemma latestEdge_exists_of_finite_nontrivial_simple_clique {H : Subgraph G}
     [h₀ : Finite H.verts]
     [h₁ : Nontrivial H.verts]
     (h₂ : H.IsSimple)
-    (h₃ : H.IsClique) :
+    (h₃ : H.IsClique H.verts) :
     ∀ (x : H.verts), ∃ (y : V) (n : ℕ), H.LatestEdge x y n := by
   intro x
   have his₀ : (H.incidenceSet x).Nonempty := nonempty_incidenceSet_of_nontrivial_clique h₃ x
@@ -319,7 +319,7 @@ lemma earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : S
     [h₀ : Finite H.verts]
     [h₁ : Nontrivial H.verts]
     (h₂ : H.IsSimple)
-    (h₃ : H.IsClique)
+    (h₃ : H.IsClique H.verts)
     (h₄ : H.IsProper) :
     ∀ (x : H.verts), ∃! q : V × ℕ, H.EarliestEdge x q.1 q.2 := by
   intro x
@@ -341,7 +341,7 @@ lemma latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : Sub
     [Finite H.verts]
     [Nontrivial H.verts]
     (h₁ : H.IsSimple)
-    (h₂ : H.IsClique)
+    (h₂ : H.IsClique H.verts)
     (h₃ : H.IsProper) :
     ∀ (x : H.verts), ∃! q : V × ℕ, H.LatestEdge x q.1 q.2 := by
   intro x
@@ -363,7 +363,7 @@ lemma existsUnique_earliestNeighbor {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
     (h₀ : H.IsSimple)
-    (h₁ : H.IsClique)
+    (h₁ : H.IsClique H.verts)
     (h₂ : H.IsProper) :
     ∀ x : H.verts, ∃! y : H.vminus, H.EarliestNeighbor x y := by
   intro x
@@ -382,7 +382,7 @@ noncomputable def earliestNeighborFn {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
     (h₀ : H.IsSimple)
-    (h₁ : H.IsClique)
+    (h₁ : H.IsClique H.verts)
     (h₂ : H.IsProper) :
     H.vplus → H.vminus :=
   fun x => Classical.choose
@@ -393,7 +393,7 @@ lemma earliestNeighborFn_eq {H : Subgraph G}
     [Nontrivial H.verts]
     {x : H.vplus} {y : H.vminus}
     (h₀ : H.IsSimple)
-    (h₁ : H.IsClique)
+    (h₁ : H.IsClique H.verts)
     (h₂ : H.IsProper) :
     (earliestNeighborFn h₀ h₁ h₂) x = y ↔ H.EarliestNeighbor x y := by
   unfold earliestNeighborFn
@@ -408,7 +408,7 @@ lemma earliestNeighborFn_injective {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
     (h₀ : H.IsSimple)
-    (h₁ : H.IsClique)
+    (h₁ : H.IsClique H.verts)
     (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable)
     [H.IsSymm] :
@@ -430,7 +430,7 @@ lemma vplus_card_le_vminus_card {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
     (h₀ : H.IsSimple)
-    (h₁ : H.IsClique)
+    (h₁ : H.IsClique H.verts)
     (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable)
     [H.IsSymm] :
@@ -442,7 +442,7 @@ lemma existsUnique_latestNeighbor {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
     (h₀ : H.IsSimple)
-    (h₁ : H.IsClique)
+    (h₁ : H.IsClique H.verts)
     (h₂ : H.IsProper) :
     ∀ x : H.verts, ∃! y : H.vplus, H.LatestNeighbor x y := by
   intro x
@@ -461,7 +461,7 @@ noncomputable def latestNeighborFn {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
     (h₀ : H.IsSimple)
-    (h₁ : H.IsClique)
+    (h₁ : H.IsClique H.verts)
     (h₂ : H.IsProper) :
     H.vminus → H.vplus :=
   fun x => Classical.choose
@@ -472,7 +472,7 @@ lemma latestNeighborFn_eq {H : Subgraph G}
     [Nontrivial H.verts]
     {x : H.vminus} {y : H.vplus}
     (h₀ : H.IsSimple)
-    (h₁ : H.IsClique)
+    (h₁ : H.IsClique H.verts)
     (h₂ : H.IsProper) :
     (latestNeighborFn h₀ h₁ h₂) x = y ↔ H.LatestNeighbor x y := by
   unfold latestNeighborFn
@@ -487,7 +487,7 @@ lemma latestNeighborFn_injective {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
     (h₀ : H.IsSimple)
-    (h₁ : H.IsClique)
+    (h₁ : H.IsClique H.verts)
     (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable)
     [H.IsSymm] :
@@ -509,7 +509,7 @@ lemma vminus_card_le_vplus_card {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
     (h₀ : H.IsSimple)
-    (h₁ : H.IsClique)
+    (h₁ : H.IsClique H.verts)
     (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable)
     [H.IsSymm] :
@@ -522,7 +522,7 @@ lemma vminus_card_eq_vplus_card {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
     (h₀ : H.IsSimple)
-    (h₁ : H.IsClique)
+    (h₁ : H.IsClique H.verts)
     (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable)
     [H.IsSymm] :
@@ -535,7 +535,7 @@ lemma earliestNeighborFn_bijective {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
     (h₀ : H.IsSimple)
-    (h₁ : H.IsClique)
+    (h₁ : H.IsClique H.verts)
     (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable)
     [H.IsSymm] :
@@ -550,7 +550,7 @@ lemma latestNeighborFn_bijective {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
     (h₀ : H.IsSimple)
-    (h₁ : H.IsClique)
+    (h₁ : H.IsClique H.verts)
     (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable)
     [H.IsSymm] :
@@ -565,7 +565,7 @@ lemma existsUnique_vplus_earliestEdge {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
     (h₀ : H.IsSimple)
-    (h₁ : H.IsClique)
+    (h₁ : H.IsClique H.verts)
     (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable)
     [H.IsSymm] :
@@ -590,7 +590,7 @@ lemma existsUnique_vminus_latestEdge {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
     (h₀ : H.IsSimple)
-    (h₁ : H.IsClique)
+    (h₁ : H.IsClique H.verts)
     (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable)
     [H.IsSymm] :
@@ -619,7 +619,7 @@ lemma vzero_empty_of_not_twoHopDismountable {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
     (h₁ : H.IsSimple)
-    (h₂ : H.IsClique)
+    (h₂ : H.IsClique H.verts)
     (h₃ : H.IsProper)
     (h₄ : ¬H.TwoHopDismountable)
     [H.IsSymm] :

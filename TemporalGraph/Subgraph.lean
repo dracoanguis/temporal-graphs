@@ -24,8 +24,10 @@ the subgraph counterparts of the vertex- and edge-indexed notions of `TemporalGr
 * `TemporalGraph.Subgraph.coe` : the view of `H : Subgraph G` as a `TemporalGraph H.verts`.
 * `TemporalGraph.Subgraph.IsSpanning`, `TemporalGraph.Subgraph.IsInduced` : whether a subgraph
   carries all of `G`'s vertices, resp. all of `G`'s edges between its own vertices.
-* `TemporalGraph.Subgraph.IsClique`, `TemporalGraph.Subgraph.IsMatching`,
-  `TemporalGraph.Subgraph.IsPerfectMatching` : the predicates quantifying over `H.verts`.
+* `TemporalGraph.Subgraph.IsMatching`, `TemporalGraph.Subgraph.IsPerfectMatching` : the
+  predicates quantifying over `H.verts`. `IsClique` needs no `Subgraph` duplicate: it already
+  takes a `Set V` argument, so `H.IsClique H.verts` resolves through the inherited
+  `TemporalGraph.IsClique`.
 * `TemporalGraph.Subgraph.neighborSet`, `TemporalGraph.Subgraph.incidenceSet`,
   `TemporalGraph.Subgraph.size`, `TemporalGraph.Subgraph.order` : the counting notions.
 * `TemporalGraph.Subgraph.induce`, `TemporalGraph.Subgraph.deleteVerts`,
@@ -208,12 +210,14 @@ lemma isSimple_iff_coe {H : Subgraph G} : H.IsSimple ↔ H.coe.IsSimple := by
   · intro h x y _ _ h'
     exact h ⟨x, H.edge_vert h'.1⟩ ⟨y, H.edge_vert' h'.1⟩ _ _ h'
 
-def IsClique (H : Subgraph G) : Prop := ∀ (x y : H.verts), x ≠ y → ∃ n, H.Adj x y n
-
 @[simp]
-lemma isClique_iff_coe {H : Subgraph G} : H.IsClique ↔ H.coe.IsClique := by
-  simp only [IsClique, ne_eq, Subtype.forall, Subtype.mk.injEq, TemporalGraph.IsClique,
-    coe_Adj]
+lemma isClique_iff_coe {H : Subgraph G} : H.IsClique H.verts ↔ H.coe.IsClique Set.univ := by
+  constructor
+  · intro h x _ y _ hne
+    exact h x.2 y.2 (fun heq ↦ hne (Subtype.ext heq))
+  · intro h x hx y hy hne
+    exact h (Set.mem_univ (⟨x, hx⟩ : H.verts)) (Set.mem_univ (⟨y, hy⟩ : H.verts))
+      (fun heq ↦ hne (congrArg Subtype.val heq))
 
 -- `IsProper` is no longer redefined here; `H.IsProper` resolves to `TemporalGraph.IsProper
 -- H.toTemporalGraph`, whose binders are EXPLICIT, so call sites below supply `x y z n` explicitly.
@@ -282,16 +286,16 @@ noncomputable def fintypeIncidenceSetOfSimple (H : Subgraph G) [Finite H.verts]
   (finite_incidenceSet_of_finite_simple h₀ x).fintype
 
 lemma nonempty_incidenceSet_of_nontrivial_clique {H : Subgraph G} [h : Nontrivial H.verts]
-    (h₁ : H.IsClique) :
+    (h₁ : H.IsClique H.verts) :
     ∀ x : H.verts, (H.incidenceSet x).Nonempty := by
   intro x
   have ⟨y, z, hne⟩ := h.exists_pair_ne
   by_cases heq : x=y
   · subst heq
-    have ⟨n, hadj⟩ := h₁ x z hne
+    have ⟨n, hadj⟩ := h₁ x.2 z.2 (fun h' ↦ hne (Subtype.ext h'))
     have h' : ⟨z, n⟩ ∈ (H.incidenceSet x) := hadj
     use ⟨z, n⟩
-  · have ⟨n, hadj⟩ := h₁ x y heq
+  · have ⟨n, hadj⟩ := h₁ x.2 y.2 (fun h' ↦ heq (Subtype.ext h'))
     have h' : ⟨y, n⟩ ∈ (H.incidenceSet x) := hadj
     use ⟨y, n⟩
 

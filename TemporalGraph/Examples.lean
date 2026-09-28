@@ -40,9 +40,8 @@ instance square_isLoopless : square.IsLoopless := ⟨fun t => ⟨fun x => by
   split <;> aesop⟩⟩
 
 /-- The square graph is a complete temporal clique. -/
-lemma square_clique : square.IsClique
-:= by
-  intro u v _
+lemma square_clique : square.IsClique Set.univ := by
+  intro u _ v _ h
   match u, v with
   | 0, 1 => use 1 ; simp [square]
   | 1, 0 => use 1 ; simp [square]
@@ -71,7 +70,8 @@ bi-clique `K₂,₂` — the shape of SAND 2025, Corollary 12. Here `{0, 1}` and
 `V⁻` and `V⁺` (`square_vminus`, `square_vplus`). -/
 theorem square_between_isBicliqueWith :
     (square.between {0, 1} {2, 3}).IsBicliqueWith {0, 1} {2, 3} :=
-  IsClique.between_isBicliqueWith square_clique (Set.disjoint_left.mpr (by decide))
+  IsClique.between_isBicliqueWith square_clique (Set.subset_univ _) (Set.subset_univ _)
+    (Set.disjoint_left.mpr (by decide))
 
 theorem square_vminus : (⊤ : square.Subgraph).vminus = {0, 1} := by
   ext x
@@ -123,7 +123,7 @@ theorem square_vplus : (⊤ : square.Subgraph).vplus = {2, 3} := by
 /-- A temporal bi-clique `K₂,₂` with labels 1, 2, 3, 4. -/
 def biSquare : TemporalGraph (Fin 2 ⊕ Fin 2) := completeBipartite fun a b ↦ 2 * a.val + b.val + 1
 
-theorem biSquare_isBiclique : biSquare.IsBiclique :=
+theorem biSquare_isBiclique : biSquare.IsBiclique Set.univ :=
   completeBipartite_isBiclique _
 
 theorem biSquare_isHappy : biSquare.IsHappy :=

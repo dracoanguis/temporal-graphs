@@ -22,13 +22,13 @@ spanners at the subgraph level).
 
 \begin{definition}[Spanning, clique sub-temporal-graph]
   \label{def:sub-spanning-clique}
-  \uses{def:sub-temporal-graph}
+  \uses{def:sub-temporal-graph,def:is-simple-clique}
   \lean{TemporalGraph.Subgraph.IsSpanning}
-  \lean{TemporalGraph.Subgraph.IsClique}
   \leanok
   $H$ \emph{is spanning} in $G$ if $\mathrm{Verts}(H) = V$. $H$ \emph{is a
-  clique} if every pair of distinct vertices of $H$ is joined by an edge of
-  $H$ at some time.
+  clique} if its vertex set $\mathrm{Verts}(H)$ forms a clique in $H$ itself
+  (Definition~\ref{def:is-simple-clique}): every pair of distinct vertices of
+  $\mathrm{Verts}(H)$ is joined by an edge of $H$ at some time.
 \end{definition}
 
 \begin{definition}[Order on sub-temporal-graphs]

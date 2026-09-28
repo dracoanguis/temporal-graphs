@@ -36,8 +36,9 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   \leanok
   $G$ \emph{is simple} if between any two vertices there is at most one edge
   at a given time (i.e.\ $\mathrm{Adj}_G(x,y,n) \wedge \mathrm{Adj}_G(x,y,m)
-  \Rightarrow n = m$). $G$ \emph{is a clique} if every pair of distinct
-  vertices is joined by an edge at some time.
+  \Rightarrow n = m$). A set $S$ of vertices \emph{forms a clique} in $G$ if
+  every pair of distinct vertices in $S$ is joined by an edge of $G$ at some
+  time; $G$ \emph{is a clique} when $S$ is the set of all vertices.
 \end{definition}
 
 \begin{definition}[Footprint]
@@ -56,8 +57,9 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   \uses{def:is-simple-clique,def:footprint}
   \lean{TemporalGraph.isClique_iff_footprint_isComplete}
   \leanok
-  $G$ is a clique exactly when its footprint is complete, i.e.\ every two
-  distinct vertices of $V$ are adjacent in the footprint.
+  A set $S$ of vertices forms a clique in $G$ exactly when the vertices of $S$
+  are pairwise adjacent in $G$'s footprint (i.e.\ the footprint restricted to
+  $S$ is complete).
 \end{lemma}
 
 \begin{definition}[Proper, happy]
@@ -190,15 +192,17 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   \lean{TemporalGraph.IsBiclique}
   \lean{TemporalGraph.completeBipartite}
   \leanok
-  A temporal graph $G$ is a \emph{temporal bi-clique} relative to $(s, t)$ if
-  it is bipartite with witness $(s, t)$ and, moreover, every vertex in $s$ has
-  an edge to every vertex in $t$ at some time. When the two parts exhaust all
-  vertices, $G$ \emph{is a bi-clique}. The \emph{complete bipartite} temporal
-  graph on the disjoint union $\alpha \sqcup \beta$ with edge times given by a function $f :
-  \alpha \to \beta \to \mathbb{N}$ is the temporal bi-clique where all such
-  edges are present at their designated times. (SAND 2025, \S1.1: ``Temporal
-  bi-cliques are defined analogously, except that the footprint is a complete
-  bipartite graph.'')
+  A temporal graph $G$ is a \emph{temporal bi-clique} relative to disjoint sets
+  $(s, t)$ if it is bipartite with witness $(s, t)$ and, moreover, every vertex
+  in $s$ has an edge to every vertex in $t$ at some time. A set $S$ of vertices
+  \emph{forms a bi-clique} in $G$ if $S = s \cup t$ for some pair $(s, t)$
+  relative to which $G$ is a bi-clique; $G$ \emph{is a bi-clique} when $S$ is
+  the set of all vertices. The
+  \emph{complete bipartite} temporal graph on the disjoint union $\alpha \sqcup
+  \beta$ with edge times given by a function $f : \alpha \to \beta \to
+  \mathbb{N}$ is the temporal bi-clique where all such edges are present at
+  their designated times. (SAND 2025, \S1.1: ``Temporal bi-cliques are defined
+  analogously, except that the footprint is a complete bipartite graph.'')
 \end{definition}
 
 \begin{lemma}[Bipartiteness via simple footprint]

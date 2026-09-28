@@ -5,6 +5,7 @@ Authors: Ethan Bargaud-Arm
 -/
 import TemporalGraph.Basic
 import TemporalGraph.Subgraph
+import TemporalGraph.Bipartite
 
 /-!
 # Dismountability
@@ -684,6 +685,28 @@ lemma vzero_empty_of_not_twoHopDismountable {H : Subgraph G}
           exact (vzero_mem z' hx).left
 
 end VzeroEmpty
+
+section biclique
+
+-- SAND 2025, Corollary 12
+lemma biclique_of_not_twoHopDismountable {H : Subgraph G}
+    [Finite H.verts]
+    [Nontrivial H.verts]
+    (h₀ : H.IsSimple)
+    (h₁ : H.IsClique H.verts)
+    (h₂ : H.IsProper)
+    (h₃ : ¬H.TwoHopDismountable)
+    [H.IsSymm] :
+    (H.between H.vminus H.vplus).IsBicliqueWith H.vminus H.vplus := by
+  apply IsClique.between_isBicliqueWith h₁ vminus_sub_verts vplus_sub_verts
+  apply Set.disjoint_iff_inter_eq_empty.mpr
+  have hnDis := not_dismountable_of_not_twoHopDismountable ⟨h₁, h₃⟩
+  conv at hnDis => rhs ; rw [←nonempty_vplus_inter_vminus_iff_dismountable]
+  push Not at hnDis
+  conv => lhs ; apply Set.inter_comm
+  apply hnDis h₁
+
+end biclique
 
 end Subgraph
 

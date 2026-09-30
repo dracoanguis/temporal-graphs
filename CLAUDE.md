@@ -263,11 +263,19 @@ bi-clique entre `V⁻` et `V⁺` est une remarque en prose juste après le Corol
 | `dismountability` (`Dismountability/Operations.lean`) | Théorème 2.1 |
 | `twoHopDismountability` (`Dismountability/Operations.lean`) | §2.1, cas 2-hop (non numéroté) |
 
-Toute nouvelle preuve visant un résultat du papier (ou d'un résultat récent connexe) devrait
-garder cette convention : un commentaire citant le numéro exact du théorème/lemme visé, sous la
-forme `-- SAND 2025, Lemma 3.1`, que suivent déjà les commentaires de `Dismountability/*` et le
-blueprint. Toujours écrire la forme complète `-- SAND 2025, Lemma 3.4` (et non `-- lemma 3.4`
-seul), pour qu'on ne confonde pas avec la numérotation de l'article CPS.
+Toute nouvelle preuve visant un résultat du papier (ou d'un résultat récent connexe) cite le
+numéro exact dans une **docstring Mathlib** qui commence par la référence complète, puis énonce le
+résultat en une phrase : `/-- SAND 2025, Lemma 3.4: in a clique that is not {1,2}-hop
+dismountable, V⁰ = ∅. -/`. Toujours écrire la forme complète `SAND 2025, Lemma 3.4` (et non
+`lemma 3.4` seul), pour qu'on ne confonde pas avec la numérotation de l'article CPS.
+
+**Forme des énoncés** (appliquée à `Dismountability/Basic.lean`, à suivre partout) :
+- ordre des binders : `{H : Subgraph G}` d'abord (les classes en dépendent), puis les classes
+  (`[Finite H.verts] [Nontrivial H.verts] [H.IsSymm]`), puis les autres implicites
+  (`{u v : V} {n : ℕ}`), puis les hypothèses explicites ;
+- hypothèses nommées numérotées `h₀, h₁, h₂, …` sans trou ; si l'on en retire une, renuméroter ;
+- binders courts regroupés sur une ligne (dans la limite de 100 caractères), binder long seul sur
+  sa ligne.
 
 ## Commandes utiles
 

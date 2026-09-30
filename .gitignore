@@ -7,3 +7,5 @@
 /blueprint/lean_decls
 /blueprint/src/web.paux
 __pycache__/
+
+*.DS_Store

@@ -84,27 +84,24 @@ section TemporalConnectivity
 /-- Every vertex can reach every vertex in the `Subgraph`. -/
 def TemporallyConnected (H : Subgraph G) : Prop := ∀ x y : H.verts , H.Reachable x y
 
+/-- `H` is temporally connected on its own vertex set. Shorthand for
+`H.TemporallyConnected H.verts`. -/
+abbrev TemporallyConnectedSubgraph (H : Subgraph G) : Prop :=
+  TemporalGraph.TemporallyConnected H.toTemporalGraph H.verts
+
 @[simp]
 lemma temporallyConnected_iff {H : Subgraph G} :
-    H.TemporallyConnected ↔ H.coe.TemporallyConnected := by
-  apply Iff.intro
-  · unfold TemporallyConnected
-    intro h
-    unfold TemporalGraph.TemporallyConnected
-    trivial
-  · unfold TemporallyConnected
-    intro h
-    rw [TemporalGraph.TemporallyConnected] at h
-    trivial
+    H.TemporallyConnected ↔ H.coe.TemporallyConnectedGraph := by
+  unfold TemporallyConnected TemporallyConnectedGraph TemporalGraph.TemporallyConnected
+  simp
 
 lemma toTemporalGraph_temporallyConnected_of_spanning_temporallyConnected
     {H : Subgraph G} :
-    H.TemporallyConnected ∧ H.IsSpanning → H.toTemporalGraph.TemporallyConnected := by
-  unfold TemporallyConnected IsSpanning
+    H.TemporallyConnected ∧ H.IsSpanning → H.toTemporalGraph.TemporallyConnectedGraph := by
+  unfold TemporallyConnected IsSpanning TemporallyConnectedGraph TemporalGraph.TemporallyConnected
   intro h
-  unfold TemporalGraph.TemporallyConnected
   have h' := h.left
-  intro x y
+  intro x _ y _
   simp only [reachable_iff_toTemporalGraph] at h'
   apply h' ⟨x, h.right x⟩ ⟨y, h.right y⟩
 
@@ -115,8 +112,7 @@ def IsTCSpanner (H : Subgraph G) : Prop :=
 
 theorem isTCSpanner_iff_isSpanner_and_TC {H : Subgraph G} :
     H.IsTCSpanner ↔ H.IsSpanner ∧ H.TemporallyConnected := by
-  simp only [IsTCSpanner, temporallyConnected_iff, IsSpanner, Reachable, Subtype.forall,
-    and_congr_left_iff, iff_self_and]
+  simp only [IsTCSpanner, IsSpanner, Reachable, Subtype.forall, and_congr_left_iff, iff_self_and]
   intro htc _ x hx y hy _
   exact htc ⟨x, hx⟩ ⟨y, hy⟩
 
@@ -171,13 +167,13 @@ lemma reachable_of_extended_latestEdge {H : Subgraph G} {x y z : H.verts} {n m :
   exact H.coe.reachable_of_extended_latestEdge (coe_latestEdge h₀) h₁ h₂ a h
 
 protected lemma temporallyConnected_of_TCSpanner (H : Subgraph G) :
-    H.IsTCSpanner → G.TemporallyConnected := by
+    H.IsTCSpanner → G.TemporallyConnectedGraph := by
   intro ⟨h_span, h_tc⟩
   unfold TemporallyConnected at h_tc
   rw [Subgraph.IsSpanning] at h_span
-  rw [TemporalGraph.TemporallyConnected]
+  unfold TemporallyConnectedGraph TemporalGraph.TemporallyConnected
   simp only [Reachable, Subtype.forall, h_span, forall_true_left] at h_tc
-  intro x y
+  intro x _ y _
   let ⟨n, ⟨m, ⟨p⟩⟩⟩ :=  h_tc x y
   exact ⟨n, ⟨m, ⟨p.lift_subtempgraph_walk⟩⟩⟩
 
@@ -210,23 +206,23 @@ lemma top_isSpanner : (⊤ : Subgraph G).IsSpanner := by
 /-- A temporal graph admits a spanner if and only if it is Temporally Connected -/
 @[simp]
 theorem TCspanner_iff_TC :
-    (∃ (H : Subgraph G), H.IsTCSpanner) ↔ G.TemporallyConnected := by
+    (∃ (H : Subgraph G), H.IsTCSpanner) ↔ G.TemporallyConnectedGraph := by
   unfold Subgraph.IsTCSpanner
   apply Iff.intro
   · intro ⟨H, ⟨h_span, h_tc⟩⟩
     unfold TemporallyConnected at h_tc
     rw [IsSpanning] at h_span
-    rw [TemporalGraph.TemporallyConnected]
+    unfold TemporallyConnectedGraph TemporalGraph.TemporallyConnected
     simp only [Reachable, Subtype.forall, h_span, forall_true_left] at h_tc
-    intro x y
+    intro x _ y _
     let ⟨_, ⟨_, ⟨tw⟩⟩⟩ :=  h_tc x y
     exact ⟨_, ⟨_, ⟨tw.lift_subtempgraph_walk⟩⟩⟩
   · intro h_tc
     have h'_tc : (⊤ : Subgraph G).TemporallyConnected  := by
       have hspanner : (⊤ : Subgraph G).IsSpanner := top_isSpanner
-      rw [TemporalGraph.TemporallyConnected] at h_tc
+      unfold TemporallyConnectedGraph TemporalGraph.TemporallyConnected at h_tc
       intro x y
-      exact hspanner.right ↑x ↑y <| h_tc x y
+      exact hspanner.right ↑x ↑y <| h_tc x (Set.mem_univ _) y (Set.mem_univ _)
     exact ⟨⊤, ⟨top_isSpanning, h'_tc⟩⟩
 
 end ReachabilityPreservation

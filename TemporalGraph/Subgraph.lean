@@ -430,6 +430,16 @@ instance : PartialOrder (Subgraph G) where
       · intro h'' ; apply h.left ; assumption
       · intro h'' ; apply h'.left ; assumption
 
+/-- `≤` on subgraphs is compatible with the inherited `≤` on `TemporalGraph`, via
+`toTemporalGraph`. -/
+theorem toTemporalGraph_le {H H' : Subgraph G} (h : H ≤ H') :
+    H.toTemporalGraph ≤ H'.toTemporalGraph :=
+  h.right
+
+/-- A subgraph's `toTemporalGraph` is a spanning subgraph of the ambient graph `G`. -/
+theorem toTemporalGraph_le_self (H : Subgraph G) : H.toTemporalGraph ≤ G :=
+  H.adj_sub
+
 end Order
 
 section Induce

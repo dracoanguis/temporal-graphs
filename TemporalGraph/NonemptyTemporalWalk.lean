@@ -69,6 +69,13 @@ def prepend {x y z : V} {n m k : ℕ}
     G.NonemptyTemporalWalk z k y m :=
   append (Single h) p h'
 
+/-- Map a walk along `G ≤ G'`: every arc of `G` is an arc of `G'`, so a walk of `G` is a walk of
+`G'`, unchanged in its vertices and times. -/
+protected def mapLe {G' : TemporalGraph V} (h : G ≤ G') {x y : V} {n m : ℕ} :
+    G.NonemptyTemporalWalk x n y m → G'.NonemptyTemporalWalk x n y m
+  | Single h' => Single (h h')
+  | Step p h' h'' => Step (p.mapLe h) (h h') h''
+
 @[simp]
 lemma nondecreasing_time {x y : V} {n m : ℕ} (tw : G.NonemptyTemporalWalk x n y m) : n ≤ m := by
   induction tw with

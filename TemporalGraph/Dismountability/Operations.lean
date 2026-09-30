@@ -243,7 +243,7 @@ theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G
         exact h₀
       rw [isClique_iff_coe] at htc
       apply temporallyConnected_of_isClique at htc
-      rw [←temporallyConnected_iff] at htc
+      have htc := temporallyConnected_iff.mpr htc
       unfold TemporallyConnected at htc ⊢
       intro u v
       have := htc ⟨u, by grind only [h₅.right.choose]⟩ ⟨v, by grind only [h₅.right.choose]⟩
@@ -474,7 +474,7 @@ theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSy
         exact h₀
       rw [isClique_iff_coe] at hclique
       apply temporallyConnected_of_isClique at hclique
-      rw [←temporallyConnected_iff] at hclique
+      have hclique := temporallyConnected_iff.mpr hclique
       unfold TemporallyConnected at hclique ⊢
       intro u v
       have := hclique ⟨u, by grind only [h₇.right.choose]⟩ ⟨v, by grind only [h₇.right.choose]⟩

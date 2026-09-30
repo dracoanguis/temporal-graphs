@@ -64,7 +64,21 @@ theorem reachable_iff_nonempty_temporalWalkSet {G : TemporalGraph V} {x y : V} :
   · rintro ⟨⟨n, m, p⟩, _⟩
     exact ⟨n, ⟨m, ⟨p⟩⟩⟩
 
-def TemporallyConnected (G : TemporalGraph V) : Prop := ∀ x y : V, G.Reachable x y
+/-- Reachability is monotone along `≤`: every pair reachable in `G` stays reachable in a graph
+`G'` that has all of `G`'s arcs. -/
+theorem Reachable.mono {G G' : TemporalGraph V} (h : G ≤ G') {x y : V} :
+    G.Reachable x y → G'.Reachable x y := by
+  rintro ⟨n, m, ⟨w⟩⟩
+  exact ⟨n, m, ⟨w.mapLe h⟩⟩
+
+/-- `S` is temporally connected in `G`: every vertex of `S` reaches every vertex of `S`. -/
+abbrev TemporallyConnected (G : TemporalGraph V) (S : Set V) : Prop :=
+  ∀ x ∈ S, ∀ y ∈ S, G.Reachable x y
+
+/-- `G` is temporally connected. Shorthand for `G.TemporallyConnected Set.univ`. On a subgraph
+`H`, use `H.TemporallyConnectedSubgraph`: the inherited `H.TemporallyConnectedGraph` asks all of
+`V` to be connected. -/
+abbrev TemporallyConnectedGraph (G : TemporalGraph V) : Prop := G.TemporallyConnected Set.univ
 
 -- /-- `G'` is a spanner of `G` iff they have the same verticies and everything reachable in `G` is
 -- reachable in `G'`. -/
@@ -76,12 +90,12 @@ def TemporallyConnected (G : TemporalGraph V) : Prop := ∀ x y : V, G.Reachable
 -- def IsTCSpanner {s : Set V} (G : TemporalGraph V) (G' : TemporalGraph s) : Prop :=
   -- G.IsSpanner G' ∧ G'.TemporallyConnected
 
-theorem temporallyConnected_of_isClique (G : TemporalGraph V) :
-    G.IsCliqueGraph → G.TemporallyConnected := by
-  unfold IsCliqueGraph IsClique TemporallyConnected
-  intro h x y
+theorem temporallyConnected_of_isClique (G : TemporalGraph V) {S : Set V} :
+    G.IsClique S → G.TemporallyConnected S := by
+  unfold IsClique TemporallyConnected
+  intro h x hx y hy
   by_cases hdiff : x ≠ y
-  · have ⟨n, h'⟩ := h (Set.mem_univ x) (Set.mem_univ y) hdiff
+  · have ⟨n, h'⟩ := h hx hy hdiff
     exact reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨NonemptyTemporalWalk.Single h'⟩⟩
   · simp_all [reachable_of_self]
 

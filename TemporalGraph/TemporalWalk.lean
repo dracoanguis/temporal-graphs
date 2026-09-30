@@ -61,6 +61,12 @@ lemma nondecreasing_time {x y : V} {n m : ℕ} (tw : G.TemporalWalk x n y m) : n
   | Empty => trivial
   | Nonempty p => exact p.nondecreasing_time
 
+/-- Map a walk along `G ≤ G'`, following `NonemptyTemporalWalk.mapLe`. -/
+protected def mapLe {G' : TemporalGraph V} (h : G ≤ G') {x y : V} {n m : ℕ} :
+    G.TemporalWalk x n y m → G'.TemporalWalk x n y m
+  | Empty => Empty
+  | Nonempty p => Nonempty (p.mapLe h)
+
 end TemporalWalk
 
 namespace NonemptyTemporalWalk

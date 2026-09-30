@@ -193,7 +193,7 @@ theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G
     (h₀ : H.IsCliqueSubgraph) (h₁ : G.Adj y x n) (h₂ : G.Adj z x m) (h₃ : H.EarliestEdge y x n)
     (h₄ : H.LatestEdge z x m) (h₅ : H'.IsSpannerOf (H.dismount x)) :
     H'.mount x h₁ h₂ |>.IsSpannerOf H := by
-  have heq : (H'.mount x h₁ h₂).verts = H.verts := by simp only [mount_verts, h₅.right.choose,
+  have heq : (H'.mount x h₁ h₂).verts = H.verts := by simp only [mount_verts, h₅.right.1,
     induce_verts, Set.union_singleton, Subtype.coe_prop, Set.insert_sdiff_self_of_mem]
   have hle : H'.mount x h₁ h₂ ≤ H := by
     apply le_iff_edgeSet_and_verts.mpr
@@ -211,7 +211,7 @@ theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G
           rw [H.mem_edgeSet]
           apply h₃.left
         grind
-    · simp only [mount_verts, h₅.right.choose, induce_verts, Set.union_singleton, Subtype.coe_prop,
+    · simp only [mount_verts, h₅.right.1, induce_verts, Set.union_singleton, Subtype.coe_prop,
       Set.insert_sdiff_self_of_mem, subset_refl]
   have htc : (H'.mount x h₁ h₂).TemporallyConnectedSubgraph := by
     apply mount_tc H'
@@ -226,10 +226,10 @@ theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G
       intro u hu v hv
       obtain ⟨heqV, hspan⟩ := h₅.right
       rw [heqV] at hu hv
-      exact hspan ⟨u, hu⟩ ⟨v, hv⟩ (hdisTC u hu v hv)
+      exact hspan u hu v hv (hdisTC u hu v hv)
   refine ⟨hle, heq, ?_⟩
-  intro u v _
-  exact htc u (by rw [heq]; exact u.2) v (by rw [heq]; exact v.2)
+  intro u hu v hv _
+  exact htc u (by rw [heq]; exact hu) v (by rw [heq]; exact hv)
 
 end Mount
 
@@ -384,7 +384,7 @@ theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSy
     (h₆ : H.LatestEdge z z' m ∧ m ≤ m' ∧ H.Adj x z' m') (h₇ : H'.IsSpannerOf (H.dismount x)) :
     H'.twoHopMount x h₁ h₂ h₃ h₄ |>.IsSpannerOf H := by
   have heq : (H'.twoHopMount x h₁ h₂ h₃ h₄).verts = H.verts := by
-    simp [twoHopMount_verts, h₇.right.choose]
+    simp [twoHopMount_verts, h₇.right.1]
   have hle : (H'.twoHopMount x h₁ h₂ h₃ h₄) ≤ H := by
     apply le_iff_edgeSet_and_verts.mpr
     constructor
@@ -425,10 +425,10 @@ theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSy
       intro u hu v hv
       obtain ⟨heqV, hspan⟩ := h₇.right
       rw [heqV] at hu hv
-      exact hspan ⟨u, hu⟩ ⟨v, hv⟩ (hdisTC u hu v hv)
+      exact hspan u hu v hv (hdisTC u hu v hv)
   refine ⟨hle, heq, ?_⟩
-  intro u v _
-  exact htc u (by rw [heq]; exact u.2) v (by rw [heq]; exact v.2)
+  intro u hu v hv _
+  exact htc u (by rw [heq]; exact hu) v (by rw [heq]; exact hv)
 
 end TwoHopMount
 

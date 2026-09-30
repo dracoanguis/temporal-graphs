@@ -38,27 +38,15 @@ namespace Subgraph
 
 section Spanners
 
-/-- A `Subgraph` is a spanner of it's original graph `G`, if it's spanning and every
-vertices as the same Reachability as in `G`. -/
+/-- A `Subgraph` is a spanner of its original graph `G`, if it's spanning and every pair of its
+vertices has the same reachability as in `G`. -/
 def IsSpanner (H : Subgraph G) : Prop :=
-  H.IsSpanning ∧ ∀ x y : H.verts, G.Reachable x y → H.Reachable x y
+  H.IsSpanning ∧ ∀ x ∈ H.verts, ∀ y ∈ H.verts, G.Reachable x y → H.Reachable x y
 
--- NOTE(refactor): `G.IsSpanner H.coe` doesn't even type-check via dot notation: `IsSpanner` is
--- nested in `TemporalGraph.Subgraph`, and Lean's dot notation does not search nested
--- namespaces for a matching explicit argument (verified independently of the Loopless/Symm
--- rename: `G : TemporalGraph V` has no argument of type `Subgraph G` to dot into). This
--- looks like it wanted the top-level (currently commented-out) `IsSpanner {s : Set V}
--- (G : TemporalGraph V) (G' : TemporalGraph s) : Prop` from `Connectivity/Basic.lean` instead.
--- The statement can't be restated without that design decision, so it's commented out entirely
--- (not just `sorry`-ed) pending review.
--- @[simp]
--- lemma isSpanner_iff_coe {H : Subgraph G} : H.IsSpanner ↔ G.IsSpanner H.coe := by
---   sorry
-
-/-- A `SubTempGraph` `H` is a spanner of another one `H'` if they have the same vertices and
+/-- A `Subgraph` `H` is a spanner of another one `H'` if they have the same vertices and
 everything reachable in `H'` is also in `H`. -/
 def IsSpannerOf (H : Subgraph G) (H' : Subgraph G) : Prop :=
-  H ≤ H' ∧ ∃ _ : H.verts = H'.verts, ∀ u v : H'.verts, H'.Reachable u v → H.Reachable u v
+  H ≤ H' ∧ H.verts = H'.verts ∧ ∀ x ∈ H'.verts, ∀ y ∈ H'.verts, H'.Reachable x y → H.Reachable x y
 
 end Spanners
 
@@ -79,7 +67,7 @@ theorem isTCSpanner_iff_isSpanner_and_TC {H : Subgraph G} :
   unfold IsTCSpanner IsSpanner
   constructor
   · intro ⟨h_span, h_tc⟩
-    exact ⟨⟨h_span, fun x y _ ↦ h_tc x x.prop y y.prop⟩, h_tc⟩
+    exact ⟨⟨h_span, fun x hx y hy _ ↦ h_tc x hx y hy⟩, h_tc⟩
   · intro ⟨⟨h_span, _⟩, h_tc⟩
     exact ⟨h_span, h_tc⟩
 
@@ -125,7 +113,7 @@ theorem deleteVerts_reachability {s : Set V} {H : Subgraph G} {x y : V} :
   reachable_of_le_reachable deleteVerts_le
 
 lemma top_isSpanner : (⊤ : Subgraph G).IsSpanner :=
-  ⟨top_isSpanning, fun _ _ h ↦ h⟩
+  ⟨top_isSpanning, fun _ _ _ _ h ↦ h⟩
 
 /-- A temporal graph admits a spanner if and only if it is Temporally Connected -/
 @[simp]

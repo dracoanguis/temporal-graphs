@@ -16,10 +16,8 @@ graphs**, since walk times must be non-decreasing.
 * `Reachable` : Existence of a temporal walk between two vertices
 * `TemporallyConnected` : Every pair of vertices is mutually reachable
 
-`IsSpanner`/`IsTCSpanner` are commented out here, pending a design review (see the
-`NOTE(refactor)` next to `Subgraph.isSpanner_iff_coe` in `Connectivity/Subgraph.lean` for why).
-The currently usable spanner notions are `Subgraph.IsSpanner`, `Subgraph.IsSpannerOf` and
-`Subgraph.IsTCSpanner`, defined in that same file.
+Spanner notions (`Subgraph.IsSpanner`, `Subgraph.IsSpannerOf` and `Subgraph.IsTCSpanner`) are
+defined at the `Subgraph` level, in `Connectivity/Subgraph.lean`.
 
 ## Main results
 * `reachable_of_self` : Every vertex reaches itself
@@ -79,16 +77,6 @@ abbrev TemporallyConnected (G : TemporalGraph V) (S : Set V) : Prop :=
 `H`, use `H.TemporallyConnectedSubgraph`: the inherited `H.TemporallyConnectedGraph` asks all of
 `V` to be connected. -/
 abbrev TemporallyConnectedGraph (G : TemporalGraph V) : Prop := G.TemporallyConnected Set.univ
-
--- /-- `G'` is a spanner of `G` iff they have the same verticies and everything reachable in `G` is
--- reachable in `G'`. -/
--- def IsSpanner {s : Set V} (G : TemporalGraph V) (G' : TemporalGraph s) : Prop :=
---   (∀ x : V, x ∈ s)
---   ∧
---   ∀ (x y : V) (hx : x ∈ s) (hy : y ∈ s), G.Reachable x y → G'.Reachable ⟨x, hx⟩ ⟨y, hy⟩
-
--- def IsTCSpanner {s : Set V} (G : TemporalGraph V) (G' : TemporalGraph s) : Prop :=
-  -- G.IsSpanner G' ∧ G'.TemporallyConnected
 
 theorem temporallyConnected_of_isClique (G : TemporalGraph V) {S : Set V} :
     G.IsClique S → G.TemporallyConnected S := by

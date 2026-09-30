@@ -133,9 +133,6 @@ lemma vzero_mem {H : Subgraph G} : ∀ x : V, x ∈ H.vzero → x ∉ H.vminus �
   simp [vzero] at hx
   simp [hx]
 
-instance {H : Subgraph G} : Coe (Set V) (Set H.verts) where
-  coe A := (Subtype.val ⁻¹' A)
-
 /-- `vminus`, `vplus` and `vzero` cover `H.verts`. -/
 lemma vunion_eq_univ {H : Subgraph G} : H.vminus ∪ H.vplus ∪ H.vzero = H.verts := by
   simp [vzero]
@@ -237,12 +234,11 @@ lemma not_dismountable_of_not_twoHopDismountable {H : Subgraph G}
 
 /-- SAND 2025, Lemma 3.2: distinct vertices of `vplus` have distinct earliest neighbors. -/
 lemma vplus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} [H.IsSymm]
-    (x y : H.vplus) (h₀ : ¬H.TwoHopDismountable) (h₁ : H.IsCliqueSubgraph) (h₂ : x ≠ y) :
+    {x y : V} (hx : x ∈ H.vplus) (hy : y ∈ H.vplus) (h₀ : ¬H.TwoHopDismountable)
+    (h₁ : H.IsCliqueSubgraph) (h₂ : x ≠ y) :
     ∀ z z' : V, H.EarliestNeighbor x z ∧ H.EarliestNeighbor y z' → z ≠ z' := by
   simp only [EarliestNeighbor, ne_eq, and_imp, forall_exists_index]
   intro z z' n hee m hee' hzz'
-  have ⟨x, hx⟩ := x
-  have ⟨y, hy⟩ := y
   absurd h₀
   constructor ; assumption'
   by_cases ht : m ≤ n
@@ -273,12 +269,11 @@ lemma vplus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} [H.IsSymm]
 
 /-- SAND 2025, Lemma 3.2: distinct vertices of `vminus` have distinct latest neighbors. -/
 lemma vminus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} [H.IsSymm]
-    (x y : H.vminus) (h₀ : ¬H.TwoHopDismountable) (h₁ : H.IsCliqueSubgraph) (h₂ : x ≠ y) :
+    {x y : V} (hx : x ∈ H.vminus) (hy : y ∈ H.vminus) (h₀ : ¬H.TwoHopDismountable)
+    (h₁ : H.IsCliqueSubgraph) (h₂ : x ≠ y) :
     ∀ z z' : V, H.LatestNeighbor x z ∧ H.LatestNeighbor y z' → z ≠ z' := by
   simp only [LatestNeighbor, ne_eq, and_imp, forall_exists_index]
   intro z z' n hle m hle' hzz'
-  have ⟨x, hx⟩ := x
-  have ⟨y, hy⟩ := y
   absurd h₀
   constructor ; assumption'
   by_cases ht : n ≤ m
@@ -316,10 +311,11 @@ edge. -/
 lemma earliestEdge_exists_of_finite_nontrivial_simple_clique {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) :
-    ∀ (x : H.verts), ∃ (y : V) (n : ℕ), H.EarliestEdge x y n := by
-  intro x
-  have his₀ : (H.incidenceSet x).Nonempty := nonempty_incidenceSet_of_nontrivial_clique h₁ x
-  have his₁ : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ x
+    ∀ x ∈ H.verts, ∃ (y : V) (n : ℕ), H.EarliestEdge x y n := by
+  intro x hx
+  have his₀ : (H.incidenceSet x).Nonempty :=
+    nonempty_incidenceSet_of_nontrivial_clique h₁ ⟨x, hx⟩
+  have his₁ : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ ⟨x, hx⟩
   exact earliestEdge_exists_of_nonempty_finite_incidenceSet his₀ his₁
 
 /-- Every vertex of a finite, nontrivial, simple clique subgraph has a latest incident
@@ -327,10 +323,11 @@ edge. -/
 lemma latestEdge_exists_of_finite_nontrivial_simple_clique {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) :
-    ∀ (x : H.verts), ∃ (y : V) (n : ℕ), H.LatestEdge x y n := by
-  intro x
-  have his₀ : (H.incidenceSet x).Nonempty := nonempty_incidenceSet_of_nontrivial_clique h₁ x
-  have his₁ : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ x
+    ∀ x ∈ H.verts, ∃ (y : V) (n : ℕ), H.LatestEdge x y n := by
+  intro x hx
+  have his₀ : (H.incidenceSet x).Nonempty :=
+    nonempty_incidenceSet_of_nontrivial_clique h₁ ⟨x, hx⟩
+  have his₁ : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ ⟨x, hx⟩
   exact latestEdge_exists_of_nonempty_finite_incidenceSet his₀ his₁
 
 /-- Every vertex of a finite, nontrivial, simple, proper clique subgraph has a unique earliest
@@ -338,9 +335,9 @@ incident edge. -/
 lemma earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
-    ∀ (x : H.verts), ∃! q : V × ℕ, H.EarliestEdge x q.1 q.2 := by
-  intro x
-  have ⟨y, n, h⟩ := earliestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x
+    ∀ x ∈ H.verts, ∃! q : V × ℕ, H.EarliestEdge x q.1 q.2 := by
+  intro x hx
+  have ⟨y, n, h⟩ := earliestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x hx
   use ⟨y, n⟩
   constructor
   · simp [h]
@@ -359,9 +356,9 @@ incident edge. -/
 lemma latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
-    ∀ (x : H.verts), ∃! q : V × ℕ, H.LatestEdge x q.1 q.2 := by
-  intro x
-  have ⟨y, n, h⟩ := latestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x
+    ∀ x ∈ H.verts, ∃! q : V × ℕ, H.LatestEdge x q.1 q.2 := by
+  intro x hx
+  have ⟨y, n, h⟩ := latestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x hx
   use ⟨y, n⟩
   constructor
   · simp [h]
@@ -384,7 +381,7 @@ lemma existsUnique_earliestNeighbor {H : Subgraph G}
   intro x
   obtain ⟨⟨y, n⟩, hee, hunique⟩ :=
     earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique
-      h₀ h₁ h₂ x
+      h₀ h₁ h₂ x x.2
   use ⟨y, ⟨_, ⟨n, hee⟩⟩⟩
   refine ⟨⟨n, hee⟩, ?_⟩
   intro z ⟨m, hee'⟩
@@ -431,7 +428,8 @@ lemma earliestNeighborFn_injective {H : Subgraph G}
   have hz'₁ := hz'
   rw [earliestNeighborFn_eq, ←hz] at hz₁
   rw [earliestNeighborFn_eq, ←hz'] at hz'₁
-  have := vplus_ne_neighbor_of_not_twoHopDismountable x y h₃ h₁ hneq z z' ⟨hz₁, hz'₁⟩
+  have := vplus_ne_neighbor_of_not_twoHopDismountable x.2 y.2 h₃ h₁
+    (fun h ↦ hneq (Subtype.ext h)) z z' ⟨hz₁, hz'₁⟩
   absurd this
   simp only [hfeq]
 
@@ -453,7 +451,7 @@ lemma existsUnique_latestNeighbor {H : Subgraph G}
   intro x
   obtain ⟨⟨y, n⟩, hle, hunique⟩ :=
     latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique
-      h₀ h₁ h₂ x
+      h₀ h₁ h₂ x x.2
   use ⟨y, ⟨_, ⟨n, hle⟩⟩⟩
   refine ⟨⟨n, hle⟩, ?_⟩
   intro z ⟨m, hle'⟩
@@ -500,7 +498,8 @@ lemma latestNeighborFn_injective {H : Subgraph G}
   have hz'₁ := hz'
   rw [latestNeighborFn_eq, ←hz] at hz₁
   rw [latestNeighborFn_eq, ←hz'] at hz'₁
-  have := vminus_ne_neighbor_of_not_twoHopDismountable x y h₃ h₁ hneq z z' ⟨hz₁, hz'₁⟩
+  have := vminus_ne_neighbor_of_not_twoHopDismountable x.2 y.2 h₃ h₁
+    (fun h ↦ hneq (Subtype.ext h)) z z' ⟨hz₁, hz'₁⟩
   absurd this
   simp only [hfeq]
 
@@ -552,21 +551,19 @@ lemma existsUnique_vplus_earliestEdge {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable) :
-    ∀ x : H.vminus, ∃! q : H.vplus × ℕ, H.EarliestEdge q.1 x q.2 := by
-  intro x
+    ∀ x ∈ H.vminus, ∃! q : V × ℕ, q.1 ∈ H.vplus ∧ H.EarliestEdge q.1 x q.2 := by
+  intro x hx
   have hen_bij := earliestNeighborFn_bijective h₀ h₁ h₂ h₃ |>.existsUnique
   conv at hen_bij =>
     rhs ; rhs
     simp only [earliestNeighborFn_eq]
-  have ⟨y, ⟨n, hee⟩, hunique⟩ := hen_bij x
-  use ⟨y, n⟩
-  refine ⟨hee, ?_⟩
-  intro q' hee'
-  have heq := hunique q'.1 ⟨q'.2, hee'⟩
-  have hadj := hee'.left
-  rw [heq] at hadj
-  have heq' := h₀ y x n q'.2 ⟨hee.left, hadj⟩
-  exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heq, heq'.symm⟩
+  obtain ⟨⟨y, hy⟩, ⟨n, hee⟩, hunique⟩ := hen_bij ⟨x, hx⟩
+  refine ⟨⟨y, n⟩, ⟨hy, hee⟩, ?_⟩
+  rintro ⟨z, m⟩ ⟨hz, hee'⟩
+  have heqv : z = y := congrArg Subtype.val (hunique ⟨z, hz⟩ ⟨m, hee'⟩)
+  rw [heqv] at hee'
+  have heq' := h₀ y x n m ⟨hee.left, hee'.left⟩
+  exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heqv, heq'.symm⟩
 
 /-- SAND 2025, Corollary 3.3 (2): `{e⁺(v) : v ∈ V⁻}` is a perfect matching, i.e. every vertex of
 `vplus` has a unique latest edge from a vertex of `vminus`. -/
@@ -574,21 +571,19 @@ lemma existsUnique_vminus_latestEdge {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable) :
-    ∀ x : H.vplus, ∃! q : H.vminus × ℕ, H.LatestEdge q.1 x q.2 := by
-  intro x
+    ∀ x ∈ H.vplus, ∃! q : V × ℕ, q.1 ∈ H.vminus ∧ H.LatestEdge q.1 x q.2 := by
+  intro x hx
   have hln_bij := latestNeighborFn_bijective h₀ h₁ h₂ h₃ |>.existsUnique
   conv at hln_bij =>
     rhs ; rhs
     simp only [latestNeighborFn_eq]
-  have ⟨y, ⟨n, hle⟩, hunique⟩ := hln_bij x
-  use ⟨y, n⟩
-  refine ⟨hle, ?_⟩
-  intro q' hle'
-  have heq := hunique q'.1 ⟨q'.2, hle'⟩
-  have hadj := hle'.left
-  rw [heq] at hadj
-  have heq' := h₀ y x n q'.2 ⟨hle.left, hadj⟩
-  exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heq, heq'.symm⟩
+  obtain ⟨⟨y, hy⟩, ⟨n, hle⟩, hunique⟩ := hln_bij ⟨x, hx⟩
+  refine ⟨⟨y, n⟩, ⟨hy, hle⟩, ?_⟩
+  rintro ⟨z, m⟩ ⟨hz, hle'⟩
+  have heqv : z = y := congrArg Subtype.val (hunique ⟨z, hz⟩ ⟨m, hle'⟩)
+  rw [heqv] at hle'
+  have heq' := h₀ y x n m ⟨hle.left, hle'.left⟩
+  exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heqv, heq'.symm⟩
 
 end NeighborFunctions
 
@@ -602,24 +597,21 @@ lemma vzero_empty_of_not_twoHopDismountable {H : Subgraph G}
     H.vzero = ∅ := by
   by_contra! ⟨x, hx⟩
   have ⟨y, n, hee⟩ :=
-    earliestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ ⟨x, vzero_sub_verts hx⟩
+    earliestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x (vzero_sub_verts hx)
   have hyin : y ∈ H.vminus := ⟨x, ⟨n, hee⟩⟩
   have ⟨z, m, hle⟩ :=
-    latestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ ⟨x, vzero_sub_verts hx⟩
+    latestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x (vzero_sub_verts hx)
   have hzin : z ∈ H.vplus := ⟨x, ⟨m, hle⟩⟩
   -- Here call SAND 2025 Corollary 3.3 to define y' ∈ H.vplus with y it's earliest neighbor
   -- symm for z' ∈ H.vminus with z it's latest neighbor
-  have ⟨⟨⟨y', hy'in⟩, n'⟩, ⟨hee', _⟩⟩ :=
-    existsUnique_vplus_earliestEdge h₀ h₁ h₂ h₃ ⟨y, hyin⟩
-  have ⟨⟨⟨z', hz'in⟩, m'⟩, ⟨hle', _⟩⟩ :=
-    existsUnique_vminus_latestEdge h₀ h₁ h₂ h₃ ⟨z, hzin⟩
+  have ⟨⟨y', n'⟩, ⟨hy'in, hee'⟩, _⟩ := existsUnique_vplus_earliestEdge h₀ h₁ h₂ h₃ y hyin
+  have ⟨⟨z', m'⟩, ⟨hz'in, hle'⟩, _⟩ := existsUnique_vminus_latestEdge h₀ h₁ h₂ h₃ z hzin
   by_cases hlt : n' ≤ n
   <;> absurd h₃
   · constructor
     · trivial
     · use y'
-      have ⟨⟨⟨y'', _⟩, _⟩, ⟨hle'', _⟩⟩ :=
-        existsUnique_vminus_latestEdge h₀ h₁ h₂ h₃ ⟨y', hy'in⟩
+      have ⟨⟨y'', _⟩, ⟨_, hle''⟩, _⟩ := existsUnique_vminus_latestEdge h₀ h₁ h₂ h₃ y' hy'in
       refine ⟨?_, Or.inl ⟨y'', ⟨_, hle''⟩⟩⟩
       apply Or.inr
       use x, y, n, n'
@@ -633,8 +625,7 @@ lemma vzero_empty_of_not_twoHopDismountable {H : Subgraph G}
     · by_cases hlt' : m ≤ m'
       · -- Same as above with z and hee instead of y and hle
         use z'
-        have ⟨⟨⟨z'', _⟩, _⟩, ⟨hee'', _⟩⟩ :=
-          existsUnique_vplus_earliestEdge h₀ h₁ h₂ h₃ ⟨z', hz'in⟩
+        have ⟨⟨z'', _⟩, ⟨_, hee''⟩, _⟩ := existsUnique_vplus_earliestEdge h₀ h₁ h₂ h₃ z' hz'in
         refine ⟨Or.inl ⟨z'', ⟨_, hee''⟩⟩, ?_⟩
         apply Or.inr
         use x, z, m, m'
@@ -731,14 +722,14 @@ lemma between_TC_of_not_twoHopDismountable {H : Subgraph G}
   intro x hx y hy
   rcases hmem x hx with hxm | hxp <;> rcases hmem y hy with hym | hyp
   · -- both in `V⁻`: through the vertex of `V⁺` whose earliest edge goes to `x`
-    obtain ⟨⟨⟨p, hp⟩, n⟩, hpe, -⟩ := existsUnique_vplus_earliestEdge h₀ h₁ h₂ h₃ ⟨x, hxm⟩
+    obtain ⟨⟨p, n⟩, ⟨hp, hpe⟩, -⟩ := existsUnique_vplus_earliestEdge h₀ h₁ h₂ h₃ x hxm
     have hKe : K.toTemporalGraph.EarliestEdge p x n :=
       ⟨⟨hpe.1, Or.inr ⟨hp, hxm⟩⟩, fun z j hz ↦ hpe.2 z j hz.1⟩
     exact TemporalGraph.reachable_of_earliestEdge hKe y (hdirect y p hym hp).2
   · exact (hdirect x y hxm hyp).1
   · exact (hdirect y x hym hxp).2
   · -- both in `V⁺`: through the vertex of `V⁻` whose latest edge goes to `y`
-    obtain ⟨⟨⟨a, ha⟩, n⟩, hal, -⟩ := existsUnique_vminus_latestEdge h₀ h₁ h₂ h₃ ⟨y, hyp⟩
+    obtain ⟨⟨a, n⟩, ⟨ha, hal⟩, -⟩ := existsUnique_vminus_latestEdge h₀ h₁ h₂ h₃ y hyp
     have hKl : K.toTemporalGraph.LatestEdge a y n :=
       ⟨⟨hal.1, Or.inl ⟨ha, hyp⟩⟩, fun z j hz ↦ hal.2 z j hz.1⟩
     exact TemporalGraph.reachable_of_latestEdge hKl x (hdirect a x ha hxp).2

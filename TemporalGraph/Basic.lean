@@ -34,6 +34,8 @@ and its clean characterization `mem_edgeSet` needs `[G.IsSymm]` (the uncondition
 * `TemporalGraph.EarliestEdge`, `TemporalGraph.LatestEdge`, `TemporalGraph.EarliestNeighbor`,
   `TemporalGraph.LatestNeighbor` : the earliest/latest edge and neighbor of a vertex.
 * `TemporalGraph.arcSet`, `TemporalGraph.edgeSet` : the oriented and symmetric edge sets.
+* `TemporalGraph.neighborSet`, `TemporalGraph.incidenceSet` : the vertex-indexed counting notions,
+  inherited by `Subgraph` (see `TemporalGraph.Subgraph` in `Subgraph.lean`).
 * `TemporalGraph.symmetrize`, `TemporalGraph.fromArcSet`, `TemporalGraph.fromEdgeSet` : graph
   builders.
 
@@ -259,6 +261,14 @@ theorem mem_neighborSet (G : TemporalGraph V) (x y : V) :
   Iff.rfl
 
 end neighborSet
+
+section incidenceSet
+
+/-- The edges incident to `x`: pairs `(y, n)` such that `x` is adjacent to `y` at time `n`. -/
+def incidenceSet (G : TemporalGraph V) (x : V) : Set (V × ℕ) :=
+  { (y, n) : V × ℕ | G.Adj x y n }
+
+end incidenceSet
 
 section arcSet
 

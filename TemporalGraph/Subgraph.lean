@@ -28,8 +28,9 @@ the subgraph counterparts of the vertex- and edge-indexed notions of `TemporalGr
   predicates quantifying over `H.verts`. `IsClique` needs no `Subgraph` duplicate: it already
   takes a `Set V` argument, so `H.IsClique H.verts` resolves through the inherited
   `TemporalGraph.IsClique`; `TemporalGraph.Subgraph.IsCliqueSubgraph` abbreviates it.
-* `TemporalGraph.Subgraph.neighborSet`, `TemporalGraph.Subgraph.incidenceSet`,
-  `TemporalGraph.Subgraph.size`, `TemporalGraph.Subgraph.order` : the counting notions.
+* `TemporalGraph.Subgraph.order` : the one remaining vertex-counting notion that needs `H.verts`.
+  `neighborSet`, `incidenceSet` and `size` need no `Subgraph` duplicate any more: they resolve
+  through generalized field notation to the `TemporalGraph` ones (see `Basic.lean`).
 * `TemporalGraph.Subgraph.induce`, `TemporalGraph.Subgraph.deleteVerts`,
   `TemporalGraph.Subgraph.addVerts`, `TemporalGraph.Subgraph.addArc`,
   `TemporalGraph.Subgraph.addEdge` : the constructions turning a subgraph into another one.
@@ -48,7 +49,6 @@ the subgraph counterparts of the vertex- and edge-indexed notions of `TemporalGr
   counterpart : a vertex with a nonempty finite incidence set has an earliest, resp. latest, edge.
 * `TemporalGraph.Subgraph.edgeSetToFootprintEdgeSet_bijective` : for a symmetric, simple subgraph,
   edges and footprint edges are in bijection.
-* Coercion instances lifting temporal walks between `H.coe`, `H` and `G`.
 
 ## Implementation notes
 
@@ -266,8 +266,9 @@ end Props
 
 section incidenceSet
 
-def incidenceSet (H : Subgraph G) (x : V) : Set (V × ℕ) :=
-  { (y, n) : V × ℕ | H.Adj x y n }
+-- `incidenceSet` is no longer redefined here: it never used `verts`, so it now lives on
+-- `TemporalGraph` (`Basic.lean`); `H.incidenceSet` resolves to `TemporalGraph.incidenceSet
+-- H.toTemporalGraph` through generalized field notation.
 
 lemma finite_incidenceSet_of_finite_simple {H : Subgraph G} [h : Finite H.verts]
     (h₁ : H.IsSimple) :
@@ -773,36 +774,18 @@ end EdgeProps
 
 section NeighborHoodSet
 
-def neighborSet (H : Subgraph G) (x : H.verts) := {y | ∃ n, H.Adj x y n}
+-- `neighborSet` is no longer redefined here; `H.neighborSet` resolves to `TemporalGraph.neighborSet
+-- H.toTemporalGraph`, whose binder is `x : V` (not `H.verts`).
 
-theorem mem_neighborhoodSet (H : Subgraph G) (x : H.verts) (y : V) :
-    y ∈ H.neighborSet x ↔ ∃ n, H.Adj x y n :=
-  Iff.rfl
-
-theorem neighborhoodSet_top (x : (⊤ : G.Subgraph).verts) :
+theorem neighborhoodSet_top (x : V) :
     (⊤ : G.Subgraph).neighborSet x = G.neighborSet x := rfl
 
-theorem neighborSet_subset_verts (H : Subgraph G) (x : H.verts) :
+theorem neighborSet_subset_verts (H : Subgraph G) (x : V) :
     H.neighborSet x ⊆ H.verts := by
   intro _ h
-  rw [mem_neighborhoodSet] at h
+  rw [H.mem_neighborSet] at h
   let ⟨_, h⟩ := h
   exact H.edge_vert' h
-
-@[simp]
-lemma neighborhoodSet_iff_coe {H : Subgraph G} {x : H.verts} :
-    H.neighborSet x = H.coe.neighborSet x := by
-  unfold neighborSet TemporalGraph.neighborSet
-  ext y
-  constructor
-  · intro ⟨_, p⟩
-    simp only [coe_Adj, Set.mem_image, Set.mem_ofPred_eq, Subtype.exists, exists_and_left,
-      exists_prop, exists_eq_right_right]
-    exact ⟨⟨_, p⟩, H.edge_vert' p⟩
-  · intro h
-    simp only [coe_Adj, Set.mem_image, Set.mem_ofPred_eq, Subtype.exists, exists_and_left,
-      exists_prop, exists_eq_right_right] at h ⊢
-    exact h.1
 
 end NeighborHoodSet
 
@@ -928,7 +911,8 @@ end edgeSet
 
 section Size
 
-def size (H : Subgraph G) [Fintype H.edgeSet] := Fintype.card H.edgeSet
+-- `size` is no longer redefined here; `H.size` resolves to `TemporalGraph.size H.toTemporalGraph`
+-- (the tautological `size_of_toTemporalGraph` bridge is gone along with it).
 
 def order (H : Subgraph G) [Fintype H.verts] := Fintype.card H.verts
 
@@ -940,10 +924,6 @@ lemma size_of_simple (H : Subgraph G)
     H.size = Fintype.card H.footprintEdgeSet := by
   apply Fintype.card_of_bijective (f := H.edgeSetToFootprintEdgeSet)
   exact H.edgeSetToFootprintEdgeSet_bijective h₀
-
-lemma size_of_toTemporalGraph (H : Subgraph G)
-    [Fintype H.edgeSet] :
-    H.size = H.toTemporalGraph.size := rfl
 
 -- NOTE(refactor): `Finite → Fintype` isn't automatic in Mathlib (avoids diamonds), so the
 -- `Finite` instance above does not chain into a `Fintype` one on its own: callers must supply
@@ -957,7 +937,7 @@ theorem addEdge_size (H : Subgraph G) {x y : V} {n : ℕ}
     (H.addEdge h₀ h₁).size = H.size + 1 := by
   -- Through `Nat.card`, which only sees the type: rewriting the edge set under `Fintype.card`
   -- would clash with the `Fintype` instance that depends on it.
-  unfold size
+  unfold TemporalGraph.size
   rw [← Nat.card_eq_fintype_card, ← Nat.card_eq_fintype_card, H.addEdge_edgeSet,
     Nat.card_coe_set_eq, Nat.card_coe_set_eq]
   exact Set.ncard_insert_of_notMem fun hm ↦ h₂ (H.mem_edgeSet.mp hm)
@@ -969,7 +949,7 @@ theorem addEdge_size_le (H : Subgraph G) {x y : V} {n : ℕ}
     {h₁ : x ∈ H.verts ∧ y ∈ H.verts}
     [Fintype H.edgeSet] [Fintype (H.addEdge h₀ h₁).edgeSet] :
     (H.addEdge h₀ h₁).size ≤ H.size + 1 := by
-  unfold size
+  unfold TemporalGraph.size
   rw [← Nat.card_eq_fintype_card, ← Nat.card_eq_fintype_card, H.addEdge_edgeSet,
     Nat.card_coe_set_eq, Nat.card_coe_set_eq]
   exact Set.ncard_insert_le _ _
@@ -992,119 +972,6 @@ theorem addVerts_size {H : Subgraph G} {s : Set V}
 end Size
 
 end Subgraph
-
-section WalkLift
-
-namespace NonemptyTemporalWalk
-
-variable {V : Type u} {G : TemporalGraph V}
-
-@[coe]
-protected def lift_walk {H : Subgraph G} {x y : H.verts} {n m : ℕ} :
-    H.coe.NonemptyTemporalWalk x n y m → G.NonemptyTemporalWalk ↑x n ↑y m
-  | Single h => Single (H.adj_sub h)
-  | Step p h h' =>
-    Step (p.lift_walk)
-      (H.adj_sub h)
-      h'
-
-instance {H : Subgraph G} {x y : H.verts} {n m : ℕ} :
-    Coe (H.coe.NonemptyTemporalWalk x n y m) (G.NonemptyTemporalWalk ↑x n ↑y m) where
-  coe := NonemptyTemporalWalk.lift_walk
-
-@[coe]
-protected def lift_subgraph_walk {H : Subgraph G} {H' : Subgraph G}
-    {x y : H.verts}
-    {n m : ℕ}
-    (h : H ≤ H') :
-    H.coe.NonemptyTemporalWalk x n y m → H'.coe.NonemptyTemporalWalk
-      ⟨x, Set.mem_of_subset_of_mem h.left x.prop⟩ n
-      ⟨y, Set.mem_of_subset_of_mem h.left y.prop⟩ m
-  | Single h' => Single (h.right h')
-  | Step p h' hle =>
-    Step (p.lift_subgraph_walk h)
-      (Subgraph.Adj.coe (h.right h'))
-      hle
-
-@[coe]
-protected def lift_toTemporalGraph_walk {H : Subgraph G} {x y : H.verts} {n m : ℕ} :
-    H.toTemporalGraph.NonemptyTemporalWalk x n y m → H.coe.NonemptyTemporalWalk x n y m
-  | Single h => @Single H.verts H.coe x y n h
-  | @Step _ _ _ y' _ _ m' _ p' h' hle' =>
-      @Step H.verts H.coe x ⟨y', H.edge_vert h'⟩ y n m' m
-        (p'.lift_toTemporalGraph_walk)
-        h' hle'
-
-instance {H : Subgraph G} {x y : H.verts} {n m : ℕ} :
-    Coe (H.toTemporalGraph.NonemptyTemporalWalk x n y m) (H.coe.NonemptyTemporalWalk x n y m) where
-  coe p := p.lift_toTemporalGraph_walk
-
-@[coe]
-protected def lift_walk_toTemporalGraph {H : Subgraph G} {x y : H.verts} {n m : ℕ} :
-    H.coe.NonemptyTemporalWalk x n y m → H.toTemporalGraph.NonemptyTemporalWalk ↑x n ↑y m
-  | Single h => Single h
-  | Step p h h' => Step p.lift_walk_toTemporalGraph h h'
-
-instance {H : Subgraph G} {x y : H.verts} {n m : ℕ} :
-    Coe (H.coe.NonemptyTemporalWalk x n y m)
-      (H.toTemporalGraph.NonemptyTemporalWalk ↑x n ↑y m) where
-  coe p := p.lift_walk_toTemporalGraph
-
-end NonemptyTemporalWalk
-
-namespace TemporalWalk
-
-variable {V : Type u} {G : TemporalGraph V} {H : Subgraph G}
-
-@[coe]
-protected def lift_subtempgraph_walk {x y : H.verts} {n m : ℕ} :
-    H.coe.TemporalWalk x n y m → G.TemporalWalk ↑x n ↑y m
-  | Empty => Empty
-  | Nonempty p => Nonempty ↑p
-
-instance {x y : H.verts} {n m : ℕ} : Coe (H.coe.TemporalWalk x n y m)
-    (G.TemporalWalk ↑x n ↑y m) where
-  coe := TemporalWalk.lift_subtempgraph_walk
-
-@[coe]
-protected def lift_subtempgraph_walk' {H' : Subgraph G} {x y : H.verts} {n m : ℕ}
-    (h : H ≤ H') :
-    H.coe.TemporalWalk x n y m → H'.coe.TemporalWalk
-      ⟨x, Set.mem_of_subset_of_mem h.left x.prop⟩ n
-      ⟨y, Set.mem_of_subset_of_mem h.left y.prop⟩ m
-  | Empty => Empty
-  | Nonempty p => Nonempty <| p.lift_subgraph_walk h
-
-@[coe]
-protected def lift_toTemporalGraph_walk {H : Subgraph G} {x y : H.verts} {n m : ℕ}
-    (w : H.toTemporalGraph.TemporalWalk ↑x n ↑y m) : H.coe.TemporalWalk x n y m := by
-  obtain ⟨xv, hx⟩ := x
-  obtain ⟨yv, hy⟩ := y
-  simp only at w ⊢
-  cases w with
-  | Empty =>
-    exact .Empty
-  | Nonempty p =>
-    exact .Nonempty p.lift_toTemporalGraph_walk
-
-instance {H : Subgraph G} {x y : H.verts} {n m : ℕ} :
-    Coe (H.toTemporalGraph.TemporalWalk x n y m) (H.coe.TemporalWalk x n y m) where
-  coe p := p.lift_toTemporalGraph_walk
-
-@[coe]
-protected def lift_walk_toTemporalGraph {H : Subgraph G} {x y : H.verts} {n m : ℕ} :
-    H.coe.TemporalWalk x n y m → H.toTemporalGraph.TemporalWalk ↑x n ↑y m
-  | Empty => Empty
-  | Nonempty p => Nonempty p.lift_walk_toTemporalGraph
-
-instance {H : Subgraph G} {x y : H.verts} {n m : ℕ} :
-    Coe (H.coe.TemporalWalk x n y m) (H.toTemporalGraph.TemporalWalk ↑x n ↑y m) where
-  coe p := p.lift_walk_toTemporalGraph
-
-
-end TemporalWalk
-
-end WalkLift
 
 section Construction
 

@@ -711,7 +711,7 @@ lemma between_TC_of_not_twoHopDismountable {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable) :
-    (H.between H.vminus H.vplus).TemporallyConnected := by
+    (H.between H.vminus H.vplus).TemporallyConnectedSubgraph := by
   set K := H.between H.vminus H.vplus
   have hbc : K.IsBicliqueWith H.vminus H.vplus := biclique_of_not_twoHopDismountable h₁ h₃
   have hmem : ∀ v ∈ H.verts, v ∈ H.vminus ∨ v ∈ H.vplus := by
@@ -728,8 +728,7 @@ lemma between_TC_of_not_twoHopDismountable {H : Subgraph G}
     obtain ⟨n, hn⟩ := hbc.adj_of_mem hv hw
     exact ⟨reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨.Single hn⟩⟩,
       reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨.Single hn.symm⟩⟩⟩
-  intro ⟨x, hx⟩ ⟨y, hy⟩
-  rw [reachable_iff_toTemporalGraph]
+  intro x hx y hy
   rcases hmem x hx with hxm | hxp <;> rcases hmem y hy with hym | hyp
   · -- both in `V⁻`: through the vertex of `V⁺` whose earliest edge goes to `x`
     obtain ⟨⟨⟨p, hp⟩, n⟩, hpe, -⟩ := existsUnique_vplus_earliestEdge h₀ h₁ h₂ h₃ ⟨x, hxm⟩

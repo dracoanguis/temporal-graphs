@@ -142,36 +142,19 @@ latest edges at `x`. -/
 theorem mount_tc (H : Subgraph G) [H.IsSymm] [G.IsSymm] {x : V} {y z : H.verts} {n m : ℕ}
     (h₀ : G.Adj y x n) (h₁ : G.Adj z x m) (h₂ : (mount H x h₀ h₁).EarliestEdge y x n)
     (h₃ : (mount H x h₀ h₁).LatestEdge z x m) :
-    H.TemporallyConnected → (mount H x h₀ h₁).TemporallyConnected := by
-  have hReach : ∀ x' y', H.Reachable x' y' → (mount H x h₀ h₁).Reachable
-    ⟨x', by simp [mount_verts]⟩
-    ⟨y', by simp [mount_verts]⟩
-    := reachable_of_le_reachable mount_le
-  unfold Subgraph.TemporallyConnected
+    H.TemporallyConnectedSubgraph → (mount H x h₀ h₁).TemporallyConnectedSubgraph := by
   intro hTC
-  have hy : y.val ∈ (mount H x h₀ h₁).verts := by simp [mount_verts]
-  have hx : x ∈ (mount H x h₀ h₁).verts := by simp [mount_verts]
-  have hz : z.val ∈ (mount H x h₀ h₁).verts := by simp [mount_verts]
-  simp only [Reachable, Subtype.forall, mount_verts, Set.union_singleton, Set.mem_insert_iff]
-  intro x' hx' y' hy'
-  apply hx'.elim
-  · intro heq ; apply hy'.elim
-    <;> conv => rhs ; lhs ; lhs ; rw [heq]
-    · intro heq'
-      -- `reachable_of_self` is `@[refl]`, so the `rfl` that `rw` attempts already closes this.
-      conv => rhs ; lhs ; rw [heq']
-    · intro hy'₀
-      have hy'₁ : y' ∈ (mount H x h₀ h₁).verts := by simp [hy']
-      apply @reachable_of_earliestEdge _ _ (mount H x h₀ h₁) ⟨y, _⟩ ⟨x, _⟩ n inferInstance h₂
-        ⟨y', _⟩
-      exact hReach ⟨y, _⟩ ⟨y', hy'₀⟩ <| hTC _ _
-  · intro hx' ; apply hy'.elim
-    · intro heq
-      conv => rhs ; lhs ; rw [heq]
-      apply @reachable_of_latestEdge _ _ (mount H x h₀ h₁) ⟨z, _⟩ ⟨x, _⟩ m inferInstance h₃
-        ⟨x', _⟩
-      exact hReach ⟨x', hx'⟩ ⟨z, _⟩ <| hTC _ _
-    · intro hy' ; exact hReach ⟨x', hx'⟩ ⟨y', hy'⟩ <| hTC _ _
+  have hReach : ∀ a b : V, H.Reachable a b → (mount H x h₀ h₁).Reachable a b :=
+    fun _ _ ↦ reachable_of_le_reachable mount_le
+  intro a ha b hb
+  simp only [mount_verts, Set.union_singleton, Set.mem_insert_iff] at ha hb
+  rcases ha with rfl | ha
+  · rcases hb with rfl | hb
+    · exact reachable_of_self _
+    · exact reachable_of_earliestEdge h₂ b (hReach y b (hTC y y.2 b hb))
+  · rcases hb with rfl | hb
+    · exact reachable_of_latestEdge h₃ a (hReach a z (hTC a ha z z.2))
+    · exact hReach a b (hTC a ha b hb)
 
 instance {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm] [G.IsLoopless] {x : V}
     {y z : H.verts} {n m : ℕ} {h₁ : G.Adj y x n} {h₂ : G.Adj z x m} :
@@ -230,7 +213,7 @@ theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G
         grind
     · simp only [mount_verts, h₅.right.choose, induce_verts, Set.union_singleton, Subtype.coe_prop,
       Set.insert_sdiff_self_of_mem, subset_refl]
-  have htc : (H'.mount x h₁ h₂).TemporallyConnected := by
+  have htc : (H'.mount x h₁ h₂).TemporallyConnectedSubgraph := by
     apply mount_tc H'
     · apply earliestEdge_of_ge _ h₃
       · exact (mount_edge H' h₁ h₂).symm
@@ -238,22 +221,15 @@ theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G
     · apply latestEdge_of_ge _ h₄
       · apply mount_edge'
       · trivial
-    · have htc : (H.dismount x).IsCliqueSubgraph := by
-        apply dismount_clique
-        exact h₀
-      rw [isClique_iff_coe] at htc
-      apply temporallyConnected_of_isClique at htc
-      have htc := temporallyConnected_iff.mpr htc
-      unfold TemporallyConnected at htc ⊢
-      intro u v
-      have := htc ⟨u, by grind only [h₅.right.choose]⟩ ⟨v, by grind only [h₅.right.choose]⟩
-      obtain ⟨_, h⟩ := h₅.right
-      exact h _ _ this
-  constructor
-  · trivial
-  · use heq
-    intro u v _
-    simpa using htc ⟨u, by grind only⟩ ⟨v, by grind only⟩
+    · have hdisTC : (H.dismount x).TemporallyConnectedSubgraph :=
+        TemporalGraph.temporallyConnected_of_isClique _ (dismount_clique H x h₀)
+      intro u hu v hv
+      obtain ⟨heqV, hspan⟩ := h₅.right
+      rw [heqV] at hu hv
+      exact hspan ⟨u, hu⟩ ⟨v, hv⟩ (hdisTC u hu v hv)
+  refine ⟨hle, heq, ?_⟩
+  intro u v _
+  exact htc u (by rw [heq]; exact u.2) v (by rw [heq]; exact v.2)
 
 end Mount
 
@@ -351,46 +327,21 @@ theorem twoHopMount_TC (H : Subgraph G) [H.IsSymm] [G.IsSymm] {y y' z z' : H.ver
     {n n' m m' : ℕ} (x : V) (h₀ : G.Adj x y' n') (h₁ : G.Adj y' y n) (h₂ : G.Adj x z' m')
     (h₃ : G.Adj z' z m) (h₄ : (H.twoHopMount x h₀ h₁ h₂ h₃).EarliestEdge y y' n ∧ n' ≤ n)
     (h₅ : (H.twoHopMount x h₀ h₁ h₂ h₃).LatestEdge z z' m ∧ m ≤ m') :
-    H.TemporallyConnected → (H.twoHopMount x h₀ h₁ h₂ h₃).TemporallyConnected := by
-  have hReach : ∀ x' y', H.Reachable x' y' → (twoHopMount H x h₀ h₁ h₂ h₃).Reachable
-    ⟨x', by simp [twoHopMount_verts]⟩
-    ⟨y', by simp [twoHopMount_verts]⟩
-    := reachable_of_le_reachable twoHopMount_le
-  intro htc
-  have hx  : x ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts   := by simp
-  have hy  : ↑y ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts  := by simp
-  have hy' : ↑y' ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts := by simp
-  have hz  : ↑z ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts  := by simp
-  have hz' : ↑z' ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts := by simp
-  simp only [TemporallyConnected, Reachable, Subtype.forall, twoHopMount_verts, Set.union_singleton,
-    Set.mem_insert_iff]
+    H.TemporallyConnectedSubgraph → (H.twoHopMount x h₀ h₁ h₂ h₃).TemporallyConnectedSubgraph := by
+  intro hTC
+  have hReach : ∀ a b : V, H.Reachable a b → (twoHopMount H x h₀ h₁ h₂ h₃).Reachable a b :=
+    fun _ _ ↦ reachable_of_le_reachable twoHopMount_le
   intro a ha b hb
-  apply Or.elim ha
-  · intro heq
-    apply Or.elim hb
-    · intro heq'
-      simp only [heq, heq', reachable_of_self]
-    · intro hb
-      simp only [heq]
-      have hb' : ↑b ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts := mem_twoHopMount_verts ⟨b, hb⟩
-      apply @reachable_of_extended_earliestEdge _ _ (H.twoHopMount x h₀ h₁ h₂ h₃)
-        ⟨y, hy⟩ ⟨y', hy'⟩ ⟨x, hx⟩ _ _ inferInstance h₄.left twoHopMount_edge
-        h₄.right ⟨b, hb'⟩
-      apply hReach y ⟨b, hb⟩
-      apply htc
-  · intro ha
-    apply Or.elim hb
-    · intro heq
-      simp only [heq]
-      have ha' : ↑a ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts := mem_twoHopMount_verts ⟨a, ha⟩
-      apply @reachable_of_extended_latestEdge _ _ (H.twoHopMount x h₀ h₁ h₂ h₃)
-        ⟨z, hz⟩ ⟨z', hz'⟩ ⟨x, hx⟩ _ _ inferInstance h₅.left
-        twoHopMount_edge'.symm h₅.right ⟨a, ha'⟩
-      apply hReach ⟨a, ha⟩ z
-      apply htc
-    · intro hb
-      apply hReach ⟨a, ha⟩ ⟨b, hb⟩
-      apply htc
+  simp only [twoHopMount_verts, Set.union_singleton, Set.mem_insert_iff] at ha hb
+  rcases ha with rfl | ha
+  · rcases hb with rfl | hb
+    · exact reachable_of_self _
+    · exact reachable_of_extended_earliestEdge h₄.left twoHopMount_edge h₄.right b
+        (hReach y b (hTC y y.2 b hb))
+  · rcases hb with rfl | hb
+    · exact reachable_of_extended_latestEdge h₅.left twoHopMount_edge'.symm h₅.right a
+        (hReach a z (hTC a ha z z.2))
+    · exact hReach a b (hTC a ha b hb)
 
 instance {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm] [G.IsLoopless] {y y' z z' : H.verts}
     {n n' m m' : ℕ} {x : V} {h₁ : G.Adj x y' n'} {h₂ : G.Adj y' y n} {h₃ : G.Adj x z' m'}
@@ -457,7 +408,7 @@ theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSy
           apply h₅.2.2
         grind
     · exact heq.le
-  have htc : (H'.twoHopMount x h₁ h₂ h₃ h₄).TemporallyConnected := by
+  have htc : (H'.twoHopMount x h₁ h₂ h₃ h₄).TemporallyConnectedSubgraph := by
     apply twoHopMount_TC H' ↑x
     · apply And.intro
       · apply earliestEdge_of_ge _ h₅.left
@@ -469,22 +420,15 @@ theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSy
         · exact twoHopMount_edge'''.symm
         · trivial
       · exact h₆.2.1
-    · have hclique : (H.dismount x).IsCliqueSubgraph := by
-        apply dismount_clique
-        exact h₀
-      rw [isClique_iff_coe] at hclique
-      apply temporallyConnected_of_isClique at hclique
-      have hclique := temporallyConnected_iff.mpr hclique
-      unfold TemporallyConnected at hclique ⊢
-      intro u v
-      have := hclique ⟨u, by grind only [h₇.right.choose]⟩ ⟨v, by grind only [h₇.right.choose]⟩
-      obtain ⟨_, h⟩ := h₇.right
-      exact h _ _ this
-  constructor
-  · trivial
-  · use heq
-    intro u v _
-    simpa using htc ⟨u, by grind only⟩ ⟨v, by grind only⟩
+    · have hdisTC : (H.dismount x).TemporallyConnectedSubgraph :=
+        TemporalGraph.temporallyConnected_of_isClique _ (dismount_clique H x h₀)
+      intro u hu v hv
+      obtain ⟨heqV, hspan⟩ := h₇.right
+      rw [heqV] at hu hv
+      exact hspan ⟨u, hu⟩ ⟨v, hv⟩ (hdisTC u hu v hv)
+  refine ⟨hle, heq, ?_⟩
+  intro u v _
+  exact htc u (by rw [heq]; exact u.2) v (by rw [heq]; exact v.2)
 
 end TwoHopMount
 

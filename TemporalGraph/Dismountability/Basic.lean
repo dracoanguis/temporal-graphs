@@ -687,6 +687,40 @@ lemma vzero_empty_of_not_twoHopDismountable {H : Subgraph G}
 
 end VzeroEmpty
 
+section Reciprocity
+
+-- SAND 2025, Lemma 3.5 (Reciprocity), first statement
+lemma earliestEdge_reciprocity {H : Subgraph G}
+    (h₀ : H.IsCliqueSubgraph)
+    (h₁ : ¬H.TwoHopDismountable)
+    [H.IsSymm]
+    {u v : V} {n : ℕ}
+    (h : H.EarliestEdge v u n) :
+    ∀ w ∈ H.vplus, ∀ j, H.Adj u w j → n ≤ j := by
+  intro w hw j hj
+  by_contra! hlt
+  -- `w` reaches `v` in two hops, through `u` then `e⁻(v)`; and `w ∈ V⁺`
+  refine h₁ ⟨h₀, w, Or.inr ⟨v, u, n, j, ?_, h, hj, hlt.le⟩, Or.inl hw⟩
+  rintro rfl
+  exact absurd (h.2 u j hj.symm) (by omega)
+
+-- SAND 2025, Lemma 3.5 (Reciprocity), second statement
+lemma latestEdge_reciprocity {H : Subgraph G}
+    (h₀ : H.IsCliqueSubgraph)
+    (h₁ : ¬H.TwoHopDismountable)
+    [H.IsSymm]
+    {u v : V} {n : ℕ}
+    (h : H.LatestEdge u v n) :
+    ∀ w ∈ H.vminus, ∀ j, H.Adj v w j → j ≤ n := by
+  intro w hw j hj
+  by_contra! hlt
+  -- `w ∈ V⁻`; and `u` reaches `w` in two hops, through `e⁺(u)` then `v`
+  refine h₁ ⟨h₀, w, Or.inl hw, Or.inr ⟨u, v, n, j, ?_, h, hj, hlt.le⟩⟩
+  rintro rfl
+  exact absurd (h.2 v j hj.symm) (by omega)
+
+end Reciprocity
+
 section biclique
 
 -- SAND 2025, Corollary 4.1

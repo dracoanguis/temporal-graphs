@@ -46,8 +46,10 @@ namespace Subgraph
 
 section Dismount
 
+/-- Delete the vertex `x` from `H` (the "dismount" operation). -/
 abbrev dismount (H : Subgraph G) (x : V) := H.deleteVerts {x}
 
+/-- Dismounting a vertex from a clique subgraph leaves a clique subgraph. -/
 lemma dismount_clique (H : Subgraph G) (x : V) (h₀ : H.IsCliqueSubgraph) :
     (H.dismount x).IsCliqueSubgraph := by
   unfold IsCliqueSubgraph IsClique dismount
@@ -60,10 +62,12 @@ lemma dismount_clique (H : Subgraph G) (x : V) (h₀ : H.IsCliqueSubgraph) :
   simp only [induce_Adj, Set.mem_sdiff, hy', Set.mem_singleton_iff, true_and, hz', hadj, and_true]
   exact ⟨hy.2, hz.2⟩
 
+/-- `H.dismount x` has vertex set `H.verts \ {x}`. -/
 @[simp]
 lemma dismount_verts {H : Subgraph G} {x : V} : (H.dismount x).verts = H.verts \ {x} := by
   simp only [induce_verts]
 
+/-- Dismounting a vertex yields a subgraph of the original. -/
 @[simp]
 lemma dismount_le {H : Subgraph G} {x : V} : (H.dismount x) ≤ H := by
   simp only [deleteVerts_le]
@@ -72,72 +76,71 @@ end Dismount
 
 section Mount
 
-def mount (H : Subgraph G) {y z : H.verts} {n m : ℕ} (x : V) [G.IsSymm]
-    (h₀ : G.Adj y x n)
-    (h₁ : G.Adj z x m) :
+/-- Add `x` back to `H`, connected via its earliest edge to `y` and latest edge to `z` (the
+"mount" operation). -/
+def mount (H : Subgraph G) [G.IsSymm] {y z : H.verts} {n m : ℕ} (x : V)
+    (h₀ : G.Adj y x n) (h₁ : G.Adj z x m) :
     G.Subgraph :=
 ((H.addVerts {x}).addEdge h₀ (by simp)).addEdge h₁ (by simp)
 
+/-- `H.mount x h₀ h₁` has vertex set `H.verts ∪ {x}`. -/
 @[simp]
-lemma mount_verts {H : Subgraph G} {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
-    (h₀ : G.Adj y x n)
-    (h₁ : G.Adj z x m) :
+lemma mount_verts {H : Subgraph G} [G.IsSymm] {x : V} {y z : H.verts} {n m : ℕ}
+    (h₀ : G.Adj y x n) (h₁ : G.Adj z x m) :
     (mount H x h₀ h₁).verts = H.verts ∪ {x} := by
   rw [mount, addEdge_verts, addEdge_verts, addVerts_verts]
 
+/-- `H.mount x h₀ h₁` is symmetric when `H` and `G` are. -/
 -- `mount` is a plain `def`, so instance resolution cannot see the `addEdge`/`addVerts`
 -- layers it is built from; this instance unfolds it once and hands the goal back to resolution.
-instance mount_isSymm {H : Subgraph G} {x : V} {y z : H.verts} {n m : ℕ} [H.IsSymm]
-    [G.IsSymm]
-    (h₀ : G.Adj y x n)
-    (h₁ : G.Adj z x m) :
+instance mount_isSymm {H : Subgraph G} [H.IsSymm] [G.IsSymm] {x : V} {y z : H.verts} {n m : ℕ}
+    (h₀ : G.Adj y x n) (h₁ : G.Adj z x m) :
     (mount H x h₀ h₁).IsSymm := by
   unfold mount
   infer_instance
 
+/-- Every vertex of `H` remains a vertex of `H.mount x h₀ h₁`. -/
 @[simp]
-lemma mem_mount_verts {H : Subgraph G} {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
-    {h₀ : G.Adj y x n}
-    {h₁ : G.Adj z x m}
-    (x' : H.verts) :
+lemma mem_mount_verts {H : Subgraph G} [G.IsSymm] {x : V} {y z : H.verts} {n m : ℕ}
+    {h₀ : G.Adj y x n} {h₁ : G.Adj z x m} (x' : H.verts) :
     ↑x' ∈ (mount H x h₀ h₁).verts := by simp [mount_verts]
 
-lemma mount_edge (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
-    (h₀ : G.Adj y x n)
-    (h₁ : G.Adj z x m) :
+/-- `H.mount x h₀ h₁` contains the edge from `x` to `y` at time `n`. -/
+lemma mount_edge (H : Subgraph G) [G.IsSymm] {x : V} {y z : H.verts} {n m : ℕ}
+    (h₀ : G.Adj y x n) (h₁ : G.Adj z x m) :
     (mount H x h₀ h₁).Adj x y n := by
   simp only [mount, addEdge, induce_verts, Set.union_singleton, induce_Adj,
     Set.mem_insert_iff, true_or, true_and, and_true, and_self, or_true]
 
-lemma mount_edge' (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
-    (h₀ : G.Adj y x n)
-    (h₁ : G.Adj z x m) :
+/-- `H.mount x h₀ h₁` contains the edge from `z` to `x` at time `m`. -/
+lemma mount_edge' (H : Subgraph G) [G.IsSymm] {x : V} {y z : H.verts} {n m : ℕ}
+    (h₀ : G.Adj y x n) (h₁ : G.Adj z x m) :
     (mount H x h₀ h₁).Adj z x m := by
   rw [mount]
   apply addEdge_edge
 
-lemma mount_le {H : Subgraph G} {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
-    {h₀ : G.Adj y x n}
-    {h₁ : G.Adj z x m} :
+/-- `H` is a subgraph of `H.mount x h₀ h₁`. -/
+lemma mount_le {H : Subgraph G} [G.IsSymm] {x : V} {y z : H.verts} {n m : ℕ}
+    {h₀ : G.Adj y x n} {h₁ : G.Adj z x m} :
     H ≤ H.mount x h₀ h₁ := by
   unfold mount
   have h := addVerts_le' H {x}
   have h' := h.trans <| addEdge_le' (H.addVerts {x}) h₀ (by simp)
   exact le_trans h' addEdge_le
 
+/-- `H.mount x h₀ h₁` has edge set `H.edgeSet` plus the two new edges `z x` at `m` and `y x` at
+`n`. -/
 @[simp]
-lemma mount_edgeSet (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [G.IsSymm]
-    [G.IsLoopless]
-    (h₀ : G.Adj y x n)
-    (h₁ : G.Adj z x m) :
+lemma mount_edgeSet (H : Subgraph G) [G.IsSymm] [G.IsLoopless] {x : V} {y z : H.verts} {n m : ℕ}
+    (h₀ : G.Adj y x n) (h₁ : G.Adj z x m) :
     (H.mount x h₀ h₁).edgeSet = H.edgeSet ∪ {⟨s(z,x), m⟩, ⟨s(y,x), n⟩} := by
   simp [mount, addEdge_edgeSet, addVerts_edgeSet]
 
-theorem mount_tc (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [H.IsSymm]
-    [G.IsSymm]
-    (h₀ : G.Adj y x n)
-    (h₁ : G.Adj z x m)
-    (h₂ : (mount H x h₀ h₁).EarliestEdge y x n)
+/-- If dismounting `x` from `H` (via its earliest edge to `y` and latest edge to `z`) is
+temporally connected, so is `H.mount x h₀ h₁`, provided those edges are indeed the earliest and
+latest edges at `x`. -/
+theorem mount_tc (H : Subgraph G) [H.IsSymm] [G.IsSymm] {x : V} {y z : H.verts} {n m : ℕ}
+    (h₀ : G.Adj y x n) (h₁ : G.Adj z x m) (h₂ : (mount H x h₀ h₁).EarliestEdge y x n)
     (h₃ : (mount H x h₀ h₁).LatestEdge z x m) :
     H.TemporallyConnected → (mount H x h₀ h₁).TemporallyConnected := by
   have hReach : ∀ x' y', H.Reachable x' y' → (mount H x h₀ h₁).Reachable
@@ -170,10 +173,8 @@ theorem mount_tc (H : Subgraph G) {x : V} {y z : H.verts} {n m : ℕ} [H.IsSymm]
       exact hReach ⟨x', hx'⟩ ⟨z, _⟩ <| hTC _ _
     · intro hy' ; exact hReach ⟨x', hx'⟩ ⟨y', hy'⟩ <| hTC _ _
 
-instance {H : Subgraph G} [h₀ : Finite H.edgeSet] {x : V} {y z : H.verts} {n m : ℕ}
-    [G.IsSymm] [G.IsLoopless]
-    {h₁ : G.Adj y x n}
-    {h₂ : G.Adj z x m} :
+instance {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm] [G.IsLoopless] {x : V}
+    {y z : H.verts} {n m : ℕ} {h₁ : G.Adj y x n} {h₂ : G.Adj z x m} :
     Finite (H.mount x h₁ h₂).edgeSet := by
   conv =>
     rhs ; rw [H.mount_edgeSet]
@@ -181,10 +182,9 @@ instance {H : Subgraph G} [h₀ : Finite H.edgeSet] {x : V} {y z : H.verts} {n m
   · trivial
   · simp only [Set.finite_insert, Set.finite_singleton]
 
-theorem mount_size {H : Subgraph G} [Fintype H.edgeSet] {x : V} {y z : H.verts} {n m : ℕ}
-    [G.IsSymm] [G.IsLoopless]
-    {h₀ : G.Adj y x n}
-    {h₁ : G.Adj z x m}
+/-- Mounting `x` back onto `H` adds at most 2 edges. -/
+theorem mount_size {H : Subgraph G} [Fintype H.edgeSet] [G.IsSymm] [G.IsLoopless] {x : V}
+    {y z : H.verts} {n m : ℕ} {h₀ : G.Adj y x n} {h₁ : G.Adj z x m}
     [Fintype (H.mount x h₀ h₁).edgeSet] :
     Fintype.card (H.mount x h₀ h₁).edgeSet ≤ Fintype.card H.edgeSet + 2 := by
   -- Rewrite the edge set only once under `Nat.card`: under `Fintype.card` it clashes with the
@@ -203,14 +203,12 @@ theorem mount_size {H : Subgraph G} [Fintype H.edgeSet] {x : V} {y z : H.verts} 
     simp only [Set.card_union_le]
   lia
 
-theorem dismountability {H H' : Subgraph G} {x : H.verts} {y z : H'.verts} {n m : ℕ}
-    [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G.IsLoopless]
-    (h₀ : H.IsCliqueSubgraph)
-    (h₁ : G.Adj y x n)
-    (h₂ : G.Adj z x m)
-    (h₃ : H.EarliestEdge y x n)
-    (h₄ : H.LatestEdge z x m)
-    (h₅ : H'.IsSpannerOf (H.dismount x)) :
+/-- SAND 2025, Theorem 2.1 (1-hop case): re-mounting `x` via its earliest edge to `y` and latest
+edge to `z` extends a spanner of `H.dismount x` to a spanner of `H`, when `H` is a clique. -/
+theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G.IsLoopless]
+    {x : H.verts} {y z : H'.verts} {n m : ℕ}
+    (h₀ : H.IsCliqueSubgraph) (h₁ : G.Adj y x n) (h₂ : G.Adj z x m) (h₃ : H.EarliestEdge y x n)
+    (h₄ : H.LatestEdge z x m) (h₅ : H'.IsSpannerOf (H.dismount x)) :
     H'.mount x h₁ h₂ |>.IsSpannerOf H := by
   have heq : (H'.mount x h₁ h₂).verts = H.verts := by simp only [mount_verts, h₅.right.choose,
     induce_verts, Set.union_singleton, Subtype.coe_prop, Set.insert_sdiff_self_of_mem]
@@ -261,12 +259,10 @@ end Mount
 
 section TwoHopMount
 
-def twoHopMount (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
-    [G.IsSymm]
-    (h₀ : G.Adj x y' n')
-    (h₁ : G.Adj y' y n)
-    (h₂ : G.Adj x z' m')
-    (h₃ : G.Adj z' z m) :
+/-- Add `x` back to `H`, connected through `y'` on the earliest side and `z'` on the latest side
+(the two-hop "mount" operation). -/
+def twoHopMount (H : Subgraph G) [G.IsSymm] {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
+    (h₀ : G.Adj x y' n') (h₁ : G.Adj y' y n) (h₂ : G.Adj x z' m') (h₃ : G.Adj z' z m) :
     G.Subgraph :=
   H.addVerts {x}
     |>.addEdge h₀ (by simp)
@@ -274,99 +270,74 @@ def twoHopMount (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
     |>.addEdge h₂ (by simp)
     |>.addEdge h₃ (by simp)
 
+/-- `H.twoHopMount x h₀ h₁ h₂ h₃` has vertex set `H.verts ∪ {x}`. -/
 @[simp]
-lemma twoHopMount_verts (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
-    [G.IsSymm]
-    (h₀ : G.Adj x y' n')
-    (h₁ : G.Adj y' y n)
-    (h₂ : G.Adj x z' m')
-    (h₃ : G.Adj z' z m) :
+lemma twoHopMount_verts (H : Subgraph G) [G.IsSymm] {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
+    (h₀ : G.Adj x y' n') (h₁ : G.Adj y' y n) (h₂ : G.Adj x z' m') (h₃ : G.Adj z' z m) :
     (H.twoHopMount x h₀ h₁ h₂ h₃).verts = H.verts ∪ {x} := by
   simp only [twoHopMount, addEdge_verts, induce_verts, Set.union_singleton]
 
+/-- `H.twoHopMount x h₀ h₁ h₂ h₃` is symmetric when `H` and `G` are. -/
 -- Same as `mount_isSymm`: resolution stops at the `def`, so unfold the four `addEdge`
 -- layers once and let the `addEdge_isSymm`/`addVerts_isSymm` instances take over.
-instance twoHopMount_isSymm (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
-    [H.IsSymm] [G.IsSymm]
-    (h₀ : G.Adj x y' n')
-    (h₁ : G.Adj y' y n)
-    (h₂ : G.Adj x z' m')
+instance twoHopMount_isSymm (H : Subgraph G) [H.IsSymm] [G.IsSymm] {y y' z z' : H.verts}
+    {n n' m m' : ℕ} (x : V) (h₀ : G.Adj x y' n') (h₁ : G.Adj y' y n) (h₂ : G.Adj x z' m')
     (h₃ : G.Adj z' z m) :
     (H.twoHopMount x h₀ h₁ h₂ h₃).IsSymm := by
   unfold twoHopMount
   infer_instance
 
+/-- Every vertex of `H` remains a vertex of `H.twoHopMount x h₀ h₁ h₂ h₃`. -/
 @[simp]
-lemma mem_twoHopMount_verts {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
-    [G.IsSymm]
-    {h₀ : G.Adj x y' n'}
-    {h₁ : G.Adj y' y n}
-    {h₂ : G.Adj x z' m'}
-    {h₃ : G.Adj z' z m}
+lemma mem_twoHopMount_verts {H : Subgraph G} [G.IsSymm] {y y' z z' : H.verts} {n n' m m' : ℕ}
+    {x : V} {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n} {h₂ : G.Adj x z' m'} {h₃ : G.Adj z' z m}
     (x' : H.verts) :
     ↑x' ∈ (H.twoHopMount x h₀ h₁ h₂ h₃).verts := by
   simp [twoHopMount_verts]
 
+/-- `H.twoHopMount x h₀ h₁ h₂ h₃` has edge set `H.edgeSet` plus the four new edges. -/
 @[simp]
-lemma twoHopMount_edgeSet (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
-    [G.IsSymm] [G.IsLoopless]
-    (h₀ : G.Adj x y' n')
-    (h₁ : G.Adj y' y n)
-    (h₂ : G.Adj x z' m')
+lemma twoHopMount_edgeSet (H : Subgraph G) [G.IsSymm] [G.IsLoopless] {y y' z z' : H.verts}
+    {n n' m m' : ℕ} (x : V) (h₀ : G.Adj x y' n') (h₁ : G.Adj y' y n) (h₂ : G.Adj x z' m')
     (h₃ : G.Adj z' z m) :
     (H.twoHopMount x h₀ h₁ h₂ h₃).edgeSet =
     H.edgeSet ∪ {⟨s(z', z), m⟩,  ⟨s(x, z'), m'⟩, ⟨s(y',y), n⟩, ⟨s(x,y'), n'⟩} := by
   simp [twoHopMount, addEdge_edgeSet, addVerts_edgeSet]
 
+/-- `H.twoHopMount x h₀ h₁ h₂ h₃` contains the edge from `x` to `y'` at time `n'`. -/
 -- The four edges below are the ones `twoHopMount` inserts directly, so each is obtained by
 -- lifting `addEdge_edge` along the later `addEdge_le` layers: no symmetry needed.
-lemma twoHopMount_edge {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
-    [G.IsSymm]
-    {h₀ : G.Adj x y' n'}
-    {h₁ : G.Adj y' y n}
-    {h₂ : G.Adj x z' m'}
-    {h₃ : G.Adj z' z m} :
+lemma twoHopMount_edge {H : Subgraph G} [G.IsSymm] {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
+    {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n} {h₂ : G.Adj x z' m'} {h₃ : G.Adj z' z m} :
     (H.twoHopMount x h₀ h₁ h₂ h₃).Adj x y' n' := by
   rw [twoHopMount]
   exact addEdge_le.right <| addEdge_le.right <| addEdge_le.right addEdge_edge
 
-lemma twoHopMount_edge' {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
-    [G.IsSymm]
-    {h₀ : G.Adj x y' n'}
-    {h₁ : G.Adj y' y n}
-    {h₂ : G.Adj x z' m'}
-    {h₃ : G.Adj z' z m} :
+/-- `H.twoHopMount x h₀ h₁ h₂ h₃` contains the edge from `x` to `z'` at time `m'`. -/
+lemma twoHopMount_edge' {H : Subgraph G} [G.IsSymm] {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
+    {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n} {h₂ : G.Adj x z' m'} {h₃ : G.Adj z' z m} :
     (H.twoHopMount x h₀ h₁ h₂ h₃).Adj x z' m' := by
   rw [twoHopMount]
   exact addEdge_le.right addEdge_edge
 
-lemma twoHopMount_edge'' {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
-    [G.IsSymm]
-    {h₀ : G.Adj x y' n'}
-    {h₁ : G.Adj y' y n}
-    {h₂ : G.Adj x z' m'}
-    {h₃ : G.Adj z' z m} :
+/-- `H.twoHopMount x h₀ h₁ h₂ h₃` contains the edge from `y'` to `y` at time `n`. -/
+lemma twoHopMount_edge'' {H : Subgraph G} [G.IsSymm] {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
+    {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n} {h₂ : G.Adj x z' m'} {h₃ : G.Adj z' z m} :
     (H.twoHopMount x h₀ h₁ h₂ h₃).Adj y' y n := by
   rw [twoHopMount]
   exact addEdge_le.right <| addEdge_le.right addEdge_edge
 
-lemma twoHopMount_edge''' {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
-    [G.IsSymm]
-    {h₀ : G.Adj x y' n'}
-    {h₁ : G.Adj y' y n}
-    {h₂ : G.Adj x z' m'}
-    {h₃ : G.Adj z' z m} :
+/-- `H.twoHopMount x h₀ h₁ h₂ h₃` contains the edge from `z'` to `z` at time `m`. -/
+lemma twoHopMount_edge''' {H : Subgraph G} [G.IsSymm] {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
+    {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n} {h₂ : G.Adj x z' m'} {h₃ : G.Adj z' z m} :
     (H.twoHopMount x h₀ h₁ h₂ h₃).Adj z' z m := by
   rw [twoHopMount]
   exact addEdge_edge
 
+/-- `H` is a subgraph of `H.twoHopMount x h₀ h₁ h₂ h₃`. -/
 @[simp]
-lemma twoHopMount_le {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
-    [G.IsSymm]
-    {h₀ : G.Adj x y' n'}
-    {h₁ : G.Adj y' y n}
-    {h₂ : G.Adj x z' m'}
-    {h₃ : G.Adj z' z m} :
+lemma twoHopMount_le {H : Subgraph G} [G.IsSymm] {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V}
+    {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n} {h₂ : G.Adj x z' m'} {h₃ : G.Adj z' z m} :
     H ≤ H.twoHopMount x h₀ h₁ h₂ h₃ :=
   addVerts_le' H {x}
     |>.trans (addEdge_le' _ h₀ (by simp))
@@ -374,13 +345,11 @@ lemma twoHopMount_le {H : Subgraph G} {y y' z z' : H.verts} {n n' m m' : ℕ} {x
     |>.trans (addEdge_le' _ h₂ (by simp))
     |>.trans (addEdge_le' _ h₃ (by simp))
 
-theorem twoHopMount_TC (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} (x : V)
-    [H.IsSymm] [G.IsSymm]
-    (h₀ : G.Adj x y' n')
-    (h₁ : G.Adj y' y n)
-    (h₂ : G.Adj x z' m')
-    (h₃ : G.Adj z' z m)
-    (h₄ : (H.twoHopMount x h₀ h₁ h₂ h₃).EarliestEdge y y' n ∧ n' ≤ n)
+/-- If dismounting `x` (via `y'`, `y` on the earliest side and `z'`, `z` on the latest side) is
+temporally connected, so is `H.twoHopMount x h₀ h₁ h₂ h₃`. -/
+theorem twoHopMount_TC (H : Subgraph G) [H.IsSymm] [G.IsSymm] {y y' z z' : H.verts}
+    {n n' m m' : ℕ} (x : V) (h₀ : G.Adj x y' n') (h₁ : G.Adj y' y n) (h₂ : G.Adj x z' m')
+    (h₃ : G.Adj z' z m) (h₄ : (H.twoHopMount x h₀ h₁ h₂ h₃).EarliestEdge y y' n ∧ n' ≤ n)
     (h₅ : (H.twoHopMount x h₀ h₁ h₂ h₃).LatestEdge z z' m ∧ m ≤ m') :
     H.TemporallyConnected → (H.twoHopMount x h₀ h₁ h₂ h₃).TemporallyConnected := by
   have hReach : ∀ x' y', H.Reachable x' y' → (twoHopMount H x h₀ h₁ h₂ h₃).Reachable
@@ -423,11 +392,8 @@ theorem twoHopMount_TC (H : Subgraph G) {y y' z z' : H.verts} {n n' m m' : ℕ} 
       apply hReach ⟨a, ha⟩ ⟨b, hb⟩
       apply htc
 
-instance {H : Subgraph G} [h₀ : Finite H.edgeSet] {y y' z z' : H.verts} {n n' m m' : ℕ}
-    {x : V} [G.IsSymm] [G.IsLoopless]
-    {h₁ : G.Adj x y' n'}
-    {h₂ : G.Adj y' y n}
-    {h₃ : G.Adj x z' m'}
+instance {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm] [G.IsLoopless] {y y' z z' : H.verts}
+    {n n' m m' : ℕ} {x : V} {h₁ : G.Adj x y' n'} {h₂ : G.Adj y' y n} {h₃ : G.Adj x z' m'}
     {h₄ : G.Adj z' z m} :
     Finite (H.twoHopMount x h₁ h₂ h₃ h₄).edgeSet := by
   conv =>
@@ -436,14 +402,10 @@ instance {H : Subgraph G} [h₀ : Finite H.edgeSet] {y y' z z' : H.verts} {n n' 
   · trivial
   · simp only [Set.finite_insert, Set.finite_singleton]
 
-theorem twoHopMount_size {H : Subgraph G} [Fintype H.edgeSet] {y y' z z' : H.verts}
-    {n n' m m' : ℕ}
-    {x : V} [G.IsSymm] [G.IsLoopless]
-    {h₀ : G.Adj x y' n'}
-    {h₁ : G.Adj y' y n}
-    {h₂ : G.Adj x z' m'}
-    {h₃ : G.Adj z' z m}
-    [Fintype (H.twoHopMount x h₀ h₁ h₂ h₃).edgeSet] :
+/-- Mounting `x` back onto `H` via two hops on each side adds at most 4 edges. -/
+theorem twoHopMount_size {H : Subgraph G} [Fintype H.edgeSet] [G.IsSymm] [G.IsLoopless]
+    {y y' z z' : H.verts} {n n' m m' : ℕ} {x : V} {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n}
+    {h₂ : G.Adj x z' m'} {h₃ : G.Adj z' z m} [Fintype (H.twoHopMount x h₀ h₁ h₂ h₃).edgeSet] :
     Fintype.card (H.twoHopMount x h₀ h₁ h₂ h₃).edgeSet ≤ Fintype.card H.edgeSet + 4 := by
   rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card, H.twoHopMount_edgeSet x h₀ h₁ h₂ h₃]
   have hle₀ :
@@ -462,17 +424,13 @@ theorem twoHopMount_size {H : Subgraph G} [Fintype H.edgeSet] {y y' z z' : H.ver
     simp only [Set.card_union_le]
   lia
 
-theorem twoHopDismountability {H H' : Subgraph G} {x : H.verts} {y y' z z' : H'.verts}
-    {n n' m m' : ℕ}
-    [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G.IsLoopless]
-    (h₀ : H.IsCliqueSubgraph)
-    (h₁ : G.Adj x y' n')
-    (h₂ : G.Adj y' y n)
-    (h₃ : G.Adj x z' m')
-    (h₄ : G.Adj z' z m)
-    (h₅ : H.EarliestEdge y y' n ∧ n' ≤ n ∧ H.Adj x y' n')
-    (h₆ : H.LatestEdge z z' m ∧ m ≤ m' ∧ H.Adj x z' m')
-    (h₇ : H'.IsSpannerOf (H.dismount x)) :
+/-- SAND 2025, §2.1 (2-hop case): re-mounting `x` via two hops on each side extends a spanner of
+`H.dismount x` to a spanner of `H`, when `H` is a clique. -/
+theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G.IsLoopless]
+    {x : H.verts} {y y' z z' : H'.verts} {n n' m m' : ℕ}
+    (h₀ : H.IsCliqueSubgraph) (h₁ : G.Adj x y' n') (h₂ : G.Adj y' y n) (h₃ : G.Adj x z' m')
+    (h₄ : G.Adj z' z m) (h₅ : H.EarliestEdge y y' n ∧ n' ≤ n ∧ H.Adj x y' n')
+    (h₆ : H.LatestEdge z z' m ∧ m ≤ m' ∧ H.Adj x z' m') (h₇ : H'.IsSpannerOf (H.dismount x)) :
     H'.twoHopMount x h₁ h₂ h₃ h₄ |>.IsSpannerOf H := by
   have heq : (H'.twoHopMount x h₁ h₂ h₃ h₄).verts = H.verts := by
     simp [twoHopMount_verts, h₇.right.choose]

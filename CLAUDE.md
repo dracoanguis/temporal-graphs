@@ -96,11 +96,11 @@ besoin de le répéter ici.
 | Fichier | Rôle | Analogue Mathlib |
 |---|---|---|
 | `TemporalGraph/Init.lean` | Rule-set aesop `TemporalGraph`, utilisé par la macro `aesop_temporal_graph` | `SimpleGraph/Init.lean` |
-| `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsCliqueGraph`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, demande `IsSymm`/`IsLoopless` en hypothèses explicites), `neighborSet`, `arcSet`/`arcSize` (monde orienté), `edgeSet`/`size` (monde symétrique ; `mem_edgeSet` demande seulement `[IsSymm]`) | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
+| `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsCliqueGraph`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, demande `IsSymm`/`IsLoopless` en hypothèses explicites), `neighborSet`, `incidenceSet`, `arcSet`/`arcSize` (monde orienté), `edgeSet`/`size` (monde symétrique ; `mem_edgeSet` demande seulement `[IsSymm]`) | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
 | `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Marches temporelles non strictes, à temps croissant | `SimpleGraph.Walk` |
-| `TemporalGraph/Subgraph.lean` | Sous-graphe temporel : `TemporalGraph.Subgraph` étend `TemporalGraph V`, ajoutant `verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `IsCliqueSubgraph`/`neighborSet`/`size`/`incidenceSet` (`edgeSet` est hérité de `TemporalGraph`, pas redéfini ici) ; treillis borné, `induce`/`deleteVerts`/`addVerts`/`addArc`/`addEdge` | `SimpleGraph.Subgraph` |
+| `TemporalGraph/Subgraph.lean` | Sous-graphe temporel : `TemporalGraph.Subgraph` étend `TemporalGraph V`, ajoutant `verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `IsCliqueSubgraph` ; `edgeSet`, `neighborSet`, `size`, `incidenceSet` sont hérités de `TemporalGraph` ; treillis borné, `induce`/`deleteVerts`/`addVerts`/`addArc`/`addEdge` ; monotonie `toTemporalGraph_le`/`toTemporalGraph_le_self` | `SimpleGraph.Subgraph` |
 | `TemporalGraph/Bipartite.lean` | Bipartition temporelle `IsBipartiteWith`/`IsBipartite` (ensembles explicites, sans hypothèse de symétrie, non classe), pont `isBipartiteWith_iff_simpleFootprint` vers Mathlib, restriction `between` aux arcs entre deux ensembles, bi-cliques temporelles `IsBicliqueWith`/`IsBiclique` (SAND 2025 §1.1 ; prennent un ensemble de sommets), constructeur `completeBipartite` sur `α ⊕ β`, et au niveau `Subgraph` : `Subgraph.between` | `SimpleGraph/Bipartite.lean` |
-| `TemporalGraph/Connectivity/Basic.lean`, `Connectivity/Subgraph.lean` | `Reachable`, `TemporallyConnected` ; spanners au niveau `TemporalGraph.Subgraph` (`Subgraph.IsSpanner`, `Subgraph.IsSpannerOf`, `Subgraph.IsTCSpanner`) — les définitions `IsSpanner`/`IsTCSpanner` au niveau `TemporalGraph` dans `Connectivity/Basic.lean` sont commentées (en attente de revue) | `SimpleGraph.Connectivity` |
+| `TemporalGraph/Connectivity/Basic.lean`, `Connectivity/Subgraph.lean` | `Reachable` (avec monotonie `Reachable.mono`), `TemporallyConnected` (prend un ensemble `S : Set V` ; shorthands `TemporallyConnectedGraph` pour `Set.univ` et `Subgraph.TemporallyConnectedSubgraph` pour `H.verts`) ; spanners au niveau sous-graphe sur `V` (`Subgraph.IsSpanner`, `Subgraph.IsSpannerOf`, `Subgraph.IsTCSpanner`) | `SimpleGraph.Connectivity` |
 | `TemporalGraph/Dismountability/Basic.lean` | `Dismountable`, `TwoHopDismountable`, partition `vminus`/`vplus`/`vzero`, bijections earliest/latest-neighbor — correspond aux Lemmes 2, 3, 5 et au Corollaire 3.3 de SAND 2025 | — |
 | `TemporalGraph/Dismountability/Operations.lean` | Opérations `dismount`/`mount`/`twoHopMount` et leurs théorèmes de correction (`dismountability`, `twoHopDismountability`) | — |
 | `TemporalGraph/Examples.lean` | Graphe de démo `square` (carré à 4 sommets), avec ses propriétés portées comme instances (`square_isSymm`, `square_isLoopless`, …) | — |
@@ -142,12 +142,20 @@ utilisaient vraiment).
   H.verts`) et aucun doublon `Subgraph` n'est nécessaire ; `Subgraph.IsClique` et
   `Subgraph.IsBiclique` ont été supprimés. Un prédicat « sur tout le type » redéfini dans
   `Subgraph` s'affiche sous le même nom que l'hérité (`H.IsClique`) et produit des erreurs
-  incompréhensibles (« `H.IsClique` attendu, `H.IsClique` reçu »). `TemporallyConnected` n'a pas
-  encore suivi. Deux abréviations évitent de répéter l'ensemble : `G.IsCliqueGraph` (`G.IsClique Set.univ`) et `H.IsCliqueSubgraph` (`H.IsClique H.verts`). Elles portent des noms distincts exprès : un `Subgraph.IsClique` masquerait `TemporalGraph.IsClique`, et sur un sous-graphe `H.IsCliqueGraph` (hérité) signifie « clique sur tout `V` ».
+  incompréhensibles (« `H.IsClique` attendu, `H.IsClique` reçu »). `TemporallyConnected` suit
+  maintenant cette convention : elle prend un ensemble `S : Set V`, avec shorthands `TemporallyConnectedGraph` (= `Set.univ`) et `Subgraph.TemporallyConnectedSubgraph` (= `H.verts`). Deux abréviations évitent de répéter l'ensemble : `G.IsCliqueGraph` (`G.IsClique Set.univ`) et `H.IsCliqueSubgraph` (`H.IsClique H.verts`). Elles portent des noms distincts exprès : un `Subgraph.IsClique` masquerait `TemporalGraph.IsClique`, et sur un sous-graphe `H.IsCliqueGraph` (hérité) signifie « clique sur tout `V` ».
 - **Deux ensembles d'arêtes** : `arcSet : Set (V × V × ℕ)` et `arcSize` comptent les arcs
   (paires ordonnées) sans aucune hypothèse — c'est le monde orienté. `edgeSet : Set (Sym2 V × ℕ)`
   et `size` comptent les arêtes non orientées ; `mem_edgeSet` demande seulement `[G.IsSymm]`
   (pas `[G.IsLoopless]`) — c'est le monde symétrique.
+- **Rien de central ne passe par le sous-type.** `Subgraph.Reachable`, `Subgraph.TemporallyConnected`,
+  `Subgraph.size`, `Subgraph.neighborSet` et les relèvements de marches ont été supprimés : sur un
+  sous-graphe, `H.Reachable x y` (sommets dans `V`), `H.size`, `H.neighborSet x` et
+  `H.incidenceSet x` sont les notions héritées. Une notion qui porte sur des sommets donnés les
+  prend dans `V` (avec des hypothèses d'appartenance) ; une notion qui quantifie sur les sommets
+  prend un `Set V`. `H.coe : TemporalGraph H.verts` reste une petite API optionnelle (ponts
+  `is*_iff_coe`, `coe_earliestEdge`…). Exception assumée : les bijections `earliestNeighborFn :
+  H.vplus → H.vminus`.
 - **Renommage ultérieur (commit `acb993a`)** : le constructeur à une seule orientation, sans
   aucune hypothèse de symétrie, s'appelle maintenant `addArc` (l'ancien `addEdge` générique), et
   le constructeur à deux orientations qui demande `[G.IsSymm]` s'appelle maintenant `addEdge`
@@ -158,9 +166,11 @@ utilisaient vraiment).
   `addEdge_isSymm` ; plus aucun nom ne porte le suffixe `addEdgeSymm`.
 - `spanningCoe` a été supprimé, remplacé par la projection héritée `toTemporalGraph`. Les lemmes
   ont été renommés en conséquence : `top_spanningCoe` → `top_toTemporalGraph`,
-  `size_of_spanningCoe` → `size_of_toTemporalGraph`, `lift_spanningCoe_walk` →
-  `lift_toTemporalGraph_walk`, `lift_walk_spanningCoe` → `lift_walk_toTemporalGraph`.
-  `spanningCoe_edgeSet_eq`, en revanche, n'a pas été renommé : il a été **supprimé**, `H.edgeSet`
+  `size_of_spanningCoe` → `size_of_toTemporalGraph`. Les relèvements de marches
+  (`lift_spanningCoe_walk` / `lift_toTemporalGraph_walk` / `lift_walk_toTemporalGraph` et variantes)
+  ont été supprimés, remplacés par `Reachable.mono` : la réachabilité est monotone selon `≤`, et
+  les nouvelles définitions walk-mapper `NonemptyTemporalWalk.mapLe` / `TemporalWalk.mapLe` produisent
+  une marche plus lente. `spanningCoe_edgeSet_eq` a aussi été **supprimé**, `H.edgeSet`
   résolvant directement à travers la notation de champ généralisée (voir `Subgraph.lean:865`).
 
 Chaque module typecheck et il n'existe aucun `sorry`. **Piège de vérification corrigé au passage** :

@@ -91,10 +91,10 @@ spanners at the subgraph level).
 \begin{definition}[Incidence set]
   \label{def:incidence-set}
   \uses{def:sub-temporal-graph}
-  \lean{TemporalGraph.Subgraph.incidenceSet}
+  \lean{TemporalGraph.incidenceSet}
   \leanok
-  The \emph{incidence set} of $x$ in $H$ is the set of pairs $(y,n)$ such
-  that $H.\mathrm{Adj}(x,y,n)$: $x$'s out-neighbors, each paired with a time
+  The \emph{incidence set} of $x$ in $H$ (a temporal graph, or a sub-temporal-graph through
+  inheritance) is the set of pairs $(y,n)$ such that $H.\mathrm{Adj}(x,y,n)$: $x$'s out-neighbors, each paired with a time
   witnessing the edge.
 \end{definition}
 
@@ -166,17 +166,13 @@ spanners at the subgraph level).
 \begin{definition}[Reachability and spanning for sub-temporal-graphs]
   \label{def:subgraph-reachable-tc-spannerOf}
   \uses{def:sub-temporal-graph,def:reachable}
-  \lean{TemporalGraph.Subgraph.Reachable}
-  \lean{TemporalGraph.Subgraph.TemporallyConnected}
   \lean{TemporalGraph.Subgraph.IsSpannerOf}
   \leanok
-  $H$'s own reachability and temporal connectivity
-  (Definition~\ref{def:reachable}) are those of the temporal graph on
-  $\mathrm{Verts}(H)$ obtained by restricting $H$'s adjacency to its own
-  vertices. Given two sub-temporal-graphs $H, H'$ of $G$: $H$ \emph{is a
-  spanner of} $H'$ if $H \le H'$, they share the same vertex set, and every
-  pair reachable in $H'$ remains reachable in $H$ — the sub-temporal-graph
-  analogue, one level down, of Definition~\ref{def:spanner} below, and the
+  On a sub-temporal-graph $H$, reachability and temporal connectivity are
+  inherited from the parent $G$ — they operate on vertices of type $V$. Given
+  two sub-temporal-graphs $H, H'$ of $G$: $H$ \emph{is a spanner of} $H'$
+  if $H \le H'$, they share the same vertex set, and every pair of vertices
+  in that set that is reachable in $H'$ remains reachable in $H$ — the
   relation used by the dismount/mount operations of
   Chapter~\ref{chap:dismountability} to transfer a spanner of a smaller
   clique back onto the original one.
@@ -188,10 +184,10 @@ spanners at the subgraph level).
   \lean{TemporalGraph.Subgraph.IsSpanner}
   \lean{TemporalGraph.Subgraph.IsTCSpanner}
   \leanok
-  A spanning sub-temporal-graph $H$ of $G$ \emph{is a spanner} if it
-  preserves reachability between all pairs of vertices of $G$: $x$ reaches
-  $y$ in $H$ whenever $x$ reaches $y$ in $G$. $H$ \emph{is a TC-spanner} if
-  it is a spanner and is itself temporally connected.
+  A spanning sub-temporal-graph $H$ of $G$ \emph{is a spanner} if, for all
+  $x, y \in \mathrm{Verts}(H)$, whenever $x$ reaches $y$ in $G$, then $x$ reaches
+  $y$ in $H$. $H$ \emph{is a TC-spanner} if it is spanning and $\mathrm{Verts}(H)$ is
+  temporally connected in $H$.
 \end{definition}
 
 \begin{lemma}[TC-spanner exists iff temporally connected]

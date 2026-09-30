@@ -49,10 +49,19 @@ least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
   \uses{def:temporal-walk}
   \lean{TemporalGraph.Reachable}
   \lean{TemporalGraph.TemporallyConnected}
+  \lean{TemporalGraph.TemporallyConnectedGraph}
+  \lean{TemporalGraph.Subgraph.TemporallyConnectedSubgraph}
+  \lean{TemporalGraph.Reachable.mono}
   \leanok
   $y$ is \emph{reachable} from $x$ in $G$ if there is a non-empty temporal
-  walk from $x$ to $y$ (at some times $n \le m$). $G$ \emph{is temporally
-  connected} if every vertex is reachable from every other vertex.
+  walk from $x$ to $y$ (at some times $n \le m$). A set $S$ of vertices is
+  \emph{temporally connected} in $G$ (denoted $G.\mathrm{TemporallyConnected}\,S$)
+  if every pair of vertices in $S$ is mutually reachable. $G$ \emph{is temporally
+  connected} (shorthand $G.\mathrm{TemporallyConnectedGraph}$) if all of $V$
+  is temporally connected; a sub-temporal-graph $H$ is temporally connected
+  (shorthand $H.\mathrm{TemporallyConnectedSubgraph}$) if all of $\mathrm{Verts}(H)$
+  is. Reachability is \emph{monotone}: if $H \le H'$, then
+  $H.\mathrm{Reachable}\,x\,y \Rightarrow H'.\mathrm{Reachable}\,x\,y$.
 \end{definition}
 
 \begin{lemma}[Cliques are temporally connected]

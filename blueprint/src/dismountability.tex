@@ -12,7 +12,7 @@ treatment by Daniele Carnevale, Arnaud Casteigts \& Timothée Corsini,
 SAND below — do not introduce a different numbering here.
 \bigskip
 
-\begin{definition}[Dismountable clique --- SAND \S~2, hypothesis of Theorem 1]
+\begin{definition}[Dismountable clique --- SAND \S~2, hypothesis of Theorem 2.1]
   \label{def:dismountable}
   \uses{def:sub-spanning-clique,def:earliest-latest-neighbor}
   \lean{TemporalGraph.Subgraph.Dismountable}
@@ -35,7 +35,7 @@ SAND below — do not introduce a different numbering here.
   $V^0(H) = \mathrm{Verts}(H) \setminus (V^-(H) \cup V^+(H))$.
 \end{definition}
 
-\begin{lemma}[Partition of non-dismountable cliques --- SAND Lemma 2]
+\begin{lemma}[Partition of non-dismountable cliques --- SAND Lemma 3.1]
   \label{lem:partition-not-dismountable}
   \uses{def:dismountable,def:vminus-vplus-vzero}
   \lean{TemporalGraph.Subgraph.partition_of_not_dismountable}
@@ -87,7 +87,7 @@ SAND below — do not introduce a different numbering here.
   Every dismountable clique is two-hop dismountable.
 \end{lemma}
 
-\begin{lemma}[$V^+$/$V^-$ are not neighbors --- SAND Lemma 3]
+\begin{lemma}[$V^+$/$V^-$ are not neighbors --- SAND Lemma 3.2]
   \label{lem:vplus-vminus-not-neighbors}
   \uses{def:two-hop-dismountable,def:vminus-vplus-vzero,def:is-symm-loopless}
   \lean{TemporalGraph.Subgraph.vplus_ne_neighbor_of_not_twoHopDismountable}
@@ -109,7 +109,7 @@ SAND below — do not introduce a different numbering here.
   all finite.
 \end{lemma}
 
-\begin{lemma}[$V^0$ is empty --- SAND Lemma 5]
+\begin{lemma}[$V^0$ is empty --- SAND Lemma 3.4]
   \label{lem:vzero-empty}
   \uses{lem:vplus-vminus-not-neighbors,def:vminus-vplus-vzero,def:is-simple-clique,def:is-proper-happy,def:is-symm-loopless}
   \lean{TemporalGraph.Subgraph.vzero_empty_of_not_twoHopDismountable}
@@ -119,7 +119,7 @@ SAND below — do not introduce a different numbering here.
   earliest or a latest neighbor of some vertex.
 \end{lemma}
 
-\section*{Bijections and cardinality (SAND Corollary 4)}
+\section*{Bijections and cardinality (SAND Corollary 3.3)}
 
 \begin{lemma}[Earliest edges are finitely witnessed]
   \label{lem:earliestEdge-exists-finite-clique}
@@ -173,7 +173,7 @@ SAND below — do not introduce a different numbering here.
   $\mathrm{f_{ee}}$ and $\mathrm{f_{le}}$ are injective.
 \end{lemma}
 
-\begin{lemma}[Cardinality bounds from injectivity --- SAND Corollary 4 (3)]
+\begin{lemma}[Cardinality bounds from injectivity --- SAND Corollary 3.3 (3)]
   \label{lem:card-bounds}
   \uses{lem:neighbor-fn-injective}
   \lean{TemporalGraph.Subgraph.vplus_card_le_vminus_card}
@@ -185,7 +185,7 @@ SAND below — do not introduce a different numbering here.
   so the cardinalities are equal: $|V^-(H)| = |V^+(H)|$.
 \end{lemma}
 
-\begin{theorem}[Neighbor functions are bijections --- SAND Corollary 4]
+\begin{theorem}[Neighbor functions are bijections --- SAND Corollary 3.3]
   \label{thm:neighbor-fn-bijective}
   \uses{lem:neighbor-fn-injective,lem:card-bounds}
   \lean{TemporalGraph.Subgraph.earliestNeighborFn_bijective}
@@ -196,7 +196,7 @@ SAND below — do not introduce a different numbering here.
   $\mathrm{f_{le}} : V^-(H) \to V^+(H)$ are bijections.
 \end{theorem}
 
-\begin{lemma}[Perfect matchings between $V^-$ and $V^+$ --- SAND Corollary 4 (1)--(2)]
+\begin{lemma}[Perfect matchings between $V^-$ and $V^+$ --- SAND Corollary 3.3 (1)--(2)]
   \label{lem:vminus-vplus-matchings}
   \uses{thm:neighbor-fn-bijective,def:vminus-vplus-vzero,def:earliest-latest-neighbor}
   \lean{TemporalGraph.Subgraph.existsUnique_vplus_earliestEdge}
@@ -245,7 +245,7 @@ SAND below — do not introduce a different numbering here.
   two-hop mounting adds at most 4 edges.
 \end{lemma}
 
-\begin{theorem}[Dismount/mount preserves spanning correctness --- SAND Theorem 1 (1-hop), \S~2.1 (2-hop)]
+\begin{theorem}[Dismount/mount preserves spanning correctness --- SAND Theorem 2.1 (1-hop), \S~2.1 (2-hop)]
   \label{thm:dismountability}
   \uses{def:dismount-mount,def:spanner,def:sub-spanning-clique}
   \lean{TemporalGraph.Subgraph.dismountability}

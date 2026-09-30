@@ -8,11 +8,11 @@ borne de spanner `O(n log n)` pour les cliques temporelles, via la technique de
 Casteigts, Timothée Corsini, *Dismountability in Temporal Cliques Revisited*, SAND 2025, LIPIcs
 vol. 330, article 6** (DOI 10.4230/LIPIcs.SAND.2025.6, arXiv 2502.01321). SAND retrouve la borne
 `O(n log n)` par la seule dismountability : la 1-/2-hop dismountability (§§2–3) réduit les
-cliques aux bi-cliques (Corollaire 12), puis la dismountability *one-sided* d'Angrick et al.
+cliques aux bi-cliques (Corollaire 4.1), puis la dismountability *one-sided* d'Angrick et al.
 (ESA 2024, rappelée en §4.1) conclut. Le code formalise aujourd'hui la partie §§2–3 (voir
 « Repères papier ↔ code ») ; la suite reste à faire. La technique est originellement due à
 **Casteigts, Peters & Schoeters, *Temporal Cliques Admit Sparse Spanners*, ICALP 2019 / JCSS
-2021**, cité par SAND pour son Théorème 1 — cet article reste une référence secondaire. Le scope
+2021**, cité par SAND pour son Théorème 2.1 — cet article reste une référence secondaire. Le scope
 peut s'élargir à d'autres résultats récents au fil du travail.
 
 Ce fichier est spécifique à ce projet. Le workflow Lean générique (lean-lsp, lean4-skills,
@@ -101,7 +101,7 @@ besoin de le répéter ici.
 | `TemporalGraph/Subgraph.lean` | Sous-graphe temporel : `TemporalGraph.Subgraph` étend `TemporalGraph V`, ajoutant `verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `IsCliqueSubgraph`/`neighborSet`/`size`/`incidenceSet` (`edgeSet` est hérité de `TemporalGraph`, pas redéfini ici) ; treillis borné, `induce`/`deleteVerts`/`addVerts`/`addArc`/`addEdge` | `SimpleGraph.Subgraph` |
 | `TemporalGraph/Bipartite.lean` | Bipartition temporelle `IsBipartiteWith`/`IsBipartite` (ensembles explicites, sans hypothèse de symétrie, non classe), pont `isBipartiteWith_iff_simpleFootprint` vers Mathlib, restriction `between` aux arcs entre deux ensembles, bi-cliques temporelles `IsBicliqueWith`/`IsBiclique` (SAND 2025 §1.1 ; prennent un ensemble de sommets), constructeur `completeBipartite` sur `α ⊕ β`, et au niveau `Subgraph` : `Subgraph.between` | `SimpleGraph/Bipartite.lean` |
 | `TemporalGraph/Connectivity/Basic.lean`, `Connectivity/Subgraph.lean` | `Reachable`, `TemporallyConnected` ; spanners au niveau `TemporalGraph.Subgraph` (`Subgraph.IsSpanner`, `Subgraph.IsSpannerOf`, `Subgraph.IsTCSpanner`) — les définitions `IsSpanner`/`IsTCSpanner` au niveau `TemporalGraph` dans `Connectivity/Basic.lean` sont commentées (en attente de revue) | `SimpleGraph.Connectivity` |
-| `TemporalGraph/Dismountability/Basic.lean` | `Dismountable`, `TwoHopDismountable`, partition `vminus`/`vplus`/`vzero`, bijections earliest/latest-neighbor — correspond aux Lemmes 2, 3, 5 et au Corollaire 4 de SAND 2025 | — |
+| `TemporalGraph/Dismountability/Basic.lean` | `Dismountable`, `TwoHopDismountable`, partition `vminus`/`vplus`/`vzero`, bijections earliest/latest-neighbor — correspond aux Lemmes 2, 3, 5 et au Corollaire 3.3 de SAND 2025 | — |
 | `TemporalGraph/Dismountability/Operations.lean` | Opérations `dismount`/`mount`/`twoHopMount` et leurs théorèmes de correction (`dismountability`, `twoHopDismountability`) | — |
 | `TemporalGraph/Examples.lean` | Graphe de démo `square` (carré à 4 sommets), avec ses propriétés portées comme instances (`square_isSymm`, `square_isLoopless`, …) | — |
 | `TemporalGraph.lean` (racine) | Pur agrégateur d'imports, aucun code | — |
@@ -241,30 +241,33 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
 ## Repères papier ↔ code
 
 Depuis le changement de référence principale (voir l'intro), les repères papier ↔ code suivent la
-numérotation de **SAND 2025** (Carnevale–Casteigts–Corsini), qui utilise un compteur unique et
-partagé pour tous les résultats numérotés ; la définition de la dismountability et de la partition
-`V⁻`/`V⁺`/`V⁰` sont en prose, non numérotées.
+numérotation de **SAND 2025** (Carnevale–Casteigts–Corsini) dans sa **version publiée LIPIcs**
+(https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.SAND.2025.6), numérotée par section
+(`Lemma 3.4`, `Corollary 4.1`, …). **Ne pas prendre les numéros de la version arXiv**
+(2502.01321) : elle utilise un compteur unique (`Lemma 5`, `Corollary 12`, …), et un premier
+alignement fait sur l'arXiv était faux pour cette raison. La définition de la dismountability et
+de la partition `V⁻`/`V⁺`/`V⁰` sont en prose, non numérotées ; la connexité temporelle de la
+bi-clique entre `V⁻` et `V⁺` est une remarque en prose juste après le Corollaire 4.1.
 
 | Code (`Dismountability/Basic.lean` sauf mention contraire) | SAND 2025 |
 |---|---|
-| `Dismountable` | §2, 1-hop dismountability (hypothèse du Théorème 1) |
+| `Dismountable` | §2, 1-hop dismountability (hypothèse du Théorème 2.1) |
 | `TwoHopDismountable` | §2.1, {1,2}-hop dismountability (cas `k ≤ 2` de la k-hop dismountability) |
-| `vminus`, `vplus`, `vzero` | §3.1, définis juste avant le Lemme 2 (`V⁻ = {n⁻(v)}`, `V⁺ = {n⁺(v)}`, `V⁰` le reste) |
-| `partition_of_not_dismountable` | Lemme 2 |
-| `vplus_ne_neighbor_of_not_twoHopDismountable`, `vminus_ne_neighbor_of_not_twoHopDismountable` | Lemme 3 |
-| `existsUnique_vplus_earliestEdge`, `existsUnique_vminus_latestEdge` | Corollaire 4 (1) et (2) : couplages parfaits entre `V⁻` et `V⁺` |
-| `earliestNeighborFn_bijective`, `latestNeighborFn_bijective` | Corollaire 4 (bijections `V⁺ ≃ V⁻`, via Lemme 3) |
-| `vminus_card_eq_vplus_card` | Corollaire 4 (3) : `|V⁻| = |V⁺|` |
-| `vzero_empty_of_not_twoHopDismountable` | Lemme 5 |
-| `dismountability` (`Dismountability/Operations.lean`) | Théorème 1 |
+| `vminus`, `vplus`, `vzero` | §3.1, définis juste avant le Lemme 3.1 (`V⁻ = {n⁻(v)}`, `V⁺ = {n⁺(v)}`, `V⁰` le reste) |
+| `partition_of_not_dismountable` | Lemme 3.1 |
+| `vplus_ne_neighbor_of_not_twoHopDismountable`, `vminus_ne_neighbor_of_not_twoHopDismountable` | Lemme 3.2 |
+| `existsUnique_vplus_earliestEdge`, `existsUnique_vminus_latestEdge` | Corollaire 3.3 (1) et (2) : couplages parfaits entre `V⁻` et `V⁺` |
+| `earliestNeighborFn_bijective`, `latestNeighborFn_bijective` | Corollaire 3.3 (bijections `V⁺ ≃ V⁻`, via Lemme 3.2) |
+| `vminus_card_eq_vplus_card` | Corollaire 3.3 (3) : `|V⁻| = |V⁺|` |
+| `vzero_empty_of_not_twoHopDismountable` | Lemme 3.4 |
+| `dismountability` (`Dismountability/Operations.lean`) | Théorème 2.1 |
 | `twoHopDismountability` (`Dismountability/Operations.lean`) | §2.1, cas 2-hop (non numéroté) |
 
 Toute nouvelle preuve visant un résultat du papier (ou d'un résultat récent connexe) devrait
 garder cette convention : un commentaire citant le numéro exact du théorème/lemme visé, sous la
-forme `-- SAND 2025, Lemma 2`, que suivent déjà les commentaires de `Dismountability/*` et le
-blueprint. **Les anciens numéros CPS sont obsolètes** : `-- Theorem 2.1`, `-- def 3.1`, `-- lemma 3.1`,
-`-- lemma 3.2`, `-- lemma 3.4` et `-- Specialized 3.3 coro` ne doivent plus être utilisés comme
-référence.
+forme `-- SAND 2025, Lemma 3.1`, que suivent déjà les commentaires de `Dismountability/*` et le
+blueprint. Toujours écrire la forme complète `-- SAND 2025, Lemma 3.4` (et non `-- lemma 3.4`
+seul), pour qu'on ne confonde pas avec la numérotation de l'article CPS.
 
 ## Commandes utiles
 

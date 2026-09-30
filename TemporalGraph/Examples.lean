@@ -66,7 +66,7 @@ private lemma square_adj_pos {y z : Fin 4} {j : ℕ} (h : square.Adj y z j) : 1 
   split at h <;> first | omega | exact h.elim
 
 /-- Restricting the clique `square` to the edges between `{0, 1}` and `{2, 3}` gives a temporal
-bi-clique `K₂,₂` — the shape of SAND 2025, Corollary 12. Here `{0, 1}` and `{2, 3}` are exactly
+bi-clique `K₂,₂` — the shape of SAND 2025, Corollary 4.1. Here `{0, 1}` and `{2, 3}` are exactly
 `V⁻` and `V⁺` (`square_vminus`, `square_vplus`). -/
 theorem square_between_isBicliqueWith :
     (square.between {0, 1} {2, 3}).IsBicliqueWith {0, 1} {2, 3} :=

@@ -28,9 +28,9 @@ and `vplus` (`earliestNeighborFn`, `latestNeighborFn`), which forces `vzero` to 
 ## Main definitions
 
 * `TemporalGraph.Subgraph.Dismountable` : SAND 2025, §2, 1-hop dismountability (the hypothesis of
-  Theorem 1).
+  Theorem 2.1).
 * `TemporalGraph.Subgraph.vminus`, `vplus`, `vzero` : SAND 2025, §3.1, `V⁻`/`V⁺`/`V⁰`, the
-  partition of `H.verts` defined just before Lemma 2.
+  partition of `H.verts` defined just before Lemma 3.1.
 * `TemporalGraph.Subgraph.TwoHopDismountable` : SAND 2025, §2.1, `{1,2}`-hop dismountability
   (`k`-hop with `k ≤ 2`).
 * `TemporalGraph.Subgraph.earliestNeighborFn`, `latestNeighborFn` : the bijections between
@@ -38,14 +38,14 @@ and `vplus` (`earliestNeighborFn`, `latestNeighborFn`), which forces `vzero` to 
 
 ## Main results
 
-* `TemporalGraph.Subgraph.partition_of_not_dismountable` : SAND 2025, Lemma 2, `vminus`, `vplus`,
+* `TemporalGraph.Subgraph.partition_of_not_dismountable` : SAND 2025, Lemma 3.1, `vminus`, `vplus`,
   `vzero` partition `H.verts`.
 * `TemporalGraph.Subgraph.vplus_ne_neighbor_of_not_twoHopDismountable`,
-  `vminus_ne_neighbor_of_not_twoHopDismountable` : SAND 2025, Lemma 3, distinct vertices of
+  `vminus_ne_neighbor_of_not_twoHopDismountable` : SAND 2025, Lemma 3.2, distinct vertices of
   `vplus` (resp. `vminus`) have distinct earliest (resp. latest) neighbors.
 * `TemporalGraph.Subgraph.earliestNeighborFn_bijective`, `latestNeighborFn_bijective` : the
-  bijections between `vminus` and `vplus` (SAND 2025, Corollary 4, via Lemma 3).
-* `TemporalGraph.Subgraph.vzero_empty_of_not_twoHopDismountable` : SAND 2025, Lemma 5,
+  bijections between `vminus` and `vplus` (SAND 2025, Corollary 3.3, via Lemma 3.2).
+* `TemporalGraph.Subgraph.vzero_empty_of_not_twoHopDismountable` : SAND 2025, Lemma 3.4,
   `vzero = ∅`.
 
 ## References
@@ -67,11 +67,11 @@ variable {G : TemporalGraph V}
 
 section Partition
 
--- SAND 2025, §2: 1-hop dismountability (hypothesis of Theorem 1)
+-- SAND 2025, §2: 1-hop dismountability (hypothesis of Theorem 2.1)
 def Dismountable (H : Subgraph G) :=
   H.IsCliqueSubgraph ∧ ∃ (x y z : V), H.EarliestNeighbor y x ∧ H.LatestNeighbor z x
 
--- SAND 2025, §3.1: V⁻, defined before Lemma 2
+-- SAND 2025, §3.1: V⁻, defined before Lemma 3.1
 def vminus (H : Subgraph G) : Set V := {x : V | ∃ y : V, H.EarliestNeighbor y x}
 
 @[simp]
@@ -87,7 +87,7 @@ stating cardinalities of `vminus` (`Fintype.card`), not for computing with them.
 noncomputable instance {H : Subgraph G} [Finite H.verts] : Fintype H.vminus :=
   Fintype.ofFinite _
 
--- SAND 2025, §3.1: V⁺, defined before Lemma 2
+-- SAND 2025, §3.1: V⁺, defined before Lemma 3.1
 def vplus (H : Subgraph G) : Set V := {x : V | ∃ y : V, H.LatestNeighbor y x}
 
 @[simp]
@@ -103,7 +103,7 @@ stating cardinalities of `vplus` (`Fintype.card`), not for computing with them. 
 noncomputable instance {H : Subgraph G} [Finite H.verts] : Fintype H.vplus :=
   Fintype.ofFinite _
 
--- SAND 2025, §3.1: V⁰, defined before Lemma 2
+-- SAND 2025, §3.1: V⁰, defined before Lemma 3.1
 def vzero (H : Subgraph G) : Set V := H.verts \ (H.vminus ∪ H.vplus)
 
 @[simp]
@@ -135,7 +135,7 @@ lemma nonempty_vplus_inter_vminus_iff_dismountable (H : Subgraph G) :
   rw [Dismountable, Set.nonempty_def, vminus, vplus]
   simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, exists_and_left, exists_and_right, And.comm]
 
--- SAND 2025, Lemma 2
+-- SAND 2025, Lemma 3.1
 lemma partition_of_not_dismountable {H : Subgraph G} (h : H.IsCliqueSubgraph ∧ ¬H.Dismountable) :
     ∀ x ∈ H.verts, ∃! s ∈ ({H.vminus, H.vplus, H.vzero} : Set (Set V)), x ∈ s := by
   have ⟨hClique, hnDis⟩ := h
@@ -219,7 +219,7 @@ lemma not_dismountable_of_not_twoHopDismountable {H : Subgraph G}
   contrapose h
   simp only [h, twoHopDismountable_of_dismountable, not_true_eq_false, and_false, not_false_eq_true]
 
--- SAND 2025, Lemma 3
+-- SAND 2025, Lemma 3.2
 lemma vplus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} (x y : H.vplus)
     (h₀ : ¬H.TwoHopDismountable) (h₁ : H.IsCliqueSubgraph) (h₂ : x ≠ y) [H.IsSymm] :
     ∀ z z' : V, H.EarliestNeighbor x z ∧ H.EarliestNeighbor y z' → z ≠ z' := by
@@ -255,7 +255,7 @@ lemma vplus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} (x y : H.vplu
           · push Not at ht ; apply ht.le
     · apply Or.inl ; assumption
 
--- SAND 2025, Lemma 3
+-- SAND 2025, Lemma 3.2
 lemma vminus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} (x y : H.vminus)
     (h₀ : ¬H.TwoHopDismountable) (h₁ : H.IsCliqueSubgraph) (h₂ : x ≠ y) [H.IsSymm] :
     ∀ z z' : V, H.LatestNeighbor x z ∧ H.LatestNeighbor y z' → z ≠ z' := by
@@ -519,7 +519,7 @@ lemma vminus_card_le_vplus_card {H : Subgraph G}
   Fintype.card_le_of_injective (latestNeighborFn h₀ h₁ h₂)
     (latestNeighborFn_injective h₀ h₁ h₂ h₃)
 
--- SAND 2025, Corollary 4 (3)
+-- SAND 2025, Corollary 3.3 (3)
 lemma vminus_card_eq_vplus_card {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
@@ -532,7 +532,7 @@ lemma vminus_card_eq_vplus_card {H : Subgraph G}
   Nat.le_antisymm (vminus_card_le_vplus_card h₀ h₁ h₂ h₃)
     (vplus_card_le_vminus_card h₀ h₁ h₂ h₃)
 
--- SAND 2025, Corollary 4 (via Lemma 3): the vminus/vplus bijection given by earliest neighbors
+-- SAND 2025, Corollary 3.3 (via Lemma 3.2): the vminus/vplus bijection given by earliest neighbors
 lemma earliestNeighborFn_bijective {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
@@ -547,7 +547,7 @@ lemma earliestNeighborFn_bijective {H : Subgraph G}
   · exact earliestNeighborFn_injective h₀ h₁ h₂ h₃
   · exact (vminus_card_eq_vplus_card h₀ h₁ h₂ h₃).symm
 
--- SAND 2025, Corollary 4 (via Lemma 3): the vminus/vplus bijection given by latest neighbors
+-- SAND 2025, Corollary 3.3 (via Lemma 3.2): the vminus/vplus bijection given by latest neighbors
 lemma latestNeighborFn_bijective {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
@@ -562,7 +562,7 @@ lemma latestNeighborFn_bijective {H : Subgraph G}
   · exact latestNeighborFn_injective h₀ h₁ h₂ h₃
   · exact vminus_card_eq_vplus_card h₀ h₁ h₂ h₃
 
--- SAND 2025, Corollary 4 (1): {e⁻(v) : v ∈ V⁺} is a perfect matching
+-- SAND 2025, Corollary 3.3 (1): {e⁻(v) : v ∈ V⁺} is a perfect matching
 lemma existsUnique_vplus_earliestEdge {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
@@ -587,7 +587,7 @@ lemma existsUnique_vplus_earliestEdge {H : Subgraph G}
   have heq' := h₀ y x n q'.2 ⟨hee.left, hadj⟩
   exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heq, heq'.symm⟩
 
--- SAND 2025, Corollary 4 (2): {e⁺(v) : v ∈ V⁻} is a perfect matching
+-- SAND 2025, Corollary 3.3 (2): {e⁺(v) : v ∈ V⁻} is a perfect matching
 lemma existsUnique_vminus_latestEdge {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
@@ -616,7 +616,7 @@ end NeighborFunctions
 
 section VzeroEmpty
 
--- SAND 2025, Lemma 5
+-- SAND 2025, Lemma 3.4
 lemma vzero_empty_of_not_twoHopDismountable {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
@@ -633,7 +633,7 @@ lemma vzero_empty_of_not_twoHopDismountable {H : Subgraph G}
   have ⟨z, m, hle⟩ :=
     latestEdge_exists_of_finite_nontrivial_simple_clique h₁ h₂ ⟨x, vzero_sub_verts hx⟩
   have hzin : z ∈ H.vplus := ⟨x, ⟨m, hle⟩⟩
-  -- Here call SAND 2025 Corollary 4 to define y' ∈ H.vplus with y it's earliest neighbor
+  -- Here call SAND 2025 Corollary 3.3 to define y' ∈ H.vplus with y it's earliest neighbor
   -- symm for z' ∈ H.vminus with z it's latest neighbor
   have ⟨⟨⟨y', hy'in⟩, n'⟩, ⟨hee', _⟩⟩ :=
     existsUnique_vplus_earliestEdge h₁ h₂ h₃ h₄ ⟨y, hyin⟩
@@ -689,7 +689,7 @@ end VzeroEmpty
 
 section biclique
 
--- SAND 2025, Corollary 12
+-- SAND 2025, Corollary 4.1
 lemma biclique_of_not_twoHopDismountable {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]
@@ -705,6 +705,7 @@ lemma biclique_of_not_twoHopDismountable {H : Subgraph G}
   conv => lhs ; apply Set.inter_comm
   apply hnDis h₁
 
+-- SAND 2025, remark after Corollary 4.1: the bi-clique is always temporally connected
 lemma between_TC_of_not_twoHopDismountable {H : Subgraph G}
     [Finite H.verts]
     [Nontrivial H.verts]

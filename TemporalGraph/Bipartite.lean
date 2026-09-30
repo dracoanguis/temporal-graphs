@@ -16,12 +16,12 @@ the oriented case that Mathlib's static API does not address. The partition `s`/
 is always an explicit argument, never bundled into a type class as `IsSymm`/`IsLoopless` are.
 
 Temporal bi-cliques (`IsBicliqueWith`) are the object at stake in Carnevale–Casteigts–Corsini's
-reduction of temporal cliques to bi-cliques (SAND 2025, §1.1 and Corollary 12): a clique restricted
+reduction of temporal cliques to bi-cliques (SAND 2025, §1.1 and Corollary 4.1): a clique restricted
 to the edges crossing a disjoint partition (`between`) is exactly a bi-clique on that partition
 (`IsClique.between_isBicliqueWith`). This file develops the definitions, their basic API, the
 bridge to Mathlib's static bipartite graphs (`isBipartite_iff_simpleFootprint`), and a labelled
 complete bipartite graph constructor (`completeBipartite`); the reduction itself (SAND 2025,
-Corollary 12) is left to a future development.
+Corollary 4.1) is left to a future development.
 
 ## Main definitions
 
@@ -45,7 +45,7 @@ does.
   `SimpleGraph.IsBipartiteWith`/`IsBipartite`, obtained through `simpleFootprint`.
 * `TemporalGraph.IsClique.between_isBicliqueWith` : restricting a clique to the arcs between two
   disjoint parts gives a temporal bi-clique on those parts (the one-step link used by SAND 2025,
-  Corollary 12).
+  Corollary 4.1).
 
 ## References
 
@@ -220,7 +220,7 @@ theorem IsBicliqueWith.symm [G.IsSymm] (h : G.IsBicliqueWith s t) : G.IsBiclique
   adj_of_mem _ _ hv hw := h.adj_of_mem' hw hv
 
 /-- Restricting a clique to the arcs between two disjoint parts gives a temporal bi-clique on
-these parts (SAND 2025, the one-step link used by Corollary 12). -/
+these parts (SAND 2025, the one-step link used by Corollary 4.1). -/
 theorem IsClique.between_isBicliqueWith (hc : G.IsClique S) (hs : s ⊆ S) (ht : t ⊆ S)
     (h : Disjoint s t) : (G.between s t).IsBicliqueWith s t where
   isBipartiteWith := between_isBipartiteWith h

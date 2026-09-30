@@ -11,7 +11,7 @@ import TemporalGraph.Connectivity.Subgraph
 # Dismounting and mounting
 
 This module carries out the inductive step of the spanner construction from Carnevale, Casteigts
-& Corsini's revisited dismountability argument (SAND 2025, Theorem 1), originally due to
+& Corsini's revisited dismountability argument (SAND 2025, Theorem 2.1), originally due to
 Casteigts, Peters & Schoeters (CPS, ICALP 2019 / JCSS): given a spanner of a clique with a vertex
 removed, extend it back to a spanner of the whole clique by re-attaching that vertex through the
 few edges that made it dismountable (or two-hop-dismountable) in the first place.
@@ -23,7 +23,7 @@ few edges that made it dismountable (or two-hop-dismountable) in the first place
 
 ## Main results
 
-* `TemporalGraph.Subgraph.dismountability` : SAND 2025, Theorem 1 (1-hop dismountability);
+* `TemporalGraph.Subgraph.dismountability` : SAND 2025, Theorem 2.1 (1-hop dismountability);
   dismounting and re-mounting through the earliest and latest edge preserves being a spanner,
   adding at most 2 edges (`mount_size`).
 * `TemporalGraph.Subgraph.twoHopDismountability` : SAND 2025, §2.1 (the 2-hop case, unnumbered

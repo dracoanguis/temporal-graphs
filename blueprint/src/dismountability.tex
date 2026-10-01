@@ -166,8 +166,8 @@ SAND below — do not introduce a different numbering here.
 \begin{lemma}[Neighbor functions are injective outside two-hop dismountability]
   \label{lem:neighbor-fn-injective}
   \uses{def:neighbor-functions,def:two-hop-dismountable,lem:vplus-vminus-not-neighbors}
-  \lean{TemporalGraph.Subgraph.earliestNeighborFn_injective}
-  \lean{TemporalGraph.Subgraph.latestNeighborFn_injective}
+  \lean{TemporalGraph.Subgraph.earliestNeighborFn_injOn}
+  \lean{TemporalGraph.Subgraph.latestNeighborFn_injOn}
   \leanok
   When $H$ is symmetric and not two-hop dismountable, both
   $\mathrm{f_{ee}}$ and $\mathrm{f_{le}}$ are injective.
@@ -188,12 +188,12 @@ SAND below — do not introduce a different numbering here.
 \begin{theorem}[Neighbor functions are bijections --- SAND Corollary 3.3]
   \label{thm:neighbor-fn-bijective}
   \uses{lem:neighbor-fn-injective,lem:card-bounds}
-  \lean{TemporalGraph.Subgraph.earliestNeighborFn_bijective}
-  \lean{TemporalGraph.Subgraph.latestNeighborFn_bijective}
+  \lean{TemporalGraph.Subgraph.earliestNeighborFn_bijOn}
+  \lean{TemporalGraph.Subgraph.latestNeighborFn_bijOn}
   \leanok
   When $H$ is finite, nontrivial, simple, proper, symmetric, and not
-  two-hop dismountable, both $\mathrm{f_{ee}} : V^+(H) \to V^-(H)$ and
-  $\mathrm{f_{le}} : V^-(H) \to V^+(H)$ are bijections.
+  two-hop dismountable, both $\mathrm{f_{ee}}$ and $\mathrm{f_{le}}$ are bijections between the
+  sets $V^+(H)$ and $V^-(H)$ (\texttt{Set.BijOn}).
 \end{theorem}
 
 \begin{lemma}[Perfect matchings between $V^-$ and $V^+$ --- SAND Corollary 3.3 (1)--(2)]

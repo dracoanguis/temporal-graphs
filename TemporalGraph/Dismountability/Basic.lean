@@ -43,8 +43,8 @@ and `vplus` (`earliestNeighborFn`, `latestNeighborFn`), which forces `vzero` to 
 * `TemporalGraph.Subgraph.vplus_ne_neighbor_of_not_twoHopDismountable`,
   `vminus_ne_neighbor_of_not_twoHopDismountable` : SAND 2025, Lemma 3.2, distinct vertices of
   `vplus` (resp. `vminus`) have distinct earliest (resp. latest) neighbors.
-* `TemporalGraph.Subgraph.earliestNeighborFn_bijective`, `latestNeighborFn_bijective` : the
-  bijections between `vminus` and `vplus` (SAND 2025, Corollary 3.3, via Lemma 3.2).
+* `TemporalGraph.Subgraph.earliestNeighborFn_bijOn`, `latestNeighborFn_bijOn` : `Set.BijOn`
+  bijections between the sets `vminus` and `vplus` (SAND 2025, Corollary 3.3, via Lemma 3.2).
 * `TemporalGraph.Subgraph.vzero_empty_of_not_twoHopDismountable` : SAND 2025, Lemma 3.4,
   `vzero = ∅`.
 
@@ -314,8 +314,8 @@ lemma earliestEdge_exists_of_finite_nontrivial_simple_clique {H : Subgraph G}
     ∀ x ∈ H.verts, ∃ (y : V) (n : ℕ), H.EarliestEdge x y n := by
   intro x hx
   have his₀ : (H.incidenceSet x).Nonempty :=
-    nonempty_incidenceSet_of_nontrivial_clique h₁ ⟨x, hx⟩
-  have his₁ : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ ⟨x, hx⟩
+    nonempty_incidenceSet_of_nontrivial_clique h₁ x hx
+  have his₁ : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ x
   exact earliestEdge_exists_of_nonempty_finite_incidenceSet his₀ his₁
 
 /-- Every vertex of a finite, nontrivial, simple clique subgraph has a latest incident
@@ -326,8 +326,8 @@ lemma latestEdge_exists_of_finite_nontrivial_simple_clique {H : Subgraph G}
     ∀ x ∈ H.verts, ∃ (y : V) (n : ℕ), H.LatestEdge x y n := by
   intro x hx
   have his₀ : (H.incidenceSet x).Nonempty :=
-    nonempty_incidenceSet_of_nontrivial_clique h₁ ⟨x, hx⟩
-  have his₁ : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ ⟨x, hx⟩
+    nonempty_incidenceSet_of_nontrivial_clique h₁ x hx
+  have his₁ : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ x
   exact latestEdge_exists_of_nonempty_finite_incidenceSet his₀ his₁
 
 /-- Every vertex of a finite, nontrivial, simple, proper clique subgraph has a unique earliest
@@ -372,178 +372,203 @@ lemma latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : Sub
     have heq' := h₂ x y z n ⟨h.left, hadj⟩
     exact ⟨heq'.symm, heq⟩
 
-/-- Every vertex of a finite, nontrivial, simple, proper clique subgraph has a unique earliest
-neighbor. -/
+/-- Every vertex of `H.verts`, in a finite, nontrivial, simple, proper clique subgraph, has a
+unique earliest neighbor. -/
 lemma existsUnique_earliestNeighbor {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
-    ∀ x : H.verts, ∃! y : H.vminus, H.EarliestNeighbor x y := by
-  intro x
+    ∀ x ∈ H.verts, ∃! y, H.EarliestNeighbor x y := by
+  intro x hx
   obtain ⟨⟨y, n⟩, hee, hunique⟩ :=
-    earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique
-      h₀ h₁ h₂ x x.2
-  use ⟨y, ⟨_, ⟨n, hee⟩⟩⟩
-  refine ⟨⟨n, hee⟩, ?_⟩
+    earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique h₀ h₁ h₂ x hx
+  refine ⟨y, ⟨n, hee⟩, ?_⟩
   intro z ⟨m, hee'⟩
   obtain heq := hunique ⟨z, m⟩ hee'
   rw [Prod.eq_iff_fst_eq_snd_eq] at heq
-  ext
   exact heq.left
 
-/-- The earliest-neighbor function from `vplus` to `vminus`, sending `x` to its unique earliest
-neighbor (see `existsUnique_earliestNeighbor`). -/
+/-- `EarliestNeighbor` witnesses membership in `vminus`. -/
+lemma earliestNeighbor_mem_vminus {H : Subgraph G} {x y : V} (h : H.EarliestNeighbor x y) :
+    y ∈ H.vminus :=
+  ⟨x, h⟩
+
+/-- Every vertex of `H.verts`, in a finite, nontrivial, simple, proper clique subgraph, has a
+unique latest neighbor. -/
+lemma existsUnique_latestNeighbor {H : Subgraph G}
+    [Finite H.verts] [Nontrivial H.verts]
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
+    ∀ x ∈ H.verts, ∃! y, H.LatestNeighbor x y := by
+  intro x hx
+  obtain ⟨⟨y, n⟩, hle, hunique⟩ :=
+    latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique h₀ h₁ h₂ x hx
+  refine ⟨y, ⟨n, hle⟩, ?_⟩
+  intro z ⟨m, hle'⟩
+  obtain heq := hunique ⟨z, m⟩ hle'
+  rw [Prod.eq_iff_fst_eq_snd_eq] at heq
+  exact heq.left
+
+/-- `LatestNeighbor` witnesses membership in `vplus`. -/
+lemma latestNeighbor_mem_vplus {H : Subgraph G} {x y : V} (h : H.LatestNeighbor x y) :
+    y ∈ H.vplus :=
+  ⟨x, h⟩
+
+/-- The earliest-neighbor function on `V`, sending `x ∈ H.verts` to its unique earliest neighbor
+(see `existsUnique_earliestNeighbor`) and left at `x` outside `H.verts`. Restricted to `vplus`, it
+lands in `vminus` (`earliestNeighborFn_mapsTo`). -/
 noncomputable def earliestNeighborFn {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
-    H.vplus → H.vminus :=
-  fun x => Classical.choose
-    (existsUnique_earliestNeighbor h₀ h₁ h₂ ⟨x.val, vplus_sub_verts x.prop⟩).exists
+    V → V := by
+  classical
+  exact fun x ↦
+    if hx : x ∈ H.verts then
+      (existsUnique_earliestNeighbor h₀ h₁ h₂ x hx).exists.choose
+    else x
 
-/-- Characterizes `earliestNeighborFn` in terms of `EarliestNeighbor`. -/
+/-- Characterizes `earliestNeighborFn` in terms of `EarliestNeighbor`, at a vertex of `H.verts`. -/
 lemma earliestNeighborFn_eq {H : Subgraph G}
-    [Finite H.verts] [Nontrivial H.verts] {x : H.vplus} {y : H.vminus}
-    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
-    (earliestNeighborFn h₀ h₁ h₂) x = y ↔ H.EarliestNeighbor x y := by
+    [Finite H.verts] [Nontrivial H.verts] {x y : V}
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) (h₃ : x ∈ H.verts) :
+    earliestNeighborFn h₀ h₁ h₂ x = y ↔ H.EarliestNeighbor x y := by
   unfold earliestNeighborFn
+  rw [dite_eq_left h₃]
   constructor
-  <;> intro h
-  · subst h
-    grind only [usr Exists.choose_spec]
-  · have ⟨y', hee, hunique⟩:= existsUnique_earliestNeighbor h₀ h₁ h₂ ⟨x, vplus_sub_verts x.prop⟩
-    grind only [usr Exists.choose_spec]
+  · intro h
+    rw [← h]
+    exact (existsUnique_earliestNeighbor h₀ h₁ h₂ x h₃).exists.choose_spec
+  · exact (existsUnique_earliestNeighbor h₀ h₁ h₂ x h₃).unique
+      (existsUnique_earliestNeighbor h₀ h₁ h₂ x h₃).exists.choose_spec
 
-/-- `earliestNeighborFn` is injective when `H` is a finite, nontrivial, simple, proper clique
-that is not `{1,2}`-hop dismountable (used to build the `vminus`/`vplus` bijection). -/
-lemma earliestNeighborFn_injective {H : Subgraph G}
+/-- `earliestNeighborFn` sends `vplus` into `vminus`. -/
+lemma earliestNeighborFn_mapsTo {H : Subgraph G}
+    [Finite H.verts] [Nontrivial H.verts]
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
+    Set.MapsTo (earliestNeighborFn h₀ h₁ h₂) H.vplus H.vminus := by
+  intro x hx
+  exact earliestNeighbor_mem_vminus
+    ((earliestNeighborFn_eq h₀ h₁ h₂ (vplus_sub_verts hx)).mp rfl)
+
+/-- `earliestNeighborFn` is injective on `vplus` when `H` is a finite, nontrivial, simple, proper
+clique that is not `{1,2}`-hop dismountable (used to build the `vminus`/`vplus` bijection). -/
+lemma earliestNeighborFn_injOn {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable) :
-    Function.Injective (earliestNeighborFn h₀ h₁ h₂) := by
-  intro x y
-  by_contra! ⟨hfeq, hneq⟩
-  let (eq := hz) z := earliestNeighborFn h₀ h₁ h₂ x
-  let (eq := hz') z'  := earliestNeighborFn h₀ h₁ h₂ y
-  rw [←hz, ←hz'] at hfeq
-  have hz₁ := hz
-  have hz'₁ := hz'
-  rw [earliestNeighborFn_eq, ←hz] at hz₁
-  rw [earliestNeighborFn_eq, ←hz'] at hz'₁
-  have := vplus_ne_neighbor_of_not_twoHopDismountable x.2 y.2 h₃ h₁
-    (fun h ↦ hneq (Subtype.ext h)) z z' ⟨hz₁, hz'₁⟩
-  absurd this
-  simp only [hfeq]
+    Set.InjOn (earliestNeighborFn h₀ h₁ h₂) H.vplus := by
+  intro x hx y hy hfeq
+  by_contra hne
+  have hz : H.EarliestNeighbor x (earliestNeighborFn h₀ h₁ h₂ y) := by
+    rw [← hfeq]
+    exact (earliestNeighborFn_eq h₀ h₁ h₂ (vplus_sub_verts hx)).mp rfl
+  have hz' : H.EarliestNeighbor y (earliestNeighborFn h₀ h₁ h₂ y) :=
+    (earliestNeighborFn_eq h₀ h₁ h₂ (vplus_sub_verts hy)).mp rfl
+  exact (vplus_ne_neighbor_of_not_twoHopDismountable hx hy h₃ h₁ hne _ _ ⟨hz, hz'⟩) rfl
 
 /-- `vplus` has at most as many elements as `vminus`, via injectivity of `earliestNeighborFn`. -/
 lemma vplus_card_le_vminus_card {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable) :
-    Fintype.card H.vplus ≤ Fintype.card H.vminus :=
-  Fintype.card_le_of_injective (earliestNeighborFn h₀ h₁ h₂)
-    (earliestNeighborFn_injective h₀ h₁ h₂ h₃)
+    H.vplus.ncard ≤ H.vminus.ncard :=
+  Set.ncard_le_ncard_of_injOn (earliestNeighborFn h₀ h₁ h₂)
+    (earliestNeighborFn_mapsTo h₀ h₁ h₂) (earliestNeighborFn_injOn h₀ h₁ h₂ h₃)
 
-/-- Every vertex of a finite, nontrivial, simple, proper clique subgraph has a unique latest
-neighbor. -/
-lemma existsUnique_latestNeighbor {H : Subgraph G}
-    [Finite H.verts] [Nontrivial H.verts]
-    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
-    ∀ x : H.verts, ∃! y : H.vplus, H.LatestNeighbor x y := by
-  intro x
-  obtain ⟨⟨y, n⟩, hle, hunique⟩ :=
-    latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique
-      h₀ h₁ h₂ x x.2
-  use ⟨y, ⟨_, ⟨n, hle⟩⟩⟩
-  refine ⟨⟨n, hle⟩, ?_⟩
-  intro z ⟨m, hle'⟩
-  obtain heq := hunique ⟨z, m⟩ hle'
-  rw [Prod.eq_iff_fst_eq_snd_eq] at heq
-  ext
-  exact heq.left
-
-/-- The latest-neighbor function from `vminus` to `vplus`, sending `x` to its unique latest
-neighbor (see `existsUnique_latestNeighbor`). -/
+/-- The latest-neighbor function on `V`, sending `x ∈ H.verts` to its unique latest neighbor
+(see `existsUnique_latestNeighbor`) and left at `x` outside `H.verts`. Restricted to `vminus`, it
+lands in `vplus` (`latestNeighborFn_mapsTo`). -/
 noncomputable def latestNeighborFn {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
-    H.vminus → H.vplus :=
-  fun x => Classical.choose
-    (existsUnique_latestNeighbor h₀ h₁ h₂ ⟨x.val, vminus_sub_verts x.prop⟩).exists
+    V → V := by
+  classical
+  exact fun x ↦
+    if hx : x ∈ H.verts then
+      (existsUnique_latestNeighbor h₀ h₁ h₂ x hx).exists.choose
+    else x
 
-/-- Characterizes `latestNeighborFn` in terms of `LatestNeighbor`. -/
+/-- Characterizes `latestNeighborFn` in terms of `LatestNeighbor`, at a vertex of `H.verts`. -/
 lemma latestNeighborFn_eq {H : Subgraph G}
-    [Finite H.verts] [Nontrivial H.verts] {x : H.vminus} {y : H.vplus}
-    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
-    (latestNeighborFn h₀ h₁ h₂) x = y ↔ H.LatestNeighbor x y := by
+    [Finite H.verts] [Nontrivial H.verts] {x y : V}
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) (h₃ : x ∈ H.verts) :
+    latestNeighborFn h₀ h₁ h₂ x = y ↔ H.LatestNeighbor x y := by
   unfold latestNeighborFn
+  rw [dite_eq_left h₃]
   constructor
-  <;> intro h
-  · subst h
-    grind only [usr Exists.choose_spec]
-  · have ⟨y', hee, hunique⟩:= existsUnique_latestNeighbor h₀ h₁ h₂ ⟨x, vminus_sub_verts x.prop⟩
-    grind only [usr Exists.choose_spec]
+  · intro h
+    rw [← h]
+    exact (existsUnique_latestNeighbor h₀ h₁ h₂ x h₃).exists.choose_spec
+  · exact (existsUnique_latestNeighbor h₀ h₁ h₂ x h₃).unique
+      (existsUnique_latestNeighbor h₀ h₁ h₂ x h₃).exists.choose_spec
 
-/-- `latestNeighborFn` is injective when `H` is a finite, nontrivial, simple, proper clique
-that is not `{1,2}`-hop dismountable (used to build the `vminus`/`vplus` bijection). -/
-lemma latestNeighborFn_injective {H : Subgraph G}
+/-- `latestNeighborFn` sends `vminus` into `vplus`. -/
+lemma latestNeighborFn_mapsTo {H : Subgraph G}
+    [Finite H.verts] [Nontrivial H.verts]
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
+    Set.MapsTo (latestNeighborFn h₀ h₁ h₂) H.vminus H.vplus := by
+  intro x hx
+  exact latestNeighbor_mem_vplus
+    ((latestNeighborFn_eq h₀ h₁ h₂ (vminus_sub_verts hx)).mp rfl)
+
+/-- `latestNeighborFn` is injective on `vminus` when `H` is a finite, nontrivial, simple, proper
+clique that is not `{1,2}`-hop dismountable (used to build the `vminus`/`vplus` bijection). -/
+lemma latestNeighborFn_injOn {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable) :
-    Function.Injective (latestNeighborFn h₀ h₁ h₂) := by
-  intro x y
-  by_contra! ⟨hfeq, hneq⟩
-  let (eq := hz) z := latestNeighborFn h₀ h₁ h₂ x
-  let (eq := hz') z'  := latestNeighborFn h₀ h₁ h₂ y
-  rw [←hz, ←hz'] at hfeq
-  have hz₁ := hz
-  have hz'₁ := hz'
-  rw [latestNeighborFn_eq, ←hz] at hz₁
-  rw [latestNeighborFn_eq, ←hz'] at hz'₁
-  have := vminus_ne_neighbor_of_not_twoHopDismountable x.2 y.2 h₃ h₁
-    (fun h ↦ hneq (Subtype.ext h)) z z' ⟨hz₁, hz'₁⟩
-  absurd this
-  simp only [hfeq]
+    Set.InjOn (latestNeighborFn h₀ h₁ h₂) H.vminus := by
+  intro x hx y hy hfeq
+  by_contra hne
+  have hz : H.LatestNeighbor x (latestNeighborFn h₀ h₁ h₂ y) := by
+    rw [← hfeq]
+    exact (latestNeighborFn_eq h₀ h₁ h₂ (vminus_sub_verts hx)).mp rfl
+  have hz' : H.LatestNeighbor y (latestNeighborFn h₀ h₁ h₂ y) :=
+    (latestNeighborFn_eq h₀ h₁ h₂ (vminus_sub_verts hy)).mp rfl
+  exact (vminus_ne_neighbor_of_not_twoHopDismountable hx hy h₃ h₁ hne _ _ ⟨hz, hz'⟩) rfl
 
 /-- `vminus` has at most as many elements as `vplus`, via injectivity of `latestNeighborFn`. -/
 lemma vminus_card_le_vplus_card {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable) :
-    Fintype.card H.vminus ≤ Fintype.card H.vplus :=
-  Fintype.card_le_of_injective (latestNeighborFn h₀ h₁ h₂)
-    (latestNeighborFn_injective h₀ h₁ h₂ h₃)
+    H.vminus.ncard ≤ H.vplus.ncard :=
+  Set.ncard_le_ncard_of_injOn (latestNeighborFn h₀ h₁ h₂)
+    (latestNeighborFn_mapsTo h₀ h₁ h₂) (latestNeighborFn_injOn h₀ h₁ h₂ h₃)
 
 /-- SAND 2025, Corollary 3.3 (3): `vminus` and `vplus` have the same cardinality. -/
 lemma vminus_card_eq_vplus_card {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable) :
-    Fintype.card H.vminus = Fintype.card H.vplus :=
-  Nat.le_antisymm (vminus_card_le_vplus_card h₀ h₁ h₂ h₃)
-    (vplus_card_le_vminus_card h₀ h₁ h₂ h₃)
+    H.vminus.ncard = H.vplus.ncard :=
+  le_antisymm (vminus_card_le_vplus_card h₀ h₁ h₂ h₃) (vplus_card_le_vminus_card h₀ h₁ h₂ h₃)
 
-/-- SAND 2025, Corollary 3.3 (via Lemma 3.2): `earliestNeighborFn` gives a bijection between
-`vplus` and `vminus`. -/
-lemma earliestNeighborFn_bijective {H : Subgraph G}
+/-- SAND 2025, Corollary 3.3 (via Lemma 3.2): `earliestNeighborFn` gives a bijection between the
+sets `vplus` and `vminus`. -/
+lemma earliestNeighborFn_bijOn {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable) :
-    Function.Bijective (earliestNeighborFn h₀ h₁ h₂) := by
-  apply Iff.mpr <| Fintype.bijective_iff_injective_and_card (earliestNeighborFn h₀ h₁ h₂)
-  constructor
-  · exact earliestNeighborFn_injective h₀ h₁ h₂ h₃
-  · exact (vminus_card_eq_vplus_card h₀ h₁ h₂ h₃).symm
+    Set.BijOn (earliestNeighborFn h₀ h₁ h₂) H.vplus H.vminus := by
+  have hinj := earliestNeighborFn_injOn h₀ h₁ h₂ h₃
+  have himg : earliestNeighborFn h₀ h₁ h₂ '' H.vplus = H.vminus := by
+    apply Set.eq_of_subset_of_ncard_le (earliestNeighborFn_mapsTo h₀ h₁ h₂).image_subset
+    rw [hinj.ncard_image]
+    exact (vminus_card_eq_vplus_card h₀ h₁ h₂ h₃).le
+  exact himg ▸ hinj.bijOn_image
 
-/-- SAND 2025, Corollary 3.3 (via Lemma 3.2): `latestNeighborFn` gives a bijection between
-`vminus` and `vplus`. -/
-lemma latestNeighborFn_bijective {H : Subgraph G}
+/-- SAND 2025, Corollary 3.3 (via Lemma 3.2): `latestNeighborFn` gives a bijection between the
+sets `vminus` and `vplus`. -/
+lemma latestNeighborFn_bijOn {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable) :
-    Function.Bijective (latestNeighborFn h₀ h₁ h₂) := by
-  apply Iff.mpr <| Fintype.bijective_iff_injective_and_card (latestNeighborFn h₀ h₁ h₂)
-  constructor
-  · exact latestNeighborFn_injective h₀ h₁ h₂ h₃
-  · exact vminus_card_eq_vplus_card h₀ h₁ h₂ h₃
+    Set.BijOn (latestNeighborFn h₀ h₁ h₂) H.vminus H.vplus := by
+  have hinj := latestNeighborFn_injOn h₀ h₁ h₂ h₃
+  have himg : latestNeighborFn h₀ h₁ h₂ '' H.vminus = H.vplus := by
+    apply Set.eq_of_subset_of_ncard_le (latestNeighborFn_mapsTo h₀ h₁ h₂).image_subset
+    rw [hinj.ncard_image]
+    exact (vminus_card_eq_vplus_card h₀ h₁ h₂ h₃).ge
+  exact himg ▸ hinj.bijOn_image
 
 /-- SAND 2025, Corollary 3.3 (1): `{e⁻(v) : v ∈ V⁺}` is a perfect matching, i.e. every vertex of
 `vminus` has a unique earliest edge from a vertex of `vplus`. -/
@@ -553,14 +578,14 @@ lemma existsUnique_vplus_earliestEdge {H : Subgraph G}
     (h₃ : ¬H.TwoHopDismountable) :
     ∀ x ∈ H.vminus, ∃! q : V × ℕ, q.1 ∈ H.vplus ∧ H.EarliestEdge q.1 x q.2 := by
   intro x hx
-  have hen_bij := earliestNeighborFn_bijective h₀ h₁ h₂ h₃ |>.existsUnique
-  conv at hen_bij =>
-    rhs ; rhs
-    simp only [earliestNeighborFn_eq]
-  obtain ⟨⟨y, hy⟩, ⟨n, hee⟩, hunique⟩ := hen_bij ⟨x, hx⟩
+  have hbij := earliestNeighborFn_bijOn h₀ h₁ h₂ h₃
+  obtain ⟨y, hy, hfy⟩ := hbij.surjOn hx
+  obtain ⟨n, hee⟩ := (earliestNeighborFn_eq h₀ h₁ h₂ (vplus_sub_verts hy)).mp hfy
   refine ⟨⟨y, n⟩, ⟨hy, hee⟩, ?_⟩
   rintro ⟨z, m⟩ ⟨hz, hee'⟩
-  have heqv : z = y := congrArg Subtype.val (hunique ⟨z, hz⟩ ⟨m, hee'⟩)
+  have hfz : earliestNeighborFn h₀ h₁ h₂ z = x :=
+    (earliestNeighborFn_eq h₀ h₁ h₂ (vplus_sub_verts hz)).mpr ⟨m, hee'⟩
+  have heqv : z = y := hbij.injOn hz hy (hfz.trans hfy.symm)
   rw [heqv] at hee'
   have heq' := h₀ y x n m ⟨hee.left, hee'.left⟩
   exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heqv, heq'.symm⟩
@@ -573,14 +598,14 @@ lemma existsUnique_vminus_latestEdge {H : Subgraph G}
     (h₃ : ¬H.TwoHopDismountable) :
     ∀ x ∈ H.vplus, ∃! q : V × ℕ, q.1 ∈ H.vminus ∧ H.LatestEdge q.1 x q.2 := by
   intro x hx
-  have hln_bij := latestNeighborFn_bijective h₀ h₁ h₂ h₃ |>.existsUnique
-  conv at hln_bij =>
-    rhs ; rhs
-    simp only [latestNeighborFn_eq]
-  obtain ⟨⟨y, hy⟩, ⟨n, hle⟩, hunique⟩ := hln_bij ⟨x, hx⟩
+  have hbij := latestNeighborFn_bijOn h₀ h₁ h₂ h₃
+  obtain ⟨y, hy, hfy⟩ := hbij.surjOn hx
+  obtain ⟨n, hle⟩ := (latestNeighborFn_eq h₀ h₁ h₂ (vminus_sub_verts hy)).mp hfy
   refine ⟨⟨y, n⟩, ⟨hy, hle⟩, ?_⟩
   rintro ⟨z, m⟩ ⟨hz, hle'⟩
-  have heqv : z = y := congrArg Subtype.val (hunique ⟨z, hz⟩ ⟨m, hle'⟩)
+  have hfz : latestNeighborFn h₀ h₁ h₂ z = x :=
+    (latestNeighborFn_eq h₀ h₁ h₂ (vminus_sub_verts hz)).mpr ⟨m, hle'⟩
+  have heqv : z = y := hbij.injOn hz hy (hfz.trans hfy.symm)
   rw [heqv] at hle'
   have heq' := h₀ y x n m ⟨hle.left, hle'.left⟩
   exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heqv, heq'.symm⟩

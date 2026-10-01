@@ -154,8 +154,10 @@ utilisaient vraiment).
   `H.incidenceSet x` sont les notions héritées. Une notion qui porte sur des sommets donnés les
   prend dans `V` (avec des hypothèses d'appartenance) ; une notion qui quantifie sur les sommets
   prend un `Set V`. `H.coe : TemporalGraph H.verts` reste une petite API optionnelle (ponts
-  `is*_iff_coe`, `coe_earliestEdge`…). Exception assumée : les bijections `earliestNeighborFn :
-  H.vplus → H.vminus`.
+  `is*_iff_coe`, `coe_earliestEdge`…). Les bijections `earliestNeighborFn`/`latestNeighborFn`
+  suivent aussi cette règle : ce sont des fonctions totales `V → V` (`earliestNeighborFn_bijOn`,
+  `latestNeighborFn_bijOn` énoncent `Set.BijOn` entre `H.vplus` et `H.vminus`), sans passer par le
+  sous-type.
 - **Renommage ultérieur (commit `acb993a`)** : le constructeur à une seule orientation, sans
   aucune hypothèse de symétrie, s'appelle maintenant `addArc` (l'ancien `addEdge` générique), et
   le constructeur à deux orientations qui demande `[G.IsSymm]` s'appelle maintenant `addEdge`
@@ -267,7 +269,7 @@ bi-clique entre `V⁻` et `V⁺` est une remarque en prose juste après le Corol
 | `partition_of_not_dismountable` | Lemme 3.1 |
 | `vplus_ne_neighbor_of_not_twoHopDismountable`, `vminus_ne_neighbor_of_not_twoHopDismountable` | Lemme 3.2 |
 | `existsUnique_vplus_earliestEdge`, `existsUnique_vminus_latestEdge` | Corollaire 3.3 (1) et (2) : couplages parfaits entre `V⁻` et `V⁺` |
-| `earliestNeighborFn_bijective`, `latestNeighborFn_bijective` | Corollaire 3.3 (bijections `V⁺ ≃ V⁻`, via Lemme 3.2) |
+| `earliestNeighborFn_bijOn`, `latestNeighborFn_bijOn` | Corollaire 3.3 (`Set.BijOn` bijections entre les ensembles `V⁺` et `V⁻`, via Lemme 3.2) |
 | `vminus_card_eq_vplus_card` | Corollaire 3.3 (3) : `|V⁻| = |V⁺|` |
 | `vzero_empty_of_not_twoHopDismountable` | Lemme 3.4 |
 | `dismountability` (`Dismountability/Operations.lean`) | Théorème 2.1 |

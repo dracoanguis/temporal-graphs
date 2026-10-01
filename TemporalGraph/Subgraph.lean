@@ -272,7 +272,7 @@ section incidenceSet
 
 lemma finite_incidenceSet_of_finite_simple {H : Subgraph G} [h : Finite H.verts]
     (h₁ : H.IsSimple) :
-    ∀ (x : H.verts), (H.incidenceSet x).Finite := by
+    ∀ x : V, (H.incidenceSet x).Finite := by
   intro x
   apply Set.Finite.of_injOn (f := fun p : V × ℕ => p.1) (t := H.verts)
   · intro ⟨y, n⟩ hadj ; exact H.edge_vert' hadj
@@ -288,22 +288,20 @@ Useful for stating cardinalities of incidence sets (`Fintype.card`), not for com
 This is deliberately not an instance: `h₀` cannot be synthesised, so an instance carrying it could
 never fire. -/
 noncomputable def fintypeIncidenceSetOfSimple (H : Subgraph G) [Finite H.verts]
-    (h₀ : H.IsSimple) (x : H.verts) : Fintype (H.incidenceSet x) :=
+    (h₀ : H.IsSimple) (x : V) : Fintype (H.incidenceSet x) :=
   (finite_incidenceSet_of_finite_simple h₀ x).fintype
 
 lemma nonempty_incidenceSet_of_nontrivial_clique {H : Subgraph G} [h : Nontrivial H.verts]
     (h₁ : H.IsCliqueSubgraph) :
-    ∀ x : H.verts, (H.incidenceSet x).Nonempty := by
-  intro x
+    ∀ x ∈ H.verts, (H.incidenceSet x).Nonempty := by
+  intro x hx
   have ⟨y, z, hne⟩ := h.exists_pair_ne
-  by_cases heq : x=y
+  by_cases heq : x = y.1
   · subst heq
-    have ⟨n, hadj⟩ := h₁ x.2 z.2 (fun h' ↦ hne (Subtype.ext h'))
-    have h' : ⟨z, n⟩ ∈ (H.incidenceSet x) := hadj
-    use ⟨z, n⟩
-  · have ⟨n, hadj⟩ := h₁ x.2 y.2 (fun h' ↦ heq (Subtype.ext h'))
-    have h' : ⟨y, n⟩ ∈ (H.incidenceSet x) := hadj
-    use ⟨y, n⟩
+    have ⟨n, hadj⟩ := h₁ hx z.2 (fun h' ↦ hne (Subtype.ext h'))
+    exact ⟨⟨z.1, n⟩, hadj⟩
+  · have ⟨n, hadj⟩ := h₁ hx y.2 heq
+    exact ⟨⟨y.1, n⟩, hadj⟩
 
 lemma earliestEdge_exists_of_nonempty_finite_incidenceSet {x : V} {H : Subgraph G}
     (h₀ : (H.incidenceSet x).Nonempty)

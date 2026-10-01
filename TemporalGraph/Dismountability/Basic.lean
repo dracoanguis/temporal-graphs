@@ -764,4 +764,46 @@ end biclique
 
 end Subgraph
 
+section MatchingConnectivity
+
+/-- `t` reaches `t` when every vertex of `t` is the endpoint of the earliest edge of some vertex
+of `s`, and `s` reaches `t`: leave `b ∈ t` along that earliest edge, then follow `s → t`. -/
+lemma reachable_of_earliestEdge_matching {G : TemporalGraph V} [G.IsSymm] {s t : Set V}
+    (h₀ : ∀ b ∈ t, ∃ v ∈ s, ∃ n, G.EarliestEdge v b n)
+    (h₁ : ∀ x ∈ s, ∀ y ∈ t, G.Reachable x y) :
+    ∀ a ∈ t, ∀ b ∈ t, G.Reachable a b := by
+  intro a ha b hb
+  obtain ⟨v, hv, n, hvn⟩ := h₀ a ha
+  exact reachable_of_earliestEdge hvn b (h₁ v hv b hb)
+
+/-- `s` reaches `s` when every vertex of `s` is the endpoint of the latest edge of some vertex of
+`t`, and `s` reaches `t`: follow `s → t`, then extend along that latest edge. -/
+lemma reachable_of_latestEdge_matching {G : TemporalGraph V} [G.IsSymm] {s t : Set V}
+    (h₀ : ∀ y ∈ s, ∃ b ∈ t, ∃ n, G.LatestEdge b y n)
+    (h₁ : ∀ x ∈ s, ∀ y ∈ t, G.Reachable x y) :
+    ∀ x ∈ s, ∀ y ∈ s, G.Reachable x y := by
+  intro x hx y hy
+  obtain ⟨b, hb, n, hbn⟩ := h₀ y hy
+  exact reachable_of_latestEdge hbn x (h₁ x hx b hb)
+
+/-- SAND 2025, §4.1 (after Corollary 4.1): if every vertex of `t` (playing `V⁻`) is the endpoint
+of the earliest edge of a vertex of `s` (the matching `M⁻`), every vertex of `s` (playing `V⁺`) is
+the endpoint of the latest edge of a vertex of `t` (the matching `M⁺`), and `s` reaches `t`, then
+`s ∪ t` is temporally connected. -/
+theorem temporallyConnected_of_reachable_of_matchings {G : TemporalGraph V} [G.IsSymm]
+    {s t : Set V}
+    (h₀ : ∀ b ∈ t, ∃ v ∈ s, ∃ n, G.EarliestEdge v b n)
+    (h₁ : ∀ y ∈ s, ∃ b ∈ t, ∃ n, G.LatestEdge b y n)
+    (h₂ : ∀ x ∈ s, ∀ y ∈ t, G.Reachable x y) :
+    G.TemporallyConnected (s ∪ t) := by
+  rintro x (hx | hx) y (hy | hy)
+  · exact reachable_of_latestEdge_matching h₁ h₂ x hx y hy
+  · exact h₂ x hx y hy
+  · -- `x ∈ t` leaves along its `M⁻` edge to some `v ∈ s`, then `s` reaches `s`
+    obtain ⟨v, hv, n, hvn⟩ := h₀ x hx
+    exact reachable_of_earliestEdge hvn y (reachable_of_latestEdge_matching h₁ h₂ v hv y hy)
+  · exact reachable_of_earliestEdge_matching h₀ h₂ x hx y hy
+
+end MatchingConnectivity
+
 end TemporalGraph

@@ -269,6 +269,52 @@ lemma exists_oneSidedDismountable_of_ncard_lt {H : Subgraph G} [Finite H.verts] 
   · exact ⟨b, hb, a, ha, hab, f a, hfs a ha, n a, n b, hn a ha, hnb'.1.symm, hle⟩
   · exact ⟨a, ha, b, hb, hab.symm, f a, hfs a ha, n b, n a, hnb', (hn a ha).1.symm, hle⟩
 
+/-- In a bi-clique on `s` and `t`, every vertex of `s` reaches every vertex of `t`, by the edge
+joining them. -/
+lemma reachable_of_isBicliqueWith {H : Subgraph G} {s t : Set V} {x y : V}
+    (h₀ : H.IsBicliqueWith s t) (h₁ : x ∈ s) (h₂ : y ∈ t) :
+    H.Reachable x y := by
+  obtain ⟨n, hn⟩ := h₀.adj_of_mem h₁ h₂
+  exact reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨.Single hn⟩⟩
+
+/-- Restricting a bi-clique on `s` and `t` to `s' ∪ t`, for `s' ⊆ s`, gives a bi-clique on `s'` and
+`t`: the subproblem of SAND 2025, §4.1. -/
+lemma isBicliqueWith_induce {H : Subgraph G} {s t s' : Set V}
+    (h₀ : H.IsBicliqueWith s t) (h₁ : s' ⊆ s) :
+    (H.induce (s' ∪ t)).IsBicliqueWith s' t where
+  isBipartiteWith :=
+    { disjoint := h₀.isBipartiteWith.disjoint.mono_left h₁
+      mem_of_adj := by
+        rintro v w n ⟨hv, hw, hadj⟩
+        have hdis := h₀.isBipartiteWith.disjoint
+        rcases h₀.isBipartiteWith.mem_of_adj hadj with ⟨hvs, hwt⟩ | ⟨hvt, hws⟩
+        · exact Or.inl ⟨hv.resolve_right (Set.disjoint_left.mp hdis hvs), hwt⟩
+        · exact Or.inr ⟨hvt, hw.resolve_right (Set.disjoint_left.mp hdis hws)⟩ }
+  adj_of_mem v w hv hw := by
+    obtain ⟨n, hn⟩ := h₀.adj_of_mem (h₁ hv) hw
+    exact ⟨n, Or.inl hv, Or.inr hw, hn⟩
+
+/-- A one-sided spanner of a subgraph `K ≤ H` in which every source reaches every target is also a
+one-sided spanner of `H`. -/
+lemma IsSpannerFromTo.of_le {H K H' : Subgraph G} {s t : Set V}
+    (h₀ : H'.IsSpannerFromTo K s t) (h₁ : K ≤ H) (h₂ : ∀ x ∈ s, ∀ y ∈ t, K.Reachable x y) :
+    H'.IsSpannerFromTo H s t :=
+  ⟨h₀.1.trans h₁, fun x hx y hy _ ↦ h₀.2 x hx y hy (h₂ x hx y hy)⟩
+
+/-- SAND 2025, §4.1 (split, full step): in a bi-clique on `s` and `t`, one-sided spanners of the
+two subproblems on `s₁ ∪ t` and `s₂ ∪ t` combine, by union, into a one-sided spanner of `H` from
+`s₁ ∪ s₂` to `t`. -/
+lemma isSpannerFromTo_sup_of_induce {H H₁ H₂ : Subgraph G} {s t s₁ s₂ : Set V}
+    (h₀ : H.IsBicliqueWith s t) (h₁ : s ∪ t ⊆ H.verts) (h₂ : s₁ ⊆ s) (h₃ : s₂ ⊆ s)
+    (h₄ : H₁.IsSpannerFromTo (H.induce (s₁ ∪ t)) s₁ t)
+    (h₅ : H₂.IsSpannerFromTo (H.induce (s₂ ∪ t)) s₂ t) :
+    (H₁ ⊔ H₂).IsSpannerFromTo H (s₁ ∪ s₂) t := by
+  have hle : ∀ s' ⊆ s, H.induce (s' ∪ t) ≤ H := fun s' hs' ↦
+    ⟨fun _ hv ↦ h₁ (Set.union_subset_union_left t hs' hv), fun h ↦ h.2.2⟩
+  refine (h₄.of_le (hle s₁ h₂) fun x hx y hy ↦ ?_).sup (h₅.of_le (hle s₂ h₃) fun x hx y hy ↦ ?_)
+  · exact reachable_of_isBicliqueWith (isBicliqueWith_induce h₀ h₂) hx hy
+  · exact reachable_of_isBicliqueWith (isBicliqueWith_induce h₀ h₃) hx hy
+
 end OneSided
 
 end Subgraph

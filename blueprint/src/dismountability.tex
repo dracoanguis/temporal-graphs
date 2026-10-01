@@ -256,3 +256,31 @@ SAND below — do not introduce a different numbering here.
   then mounting $x$ back (via $\mathrm{mount}$ or $\mathrm{twoHopMount}$) with
   the appropriate edges from $H$ yields a TC-spanner of $H$ itself.
 \end{theorem}
+
+\section*{One-sided dismountability (SAND 2025, \S~4.1)}
+
+\begin{definition}[One-sided spanner]
+  \label{def:spanner-from-to}
+  \uses{def:sub-temporal-graph,def:reachable}
+  \lean{TemporalGraph.Subgraph.IsSpannerFromTo}
+  \lean{TemporalGraph.Subgraph.OneSidedDismountable}
+  \lean{TemporalGraph.Subgraph.oneSidedMount}
+  \leanok
+  $H'$ is a \emph{one-sided spanner} of $H$ from $S$ to $T$ if $H' \le H$ and
+  every vertex of $S$ reaches in $H'$ every vertex of $T$ it reaches in $H$.
+  A target vertex $x \in T$ is \emph{one-sided dismountable} when another
+  target $x'$ has a latest edge to some $y \in S$, at time $n$, and $y$ is
+  joined to $x$ at a time $m \ge n$: $x$ receives through $x' \to y \to x$
+  everything $x'$ receives from $S$, and it is put back with the two edges
+  $yx'$ and $yx$.
+\end{definition}
+
+\begin{lemma}[Split]
+  \label{lem:spanner-from-to-sup}
+  \uses{def:spanner-from-to}
+  \lean{TemporalGraph.Subgraph.IsSpannerFromTo.sup}
+  \leanok
+  If $H_1$ and $H_2$ are one-sided spanners of $H$ from $S_1$ and from $S_2$
+  to the same target $T$, then $H_1 \sqcup H_2$ is a one-sided spanner of $H$
+  from $S_1 \cup S_2$ to $T$.
+\end{lemma}

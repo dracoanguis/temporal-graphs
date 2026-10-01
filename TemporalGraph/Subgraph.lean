@@ -429,6 +429,31 @@ instance : PartialOrder (Subgraph G) where
       · intro h'' ; apply h.left ; assumption
       · intro h'' ; apply h'.left ; assumption
 
+/-- The union of two subgraphs: the union of their vertex sets and of their arcs. -/
+instance : SemilatticeSup (Subgraph G) where
+  sup H₁ H₂ :=
+    { verts := H₁.verts ∪ H₂.verts
+      Adj x y n := H₁.Adj x y n ∨ H₂.Adj x y n
+      adj_sub h := h.elim H₁.adj_sub H₂.adj_sub
+      edge_vert h := h.elim (fun h ↦ Or.inl (H₁.edge_vert h)) (fun h ↦ Or.inr (H₂.edge_vert h))
+      edge_vert' h := h.elim (fun h ↦ Or.inl (H₁.edge_vert' h)) (fun h ↦ Or.inr (H₂.edge_vert' h)) }
+  le_sup_left _ _ := ⟨Set.subset_union_left, Or.inl⟩
+  le_sup_right _ _ := ⟨Set.subset_union_right, Or.inr⟩
+  sup_le _ _ _ h₀ h₁ := ⟨Set.union_subset h₀.1 h₁.1, fun h ↦ h.elim h₀.2 h₁.2⟩
+
+@[simp]
+theorem sup_verts (H₁ H₂ : Subgraph G) : (H₁ ⊔ H₂).verts = H₁.verts ∪ H₂.verts :=
+  rfl
+
+@[simp]
+theorem sup_adj {H₁ H₂ : Subgraph G} {x y : V} {n : ℕ} :
+    (H₁ ⊔ H₂).Adj x y n ↔ H₁.Adj x y n ∨ H₂.Adj x y n :=
+  Iff.rfl
+
+/-- The union of two symmetric subgraphs is symmetric. -/
+instance sup_isSymm (H₁ H₂ : Subgraph G) [H₁.IsSymm] [H₂.IsSymm] : (H₁ ⊔ H₂).IsSymm :=
+  IsSymm.of_adj fun _ _ _ h ↦ h.imp (·.symm) (·.symm)
+
 /-- `≤` on subgraphs is compatible with the inherited `≤` on `TemporalGraph`, via
 `toTemporalGraph`. -/
 theorem toTemporalGraph_le {H H' : Subgraph G} (h : H ≤ H') :

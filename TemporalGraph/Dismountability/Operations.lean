@@ -151,7 +151,7 @@ lemma mount_le {H : Subgraph G} [G.IsSymm] {x y z : V} {n m : ℕ} (hy : y ∈ H
 /-- `H.mount hy hz x h₀ h₁` has edge set `H.edgeSet` plus the two new edges `z x` at `m` and `y x`
 at `n`. -/
 @[simp]
-lemma mount_edgeSet (H : Subgraph G) [G.IsSymm] [G.IsLoopless] {x y z : V} {n m : ℕ}
+lemma mount_edgeSet (H : Subgraph G) [G.IsSymm] {x y z : V} {n m : ℕ}
     (hy : y ∈ H.verts) (hz : z ∈ H.verts) (h₀ : G.Adj y x n) (h₁ : G.Adj z x m) :
     (H.mount hy hz x h₀ h₁).edgeSet = H.edgeSet ∪ {⟨s(z,x), m⟩, ⟨s(y,x), n⟩} := by
   simp [mount, addEdge_edgeSet, addVerts_edgeSet]
@@ -177,7 +177,7 @@ theorem mount_tc (H : Subgraph G) [H.IsSymm] [G.IsSymm] {x y z : V} {n m : ℕ} 
     · exact reachable_of_latestEdge h₃ a (hReach a z (hTC a ha z hz))
     · exact hReach a b (hTC a ha b hb)
 
-instance {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm] [G.IsLoopless] {x y z : V}
+instance {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm] {x y z : V}
     {n m : ℕ} {hy : y ∈ H.verts} {hz : z ∈ H.verts} {h₁ : G.Adj y x n} {h₂ : G.Adj z x m} :
     Finite (H.mount hy hz x h₁ h₂).edgeSet := by
   conv =>
@@ -188,7 +188,7 @@ instance {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm] [G.IsLoopless] {x
 
 /-- Instance-free form of `mount_size`: mounting `x` back onto `H` adds at most 2 edges to
 `H.edgeSet`'s `Set.ncard`. -/
-theorem ncard_edgeSet_mount_le {H : Subgraph G} [G.IsSymm] [G.IsLoopless] {x y z : V} {n m : ℕ}
+theorem ncard_edgeSet_mount_le {H : Subgraph G} [G.IsSymm] {x y z : V} {n m : ℕ}
     {hy : y ∈ H.verts} {hz : z ∈ H.verts} {h₀ : G.Adj y x n} {h₁ : G.Adj z x m} :
     (H.mount hy hz x h₀ h₁).edgeSet.ncard ≤ H.edgeSet.ncard + 2 := by
   rw [H.mount_edgeSet]
@@ -197,7 +197,7 @@ theorem ncard_edgeSet_mount_le {H : Subgraph G} [G.IsSymm] [G.IsLoopless] {x y z
   omega
 
 /-- Mounting `x` back onto `H` adds at most 2 edges. -/
-theorem mount_size {H : Subgraph G} [G.IsSymm] [G.IsLoopless] {x y z : V} {n m : ℕ}
+theorem mount_size {H : Subgraph G} [G.IsSymm] {x y z : V} {n m : ℕ}
     {hy : y ∈ H.verts} {hz : z ∈ H.verts} {h₀ : G.Adj y x n} {h₁ : G.Adj z x m}
     [Fintype H.edgeSet] [Fintype (H.mount hy hz x h₀ h₁).edgeSet] :
     (H.mount hy hz x h₀ h₁).size ≤ H.size + 2 := by
@@ -296,7 +296,7 @@ lemma mem_twoHopMount_verts {H : Subgraph G} [G.IsSymm] {y y' z z' : V} {n n' m 
 /-- `H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃` has edge set `H.edgeSet` plus the four new
 edges. -/
 @[simp]
-lemma twoHopMount_edgeSet (H : Subgraph G) [G.IsSymm] [G.IsLoopless] {y y' z z' : V}
+lemma twoHopMount_edgeSet (H : Subgraph G) [G.IsSymm] {y y' z z' : V}
     {n n' m m' : ℕ} (hy : y ∈ H.verts) (hy' : y' ∈ H.verts) (hz : z ∈ H.verts)
     (hz' : z' ∈ H.verts) (x : V) (h₀ : G.Adj x y' n') (h₁ : G.Adj y' y n) (h₂ : G.Adj x z' m')
     (h₃ : G.Adj z' z m) :
@@ -378,7 +378,7 @@ theorem twoHopMount_TC (H : Subgraph G) [H.IsSymm] [G.IsSymm] {y y' z z' : V}
         h₅.right a (hReach a z (hTC a ha z hz))
     · exact hReach a b (hTC a ha b hb)
 
-instance {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm] [G.IsLoopless] {y y' z z' : V}
+instance {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm] {y y' z z' : V}
     {n n' m m' : ℕ} {hy : y ∈ H.verts} {hy' : y' ∈ H.verts} {hz : z ∈ H.verts}
     {hz' : z' ∈ H.verts} {x : V} {h₁ : G.Adj x y' n'} {h₂ : G.Adj y' y n} {h₃ : G.Adj x z' m'}
     {h₄ : G.Adj z' z m} :
@@ -391,7 +391,7 @@ instance {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm] [G.IsLoopless] {y
 
 /-- Instance-free form of `twoHopMount_size`: mounting `x` back onto `H` via two hops on each
 side adds at most 4 edges to `H.edgeSet`'s `Set.ncard`. -/
-theorem ncard_edgeSet_twoHopMount_le {H : Subgraph G} [G.IsSymm] [G.IsLoopless]
+theorem ncard_edgeSet_twoHopMount_le {H : Subgraph G} [G.IsSymm]
     {y y' z z' : V} {n n' m m' : ℕ} {hy : y ∈ H.verts} {hy' : y' ∈ H.verts} {hz : z ∈ H.verts}
     {hz' : z' ∈ H.verts} {x : V} {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n} {h₂ : G.Adj x z' m'}
     {h₃ : G.Adj z' z m} :
@@ -404,7 +404,7 @@ theorem ncard_edgeSet_twoHopMount_le {H : Subgraph G} [G.IsSymm] [G.IsLoopless]
   omega
 
 /-- Mounting `x` back onto `H` via two hops on each side adds at most 4 edges. -/
-theorem twoHopMount_size {H : Subgraph G} [G.IsSymm] [G.IsLoopless]
+theorem twoHopMount_size {H : Subgraph G} [G.IsSymm]
     {y y' z z' : V} {n n' m m' : ℕ} {hy : y ∈ H.verts} {hy' : y' ∈ H.verts} {hz : z ∈ H.verts}
     {hz' : z' ∈ H.verts} {x : V} {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n} {h₂ : G.Adj x z' m'}
     {h₃ : G.Adj z' z m}

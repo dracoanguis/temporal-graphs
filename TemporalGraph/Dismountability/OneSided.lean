@@ -128,7 +128,7 @@ lemma oneSidedMount_le {H H₀ : Subgraph G} [G.IsSymm] [H₀.IsSymm] {x' y x : 
 
 /-- Instance-free form of `oneSidedMount_size`: mounting `x` back onto `H` with its two
 delegation edges adds at most 2 edges to `H.edgeSet`'s `Set.ncard`. -/
-theorem ncard_edgeSet_oneSidedMount_le {H : Subgraph G} [G.IsSymm] [G.IsLoopless] {x' y x : V}
+theorem ncard_edgeSet_oneSidedMount_le {H : Subgraph G} [G.IsSymm] {x' y x : V}
     {n m : ℕ} {hx' : x' ∈ H.verts} {hy : y ∈ H.verts} {h₀ : G.Adj y x' n} {h₁ : G.Adj y x m} :
     (H.oneSidedMount hx' hy x h₀ h₁).edgeSet.ncard ≤ H.edgeSet.ncard + 2 := by
   rw [H.oneSidedMount_edgeSet]
@@ -137,7 +137,7 @@ theorem ncard_edgeSet_oneSidedMount_le {H : Subgraph G} [G.IsSymm] [G.IsLoopless
   omega
 
 /-- Mounting `x` back onto `H` with its two delegation edges adds at most 2 edges. -/
-theorem oneSidedMount_size {H : Subgraph G} [G.IsSymm] [G.IsLoopless] {x' y x : V} {n m : ℕ}
+theorem oneSidedMount_size {H : Subgraph G} [G.IsSymm] {x' y x : V} {n m : ℕ}
     {hx' : x' ∈ H.verts} {hy : y ∈ H.verts} {h₀ : G.Adj y x' n} {h₁ : G.Adj y x m}
     [Fintype H.edgeSet] [Fintype (H.oneSidedMount hx' hy x h₀ h₁).edgeSet] :
     (H.oneSidedMount hx' hy x h₀ h₁).size ≤ H.size + 2 := by

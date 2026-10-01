@@ -132,13 +132,8 @@ theorem ncard_edgeSet_oneSidedMount_le {H : Subgraph G} [G.IsSymm] [G.IsLoopless
     {n m : ℕ} {hx' : x' ∈ H.verts} {hy : y ∈ H.verts} {h₀ : G.Adj y x' n} {h₁ : G.Adj y x m} :
     (H.oneSidedMount hx' hy x h₀ h₁).edgeSet.ncard ≤ H.edgeSet.ncard + 2 := by
   rw [H.oneSidedMount_edgeSet]
-  have aux2 : ∀ a b : Sym2 V × ℕ, ({a, b} : Set (Sym2 V × ℕ)).ncard ≤ 2 := by
-    intro a b
-    have h1 := Set.ncard_insert_le a ({b} : Set (Sym2 V × ℕ))
-    have h2 := Set.ncard_singleton b
-    omega
   have hun := Set.ncard_union_le H.edgeSet ({⟨s(y, x), m⟩, ⟨s(y, x'), n⟩} : Set (Sym2 V × ℕ))
-  have hcard := aux2 (⟨s(y, x), m⟩ : Sym2 V × ℕ) ⟨s(y, x'), n⟩
+  have hcard := ncard_pair_le (⟨s(y, x), m⟩ : Sym2 V × ℕ) ⟨s(y, x'), n⟩
   omega
 
 /-- Mounting `x` back onto `H` with its two delegation edges adds at most 2 edges. -/

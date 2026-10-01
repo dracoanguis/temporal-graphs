@@ -44,6 +44,26 @@ namespace TemporalGraph
 
 namespace Subgraph
 
+section CardHelpers
+
+/-- An unordered pair has `Set.ncard` at most 2. Shared by the `mount`/`twoHopMount`/
+`oneSidedMount` edge-count bounds below. -/
+lemma ncard_pair_le {α : Type*} (a b : α) : ({a, b} : Set α).ncard ≤ 2 := by
+  have h1 := Set.ncard_insert_le a ({b} : Set α)
+  have h2 := Set.ncard_singleton b
+  omega
+
+/-- A set given by (up to) four elements has `Set.ncard` at most 4. Shared by the `twoHopMount`
+edge-count bound below. -/
+lemma ncard_le_four {α : Type*} (a b c d : α) : ({a, b, c, d} : Set α).ncard ≤ 4 := by
+  have h1 := Set.ncard_insert_le a ({b, c, d} : Set α)
+  have h2 := Set.ncard_insert_le b ({c, d} : Set α)
+  have h3 := Set.ncard_insert_le c ({d} : Set α)
+  have h4 := Set.ncard_singleton d
+  omega
+
+end CardHelpers
+
 section Dismount
 
 /-- Delete the vertex `x` from `H` (the "dismount" operation). -/
@@ -172,13 +192,8 @@ theorem ncard_edgeSet_mount_le {H : Subgraph G} [G.IsSymm] [G.IsLoopless] {x y z
     {hy : y ∈ H.verts} {hz : z ∈ H.verts} {h₀ : G.Adj y x n} {h₁ : G.Adj z x m} :
     (H.mount hy hz x h₀ h₁).edgeSet.ncard ≤ H.edgeSet.ncard + 2 := by
   rw [H.mount_edgeSet]
-  have aux2 : ∀ a b : Sym2 V × ℕ, ({a, b} : Set (Sym2 V × ℕ)).ncard ≤ 2 := by
-    intro a b
-    have h1 := Set.ncard_insert_le a ({b} : Set (Sym2 V × ℕ))
-    have h2 := Set.ncard_singleton b
-    omega
   have hun := Set.ncard_union_le H.edgeSet ({⟨s(z, x), m⟩, ⟨s(y, x), n⟩} : Set (Sym2 V × ℕ))
-  have hcard := aux2 (⟨s(z, x), m⟩ : Sym2 V × ℕ) ⟨s(y, x), n⟩
+  have hcard := ncard_pair_le (⟨s(z, x), m⟩ : Sym2 V × ℕ) ⟨s(y, x), n⟩
   omega
 
 /-- Mounting `x` back onto `H` adds at most 2 edges. -/
@@ -382,16 +397,10 @@ theorem ncard_edgeSet_twoHopMount_le {H : Subgraph G} [G.IsSymm] [G.IsLoopless]
     {h₃ : G.Adj z' z m} :
     (H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃).edgeSet.ncard ≤ H.edgeSet.ncard + 4 := by
   rw [H.twoHopMount_edgeSet hy hy' hz hz' x h₀ h₁ h₂ h₃]
-  have aux4 : ∀ a b c d : Sym2 V × ℕ, ({a, b, c, d} : Set (Sym2 V × ℕ)).ncard ≤ 4 := by
-    intro a b c d
-    have h1 := Set.ncard_insert_le a ({b, c, d} : Set (Sym2 V × ℕ))
-    have h2 := Set.ncard_insert_le b ({c, d} : Set (Sym2 V × ℕ))
-    have h3 := Set.ncard_insert_le c ({d} : Set (Sym2 V × ℕ))
-    have h4 := Set.ncard_singleton d
-    omega
   have hun := Set.ncard_union_le H.edgeSet
     ({⟨s(z', z), m⟩, ⟨s(x, z'), m'⟩, ⟨s(y', y), n⟩, ⟨s(x, y'), n'⟩} : Set (Sym2 V × ℕ))
-  have hcard := aux4 (⟨s(z', z), m⟩ : Sym2 V × ℕ) ⟨s(x, z'), m'⟩ ⟨s(y', y), n⟩ ⟨s(x, y'), n'⟩
+  have hcard := ncard_le_four (⟨s(z', z), m⟩ : Sym2 V × ℕ) ⟨s(x, z'), m'⟩ ⟨s(y', y), n⟩
+    ⟨s(x, y'), n'⟩
   omega
 
 /-- Mounting `x` back onto `H` via two hops on each side adds at most 4 edges. -/

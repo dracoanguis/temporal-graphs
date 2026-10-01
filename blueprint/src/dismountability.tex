@@ -284,3 +284,53 @@ SAND below — do not introduce a different numbering here.
   to the same target $T$, then $H_1 \sqcup H_2$ is a one-sided spanner of $H$
   from $S_1 \cup S_2$ to $T$.
 \end{lemma}
+
+\begin{theorem}[Temporal connectivity from the matchings]
+  \label{thm:tc-of-spanner-from-to}
+  \uses{def:spanner-from-to,lem:spanner-from-to-sup}
+  \lean{TemporalGraph.temporallyConnected_of_reachable_of_matchings}
+  \lean{TemporalGraph.Subgraph.temporallyConnected_of_isSpannerFromTo}
+  \leanok
+  If every vertex of $T$ is the endpoint of the earliest edge of a vertex of
+  $S$, every vertex of $S$ the endpoint of the latest edge of a vertex of $T$,
+  and $S$ reaches $T$, then $S \cup T$ is temporally connected. In
+  particular, a one-sided spanner from $V^+$ to $V^-$ of the bi-clique of
+  Corollary~4.1 that contains the matchings $M^-$ and $M^+$ is temporally
+  connected on $V(H)$.
+\end{theorem}
+
+\begin{theorem}[One-sided dismounting]
+  \label{thm:one-sided-dismountability}
+  \uses{def:spanner-from-to}
+  \lean{TemporalGraph.Subgraph.oneSidedDismountability}
+  \lean{TemporalGraph.Subgraph.oneSidedMount_size}
+  \leanok
+  In a bi-clique on $(S, T)$, if $x \in T$ is one-sided dismountable through
+  $x'$ and $y$, a one-sided spanner from $S$ to $T \setminus \{x\}$ of the
+  bi-clique without $x$, extended by the two edges $yx'$ and $yx$, is a
+  one-sided spanner from $S$ to $T$; it has at most two more edges.
+\end{theorem}
+
+\begin{lemma}[Pigeonhole]
+  \label{lem:exists-one-sided-dismountable}
+  \uses{def:spanner-from-to}
+  \lean{TemporalGraph.Subgraph.exists_latestEdge_of_isBicliqueWith}
+  \lean{TemporalGraph.Subgraph.exists_oneSidedDismountable_of_ncard_lt}
+  \leanok
+  In a finite simple bi-clique on $(S, T)$ with $S$ nonempty and
+  $|S| < |T|$, two vertices of $T$ share their latest neighbor in $S$, so
+  some vertex of $T$ is one-sided dismountable.
+\end{lemma}
+
+\begin{lemma}[Split, full step]
+  \label{lem:spanner-from-to-split}
+  \uses{lem:spanner-from-to-sup}
+  \lean{TemporalGraph.Subgraph.isBicliqueWith_induce}
+  \lean{TemporalGraph.Subgraph.IsSpannerFromTo.of_le}
+  \lean{TemporalGraph.Subgraph.isSpannerFromTo_sup_of_induce}
+  \leanok
+  For $S_1, S_2 \subseteq S$, the restrictions of a bi-clique on $(S, T)$ to
+  $S_i \cup T$ are bi-cliques on $(S_i, T)$, and one-sided spanners of these
+  two subproblems combine, by union, into a one-sided spanner of the
+  bi-clique from $S_1 \cup S_2$ to $T$.
+\end{lemma}

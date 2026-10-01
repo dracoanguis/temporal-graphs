@@ -63,6 +63,90 @@ def oneSidedMount (H : Subgraph G) [G.IsSymm] {x' y : V} {n m : ℕ}
     G.Subgraph :=
   ((H.addVerts {x}).addEdge h₀ (by simp [hy, hx'])).addEdge h₁ (by simp [hy])
 
+/-- `H.oneSidedMount hx' hy x h₀ h₁` has vertex set `H.verts ∪ {x}`. -/
+@[simp]
+lemma oneSidedMount_verts {H : Subgraph G} [G.IsSymm] {x' y x : V} {n m : ℕ}
+    (hx' : x' ∈ H.verts) (hy : y ∈ H.verts) (h₀ : G.Adj y x' n) (h₁ : G.Adj y x m) :
+    (H.oneSidedMount hx' hy x h₀ h₁).verts = H.verts ∪ {x} := by
+  rw [oneSidedMount, addEdge_verts, addEdge_verts, addVerts_verts]
+
+/-- `H.oneSidedMount hx' hy x h₀ h₁` is symmetric when `H` and `G` are. -/
+-- `oneSidedMount` is a plain `def`, so instance resolution cannot see the `addEdge`/`addVerts`
+-- layers it is built from; this instance unfolds it once and hands the goal back to resolution.
+instance oneSidedMount_isSymm {H : Subgraph G} [H.IsSymm] [G.IsSymm] {x' y x : V} {n m : ℕ}
+    (hx' : x' ∈ H.verts) (hy : y ∈ H.verts) (h₀ : G.Adj y x' n) (h₁ : G.Adj y x m) :
+    (H.oneSidedMount hx' hy x h₀ h₁).IsSymm := by
+  unfold oneSidedMount
+  infer_instance
+
+/-- `H` is a subgraph of `H.oneSidedMount hx' hy x h₀ h₁`. -/
+lemma le_oneSidedMount {H : Subgraph G} [G.IsSymm] {x' y x : V} {n m : ℕ}
+    (hx' : x' ∈ H.verts) (hy : y ∈ H.verts) (h₀ : G.Adj y x' n) (h₁ : G.Adj y x m) :
+    H ≤ H.oneSidedMount hx' hy x h₀ h₁ := by
+  unfold oneSidedMount
+  have h := addVerts_le' H {x}
+  have h' := h.trans <| addEdge_le' (H.addVerts {x}) h₀ (by simp [hy, hx'])
+  exact le_trans h' addEdge_le
+
+/-- `H.oneSidedMount hx' hy x h₀ h₁` contains the edge from `y` to `x'` at time `n`. -/
+lemma oneSidedMount_adj_left (H : Subgraph G) [G.IsSymm] {x' y x : V} {n m : ℕ}
+    (hx' : x' ∈ H.verts) (hy : y ∈ H.verts) (h₀ : G.Adj y x' n) (h₁ : G.Adj y x m) :
+    (H.oneSidedMount hx' hy x h₀ h₁).Adj y x' n := by
+  rw [oneSidedMount]
+  exact addEdge_le.right addEdge_edge
+
+/-- `H.oneSidedMount hx' hy x h₀ h₁` contains the edge from `y` to `x` at time `m`. -/
+lemma oneSidedMount_adj_right (H : Subgraph G) [G.IsSymm] {x' y x : V} {n m : ℕ}
+    (hx' : x' ∈ H.verts) (hy : y ∈ H.verts) (h₀ : G.Adj y x' n) (h₁ : G.Adj y x m) :
+    (H.oneSidedMount hx' hy x h₀ h₁).Adj y x m := by
+  rw [oneSidedMount]
+  exact addEdge_edge
+
+/-- `H.oneSidedMount hx' hy x h₀ h₁` has edge set `H.edgeSet` plus the two new edges `y x'` at `n`
+and `y x` at `m`. -/
+@[simp]
+lemma oneSidedMount_edgeSet (H : Subgraph G) [G.IsSymm] {x' y x : V} {n m : ℕ}
+    (hx' : x' ∈ H.verts) (hy : y ∈ H.verts) (h₀ : G.Adj y x' n) (h₁ : G.Adj y x m) :
+    (H.oneSidedMount hx' hy x h₀ h₁).edgeSet = H.edgeSet ∪ {⟨s(y, x), m⟩, ⟨s(y, x'), n⟩} := by
+  simp [oneSidedMount, addEdge_edgeSet, addVerts_edgeSet]
+
+/-- Any symmetric subgraph `H₀` that extends `H`, contains `x` and both delegation edges, also
+contains `H.oneSidedMount hx' hy x h₀ h₁`. -/
+lemma oneSidedMount_le {H H₀ : Subgraph G} [G.IsSymm] [H₀.IsSymm] {x' y x : V} {n m : ℕ}
+    (hx' : x' ∈ H.verts) (hy : y ∈ H.verts) (h₀ : G.Adj y x' n) (h₁ : G.Adj y x m)
+    (h₂ : H ≤ H₀) (h₃ : x ∈ H₀.verts) (h₄ : H₀.Adj y x' n) (h₅ : H₀.Adj y x m) :
+    H.oneSidedMount hx' hy x h₀ h₁ ≤ H₀ := by
+  apply le_iff_edgeSet_and_verts.mpr
+  refine ⟨?_, ?_⟩
+  · rw [H.oneSidedMount_edgeSet]
+    refine Set.union_subset (edgeSet_le h₂) ?_
+    rintro p (rfl | rfl)
+    · exact Adj.mem_edgeSet h₅
+    · exact Adj.mem_edgeSet h₄
+  · rw [H.oneSidedMount_verts]
+    exact Set.union_subset h₂.left (Set.singleton_subset_iff.mpr h₃)
+
+/-- Mounting `x` back onto `H` with its two delegation edges adds at most 2 edges. -/
+theorem oneSidedMount_size {H : Subgraph G} [Fintype H.edgeSet] [G.IsSymm] [G.IsLoopless]
+    {x' y x : V} {n m : ℕ} {hx' : x' ∈ H.verts} {hy : y ∈ H.verts} {h₀ : G.Adj y x' n}
+    {h₁ : G.Adj y x m} [Fintype (H.oneSidedMount hx' hy x h₀ h₁).edgeSet] :
+    Fintype.card (H.oneSidedMount hx' hy x h₀ h₁).edgeSet ≤ Fintype.card H.edgeSet + 2 := by
+  -- Rewrite the edge set only once under `Nat.card`: under `Fintype.card` it clashes with the
+  -- `Fintype` instance that depends on it.
+  rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card, H.oneSidedMount_edgeSet]
+  have hle₀ : Nat.card ({(s(y, x), m), (s(y, x'), n)} : Set ((Sym2 V) × ℕ)) ≤ 2 := by
+    simp only [←Set.union_singleton]
+    have h : 2 = 1 + 1 := by simp only [Nat.reduceAdd]
+    have h' : Fintype.card ({(s(y, x), m)} : Set (Sym2 V × ℕ)) = 1 := by simp
+    have h'' : Fintype.card ({(s(y, x'), n)} : Set (Sym2 V × ℕ)) = 1 := by simp
+    conv => rhs ; rw [h] ; arg 1 ; rw [←h'']
+    conv => arg 2 ; arg 2 ; rw [←h']
+    simp only [←Nat.card_eq_fintype_card, Set.card_union_le]
+  have hle₁ : Nat.card ↑(H.edgeSet ∪ {(s(y, x), m), (s(y, x'), n)})
+      ≤ Nat.card H.edgeSet + Nat.card ({(s(y, x), m), (s(y, x'), n)} : Set ((Sym2 V) × ℕ)) := by
+    simp only [Set.card_union_le]
+  lia
+
 /-- SAND 2025, §4.1 (split): one-sided spanners of `H` from `s₁` and from `s₂` to the same
 target `t` have a union that is a one-sided spanner from `s₁ ∪ s₂` to `t`. -/
 lemma IsSpannerFromTo.sup {H H₁ H₂ : Subgraph G} {s₁ s₂ t : Set V}
@@ -103,6 +187,49 @@ theorem temporallyConnected_of_isSpannerFromTo {H S : Subgraph G}
     intro x hx y hy
     obtain ⟨n, hn⟩ := hbc.adj_of_mem' hy hx
     exact h₄.2 x hx y hy (reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨.Single hn⟩⟩)
+
+/-- SAND 2025, §4.1: correctness of one-sided dismounting. In a bi-clique on `s` and `t`, if `x`
+is one-sided dismountable through `x'` and `y`, and `H'` is a one-sided spanner from `s` to
+`t \ {x}` of `H` without `x`, then putting `x` back with the edges `y x'` and `y x` gives a
+one-sided spanner from `s` to `t` of `H`. -/
+theorem oneSidedDismountability {H H' : Subgraph G} [G.IsSymm] [H.IsSymm] [H'.IsSymm]
+    {s t : Set V} {x x' y : V} {n m : ℕ}
+    (h₀ : H.IsBicliqueWith s t) (h₁ : x ∈ t) (h₂ : x' ∈ t) (h₃ : x' ≠ x)
+    (h₄ : H.LatestEdge x' y n) (h₅ : H.Adj y x m) (h₆ : n ≤ m)
+    (h₇ : H'.IsSpannerFromTo (H.deleteVerts {x}) s (t \ {x}))
+    (hx' : x' ∈ H'.verts) (hy : y ∈ H'.verts) :
+    (H'.oneSidedMount hx' hy x (H.adj_sub h₄.1).symm (H.adj_sub h₅)).IsSpannerFromTo H s t := by
+  set M := H'.oneSidedMount hx' hy x (H.adj_sub h₄.1).symm (H.adj_sub h₅) with hM
+  have hMH : M ≤ H :=
+    oneSidedMount_le hx' hy _ _ (h₇.1.trans deleteVerts_le) (H.edge_vert' h₅) h₄.1.symm h₅
+  refine ⟨hMH, ?_⟩
+  intro z hz w hw hr
+  have hzt : z ∉ t := Set.disjoint_left.mp h₀.isBipartiteWith.disjoint hz
+  have hzx : z ≠ x := fun he ↦ hzt (he ▸ h₁)
+  have hzx' : z ≠ x' := fun he ↦ hzt (he ▸ h₂)
+  -- Every target of `t \ {x}` stays reachable from `z`, through the one-sided spanner `H'` of
+  -- `H.deleteVerts {x}`, then lifted to the bigger graph `M`.
+  have key : ∀ w' ∈ t \ {x}, M.Reachable z w' := by
+    intro w' hw'
+    obtain ⟨k, hadj⟩ := h₀.adj_of_mem hz hw'.1
+    have hzw'del : (H.deleteVerts {x}).Adj z w' k := by
+      simp only [deleteVerts, induce_Adj, Set.mem_sdiff, Set.mem_singleton_iff]
+      exact ⟨⟨H.edge_vert hadj, hzx⟩, ⟨H.edge_vert' hadj, hw'.2⟩, hadj⟩
+    have hrd : (H.deleteVerts {x}).Reachable z w' :=
+      reachable_of_nonempty_NonemptyTemporalWalk ⟨k, k, ⟨.Single hzw'del⟩⟩
+    have hle : H' ≤ M := le_oneSidedMount hx' hy (H.adj_sub h₄.1).symm (H.adj_sub h₅)
+    exact Reachable.mono (toTemporalGraph_le hle) (h₇.2 z hz w' hw' hrd)
+  by_cases hwx : w = x
+  · -- `w = x`: reach `x'` first (it survives the dismount), then extend through `y x` using that
+    -- `x'`'s edge to `y` is still the latest one in `M` (it was in `H`, which contains `M`).
+    subst hwx
+    have hMx' : M.Reachable z x' := key x' ⟨h₂, h₃⟩
+    have hMx'y : M.Adj x' y n :=
+      (oneSidedMount_adj_left H' hx' hy (H.adj_sub h₄.1).symm (H.adj_sub h₅)).symm
+    have hML : M.LatestEdge x' y n := latestEdge_of_ge hMH h₄ hMx'y
+    exact TemporalGraph.reachable_of_extended_latestEdge hML
+      (oneSidedMount_adj_right H' hx' hy (H.adj_sub h₄.1).symm (H.adj_sub h₅)) h₆ z hMx'
+  · exact key w ⟨hw, hwx⟩
 
 end OneSided
 

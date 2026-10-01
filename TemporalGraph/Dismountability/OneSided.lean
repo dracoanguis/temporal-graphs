@@ -231,6 +231,44 @@ theorem oneSidedDismountability {H H' : Subgraph G} [G.IsSymm] [H.IsSymm] [H'.Is
       (oneSidedMount_adj_right H' hx' hy (H.adj_sub h₄.1).symm (H.adj_sub h₅)) h₆ z hMx'
   · exact key w ⟨hw, hwx⟩
 
+/-- In a finite simple bi-clique on `s` and `t` with `s` nonempty, every vertex of `t` has a
+latest edge, and it goes to `s`. -/
+lemma exists_latestEdge_of_isBicliqueWith {H : Subgraph G} [Finite H.verts] [H.IsSymm]
+    {s t : Set V} {x : V}
+    (h₀ : H.IsSimple) (h₁ : H.IsBicliqueWith s t) (h₂ : s.Nonempty) (h₃ : x ∈ t) :
+    ∃ y ∈ s, ∃ n, H.LatestEdge x y n := by
+  obtain ⟨z, hz⟩ := h₂
+  obtain ⟨k, hadj⟩ := h₁.adj_of_mem hz h₃
+  have hin : ((z, k) : V × ℕ) ∈ H.incidenceSet x := hadj.symm
+  have hne : (H.incidenceSet x).Nonempty := ⟨(z, k), hin⟩
+  have hfin : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ x
+  obtain ⟨y, n, hlat⟩ := latestEdge_exists_of_nonempty_finite_incidenceSet hne hfin
+  exact ⟨y, h₁.isBipartiteWith.mem_of_mem_adj' h₃ hlat.1, n, hlat⟩
+
+/-- SAND 2025, §4.1 (pigeonhole): in a finite simple bi-clique on `s` and `t` with `s` nonempty and
+`|s| < |t|`, two vertices of `t` share their latest neighbor in `s`, so some vertex of `t` is
+one-sided dismountable. -/
+lemma exists_oneSidedDismountable_of_ncard_lt {H : Subgraph G} [Finite H.verts] [H.IsSymm]
+    {s t : Set V}
+    (h₀ : H.IsSimple) (h₁ : H.IsBicliqueWith s t) (h₂ : s.Nonempty)
+    (h₃ : s.ncard < t.ncard) :
+    ∃ x, H.OneSidedDismountable s t x := by
+  classical
+  have : Nonempty V := ⟨h₂.choose⟩
+  have hex : ∀ x ∈ t, ∃ y ∈ s, ∃ n, H.LatestEdge x y n :=
+    fun x hx ↦ exists_latestEdge_of_isBicliqueWith h₀ h₁ h₂ hx
+  choose! f hfs n hn using hex
+  have ht0 : t.ncard ≠ 0 := ((Nat.zero_le s.ncard).trans_lt h₃).ne'
+  obtain ⟨w, hw⟩ := Set.nonempty_of_ncard_ne_zero ht0
+  have hsub : s ⊆ H.verts := fun v hv ↦ H.edge_vert (h₁.adj_of_mem hv hw).choose_spec
+  have hsFin : s.Finite := (Set.toFinite H.verts).subset hsub
+  obtain ⟨a, ha, b, hb, hab, hfab⟩ :=
+    Set.exists_ne_map_eq_of_ncard_lt_of_maps_to h₃ hfs hsFin
+  have hnb' : H.LatestEdge b (f a) (n b) := by rw [hfab]; exact hn b hb
+  rcases le_total (n a) (n b) with hle | hle
+  · exact ⟨b, hb, a, ha, hab, f a, hfs a ha, n a, n b, hn a ha, hnb'.1.symm, hle⟩
+  · exact ⟨a, ha, b, hb, hab.symm, f a, hfs a ha, n b, n a, hnb', (hn a ha).1.symm, hle⟩
+
 end OneSided
 
 end Subgraph

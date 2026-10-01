@@ -96,7 +96,7 @@ besoin de le répéter ici.
 | Fichier | Rôle | Analogue Mathlib |
 |---|---|---|
 | `TemporalGraph/Init.lean` | Rule-set aesop `TemporalGraph`, utilisé par la macro `aesop_temporal_graph` | `SimpleGraph/Init.lean` |
-| `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsCliqueGraph`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, demande `IsSymm`/`IsLoopless` en hypothèses explicites), `neighborSet`, `incidenceSet`, `arcSet`/`arcSize` (monde orienté), `edgeSet`/`size` (monde symétrique ; `mem_edgeSet` demande seulement `[IsSymm]`) | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
+| `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsCliqueGraph`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, demande `IsSymm`/`IsLoopless` en hypothèses explicites), `neighborSet`, `incidenceSet`, `arcSet`/`arcSize` (monde orienté), `edgeSet`/`size` (monde symétrique ; `mem_edgeSet` demande seulement `[IsSymm]`) ; `size`/`arcSize` sont des `def` calculables (pattern `SimpleGraph.degree` : `Fintype.card` sous une instance `[Fintype G.edgeSet]`/`[Fintype G.arcSet]`), avec la forme instance-free `Set.ncard` disponible via `size_eq_ncard`/`arcSize_eq_ncard` | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
 | `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Marches temporelles non strictes, à temps croissant | `SimpleGraph.Walk` |
 | `TemporalGraph/Subgraph.lean` | Sous-graphe temporel : `TemporalGraph.Subgraph` étend `TemporalGraph V`, ajoutant `verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `IsCliqueSubgraph` ; `edgeSet`, `neighborSet`, `size`, `incidenceSet` sont hérités de `TemporalGraph` ; treillis borné et union `⊔` (`SemilatticeSup`), `induce`/`deleteVerts`/`addVerts`/`addArc`/`addEdge` ; monotonie `toTemporalGraph_le`/`toTemporalGraph_le_self` | `SimpleGraph.Subgraph` |
 | `TemporalGraph/Bipartite.lean` | Bipartition temporelle `IsBipartiteWith`/`IsBipartite` (ensembles explicites, sans hypothèse de symétrie, non classe), pont `isBipartiteWith_iff_simpleFootprint` vers Mathlib, restriction `between` aux arcs entre deux ensembles, bi-cliques temporelles `IsBicliqueWith`/`IsBiclique` (SAND 2025 §1.1 ; prennent un ensemble de sommets), constructeur `completeBipartite` sur `α ⊕ β`, et au niveau `Subgraph` : `Subgraph.between` | `SimpleGraph/Bipartite.lean` |
@@ -316,11 +316,17 @@ dismountable, V⁰ = ∅. -/`. Toujours écrire la forme complète `SAND 2025, L
   incrémentaux, en quelques minutes. Ne pas supprimer `docbuild/.lake`. Garder le `rev` de doc-gen4
   égal au tag de `lean-toolchain`.
 - `lake build` n'accepte pas `-j` (vérifié en `v4.29.0-rc6`).
-- **Réécrire un ensemble sous `Fintype.card`** : `rw`/`simp` avec une égalité d'ensembles (par
-  exemple `addEdge_edgeSet`, `mount_edgeSet`) ne passent plus sous `Fintype.card ↑S`, dont
-  l'instance dépend de `S`. Il faut d'abord passer en `Nat.card` (`← Nat.card_eq_fintype_card`),
-  qui ne voit que le type, puis réécrire, puis conclure avec `Set.ncard_*` via
-  `Nat.card_coe_set_eq`.
+- **Comptage d'arêtes : pattern `SimpleGraph.degree`, pas de `noncomputable` exposé.** `size`/
+  `arcSize` sont des `def` calculables, `Fintype.card G.edgeSet`/`G.arcSet` sous une instance
+  `[Fintype …]` (Mathlib, `Finite.lean:242` : `degree`/`card_neighborSet_eq_degree`/
+  `ncard_neighborSet`) ; le pont instance-free est `size_eq_ncard`/`arcSize_eq_ncard`
+  (`G.size = G.edgeSet.ncard`). Les lemmes de comptage de la bibliothèque (`addEdge_size`,
+  `mount_size`, `twoHopMount_size`, `oneSidedMount_size`, …) sont désormais chacun doublés d'une
+  version instance-free sur `edgeSet.ncard` (`ncard_edgeSet_addEdge`, `ncard_edgeSet_mount_le`,
+  `ncard_edgeSet_twoHopMount_le`, `ncard_edgeSet_oneSidedMount_le`, …), dans laquelle `rw`/`simp`
+  avec une égalité d'ensembles (par exemple `addEdge_edgeSet`, `mount_edgeSet`) passe directement
+  sous `.ncard` sans détour par `Nat.card` ; la version `size` en est un corollaire sous
+  `[Fintype …]`, via `size_eq_ncard`.
 - CI GitHub Actions existante (ne pas modifier sans raison) : `lean_action_ci.yml` (build +
   docgen), `create-release.yml` (tag de release sur changement de `lean-toolchain`),
   `update.yml` (PR/issue automatique sur mise à jour Mathlib).

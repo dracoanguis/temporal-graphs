@@ -291,6 +291,20 @@ noncomputable def fintypeIncidenceSetOfSimple (H : Subgraph G) [Finite H.verts]
     (h₀ : H.IsSimple) (x : V) : Fintype (H.incidenceSet x) :=
   (finite_incidenceSet_of_finite_simple h₀ x).fintype
 
+/-- A simple subgraph on finitely many vertices has finitely many edges (at most one time per
+pair). -/
+lemma finite_edgeSet_of_finite_simple {H : Subgraph G} [Finite H.verts] (h₀ : H.IsSimple) :
+    H.edgeSet.Finite := by
+  have hsub : H.edgeSet ⊆
+      (fun p : V × V × ℕ ↦ (s(p.1, p.2.1), p.2.2)) '' ⋃ x ∈ H.verts, {x} ×ˢ H.incidenceSet x := by
+    rintro ⟨p, n⟩ ⟨x, y, hp, hadj⟩
+    refine ⟨(x, y, n), ?_, by simp [hp]⟩
+    simp only [Set.mem_iUnion, Set.mem_prod, Set.mem_singleton_iff]
+    exact ⟨x, H.edge_vert hadj, rfl, hadj⟩
+  refine Set.Finite.subset (Set.Finite.image _ ?_) hsub
+  exact (Set.toFinite H.verts).biUnion fun x _ ↦
+    (Set.finite_singleton x).prod (finite_incidenceSet_of_finite_simple h₀ x)
+
 lemma nonempty_incidenceSet_of_nontrivial_clique {H : Subgraph G} [h : Nontrivial H.verts]
     (h₁ : H.IsCliqueSubgraph) :
     ∀ x ∈ H.verts, (H.incidenceSet x).Nonempty := by
@@ -939,31 +953,50 @@ section Size
 
 def order (H : Subgraph G) [Fintype H.verts] := Fintype.card H.verts
 
-lemma size_of_simple (H : Subgraph G)
-    [Fintype H.edgeSet]
-    [Fintype H.footprintEdgeSet]
-    [H.IsSymm]
-    (h₀ : H.IsSimple) :
-    H.size = Fintype.card H.footprintEdgeSet := by
-  apply Fintype.card_of_bijective (f := H.edgeSetToFootprintEdgeSet)
-  exact H.edgeSetToFootprintEdgeSet_bijective h₀
+/-- Instance-free form of `size_of_simple`: with no finiteness hypothesis needed, `H.edgeSet` and
+`H.footprintEdgeSet` have the same `Set.ncard` when `H` is symmetric and simple. -/
+lemma ncard_edgeSet_of_simple (H : Subgraph G) [H.IsSymm] (h₀ : H.IsSimple) :
+    H.edgeSet.ncard = H.footprintEdgeSet.ncard := by
+  rw [← Nat.card_coe_set_eq, ← Nat.card_coe_set_eq]
+  exact Nat.card_congr (Equiv.ofBijective _ (H.edgeSetToFootprintEdgeSet_bijective h₀))
 
--- NOTE(refactor): `Finite → Fintype` isn't automatic in Mathlib (avoids diamonds), so the
--- `Finite` instance above does not chain into a `Fintype` one on its own: callers must supply
--- the `Fintype` instance explicitly.
+theorem size_of_simple (H : Subgraph G) [H.IsSymm] [Fintype H.edgeSet] (h₀ : H.IsSimple) :
+    H.size = H.footprintEdgeSet.ncard := by
+  rw [size_eq_ncard]
+  exact H.ncard_edgeSet_of_simple h₀
+
+/-- Instance-free form of `addEdge_size`: adding an edge not already present increases the edge
+set's `Set.ncard` by exactly one. -/
+theorem ncard_edgeSet_addEdge (H : Subgraph G) {x y : V} {n : ℕ}
+    [H.IsSymm] [G.IsSymm]
+    {h₀ : G.Adj x y n}
+    {h₁ : x ∈ H.verts ∧ y ∈ H.verts}
+    {h₂ : ¬H.Adj x y n}
+    (hfin : H.edgeSet.Finite := by toFinite_tac) :
+    (H.addEdge h₀ h₁).edgeSet.ncard = H.edgeSet.ncard + 1 := by
+  rw [H.addEdge_edgeSet]
+  exact Set.ncard_insert_of_notMem (fun hm ↦ h₂ (H.mem_edgeSet.mp hm)) hfin
+
 theorem addEdge_size (H : Subgraph G) {x y : V} {n : ℕ}
     [H.IsSymm] [G.IsSymm]
     {h₀ : G.Adj x y n}
     {h₁ : x ∈ H.verts ∧ y ∈ H.verts}
     {h₂ : ¬H.Adj x y n}
-    [Fintype H.edgeSet] [Fintype (H.addEdge h₀ h₁).edgeSet] :
+    [Fintype H.edgeSet] [Fintype (H.addEdge h₀ h₁).edgeSet]
+    (hfin : H.edgeSet.Finite := by toFinite_tac) :
     (H.addEdge h₀ h₁).size = H.size + 1 := by
-  -- Through `Nat.card`, which only sees the type: rewriting the edge set under `Fintype.card`
-  -- would clash with the `Fintype` instance that depends on it.
-  unfold TemporalGraph.size
-  rw [← Nat.card_eq_fintype_card, ← Nat.card_eq_fintype_card, H.addEdge_edgeSet,
-    Nat.card_coe_set_eq, Nat.card_coe_set_eq]
-  exact Set.ncard_insert_of_notMem fun hm ↦ h₂ (H.mem_edgeSet.mp hm)
+  rw [size_eq_ncard, size_eq_ncard]
+  exact H.ncard_edgeSet_addEdge (h₂ := h₂) hfin
+
+/-- Instance-free form of `addEdge_size_le`: adding an edge increases the edge set's
+`Set.ncard` by at most one. -/
+theorem ncard_edgeSet_addEdge_le (H : Subgraph G) {x y : V} {n : ℕ}
+    [G.IsSymm]
+    {h₀ : G.Adj x y n}
+    {h₁ : x ∈ H.verts ∧ y ∈ H.verts} :
+    (H.addEdge h₀ h₁).edgeSet.ncard ≤ H.edgeSet.ncard + 1 := by
+  rw [H.addEdge_edgeSet]
+  exact Set.ncard_insert_le _ _
 
 @[simp]
 theorem addEdge_size_le (H : Subgraph G) {x y : V} {n : ℕ}
@@ -972,25 +1005,29 @@ theorem addEdge_size_le (H : Subgraph G) {x y : V} {n : ℕ}
     {h₁ : x ∈ H.verts ∧ y ∈ H.verts}
     [Fintype H.edgeSet] [Fintype (H.addEdge h₀ h₁).edgeSet] :
     (H.addEdge h₀ h₁).size ≤ H.size + 1 := by
-  unfold TemporalGraph.size
-  rw [← Nat.card_eq_fintype_card, ← Nat.card_eq_fintype_card, H.addEdge_edgeSet,
-    Nat.card_coe_set_eq, Nat.card_coe_set_eq]
-  exact Set.ncard_insert_le _ _
+  rw [size_eq_ncard, size_eq_ncard]
+  exact H.ncard_edgeSet_addEdge_le
 
 theorem addEdge_size_le' (H : Subgraph G) {x y : V} {n : ℕ}
     [G.IsSymm]
     (h₀ : G.Adj x y n)
     (h₁ : x ∈ H.verts ∧ y ∈ H.verts)
     [Fintype H.edgeSet] [Fintype (H.addEdge h₀ h₁).edgeSet] :
-    Fintype.card (H.addEdge h₀ h₁).edgeSet ≤ Fintype.card H.edgeSet + 1 := by
-  exact H.addEdge_size_le
+    (H.addEdge h₀ h₁).size ≤ H.size + 1 :=
+  H.addEdge_size_le
+
+/-- Instance-free form of `addVerts_size`: adding vertices does not change the edge set's
+`Set.ncard`. -/
+theorem ncard_edgeSet_addVerts {H : Subgraph G} {s : Set V} :
+    (H.addVerts s).edgeSet.ncard = H.edgeSet.ncard :=
+  congrArg Set.ncard addVerts_edgeSet
 
 @[simp]
 theorem addVerts_size {H : Subgraph G} {s : Set V}
-    [Fintype H.edgeSet]
-    [Fintype (H.addVerts s).edgeSet] :
-    Fintype.card (H.addVerts s).edgeSet = Fintype.card H.edgeSet := by
-  simp only [addVerts_edgeSet]
+    [Fintype H.edgeSet] [Fintype (H.addVerts s).edgeSet] :
+    (H.addVerts s).size = H.size := by
+  rw [size_eq_ncard, size_eq_ncard]
+  exact ncard_edgeSet_addVerts
 
 end Size
 

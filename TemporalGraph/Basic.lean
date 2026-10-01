@@ -334,11 +334,35 @@ end edgeSet
 
 section Size
 
-/-- The number of unordered edges: the symmetric world's measure. -/
-def size (G : TemporalGraph V) [Fintype G.edgeSet] := Fintype.card G.edgeSet
+/-- The number of unordered edges: the symmetric world's measure. Computable, under a
+`Fintype` instance on the edge set; `size_eq_ncard` gives the instance-free `Set.ncard` form, in
+which the counting lemmas of the library are stated. -/
+def size (G : TemporalGraph V) [Fintype G.edgeSet] : ℕ := Fintype.card G.edgeSet
 
-/-- The number of arcs: the oriented counterpart of `size`. -/
-def arcSize (G : TemporalGraph V) [Fintype G.arcSet] := Fintype.card G.arcSet
+/-- The number of arcs: the oriented counterpart of `size`. Computable, under a `Fintype`
+instance on the arc set; `arcSize_eq_ncard` gives the instance-free `Set.ncard` form. -/
+def arcSize (G : TemporalGraph V) [Fintype G.arcSet] : ℕ := Fintype.card G.arcSet
+
+/-- `size` is `Set.ncard` of the edge set: the instance-free form, in which the counting
+lemmas of the library (`ncard_edgeSet_addEdge_le`, …) are stated. -/
+theorem size_eq_ncard (G : TemporalGraph V) [Fintype G.edgeSet] :
+    G.size = G.edgeSet.ncard :=
+  Set.fintypeCard_eq_ncard G.edgeSet
+
+/-- `arcSize` is `Set.ncard` of the arc set: the instance-free counterpart of `size_eq_ncard`. -/
+theorem arcSize_eq_ncard (G : TemporalGraph V) [Fintype G.arcSet] :
+    G.arcSize = G.arcSet.ncard :=
+  Set.fintypeCard_eq_ncard G.arcSet
+
+/-- `size` is also the `Finset.card` of the edge set's `toFinset`. -/
+theorem size_eq_card_toFinset (G : TemporalGraph V) [Fintype G.edgeSet] :
+    G.size = G.edgeSet.toFinset.card :=
+  (Set.toFinset_card G.edgeSet).symm
+
+/-- `arcSize` is also the `Finset.card` of the arc set's `toFinset`. -/
+theorem arcSize_eq_card_toFinset (G : TemporalGraph V) [Fintype G.arcSet] :
+    G.arcSize = G.arcSet.toFinset.card :=
+  (Set.toFinset_card G.arcSet).symm
 
 end Size
 

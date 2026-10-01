@@ -166,26 +166,28 @@ instance {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm] [G.IsLoopless] {x
   · trivial
   · simp only [Set.finite_insert, Set.finite_singleton]
 
+/-- Instance-free form of `mount_size`: mounting `x` back onto `H` adds at most 2 edges to
+`H.edgeSet`'s `Set.ncard`. -/
+theorem ncard_edgeSet_mount_le {H : Subgraph G} [G.IsSymm] [G.IsLoopless] {x y z : V} {n m : ℕ}
+    {hy : y ∈ H.verts} {hz : z ∈ H.verts} {h₀ : G.Adj y x n} {h₁ : G.Adj z x m} :
+    (H.mount hy hz x h₀ h₁).edgeSet.ncard ≤ H.edgeSet.ncard + 2 := by
+  rw [H.mount_edgeSet]
+  have aux2 : ∀ a b : Sym2 V × ℕ, ({a, b} : Set (Sym2 V × ℕ)).ncard ≤ 2 := by
+    intro a b
+    have h1 := Set.ncard_insert_le a ({b} : Set (Sym2 V × ℕ))
+    have h2 := Set.ncard_singleton b
+    omega
+  have hun := Set.ncard_union_le H.edgeSet ({⟨s(z, x), m⟩, ⟨s(y, x), n⟩} : Set (Sym2 V × ℕ))
+  have hcard := aux2 (⟨s(z, x), m⟩ : Sym2 V × ℕ) ⟨s(y, x), n⟩
+  omega
+
 /-- Mounting `x` back onto `H` adds at most 2 edges. -/
-theorem mount_size {H : Subgraph G} [Fintype H.edgeSet] [G.IsSymm] [G.IsLoopless] {x y z : V}
-    {n m : ℕ} {hy : y ∈ H.verts} {hz : z ∈ H.verts} {h₀ : G.Adj y x n} {h₁ : G.Adj z x m}
-    [Fintype (H.mount hy hz x h₀ h₁).edgeSet] :
-    Fintype.card (H.mount hy hz x h₀ h₁).edgeSet ≤ Fintype.card H.edgeSet + 2 := by
-  -- Rewrite the edge set only once under `Nat.card`: under `Fintype.card` it clashes with the
-  -- `Fintype` instance that depends on it.
-  rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card, H.mount_edgeSet]
-  have hle₀ : Nat.card ({(s(z, x), m), (s(y, x), n)} : Set ((Sym2 V) × ℕ)) ≤ 2 := by
-    simp only [←Set.union_singleton]
-    have h : 2 = 1 + 1 := by simp only [Nat.reduceAdd]
-    have h' : Fintype.card ({(s(z, x), m)} : Set (Sym2 V × ℕ)) = 1 := by simp
-    have h'' : Fintype.card ({(s(y, x), n)} : Set (Sym2 V × ℕ)) = 1 := by simp
-    conv => rhs ; rw [h] ; arg 1 ; rw [←h'']
-    conv => arg 2 ; arg 2 ; rw [←h']
-    simp only [←Nat.card_eq_fintype_card, Set.card_union_le]
-  have hle₁ : Nat.card ↑(H.edgeSet ∪ {(s(z, x), m), (s(y, x), n)})
-      ≤ Nat.card H.edgeSet + Nat.card ({(s(z, x), m), (s(y, x), n)} : Set ((Sym2 V) × ℕ)) := by
-    simp only [Set.card_union_le]
-  lia
+theorem mount_size {H : Subgraph G} [G.IsSymm] [G.IsLoopless] {x y z : V} {n m : ℕ}
+    {hy : y ∈ H.verts} {hz : z ∈ H.verts} {h₀ : G.Adj y x n} {h₁ : G.Adj z x m}
+    [Fintype H.edgeSet] [Fintype (H.mount hy hz x h₀ h₁).edgeSet] :
+    (H.mount hy hz x h₀ h₁).size ≤ H.size + 2 := by
+  rw [size_eq_ncard, size_eq_ncard]
+  exact ncard_edgeSet_mount_le
 
 /-- SAND 2025, Theorem 2.1 (1-hop case): re-mounting `x` via its earliest edge to `y` and latest
 edge to `z` extends a spanner of `H.dismount x` to a spanner of `H`, when `H` is a clique. -/
@@ -372,30 +374,35 @@ instance {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm] [G.IsLoopless] {y
   · trivial
   · simp only [Set.finite_insert, Set.finite_singleton]
 
-/-- Mounting `x` back onto `H` via two hops on each side adds at most 4 edges. -/
-theorem twoHopMount_size {H : Subgraph G} [Fintype H.edgeSet] [G.IsSymm] [G.IsLoopless]
+/-- Instance-free form of `twoHopMount_size`: mounting `x` back onto `H` via two hops on each
+side adds at most 4 edges to `H.edgeSet`'s `Set.ncard`. -/
+theorem ncard_edgeSet_twoHopMount_le {H : Subgraph G} [G.IsSymm] [G.IsLoopless]
     {y y' z z' : V} {n n' m m' : ℕ} {hy : y ∈ H.verts} {hy' : y' ∈ H.verts} {hz : z ∈ H.verts}
     {hz' : z' ∈ H.verts} {x : V} {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n} {h₂ : G.Adj x z' m'}
-    {h₃ : G.Adj z' z m} [Fintype (H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃).edgeSet] :
-    Fintype.card (H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃).edgeSet
-      ≤ Fintype.card H.edgeSet + 4 := by
-  rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card,
-    H.twoHopMount_edgeSet hy hy' hz hz' x h₀ h₁ h₂ h₃]
-  have hle₀ :
-      Nat.card ({(s(z', z), m), (s(x, z'), m'),
-      (s(y', y), n), (s(x, y'), n')} : Set ((Sym2 V) × ℕ)) ≤ 4 := by
-    have h :  4 = 1 + 1 + 1 + 1 := by simp only [Nat.reduceAdd]
-    have heq₀ : Nat.card ({(s(z', z), m)} : Set (Sym2 V × ℕ)) = 1 := by simp
-    have heq₁ : Nat.card ({(s(x, z'), m')} : Set (Sym2 V × ℕ)) = 1 := by simp
-    have heq₂ : Nat.card ({(s(y', y), n)} : Set (Sym2 V × ℕ)) = 1 := by simp
-    have heq₃ : Nat.card ({(s(x, y'), n')} : Set (Sym2 V × ℕ)) = 1 := by simp
-    grind only [Set.card_union_le, !Set.insert_eq]
-  have hle₁ :
-      Nat.card ↑(H.edgeSet ∪ {⟨s(z', z), m⟩,  ⟨s(x, z'), m'⟩, ⟨s(y',y), n⟩, ⟨s(x,y'), n'⟩})
-      ≤ Nat.card H.edgeSet  + Nat.card ({(s(z', z), m), (s(x, z'), m'), (s(y', y), n),
-        (s(x, y'), n')} : Set ((Sym2 V) × ℕ)) := by
-    simp only [Set.card_union_le]
-  lia
+    {h₃ : G.Adj z' z m} :
+    (H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃).edgeSet.ncard ≤ H.edgeSet.ncard + 4 := by
+  rw [H.twoHopMount_edgeSet hy hy' hz hz' x h₀ h₁ h₂ h₃]
+  have aux4 : ∀ a b c d : Sym2 V × ℕ, ({a, b, c, d} : Set (Sym2 V × ℕ)).ncard ≤ 4 := by
+    intro a b c d
+    have h1 := Set.ncard_insert_le a ({b, c, d} : Set (Sym2 V × ℕ))
+    have h2 := Set.ncard_insert_le b ({c, d} : Set (Sym2 V × ℕ))
+    have h3 := Set.ncard_insert_le c ({d} : Set (Sym2 V × ℕ))
+    have h4 := Set.ncard_singleton d
+    omega
+  have hun := Set.ncard_union_le H.edgeSet
+    ({⟨s(z', z), m⟩, ⟨s(x, z'), m'⟩, ⟨s(y', y), n⟩, ⟨s(x, y'), n'⟩} : Set (Sym2 V × ℕ))
+  have hcard := aux4 (⟨s(z', z), m⟩ : Sym2 V × ℕ) ⟨s(x, z'), m'⟩ ⟨s(y', y), n⟩ ⟨s(x, y'), n'⟩
+  omega
+
+/-- Mounting `x` back onto `H` via two hops on each side adds at most 4 edges. -/
+theorem twoHopMount_size {H : Subgraph G} [G.IsSymm] [G.IsLoopless]
+    {y y' z z' : V} {n n' m m' : ℕ} {hy : y ∈ H.verts} {hy' : y' ∈ H.verts} {hz : z ∈ H.verts}
+    {hz' : z' ∈ H.verts} {x : V} {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n} {h₂ : G.Adj x z' m'}
+    {h₃ : G.Adj z' z m}
+    [Fintype H.edgeSet] [Fintype (H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃).edgeSet] :
+    (H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃).size ≤ H.size + 4 := by
+  rw [size_eq_ncard, size_eq_ncard]
+  exact ncard_edgeSet_twoHopMount_le
 
 /-- SAND 2025, §2.1 (2-hop case): re-mounting `x` via two hops on each side extends a spanner of
 `H.dismount x` to a spanner of `H`, when `H` is a clique. -/

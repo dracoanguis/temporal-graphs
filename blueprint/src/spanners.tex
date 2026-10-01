@@ -133,7 +133,11 @@ spanners at the subgraph level).
   If $H$ is symmetric and simple, the map from $\mathrm{EdgeSet}(H)$ to
   $H$'s footprint edge set, forgetting the time component, is a bijection:
   simplicity guarantees each unordered pair of $H$-adjacent vertices carries
-  a single time. In particular the two notions of size agree in this case
+  a single time. In particular the \texttt{Set.ncard} of $\mathrm{EdgeSet}(H)$
+  agrees with that of the footprint edge set in this case, with no
+  finiteness hypothesis needed
+  (\lean{TemporalGraph.Subgraph.ncard_edgeSet_of_simple}), and so does
+  $H.\mathrm{size}$ under a \texttt{Fintype} instance
   (\lean{TemporalGraph.Subgraph.size_of_simple}).
 \end{lemma}
 

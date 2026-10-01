@@ -239,7 +239,9 @@ SAND below — do not introduce a different numbering here.
   \label{lem:mount-size}
   \uses{def:dismount-mount,def:arcset-edgeset}
   \lean{TemporalGraph.Subgraph.mount_size}
+  \lean{TemporalGraph.Subgraph.ncard_edgeSet_mount_le}
   \lean{TemporalGraph.Subgraph.twoHopMount_size}
+  \lean{TemporalGraph.Subgraph.ncard_edgeSet_twoHopMount_le}
   \leanok
   Mounting a single vertex adds at most 2 edges to the edge set;
   two-hop mounting adds at most 4 edges.
@@ -304,6 +306,7 @@ SAND below — do not introduce a different numbering here.
   \uses{def:spanner-from-to}
   \lean{TemporalGraph.Subgraph.oneSidedDismountability}
   \lean{TemporalGraph.Subgraph.oneSidedMount_size}
+  \lean{TemporalGraph.Subgraph.ncard_edgeSet_oneSidedMount_le}
   \leanok
   In a bi-clique on $(S, T)$, if $x \in T$ is one-sided dismountable through
   $x'$ and $y$, a one-sided spanner from $S$ to $T \setminus \{x\}$ of the

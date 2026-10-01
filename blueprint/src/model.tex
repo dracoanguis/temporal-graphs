@@ -123,15 +123,21 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   \lean{TemporalGraph.mem_edgeSet_iff_or}
   \lean{TemporalGraph.arcSize}
   \lean{TemporalGraph.size}
+  \lean{TemporalGraph.size_eq_ncard}
   \leanok
   The \emph{arcs} of $G$ are the triples $(x,y,n)$ with $\mathrm{Adj}_G(x,y,n)$:
-  an oriented notion, counted (when finite) by $\mathrm{arcSize}$. The
+  an oriented notion, counted by $\mathrm{arcSize}$. The
   \emph{edges} of $G$ are unordered: pairs $(\{x,y\}, n)$ such that
   $\mathrm{Adj}_G(x,y,n)$ or $\mathrm{Adj}_G(y,x,n)$, counted by
   $\mathrm{size}$. An unordered pair is therefore an edge exactly when one of
   its orientations is an arc, with no hypothesis; when $G$ is symmetric the
   two orientations coincide and membership reduces to
-  $\mathrm{Adj}_G(x,y,n)$.
+  $\mathrm{Adj}_G(x,y,n)$. Both $\mathrm{size}$ and $\mathrm{arcSize}$ are
+  computable \texttt{Fintype.card} of the edge/arc set, under a
+  \texttt{Fintype} instance (the same pattern as Mathlib's
+  \texttt{SimpleGraph.degree}); the instance-free \texttt{Set.ncard} form is
+  always available via $\mathrm{size\_eq\_ncard}$ (an infinite edge or arc set
+  then counts as $0$).
 \end{definition}
 
 \begin{definition}[Symmetrization]

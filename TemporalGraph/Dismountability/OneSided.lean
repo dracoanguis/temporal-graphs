@@ -126,26 +126,28 @@ lemma oneSidedMount_le {H H₀ : Subgraph G} [G.IsSymm] [H₀.IsSymm] {x' y x : 
   · rw [H.oneSidedMount_verts]
     exact Set.union_subset h₂.left (Set.singleton_subset_iff.mpr h₃)
 
+/-- Instance-free form of `oneSidedMount_size`: mounting `x` back onto `H` with its two
+delegation edges adds at most 2 edges to `H.edgeSet`'s `Set.ncard`. -/
+theorem ncard_edgeSet_oneSidedMount_le {H : Subgraph G} [G.IsSymm] [G.IsLoopless] {x' y x : V}
+    {n m : ℕ} {hx' : x' ∈ H.verts} {hy : y ∈ H.verts} {h₀ : G.Adj y x' n} {h₁ : G.Adj y x m} :
+    (H.oneSidedMount hx' hy x h₀ h₁).edgeSet.ncard ≤ H.edgeSet.ncard + 2 := by
+  rw [H.oneSidedMount_edgeSet]
+  have aux2 : ∀ a b : Sym2 V × ℕ, ({a, b} : Set (Sym2 V × ℕ)).ncard ≤ 2 := by
+    intro a b
+    have h1 := Set.ncard_insert_le a ({b} : Set (Sym2 V × ℕ))
+    have h2 := Set.ncard_singleton b
+    omega
+  have hun := Set.ncard_union_le H.edgeSet ({⟨s(y, x), m⟩, ⟨s(y, x'), n⟩} : Set (Sym2 V × ℕ))
+  have hcard := aux2 (⟨s(y, x), m⟩ : Sym2 V × ℕ) ⟨s(y, x'), n⟩
+  omega
+
 /-- Mounting `x` back onto `H` with its two delegation edges adds at most 2 edges. -/
-theorem oneSidedMount_size {H : Subgraph G} [Fintype H.edgeSet] [G.IsSymm] [G.IsLoopless]
-    {x' y x : V} {n m : ℕ} {hx' : x' ∈ H.verts} {hy : y ∈ H.verts} {h₀ : G.Adj y x' n}
-    {h₁ : G.Adj y x m} [Fintype (H.oneSidedMount hx' hy x h₀ h₁).edgeSet] :
-    Fintype.card (H.oneSidedMount hx' hy x h₀ h₁).edgeSet ≤ Fintype.card H.edgeSet + 2 := by
-  -- Rewrite the edge set only once under `Nat.card`: under `Fintype.card` it clashes with the
-  -- `Fintype` instance that depends on it.
-  rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card, H.oneSidedMount_edgeSet]
-  have hle₀ : Nat.card ({(s(y, x), m), (s(y, x'), n)} : Set ((Sym2 V) × ℕ)) ≤ 2 := by
-    simp only [←Set.union_singleton]
-    have h : 2 = 1 + 1 := by simp only [Nat.reduceAdd]
-    have h' : Fintype.card ({(s(y, x), m)} : Set (Sym2 V × ℕ)) = 1 := by simp
-    have h'' : Fintype.card ({(s(y, x'), n)} : Set (Sym2 V × ℕ)) = 1 := by simp
-    conv => rhs ; rw [h] ; arg 1 ; rw [←h'']
-    conv => arg 2 ; arg 2 ; rw [←h']
-    simp only [←Nat.card_eq_fintype_card, Set.card_union_le]
-  have hle₁ : Nat.card ↑(H.edgeSet ∪ {(s(y, x), m), (s(y, x'), n)})
-      ≤ Nat.card H.edgeSet + Nat.card ({(s(y, x), m), (s(y, x'), n)} : Set ((Sym2 V) × ℕ)) := by
-    simp only [Set.card_union_le]
-  lia
+theorem oneSidedMount_size {H : Subgraph G} [G.IsSymm] [G.IsLoopless] {x' y x : V} {n m : ℕ}
+    {hx' : x' ∈ H.verts} {hy : y ∈ H.verts} {h₀ : G.Adj y x' n} {h₁ : G.Adj y x m}
+    [Fintype H.edgeSet] [Fintype (H.oneSidedMount hx' hy x h₀ h₁).edgeSet] :
+    (H.oneSidedMount hx' hy x h₀ h₁).size ≤ H.size + 2 := by
+  rw [size_eq_ncard, size_eq_ncard]
+  exact ncard_edgeSet_oneSidedMount_le
 
 /-- SAND 2025, §4.1 (split): one-sided spanners of `H` from `s₁` and from `s₂` to the same
 target `t` have a union that is a one-sided spanner from `s₁ ∪ s₂` to `t`. -/

@@ -953,6 +953,10 @@ section Size
 
 def order (H : Subgraph G) [Fintype H.verts] := Fintype.card H.verts
 
+/-- `order` is `Set.ncard` of `H.verts`: the instance-free form. -/
+theorem order_eq_ncard (H : Subgraph G) [Fintype H.verts] : H.order = H.verts.ncard :=
+  Set.fintypeCard_eq_ncard H.verts
+
 /-- Instance-free form of `size_of_simple`: with no finiteness hypothesis needed, `H.edgeSet` and
 `H.footprintEdgeSet` have the same `Set.ncard` when `H` is symmetric and simple. -/
 lemma ncard_edgeSet_of_simple (H : Subgraph G) [H.IsSymm] (h₀ : H.IsSimple) :

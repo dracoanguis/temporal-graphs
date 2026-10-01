@@ -73,6 +73,37 @@ lemma IsSpannerFromTo.sup {H H₁ H₂ : Subgraph G} {s₁ s₂ t : Set V}
   · exact Reachable.mono (toTemporalGraph_le le_sup_left) (h₀.2 x hx y hy hr)
   · exact Reachable.mono (toTemporalGraph_le le_sup_right) (h₁.2 x hx y hy hr)
 
+/-- SAND 2025, §4.1: in the bi-clique left by a clique that is not `{1,2}`-hop dismountable, a
+one-sided spanner from `V⁺` to `V⁻` that contains the matchings `M⁻` and `M⁺` is temporally
+connected on `H.verts`. -/
+theorem temporallyConnected_of_isSpannerFromTo {H S : Subgraph G}
+    [Finite H.verts] [Nontrivial H.verts] [H.IsSymm] [S.IsSymm]
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
+    (h₃ : ¬H.TwoHopDismountable)
+    (h₄ : S.IsSpannerFromTo (H.between H.vminus H.vplus) H.vplus H.vminus)
+    (h₅ : ∀ v ∈ H.vplus, ∀ a n, H.EarliestEdge v a n → S.Adj v a n)
+    (h₆ : ∀ b ∈ H.vminus, ∀ y n, H.LatestEdge b y n → S.Adj b y n) :
+    S.TemporallyConnected H.verts := by
+  have hSH : S ≤ H := h₄.1.trans between_le
+  have hbc := biclique_of_not_twoHopDismountable h₁ h₃
+  have hverts : H.verts = H.vplus ∪ H.vminus := by
+    rw [← vunion_eq_univ, vzero_empty_of_not_twoHopDismountable h₀ h₁ h₂ h₃, Set.union_empty,
+      Set.union_comm]
+  rw [hverts]
+  refine temporallyConnected_of_reachable_of_matchings (G := S.toTemporalGraph) ?_ ?_ ?_
+  · -- `M⁻`: every vertex of `V⁻` is the end of the earliest edge of a vertex of `V⁺`
+    intro a ha
+    obtain ⟨⟨v, n⟩, ⟨hv, he⟩, -⟩ := existsUnique_vplus_earliestEdge h₀ h₁ h₂ h₃ a ha
+    exact ⟨v, hv, n, earliestEdge_of_ge hSH he (h₅ v hv a n he)⟩
+  · -- `M⁺`: every vertex of `V⁺` is the end of the latest edge of a vertex of `V⁻`
+    intro y hy
+    obtain ⟨⟨b, n⟩, ⟨hb, hl⟩, -⟩ := existsUnique_vminus_latestEdge h₀ h₁ h₂ h₃ y hy
+    exact ⟨b, hb, n, latestEdge_of_ge hSH hl (h₆ b hb y n hl)⟩
+  · -- `V⁺ → V⁻`: a direct edge of the bi-clique, kept by the one-sided spanner
+    intro x hx y hy
+    obtain ⟨n, hn⟩ := hbc.adj_of_mem' hy hx
+    exact h₄.2 x hx y hy (reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨.Single hn⟩⟩)
+
 end OneSided
 
 end Subgraph

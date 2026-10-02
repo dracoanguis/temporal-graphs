@@ -56,6 +56,31 @@ spanners at the subgraph level).
   $\mathrm{Verts}(H) \subseteq \mathrm{Verts}(H')$.
 \end{lemma}
 
+\begin{lemma}[$\le$ is compatible with \texttt{toTemporalGraph}]
+  \label{lem:toTemporalGraph-le}
+  \uses{def:subgraph-order}
+  \lean{TemporalGraph.Subgraph.toTemporalGraph_le}
+  \lean{TemporalGraph.Subgraph.toTemporalGraph_le_self}
+  \leanok
+  If $H \le H'$ as sub-temporal-graphs of $G$, then
+  $H.\mathrm{toTemporalGraph} \le H'.\mathrm{toTemporalGraph}$, the inherited
+  order of Definition~\ref{def:spanning-order}. Every sub-temporal-graph's
+  $\mathrm{toTemporalGraph}$ is, in particular, a spanning sub-temporal-graph
+  of $G$ itself.
+\end{lemma}
+
+\begin{definition}[Union of sub-temporal-graphs]
+  \label{def:subgraph-sup}
+  \uses{def:subgraph-order,def:arcset-edgeset}
+  \lean{TemporalGraph.Subgraph.sup_edgeSet}
+  \leanok
+  Sub-temporal-graphs of $G$ form a \texttt{SemilatticeSup}: $H_1 \sqcup H_2$
+  has vertex set $\mathrm{Verts}(H_1) \cup \mathrm{Verts}(H_2)$ and keeps an
+  edge of either $H_1$ or $H_2$, and it is the least upper bound of $H_1$
+  and $H_2$ for the order of Definition~\ref{def:subgraph-order}. Its edge
+  set is the union $\mathrm{EdgeSet}(H_1) \cup \mathrm{EdgeSet}(H_2)$.
+\end{definition}
+
 \begin{definition}[Induced, added, deleted sub-temporal-graphs]
   \label{def:subgraph-induce-delete-add}
   \uses{def:sub-temporal-graph}
@@ -75,6 +100,30 @@ spanners at the subgraph level).
   Definition~\ref{def:subgraph-order}.
 \end{definition}
 
+\begin{lemma}[Finiteness is preserved by induction and deletion]
+  \label{lem:subgraph-finite-induce-delete}
+  \uses{def:subgraph-induce-delete-add}
+  \lean{TemporalGraph.Subgraph.finite_induce_verts}
+  \lean{TemporalGraph.Subgraph.deleteVerts_finite}
+  \leanok
+  If $\mathrm{Verts}(H)$ is finite, then so is $\mathrm{Verts}(H[s])$ for
+  any $s \subseteq \mathrm{Verts}(H)$ (in particular, so is
+  $\mathrm{Verts}(H \setminus s)$, as an instance named
+  \texttt{deleteVerts\_finite}): both vertex sets are subsets of
+  $\mathrm{Verts}(H)$.
+\end{lemma}
+
+\begin{lemma}[Finitely many vertices, simple: finitely many edges]
+  \label{lem:subgraph-finite-edgeSet-of-simple}
+  \uses{def:sub-spanning-clique,def:arcset-edgeset}
+  \lean{TemporalGraph.Subgraph.finite_edgeSet_of_finite_simple}
+  \leanok
+  If $H$ is simple (Definition~\ref{def:is-simple-clique}) and
+  $\mathrm{Verts}(H)$ is finite, then $\mathrm{EdgeSet}(H)$ is finite: there is
+  at most one time per unordered pair of vertices, and there are finitely
+  many such pairs.
+\end{lemma}
+
 \begin{definition}[Adding a single edge]
   \label{def:subgraph-addEdge}
   \uses{def:sub-temporal-graph}
@@ -88,15 +137,16 @@ spanners at the subgraph level).
   find the reverse arc $y \to x$ back in $G$.
 \end{definition}
 
-\begin{definition}[Incidence set]
-  \label{def:incidence-set}
-  \uses{def:sub-temporal-graph}
-  \lean{TemporalGraph.incidenceSet}
+\begin{lemma}[Adding an edge changes the edge set by one]
+  \label{lem:subgraph-addEdge-edgeSet}
+  \uses{def:subgraph-addEdge,def:arcset-edgeset}
+  \lean{TemporalGraph.Subgraph.addEdge_edgeSet}
+  \lean{TemporalGraph.Subgraph.ncard_edgeSet_addEdge_le}
   \leanok
-  The \emph{incidence set} of $x$ in $H$ (a temporal graph, or a sub-temporal-graph through
-  inheritance) is the set of pairs $(y,n)$ such that $H.\mathrm{Adj}(x,y,n)$: $x$'s out-neighbors, each paired with a time
-  witnessing the edge.
-\end{definition}
+  $H.\mathrm{addEdge}$'s edge set is $\mathrm{EdgeSet}(H)$ with the new pair
+  $(\{x,y\}, n)$ inserted; in particular its \texttt{Set.ncard} is at most
+  $|\mathrm{EdgeSet}(H)| + 1$, with no finiteness hypothesis needed.
+\end{lemma}
 
 \begin{lemma}[Earliest / latest edge from a finite incidence set]
   \label{lem:earliest-latest-edge-exists}
@@ -181,6 +231,16 @@ spanners at the subgraph level).
   Chapter~\ref{chap:dismountability} to transfer a spanner of a smaller
   clique back onto the original one.
 \end{definition}
+
+\begin{lemma}[A reachable pair of distinct vertices lies in $H$]
+  \label{lem:subgraph-mem-verts-of-reachable}
+  \uses{def:sub-temporal-graph,def:reachable}
+  \lean{TemporalGraph.Subgraph.mem_verts_of_reachable}
+  \leanok
+  If $x \neq y$ and $y$ is reachable from $x$ in $H$, then both
+  $x, y \in \mathrm{Verts}(H)$: a nonempty witnessing walk has a first and a
+  last edge, both of $H$, giving each endpoint's membership.
+\end{lemma}
 
 \begin{definition}[Temporal spanner]
   \label{def:spanner}

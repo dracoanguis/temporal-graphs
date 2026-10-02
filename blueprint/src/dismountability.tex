@@ -188,12 +188,17 @@ SAND below — do not introduce a different numbering here.
 \begin{theorem}[Neighbor functions are bijections --- SAND Corollary 3.3]
   \label{thm:neighbor-fn-bijective}
   \uses{lem:neighbor-fn-injective,lem:card-bounds}
+  \lean{TemporalGraph.Subgraph.earliestNeighborFn_mapsTo}
+  \lean{TemporalGraph.Subgraph.latestNeighborFn_mapsTo}
   \lean{TemporalGraph.Subgraph.earliestNeighborFn_bijOn}
   \lean{TemporalGraph.Subgraph.latestNeighborFn_bijOn}
   \leanok
   When $H$ is finite, nontrivial, simple, proper, symmetric, and not
   two-hop dismountable, both $\mathrm{f_{ee}}$ and $\mathrm{f_{le}}$ are bijections between the
-  sets $V^+(H)$ and $V^-(H)$ (\texttt{Set.BijOn}).
+  sets $V^+(H)$ and $V^-(H)$ (\texttt{Set.BijOn}): $\mathrm{f_{ee}}$ maps $V^+(H)$ into
+  $V^-(H)$ and $\mathrm{f_{le}}$ maps $V^-(H)$ into $V^+(H)$
+  (\texttt{Set.MapsTo}), and both maps are injective (Lemma above), hence
+  bijective by the cardinality equality.
 \end{theorem}
 
 \begin{lemma}[Perfect matchings between $V^-$ and $V^+$ --- SAND Corollary 3.3 (1)--(2)]
@@ -336,4 +341,16 @@ SAND below — do not introduce a different numbering here.
   $S_i \cup T$ are bi-cliques on $(S_i, T)$, and one-sided spanners of these
   two subproblems combine, by union, into a one-sided spanner of the
   bi-clique from $S_1 \cup S_2$ to $T$.
+\end{lemma}
+
+\begin{lemma}[Splitting a set into halves]
+  \label{lem:exists-ncard-halves}
+  \lean{TemporalGraph.Subgraph.exists_ncard_halves}
+  \leanok
+  Any set $S$ has a subset $S_1 \subseteq S$ with $|S_1| = \lceil |S|/2 \rceil$
+  and $|S \setminus S_1| = \lfloor |S|/2 \rfloor$, unconditionally (an infinite
+  $S$ has \texttt{Set.ncard} $0$, and the statement holds trivially with
+  $S_1 = \emptyset$). Combined with Lemma~\ref{lem:spanner-from-to-split}
+  (taking $S_1, S_2 = S_1, S \setminus S_1$), this is the recursive splitting
+  step of the one-sided dismounting strategy, SAND 2025 \S~4.1.
 \end{lemma}

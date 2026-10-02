@@ -92,6 +92,17 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   drive the dismountability argument of Chapter~\ref{chap:dismountability}.
 \end{definition}
 
+\begin{definition}[Incidence set]
+  \label{def:incidence-set}
+  \uses{def:temporal-graph}
+  \lean{TemporalGraph.incidenceSet}
+  \leanok
+  The \emph{incidence set} of $x$ in $G$ (a temporal graph, or a
+  sub-temporal-graph through inheritance, Chapter~\ref{chap:spanners}) is the
+  set of pairs $(y,n)$ such that $\mathrm{Adj}_G(x,y,n)$: $x$'s out-neighbors,
+  each paired with a time witnessing the edge.
+\end{definition}
+
 \begin{definition}[Spanning sub-temporal-graph order]
   \label{def:spanning-order}
   \uses{def:temporal-graph}
@@ -101,6 +112,19 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   every edge of $G$ is an edge of $H$: $\mathrm{Adj}_G(x,y,n) \Rightarrow
   \mathrm{Adj}_H(x,y,n)$ for all $x,y,n$.
 \end{definition}
+
+\begin{lemma}[Monotonicity of simple, proper, happy]
+  \label{lem:monotone-simple-proper-happy}
+  \uses{def:spanning-order,def:is-simple-clique,def:is-proper-happy}
+  \lean{TemporalGraph.IsSimple.mono}
+  \lean{TemporalGraph.IsProper.mono}
+  \lean{TemporalGraph.IsHappy.mono}
+  \leanok
+  If $H$ is simple (resp.\ proper, resp.\ happy) and $G \le H$
+  (Definition~\ref{def:spanning-order}), then $G$ is simple (resp.\ proper,
+  resp.\ happy): each of these predicates only restricts the edges that are
+  present, so it is inherited by any spanning sub-temporal-graph.
+\end{lemma}
 
 \begin{definition}[General sub-temporal-graph]
   \label{def:is-subgraph-of}
@@ -124,6 +148,7 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   \lean{TemporalGraph.arcSize}
   \lean{TemporalGraph.size}
   \lean{TemporalGraph.size_eq_ncard}
+  \lean{TemporalGraph.arcSize_eq_ncard}
   \leanok
   The \emph{arcs} of $G$ are the triples $(x,y,n)$ with $\mathrm{Adj}_G(x,y,n)$:
   an oriented notion, counted by $\mathrm{arcSize}$. The
@@ -221,4 +246,26 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   t)$ exactly when its simple footprint (the underlying undirected static
   graph) is bipartite with the same witness. This provides a bridge to
   Mathlib's \texttt{SimpleGraph.IsBipartiteWith}.
+\end{lemma}
+
+\begin{lemma}[A bi-clique part reaches the other]
+  \label{lem:reachable-of-isBicliqueWith}
+  \uses{def:is-biclique,def:reachable}
+  \lean{TemporalGraph.Subgraph.reachable_of_isBicliqueWith}
+  \leanok
+  If $H$ is a bi-clique with witness $(s, t)$, every vertex of $s$ reaches
+  every vertex of $t$ in $H$: they are joined directly by an edge.
+\end{lemma}
+
+\begin{lemma}[Bi-cliques under induce and deleteVerts]
+  \label{lem:isBicliqueWith-induce-deleteVerts}
+  \uses{def:is-biclique,def:subgraph-induce-delete-add}
+  \lean{TemporalGraph.Subgraph.isBicliqueWith_induce}
+  \lean{TemporalGraph.Subgraph.isBicliqueWith_deleteVerts}
+  \leanok
+  Let $H$ be a bi-clique with witness $(s, t)$. For $s' \subseteq s$, the
+  sub-temporal-graph induced by $H$ on $s' \cup t$ is a bi-clique with
+  witness $(s', t)$ (SAND 2025, \S4.1, the restriction used by the one-sided
+  split step). Dually, deleting any set $u$ of vertices from $H$ leaves a
+  bi-clique with witness $(s \setminus u, t \setminus u)$.
 \end{lemma}

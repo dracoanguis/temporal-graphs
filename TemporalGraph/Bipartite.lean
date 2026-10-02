@@ -323,7 +323,7 @@ theorem completeBipartite_isBiclique (f : α → β → ℕ) :
 
 /-- `completeBipartite f` is simple: at most one time per ordered pair. -/
 theorem completeBipartite_isSimple (f : α → β → ℕ) : (completeBipartite f).IsSimple := by
-  unfold TemporalGraph.IsSimple; grind
+  grind
 
 /-- `completeBipartite f` is proper when `f` is injective in each argument separately. -/
 theorem completeBipartite_isProper {f : α → β → ℕ} (h₁ : ∀ a, (f a).Injective)

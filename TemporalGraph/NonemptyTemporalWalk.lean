@@ -113,9 +113,8 @@ lemma exists_adj_snd {x y : V} {n m : ℕ} (tw : G.NonemptyTemporalWalk x n y m)
 lemma EarliestEdge.time_bound_of_edge {x y z : V} {n m k : ℕ}
     (tw : G.NonemptyTemporalWalk x n y m) (h : G.EarliestEdge x z k) :
     k ≤ n := by
-  rw [EarliestEdge] at h
   induction tw with
-  |Single h' => exact h.right _ _ h'
+  |Single h' => grind
   |Step _ _ _ hi => exact hi
 
 /-- For a symmetric graph, the latest edge out of a walk's end vertex occurs no earlier than the
@@ -123,9 +122,8 @@ walk's end time. -/
 lemma LatestEdge.time_bound_of_edge {x y z : V} {n m k : ℕ} [G.IsSymm]
     (tw : G.NonemptyTemporalWalk x n y m) (h : G.LatestEdge y z k) :
     m ≤ k := by
-  rw [LatestEdge] at h
   cases tw with
-  | Single h' => exact h.right _ _ h'.symm
+  | Single h' => grind
   | Step _ h' _ => exact h.right _ _ h'.symm
 
 

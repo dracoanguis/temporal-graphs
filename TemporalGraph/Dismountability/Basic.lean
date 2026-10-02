@@ -258,13 +258,13 @@ lemma vplus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} [H.IsSymm]
     constructor
     · apply Or.inr
       use x, z, n, m
-      exact ⟨by simpa using h₂, hee, by grind [TemporalGraph.EarliestEdge], by assumption⟩
+      exact ⟨by simpa using h₂, hee, by grind, by assumption⟩
     · apply Or.inl ; assumption
   · use x
     constructor
     · apply Or.inr
       use y, z', m, n
-      exact ⟨by simpa using h₂.symm, hee', by grind [TemporalGraph.EarliestEdge], by omega⟩
+      exact ⟨by simpa using h₂.symm, hee', by grind, by omega⟩
     · apply Or.inl ; assumption
 
 /-- SAND 2025, Lemma 3.2: distinct vertices of `vminus` have distinct latest neighbors. -/
@@ -282,13 +282,13 @@ lemma vminus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} [H.IsSymm]
     · apply Or.inl ; assumption
     · apply Or.inr
       use x, z, n, m
-      exact ⟨by simpa using h₂, hle, by grind [TemporalGraph.LatestEdge], by assumption⟩
+      exact ⟨by simpa using h₂, hle, by grind, by assumption⟩
   · use x
     constructor
     · apply Or.inl ; assumption
     · apply Or.inr
       use y, z', m, n
-      exact ⟨by simpa using h₂.symm, hle', by grind [TemporalGraph.LatestEdge], by omega⟩
+      exact ⟨by simpa using h₂.symm, hle', by grind, by omega⟩
 
 end TwoHop
 
@@ -331,13 +331,7 @@ lemma earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : S
   · simp [h]
   · intro ⟨z, m⟩ h'
     simp only [Prod.mk.injEq]
-    have hle := h.right _ _ h'.left
-    have hle' := h'.right _ _ h.left
-    have heq := hle.ge_iff_eq.mp hle'
-    have hadj := h'.left
-    rw [heq.symm] at hadj
-    have heq' := h₂ x y z n ⟨h.left, hadj⟩
-    exact ⟨heq'.symm, heq.symm⟩
+    grind
 
 /-- Every vertex of a finite, nontrivial, simple, proper clique subgraph has a unique latest
 incident edge. -/
@@ -352,13 +346,7 @@ lemma latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : Sub
   · simp [h]
   · intro ⟨z, m⟩ h'
     simp only [Prod.mk.injEq]
-    have hle := h.right _ _ h'.left
-    have hle' := h'.right _ _ h.left
-    have heq := hle.ge_iff_eq.mp hle'
-    have hadj := h'.left
-    rw [heq] at hadj
-    have heq' := h₂ x y z n ⟨h.left, hadj⟩
-    exact ⟨heq'.symm, heq⟩
+    grind
 
 /-- Every vertex of `H.verts`, in a finite, nontrivial, simple, proper clique subgraph, has a
 unique earliest neighbor. -/
@@ -371,9 +359,8 @@ lemma existsUnique_earliestNeighbor {H : Subgraph G}
     earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique h₀ h₁ h₂ x hx
   refine ⟨y, ⟨n, hee⟩, ?_⟩
   intro z ⟨m, hee'⟩
-  obtain heq := hunique ⟨z, m⟩ hee'
-  rw [Prod.eq_iff_fst_eq_snd_eq] at heq
-  exact heq.left
+  have := hunique ⟨z, m⟩ hee'
+  grind
 
 /-- `EarliestNeighbor` witnesses membership in `vminus`. -/
 lemma earliestNeighbor_mem_vminus {H : Subgraph G} {x y : V} (h : H.EarliestNeighbor x y) :
@@ -391,9 +378,8 @@ lemma existsUnique_latestNeighbor {H : Subgraph G}
     latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique h₀ h₁ h₂ x hx
   refine ⟨y, ⟨n, hle⟩, ?_⟩
   intro z ⟨m, hle'⟩
-  obtain heq := hunique ⟨z, m⟩ hle'
-  rw [Prod.eq_iff_fst_eq_snd_eq] at heq
-  exact heq.left
+  have := hunique ⟨z, m⟩ hle'
+  grind
 
 /-- `LatestNeighbor` witnesses membership in `vplus`. -/
 lemma latestNeighbor_mem_vplus {H : Subgraph G} {x y : V} (h : H.LatestNeighbor x y) :
@@ -574,9 +560,7 @@ lemma existsUnique_vplus_earliestEdge {H : Subgraph G}
   have hfz : earliestNeighborFn h₀ h₁ h₂ z = x :=
     (earliestNeighborFn_eq h₀ h₁ h₂ (vplus_sub_verts hz)).mpr ⟨m, hee'⟩
   have heqv : z = y := hbij.injOn hz hy (hfz.trans hfy.symm)
-  rw [heqv] at hee'
-  have heq' := h₀ y x n m ⟨hee.left, hee'.left⟩
-  exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heqv, heq'.symm⟩
+  grind
 
 /-- SAND 2025, Corollary 3.3 (2): `{e⁺(v) : v ∈ V⁻}` is a perfect matching, i.e. every vertex of
 `vplus` has a unique latest edge from a vertex of `vminus`. -/
@@ -594,9 +578,7 @@ lemma existsUnique_vminus_latestEdge {H : Subgraph G}
   have hfz : latestNeighborFn h₀ h₁ h₂ z = x :=
     (latestNeighborFn_eq h₀ h₁ h₂ (vminus_sub_verts hz)).mpr ⟨m, hle'⟩
   have heqv : z = y := hbij.injOn hz hy (hfz.trans hfy.symm)
-  rw [heqv] at hle'
-  have heq' := h₀ y x n m ⟨hle.left, hle'.left⟩
-  exact Prod.eq_iff_fst_eq_snd_eq.mpr ⟨heqv, heq'.symm⟩
+  grind
 
 end NeighborFunctions
 
@@ -676,8 +658,7 @@ lemma earliestEdge_reciprocity {H : Subgraph G} [H.IsSymm] {u v : V} {n : ℕ}
   by_contra! hlt
   -- `w` reaches `v` in two hops, through `u` then `e⁻(v)`; and `w ∈ V⁺`
   refine h₁ ⟨h₀, w, Or.inr ⟨v, u, n, j, ?_, h, hj, hlt.le⟩, Or.inl hw⟩
-  rintro rfl
-  exact absurd (h.2 u j hj.symm) (by omega)
+  grind
 
 /-- SAND 2025, Lemma 3.5 (Reciprocity), second statement: if `u v` occurs at time `n` as `u`'s
 latest edge, every edge from `v` to a vertex of `vminus` occurs no later than `n`. -/
@@ -688,8 +669,7 @@ lemma latestEdge_reciprocity {H : Subgraph G} [H.IsSymm] {u v : V} {n : ℕ}
   by_contra! hlt
   -- `w ∈ V⁻`; and `u` reaches `w` in two hops, through `e⁺(u)` then `v`
   refine h₁ ⟨h₀, w, Or.inl hw, Or.inr ⟨u, v, n, j, ?_, h, hj, hlt.le⟩⟩
-  rintro rfl
-  exact absurd (h.2 v j hj.symm) (by omega)
+  grind
 
 end Reciprocity
 

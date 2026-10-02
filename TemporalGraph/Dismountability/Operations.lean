@@ -225,13 +225,7 @@ theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G
       apply Set.union_subset_union
       · apply edgeSet_le
         apply le_trans h₅.left dismount_le
-      · have : (s(z, x), m) ∈ H.edgeSet := by
-          rw [H.mem_edgeSet]
-          apply h₄.left
-        have : (s(y, x), n) ∈ H.edgeSet := by
-          rw [H.mem_edgeSet]
-          apply h₃.left
-        grind
+      · grind
     · simp only [mount_verts, h₅.right.1, induce_verts, Set.union_singleton, hx,
       Set.insert_sdiff_self_of_mem, subset_refl]
   have htc : (H'.mount hy hz x h₁ h₂).TemporallyConnectedSubgraph := by
@@ -436,19 +430,7 @@ theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSy
       apply Set.union_subset_union
       · apply edgeSet_le
         apply le_trans h₇.left dismount_le
-      · have : (s(z, z'), m) ∈ H.edgeSet := by
-          rw [H.mem_edgeSet]
-          apply h₆.1.1
-        have : (s(x, z'), m') ∈ H.edgeSet := by
-          rw [H.mem_edgeSet]
-          apply h₆.2.2
-        have : (s(y, y'), n) ∈ H.edgeSet := by
-          rw [H.mem_edgeSet]
-          apply h₅.1.1
-        have : (s(x, y'), n') ∈ H.edgeSet := by
-          rw [H.mem_edgeSet]
-          apply h₅.2.2
-        grind
+      · grind
     · exact heq.le
   have htc : (H'.twoHopMount hy hy' hz hz' x h₁ h₂ h₃ h₄).TemporallyConnectedSubgraph := by
     apply twoHopMount_TC H' hy hy' hz hz' x

@@ -141,9 +141,7 @@ theorem Adj.symm [G.IsSymm] (h : G.Adj x y n) : G.Adj y x n :=
   adj_symm h
 
 /-- In a loopless graph, adjacent vertices are distinct. -/
-theorem ne_of_adj [G.IsLoopless] (h : G.Adj x y n) : x ≠ y := by
-  rintro rfl
-  exact G.irrefl h
+theorem ne_of_adj [G.IsLoopless] (h : G.Adj x y n) : x ≠ y := by grind
 
 /-- Dot-notation form of `ne_of_adj`. -/
 @[grind →]

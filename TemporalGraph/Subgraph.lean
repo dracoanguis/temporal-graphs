@@ -616,12 +616,7 @@ lemma addVerts_verts (H : Subgraph G) (s : Set V) : (H.addVerts s).verts = H.ver
 
 /-- Every adjacency of `H` is still one of `H.addVerts s`. -/
 lemma addVerts_Adj {x y : V} {n : ℕ} {H : Subgraph G} {s : Set V} :
-    H.Adj x y n → (H.addVerts s).Adj x y n := by
-  have hinc : H.verts ⊆ (H.addVerts s).verts := by simp
-  intro h
-  have hin := hinc <| H.edge_vert h
-  have hin' := hinc <| H.edge_vert' h
-  exact ⟨hin, hin', h⟩
+    H.Adj x y n → (H.addVerts s).Adj x y n := by simp; grind
 
 /-- `H` is below `H.addVerts s`. -/
 @[simp]

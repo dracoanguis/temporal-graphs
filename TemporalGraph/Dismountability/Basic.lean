@@ -258,25 +258,13 @@ lemma vplus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} [H.IsSymm]
     constructor
     · apply Or.inr
       use x, z, n, m
-      constructor
-      · simpa using h₂
-      · constructor
-        · assumption
-        · constructor
-          · rw [←hzz'] at hee' ; exact H.adj_symm hee'.left
-          · assumption
+      exact ⟨by simpa using h₂, hee, by grind [TemporalGraph.EarliestEdge], by assumption⟩
     · apply Or.inl ; assumption
   · use x
     constructor
     · apply Or.inr
       use y, z', m, n
-      constructor
-      · simpa using h₂.symm
-      · constructor
-        · assumption
-        · constructor
-          · rw [hzz'] at hee ; exact H.adj_symm hee.left
-          · push Not at ht ; apply ht.le
+      exact ⟨by simpa using h₂.symm, hee', by grind [TemporalGraph.EarliestEdge], by omega⟩
     · apply Or.inl ; assumption
 
 /-- SAND 2025, Lemma 3.2: distinct vertices of `vminus` have distinct latest neighbors. -/
@@ -294,25 +282,13 @@ lemma vminus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} [H.IsSymm]
     · apply Or.inl ; assumption
     · apply Or.inr
       use x, z, n, m
-      constructor
-      · simpa using h₂
-      · constructor
-        · assumption
-        · constructor
-          · rw [←hzz'] at hle' ; exact H.adj_symm hle'.left
-          · assumption
+      exact ⟨by simpa using h₂, hle, by grind [TemporalGraph.LatestEdge], by assumption⟩
   · use x
     constructor
     · apply Or.inl ; assumption
     · apply Or.inr
       use y, z', m, n
-      constructor
-      · simpa using h₂.symm
-      · constructor
-        · assumption
-        · constructor
-          · rw [hzz'] at hle ; exact H.adj_symm hle.left
-          · push Not at ht ; apply ht.le
+      exact ⟨by simpa using h₂.symm, hle', by grind [TemporalGraph.LatestEdge], by omega⟩
 
 end TwoHop
 

@@ -114,7 +114,7 @@ lemma EarliestEdge.time_bound_of_edge {x y z : V} {n m k : ℕ}
     (tw : G.NonemptyTemporalWalk x n y m) (h : G.EarliestEdge x z k) :
     k ≤ n := by
   induction tw with
-  |Single h' => grind only [= EarliestEdge.eq_1]
+  | Single h' => grind only [= EarliestEdge.eq_1]
   |Step _ _ _ hi => exact hi
 
 /-- For a symmetric graph, the latest edge out of a walk's end vertex occurs no earlier than the
@@ -131,8 +131,7 @@ section API
 
 variable {x y z : V} {n m k l : ℕ}
 
-/-- The length of a concatenation is the sum of the lengths, used to bound journeys assembled
-inside a spanner. -/
+/-- The length of a concatenation is the sum of the lengths. -/
 @[simp, grind =]
 theorem length_append (p : G.NonemptyTemporalWalk x n y m) (q : G.NonemptyTemporalWalk y k z l)
     (h₀ : m ≤ k) : (p.append q h₀).length = p.length + q.length := by
@@ -153,8 +152,8 @@ theorem length_mapLe {G' : TemporalGraph V} (h₀ : G ≤ G') (p : G.NonemptyTem
 
 /-- Mapping a walk along `G ≤ G'` preserves its support. -/
 @[simp, grind =]
-theorem support_mapLe {G' : TemporalGraph V} (h₀ : G ≤ G') (p : G.NonemptyTemporalWalk x n y m) :
-    (p.mapLe h₀).support = p.support := by
+theorem support_mapLe {G' : TemporalGraph V} (h₀ : G ≤ G')
+    (p : G.NonemptyTemporalWalk x n y m) : (p.mapLe h₀).support = p.support := by
   induction p <;> grind
 
 /-- Mapping a walk along `G ≤ G'` preserves its arcs. -/

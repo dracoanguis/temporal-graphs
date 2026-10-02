@@ -46,6 +46,8 @@ the subgraph counterparts of the vertex- and edge-indexed notions of `TemporalGr
   union of vertex sets and arcs (`sup_verts`, `sup_adj`, `sup_isSymm`, `sup_edgeSet`).
 * `TemporalGraph.Subgraph.toTemporalGraph_le`, `TemporalGraph.Subgraph.toTemporalGraph_le_self` :
   `≤` on subgraphs is compatible with the inherited `≤` on `TemporalGraph`, via `toTemporalGraph`.
+* `TemporalGraph.Subgraph.le_def` : unfolding of `≤` into vertex inclusion and pointwise
+  adjacency implication.
 * `TemporalGraph.Subgraph.le_iff_edgeSet_and_verts` : a symmetric subgraph is below another
   exactly when its vertices and its edges are.
 * `TemporalGraph.Subgraph.earliestEdge_exists_of_nonempty_finite_incidenceSet` and its `latest`

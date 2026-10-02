@@ -24,6 +24,11 @@ to contain at least one edge. Times must be non-decreasing along the walk.
 * `nondecreasing_time` : Times are non-decreasing along a walk
 * `exists_adj_fst` : The first vertex of a walk has an outgoing arc
 * `exists_adj_snd` : The last vertex of a walk has an incoming arc
+* `length_append`, `arcs_append` : Concatenation lemmas for walk length and arcs
+* `length_mapLe`, `support_mapLe`, `arcs_mapLe` : Mapping preserves length, support and arcs
+* `mapLe_append`, `mapLe_mapLe` : Composition lemmas for `mapLe`
+* `start_mem_support`, `end_mem_support` : Walk endpoints belong to the support
+* `adj_of_mem_arcs` : Every arc in a walk is an edge within the time bounds
 -/
 
 universe u

@@ -18,6 +18,12 @@ Defines `TemporalWalk`, an inductive type for temporal walks that may be empty. 
 * `arcs` : The list of directed edges
 * `temporalWalkSet` : The set of all walks between two vertices
 * `mapLe` : Transport a walk along a spanning-subgraph inclusion `G ≤ G'`
+
+## Main results
+* `nondecreasing_time` : Times are non-decreasing along a walk
+* `length_mapLe`, `support_mapLe`, `arcs_mapLe` : Mapping preserves length, support and arcs
+* `start_mem_support`, `end_mem_support` : Walk endpoints belong to the support
+* `adj_of_mem_arcs` : Every arc in a walk is an edge within the time bounds
 -/
 
 universe u

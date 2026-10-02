@@ -509,6 +509,13 @@ lemma isInduced_of_top_induce {s : Set V} :
   intro x hx y hy n h
   refine ⟨hx, hy, h⟩
 
+/-- Inducing a finite subgraph on a subset of its vertices stays finite: `(H.induce s).verts` is
+`s` itself, so finiteness transfers along `s ⊆ H.verts`. Stated as a lemma rather than an
+instance, since `s ⊆ H.verts` is not a class: use with `haveI`. -/
+lemma finite_induce_verts (H : Subgraph G) [Finite H.verts] {s : Set V} (h₀ : s ⊆ H.verts) :
+    Finite (H.induce s).verts :=
+  Finite.Set.subset H.verts h₀
+
 end Induce
 
 section DeleteVerts
@@ -531,6 +538,11 @@ instance deleteVerts_isSymm (H : Subgraph G) [H.IsSymm] (s : Set V) :
     (H.deleteVerts s).IsSymm :=
   induce_isSymm H _
 
+/-- Deleting vertices from a finite subgraph stays finite: `(H.deleteVerts s).verts` is a subset
+of `H.verts`. -/
+instance deleteVerts_finite (H : Subgraph G) [Finite H.verts] (s : Set V) :
+    Finite (H.deleteVerts s).verts :=
+  Finite.Set.subset H.verts deleteVerts_le.1
 
 end DeleteVerts
 
@@ -843,6 +855,14 @@ lemma edgeSet_le {H : Subgraph G} {H' : Subgraph G} (h₀ : H ≤ H') :
     H.edgeSet ⊆ H'.edgeSet := by
   intro _ ⟨x, y, hp, h⟩
   exact ⟨x, y, hp, h₀.right h⟩
+
+/-- The edges of a union of subgraphs are the union of their edges. -/
+@[simp]
+theorem sup_edgeSet (H₁ H₂ : Subgraph G) : (H₁ ⊔ H₂).edgeSet = H₁.edgeSet ∪ H₂.edgeSet := by
+  ext ⟨p, n⟩
+  induction p using Sym2.ind with
+  | _ x y =>
+    simp only [TemporalGraph.mem_edgeSet_iff_or, sup_adj, Set.mem_union, or_or_or_comm]
 
 lemma le_iff_edgeSet_and_verts {H H' : Subgraph G} [H'.IsSymm] :
     H ≤ H' ↔ H.edgeSet ⊆ H'.edgeSet ∧ H.verts ⊆ H'.verts := by

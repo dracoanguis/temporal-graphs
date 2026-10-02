@@ -266,6 +266,13 @@ SAND below — do not introduce a different numbering here.
 
 \section*{One-sided dismountability (SAND 2025, \S~4.1)}
 
+The one-sided strategy is due to Angrick, Bals, Friedrich, Gawendowicz,
+Hastrich, Klodt, Lenzner, Schmidt, Skretas and Wells (\emph{How to Reduce
+Temporal Cliques to Find Sparse Spanners}, ESA 2024), as recalled in SAND 2025,
+\S~4.1: spanners are only required to connect a source part to a target part
+of a temporal bi-clique, and a target vertex sharing its latest neighbor in
+the source with another target can be dismounted at the cost of two edges.
+
 \begin{definition}[One-sided spanner]
   \label{def:spanner-from-to}
   \uses{def:sub-temporal-graph,def:reachable}

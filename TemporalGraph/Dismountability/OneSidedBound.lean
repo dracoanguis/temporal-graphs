@@ -10,9 +10,10 @@ import Mathlib.Analysis.SpecialFunctions.Log.Base
 # Size of one-sided spanners
 
 This module bounds the size of the one-sided spanner built by `oneSidedDismountability`
-(`TemporalGraph/Dismountability/OneSided.lean`) by repeated halving, following SAND 2025, §4.1:
-splitting the source part of a bi-clique into two halves of size `⌈n / 2⌉` and `⌊n / 2⌋`, then
-dismounting the other half's targets at two edges each, yields the recurrence
+(`TemporalGraph/Dismountability/OneSided.lean`) by repeated halving. The strategy is due to
+Angrick et al. (ESA 2024), as recalled in SAND 2025, §4.1: splitting the source part of a
+bi-clique into two halves of size `⌈n / 2⌉` and `⌊n / 2⌋`, then dismounting the other half's
+targets at two edges each, yields the recurrence
 `size(n) ≤ 2 * size(n / 2) + O(n)`. `spannerBound` is this recurrence made explicit (with the
 `O(n)` term instantiated to `2 * n`), and `spannerBound_le` solves it in closed form,
 `spannerBound n ≤ 2 * n * ⌈log₂ n⌉ + n`.
@@ -32,9 +33,10 @@ dismounting the other half's targets at two edges each, yields the recurrence
 
 * Carnevale, Casteigts & Corsini, *Dismountability in Temporal Cliques Revisited*, SAND 2025
   (LIPIcs 330, doi:10.4230/LIPIcs.SAND.2025.6), §4.1.
+* Angrick, Bals, Friedrich, Gawendowicz, Hastrich, Klodt, Lenzner, Schmidt, Skretas & Wells,
+  *How to Reduce Temporal Cliques to Find Sparse Spanners*, ESA 2024 (LIPIcs 308,
+  doi:10.4230/LIPIcs.ESA.2024.11, arXiv:2402.13624) — origin of the one-sided strategy.
 -/
-
-open Asymptotics Filter
 
 namespace TemporalGraph
 
@@ -79,41 +81,21 @@ private lemma clog_half_le {n : ℕ} (h : 2 ≤ n) :
 /-- Closed form: `spannerBound n ≤ 2 n ⌈log₂ n⌉ + n`. -/
 theorem spannerBound_le {n : ℕ} (h₀ : 1 ≤ n) :
     spannerBound n ≤ 2 * n * Nat.clog 2 n + n := by
-  suffices h : ∀ n, 1 ≤ n → spannerBound n ≤ 2 * n * Nat.clog 2 n + n from h n h₀
-  intro n
   induction n using Nat.strong_induction_on with
   | _ n ih =>
-    intro h₀
     match n, h₀ with
-    | 0, h₀ => omega
-    | 1, _ => simp [Nat.clog_one_right]
-    | (n + 2), _ =>
-      have hab : (n + 3) / 2 + (n + 2) / 2 = n + 2 := by omega
-      have ha_lt : (n + 3) / 2 < n + 2 := by omega
-      have hb_lt : (n + 2) / 2 < n + 2 := by omega
-      have ha_pos : 1 ≤ (n + 3) / 2 := by omega
-      have hb_pos : 1 ≤ (n + 2) / 2 := by omega
-      have hbound_a := ih _ ha_lt ha_pos
-      have hbound_b := ih _ hb_lt hb_pos
+    | 1, _ => simp
+    | n + 2, _ =>
+      have ha := ih ((n + 3) / 2) (by omega) (by omega)
+      have hb := ih ((n + 2) / 2) (by omega) (by omega)
+      -- both halves have `⌈log₂⌉` at most `⌈log₂ n⌉ - 1`
       have hca : Nat.clog 2 ((n + 3) / 2) + 1 ≤ Nat.clog 2 (n + 2) := clog_half_le (by omega)
-      have hmono : Nat.clog 2 ((n + 2) / 2) ≤ Nat.clog 2 ((n + 3) / 2) :=
+      have hcb : Nat.clog 2 ((n + 2) / 2) ≤ Nat.clog 2 ((n + 3) / 2) :=
         Nat.clog_mono_right 2 (by omega)
-      have hcb : Nat.clog 2 ((n + 2) / 2) + 1 ≤ Nat.clog 2 (n + 2) := by omega
-      obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le (show 1 ≤ Nat.clog 2 (n + 2) from by omega)
-      have hca' : Nat.clog 2 ((n + 3) / 2) ≤ k := by omega
-      have hcb' : Nat.clog 2 ((n + 2) / 2) ≤ k := by omega
-      have hma : 2 * ((n + 3) / 2) * Nat.clog 2 ((n + 3) / 2) ≤ 2 * ((n + 3) / 2) * k :=
-        Nat.mul_le_mul le_rfl hca'
-      have hmb : 2 * ((n + 2) / 2) * Nat.clog 2 ((n + 2) / 2) ≤ 2 * ((n + 2) / 2) * k :=
-        Nat.mul_le_mul le_rfl hcb'
-      have hdist : 2 * ((n + 3) / 2) * k + 2 * ((n + 2) / 2) * k = 2 * (n + 2) * k := by
-        have hring : 2 * ((n + 3) / 2) * k + 2 * ((n + 2) / 2) * k =
-            2 * ((n + 3) / 2 + (n + 2) / 2) * k := by ring
-        rw [hring, hab]
-      have htarget : 2 * (n + 2) * Nat.clog 2 (n + 2) = 2 * (n + 2) * k + 2 * (n + 2) := by
-        rw [hk]; ring
+      have hab : (n + 3) / 2 + (n + 2) / 2 = n + 2 := by omega
       rw [spannerBound_add_two]
-      omega
+      nlinarith [Nat.mul_le_mul_left ((n + 3) / 2) hca, Nat.mul_le_mul_left ((n + 2) / 2) hcb,
+        Nat.mul_le_mul_left ((n + 2) / 2) hca]
 
 /-- The closed form is exact at powers of two, so it cannot be improved in general. -/
 theorem spannerBound_two_pow (k : ℕ) :
@@ -130,6 +112,10 @@ theorem spannerBound_two_pow (k : ℕ) :
       ring
     rw [key, ih, pow_succ]
     ring
+
+section BigO
+
+open Asymptotics Filter
 
 /-- `Nat.clog 2 n` is within `1` of `log₂ n`, for `n ≥ 2`: `⌈log₂ n⌉` is `Nat.clog 2 n` (cast via
 `Real.natCeil_logb_natCast`), and a ceiling is below its argument plus one. -/
@@ -181,6 +167,8 @@ theorem spannerBound_isBigO :
     rw [hrw]
     nlinarith [e1, e2]
   linarith [hcast, hfinal]
+
+end BigO
 
 end Subgraph
 

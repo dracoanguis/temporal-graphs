@@ -10,7 +10,7 @@ import TemporalGraph.Dismountability.Operations
 # One-sided dismountability
 
 This module formalizes the one-sided dismountability strategy recalled in SAND 2025, §4.1 (due to
-Angrick et al.), which builds a sparse spanner of the temporal bi-clique left by
+Angrick et al., ESA 2024), which builds a sparse spanner of the temporal bi-clique left by
 `biclique_of_not_twoHopDismountable`. Only reachability from a source part to a target part is
 tracked (`IsSpannerFromTo`); the matchings `M⁻`, `M⁺` then upgrade it to temporal connectivity
 (`temporallyConnected_of_reachable_of_matchings`).
@@ -25,13 +25,24 @@ tracked (`IsSpannerFromTo`); the matchings `M⁻`, `M⁺` then upgrade it to tem
 
 ## Main results
 
-* `TemporalGraph.Subgraph.IsSpannerFromTo.sup` : the split step, one-sided spanners from two
-  sources combine by union.
+* `TemporalGraph.Subgraph.IsSpannerFromTo.sup`, `isSpannerFromTo_sup_of_induce` : the split
+  step, one-sided spanners of the two subproblems combine by union.
+* `TemporalGraph.Subgraph.oneSidedDismountability` : putting a one-sided dismountable target
+  back with its two delegation edges keeps a one-sided spanner (`oneSidedMount_size`: at most two
+  more edges).
+* `TemporalGraph.Subgraph.exists_oneSidedDismountable_of_ncard_lt` : pigeonhole, a dismountable
+  target exists when the target part is larger than the source part.
+* `TemporalGraph.Subgraph.temporallyConnected_of_isSpannerFromTo` : a one-sided spanner from `V⁺`
+  to `V⁻` containing the matchings `M⁻` and `M⁺` is temporally connected.
+* `TemporalGraph.Subgraph.exists_ncard_halves` : splitting a set into two halves.
 
 ## References
 
 * Carnevale, Casteigts & Corsini, *Dismountability in Temporal Cliques Revisited*, SAND 2025
   (LIPIcs 330, doi:10.4230/LIPIcs.SAND.2025.6), §4.1.
+* Angrick, Bals, Friedrich, Gawendowicz, Hastrich, Klodt, Lenzner, Schmidt, Skretas & Wells,
+  *How to Reduce Temporal Cliques to Find Sparse Spanners*, ESA 2024 (LIPIcs 308,
+  doi:10.4230/LIPIcs.ESA.2024.11, arXiv:2402.13624) — origin of the one-sided strategy.
 -/
 
 universe u

@@ -226,9 +226,9 @@ theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G
       · apply edgeSet_le
         apply le_trans h₅.left dismount_le
       · -- the two edges added by the mount are edges of `H`
-        grind only [→ TemporalGraph.Adj.ne, = EarliestEdge.eq_1, = LatestEdge.eq_1,
-          = Set.subset_def, = Sym2.eq, = Sym2.rel_iff', = Set.mem_insert_iff,
-          = Set.mem_singleton_iff, = Prod.swap_prod_mk, = mem_edgeSet]
+        have : (s(z, x), m) ∈ H.edgeSet := H.mem_edgeSet.mpr h₄.left
+        have : (s(y, x), n) ∈ H.edgeSet := H.mem_edgeSet.mpr h₃.left
+        grind only [= Sym2.eq, = Set.subset_def, = Set.mem_insert_iff, = Set.mem_singleton_iff]
     · simp only [mount_verts, h₅.right.1, induce_verts, Set.union_singleton, hx,
       Set.insert_sdiff_self_of_mem, subset_refl]
   have htc : (H'.mount hy hz x h₁ h₂).TemporallyConnectedSubgraph := by
@@ -434,10 +434,12 @@ theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSy
       · apply edgeSet_le
         apply le_trans h₇.left dismount_le
       · -- the four edges added by the mount are edges of `H`
-        grind only [→ TemporalGraph.adj_symm, → Adj.ne, → TemporalGraph.Adj.ne,
-          = EarliestEdge.eq_1, = Set.subset_def, = LatestEdge.eq_1, = deleteVerts_verts,
-          = Sym2.eq, → Adj.fst_mem, → Adj.snd_mem, = Sym2.rel_iff', = Set.mem_insert_iff,
-          = Set.mem_sdiff, = Prod.swap_prod_mk, = Set.mem_singleton_iff, = mem_edgeSet]
+        have : (s(z, z'), m) ∈ H.edgeSet := H.mem_edgeSet.mpr h₆.1.1
+        have : (s(x, z'), m') ∈ H.edgeSet := H.mem_edgeSet.mpr h₆.2.2
+        have : (s(y, y'), n) ∈ H.edgeSet := H.mem_edgeSet.mpr h₅.1.1
+        have : (s(x, y'), n') ∈ H.edgeSet := H.mem_edgeSet.mpr h₅.2.2
+        grind only [= Set.subset_def, = Sym2.eq, = Sym2.rel_iff', = Set.mem_insert_iff,
+          = Prod.swap_prod_mk, = Set.mem_singleton_iff]
     · exact heq.le
   have htc : (H'.twoHopMount hy hy' hz hz' x h₁ h₂ h₃ h₄).TemporallyConnectedSubgraph := by
     apply twoHopMount_TC H' hy hy' hz hz' x

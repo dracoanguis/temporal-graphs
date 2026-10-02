@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ethan Bargaud-Arm
 -/
 import TemporalGraph.Subgraph
+import TemporalGraph.Connectivity.Basic
 
 /-!
 # Bipartite temporal graphs
@@ -374,6 +375,46 @@ instance Subgraph.between_isSymm [H.IsSymm] : (H.between s t).IsSymm :=
   IsSymm.of_adj fun _ _ _ h ↦ by
     obtain ⟨hadj, hor⟩ := h
     exact ⟨TemporalGraph.adj_symm hadj, by tauto⟩
+
+/-- In a bi-clique on `s` and `t`, every vertex of `s` reaches every vertex of `t`, by the edge
+joining them. -/
+lemma Subgraph.reachable_of_isBicliqueWith {s t : Set V} {x y : V}
+    (h₀ : H.IsBicliqueWith s t) (h₁ : x ∈ s) (h₂ : y ∈ t) :
+    H.Reachable x y := by
+  obtain ⟨n, hn⟩ := h₀.adj_of_mem h₁ h₂
+  exact reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨.Single hn⟩⟩
+
+/-- Restricting a bi-clique on `s` and `t` to `s' ∪ t`, for `s' ⊆ s`, gives a bi-clique on `s'` and
+`t`: the subproblem of SAND 2025, §4.1. -/
+lemma Subgraph.isBicliqueWith_induce {s t s' : Set V}
+    (h₀ : H.IsBicliqueWith s t) (h₁ : s' ⊆ s) :
+    (H.induce (s' ∪ t)).IsBicliqueWith s' t where
+  isBipartiteWith :=
+    { disjoint := h₀.isBipartiteWith.disjoint.mono_left h₁
+      mem_of_adj := by
+        rintro v w n ⟨hv, hw, hadj⟩
+        have hdis := h₀.isBipartiteWith.disjoint
+        rcases h₀.isBipartiteWith.mem_of_adj hadj with ⟨hvs, hwt⟩ | ⟨hvt, hws⟩
+        · exact Or.inl ⟨hv.resolve_right (Set.disjoint_left.mp hdis hvs), hwt⟩
+        · exact Or.inr ⟨hvt, hw.resolve_right (Set.disjoint_left.mp hdis hws)⟩ }
+  adj_of_mem v w hv hw := by
+    obtain ⟨n, hn⟩ := h₀.adj_of_mem (h₁ hv) hw
+    exact ⟨n, Or.inl hv, Or.inr hw, hn⟩
+
+/-- Deleting vertices from a temporal bi-clique keeps a bi-clique, on the two parts with those
+vertices removed (SAND 2025, §4.1, the `deleteVerts` counterpart of `isBicliqueWith_induce`). -/
+lemma Subgraph.isBicliqueWith_deleteVerts {s t u : Set V} (h₀ : H.IsBicliqueWith s t) :
+    (H.deleteVerts u).IsBicliqueWith (s \ u) (t \ u) where
+  isBipartiteWith :=
+    { disjoint := Disjoint.mono Set.sdiff_subset Set.sdiff_subset h₀.isBipartiteWith.disjoint
+      mem_of_adj := by
+        rintro v w n ⟨hv, hw, hadj⟩
+        rcases h₀.isBipartiteWith.mem_of_adj hadj with ⟨hvs, hwt⟩ | ⟨hvt, hws⟩
+        · exact Or.inl ⟨⟨hvs, hv.2⟩, ⟨hwt, hw.2⟩⟩
+        · exact Or.inr ⟨⟨hvt, hv.2⟩, ⟨hws, hw.2⟩⟩ }
+  adj_of_mem v w hv hw := by
+    obtain ⟨n, hadj⟩ := h₀.adj_of_mem hv.1 hw.1
+    exact ⟨n, ⟨H.edge_vert hadj, hv.2⟩, ⟨H.edge_vert' hadj, hw.2⟩, hadj⟩
 
 end Subgraph
 

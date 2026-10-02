@@ -266,31 +266,6 @@ lemma exists_oneSidedDismountable_of_ncard_lt {H : Subgraph G} [Finite H.verts] 
   · exact ⟨b, hb, a, ha, hab, f a, hfs a ha, n a, n b, hn a ha, hnb'.1.symm, hle⟩
   · exact ⟨a, ha, b, hb, hab.symm, f a, hfs a ha, n b, n a, hnb', (hn a ha).1.symm, hle⟩
 
-/-- In a bi-clique on `s` and `t`, every vertex of `s` reaches every vertex of `t`, by the edge
-joining them. -/
-lemma reachable_of_isBicliqueWith {H : Subgraph G} {s t : Set V} {x y : V}
-    (h₀ : H.IsBicliqueWith s t) (h₁ : x ∈ s) (h₂ : y ∈ t) :
-    H.Reachable x y := by
-  obtain ⟨n, hn⟩ := h₀.adj_of_mem h₁ h₂
-  exact reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨.Single hn⟩⟩
-
-/-- Restricting a bi-clique on `s` and `t` to `s' ∪ t`, for `s' ⊆ s`, gives a bi-clique on `s'` and
-`t`: the subproblem of SAND 2025, §4.1. -/
-lemma isBicliqueWith_induce {H : Subgraph G} {s t s' : Set V}
-    (h₀ : H.IsBicliqueWith s t) (h₁ : s' ⊆ s) :
-    (H.induce (s' ∪ t)).IsBicliqueWith s' t where
-  isBipartiteWith :=
-    { disjoint := h₀.isBipartiteWith.disjoint.mono_left h₁
-      mem_of_adj := by
-        rintro v w n ⟨hv, hw, hadj⟩
-        have hdis := h₀.isBipartiteWith.disjoint
-        rcases h₀.isBipartiteWith.mem_of_adj hadj with ⟨hvs, hwt⟩ | ⟨hvt, hws⟩
-        · exact Or.inl ⟨hv.resolve_right (Set.disjoint_left.mp hdis hvs), hwt⟩
-        · exact Or.inr ⟨hvt, hw.resolve_right (Set.disjoint_left.mp hdis hws)⟩ }
-  adj_of_mem v w hv hw := by
-    obtain ⟨n, hn⟩ := h₀.adj_of_mem (h₁ hv) hw
-    exact ⟨n, Or.inl hv, Or.inr hw, hn⟩
-
 /-- A one-sided spanner of a subgraph `K ≤ H` in which every source reaches every target is also a
 one-sided spanner of `H`. -/
 lemma IsSpannerFromTo.of_le {H K H' : Subgraph G} {s t : Set V}

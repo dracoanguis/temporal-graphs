@@ -64,7 +64,7 @@ def oneSidedMount (H : Subgraph G) [G.IsSymm] {x' y : V} {n m : ℕ}
   ((H.addVerts {x}).addEdge h₀ (by simp [hy, hx'])).addEdge h₁ (by simp [hy])
 
 /-- `H.oneSidedMount hx' hy x h₀ h₁` has vertex set `H.verts ∪ {x}`. -/
-@[simp]
+@[simp, grind =]
 lemma oneSidedMount_verts {H : Subgraph G} [G.IsSymm] {x' y x : V} {n m : ℕ}
     (hx' : x' ∈ H.verts) (hy : y ∈ H.verts) (h₀ : G.Adj y x' n) (h₁ : G.Adj y x m) :
     (H.oneSidedMount hx' hy x h₀ h₁).verts = H.verts ∪ {x} := by

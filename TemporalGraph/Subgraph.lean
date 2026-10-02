@@ -80,7 +80,7 @@ universe u
 namespace TemporalGraph
 
 
-@[ext]
+@[ext, grind ext]
 structure Subgraph {V : Type u} (G : TemporalGraph V) extends TemporalGraph V where
   verts : Set V
 
@@ -104,7 +104,7 @@ instance loopless (H : Subgraph G) [G.IsLoopless] : H.IsLoopless :=
   ⟨fun _ ↦ ⟨fun _ h ↦ G.irrefl (H.adj_sub h)⟩⟩
 
 /-- No vertex of a subgraph of a loopless graph is adjacent to itself, at any time. -/
-@[simp, aesop safe (rule_sets := [TemporalGraph])]
+@[simp, grind ., aesop safe (rule_sets := [TemporalGraph])]
 protected theorem irrefl {H : Subgraph G} [G.IsLoopless] {x : V} {n : ℕ} :
     ¬H.Adj x x n :=
   TemporalGraph.irrefl
@@ -133,31 +133,33 @@ protected theorem Adj.symm {H : Subgraph G} [H.IsSymm] {x y : V} {n : ℕ}
 -- `forward` rules: from `h : H.Adj u v t` aesop adds `G.Adj u v t`, `u ∈ H.verts`, `v ∈ H.verts`.
 -- As `apply` rules they misfired: `adj_sub`'s conclusion `G.Adj u v t` matches any adjacency goal
 -- and spawns an endless chain of subgraphs, and `fst_mem` got committed to on `v ∈ H.verts`.
-@[aesop safe forward (rule_sets := [TemporalGraph])]
+@[grind →, aesop safe forward (rule_sets := [TemporalGraph])]
 protected theorem Adj.adj_sub {H : G.Subgraph} {u v : V} {t : ℕ} (h : H.Adj u v t) :
     G.Adj u v t :=
   H.adj_sub h
 
 /-- The two endpoints of an adjacency in a loopless subgraph are distinct. -/
+@[grind →]
 protected theorem Adj.ne {H : Subgraph G} [G.IsLoopless] {x y : V} {n : ℕ}
     (h : H.Adj x y n) :
     x ≠ y :=
   (H.adj_sub h).ne
 
 /-- `Adj.ne` with the endpoints swapped. -/
+@[grind →]
 protected theorem Adj.ne' {H : Subgraph G} [G.IsLoopless] {x y : V} {n : ℕ}
     (h : H.Adj x y n) :
     y ≠ x :=
   (H.adj_sub h).ne'
 
 /-- The first endpoint of an adjacency of `H` belongs to `H.verts`. -/
-@[aesop safe forward (rule_sets := [TemporalGraph])]
+@[grind →, aesop safe forward (rule_sets := [TemporalGraph])]
 protected theorem Adj.fst_mem {H : G.Subgraph} {u v : V} {t : ℕ} (h : H.Adj u v t) :
     u ∈ H.verts :=
   H.edge_vert h
 
 /-- The second endpoint of an adjacency of `H` belongs to `H.verts`. -/
-@[aesop safe forward (rule_sets := [TemporalGraph])]
+@[grind →, aesop safe forward (rule_sets := [TemporalGraph])]
 protected theorem Adj.snd_mem {H : G.Subgraph} {x y : V} {n : ℕ} (h : H.Adj x y n) :
     y ∈ H.verts :=
   H.edge_vert' h
@@ -403,12 +405,13 @@ instance : Top G.Subgraph where
   }
 
 /-- Adjacency in `⊤ : Subgraph G` is adjacency in `G`. -/
-@[simp]
+@[simp, grind =]
 theorem top_adj {x y : V} {n : ℕ} :
     (⊤ : Subgraph G).Adj x y n ↔ G.Adj x y n :=
   Iff.rfl
 
 /-- The vertex set of `⊤ : Subgraph G` is all of `V`. -/
+@[grind =]
 theorem top_verts : (⊤ : Subgraph G).verts = Set.univ := rfl
 
 /-- The underlying `TemporalGraph` of `⊤ : Subgraph G` is `G` itself. -/
@@ -500,12 +503,12 @@ instance : SemilatticeSup (Subgraph G) where
   sup_le _ _ _ h₀ h₁ := ⟨Set.union_subset h₀.1 h₁.1, fun h ↦ h.elim h₀.2 h₁.2⟩
 
 /-- The vertex set of a union of subgraphs is the union of their vertex sets. -/
-@[simp]
+@[simp, grind =]
 theorem sup_verts (H₁ H₂ : Subgraph G) : (H₁ ⊔ H₂).verts = H₁.verts ∪ H₂.verts :=
   rfl
 
 /-- Adjacency in a union of subgraphs holds iff it holds in one of them. -/
-@[simp]
+@[simp, grind =]
 theorem sup_adj {H₁ H₂ : Subgraph G} {x y : V} {n : ℕ} :
     (H₁ ⊔ H₂).Adj x y n ↔ H₁.Adj x y n ∨ H₂.Adj x y n :=
   Iff.rfl
@@ -573,6 +576,7 @@ abbrev deleteVerts (H : Subgraph G) (s : Set V) : G.Subgraph :=
   H.induce (H.verts \ s)
 
 /-- The vertex set of `H.deleteVerts s` is `H.verts \ s`. -/
+@[grind =]
 lemma deleteVerts_verts (H : Subgraph G) (s : Set V) :
     (H.deleteVerts s).verts = H.verts \ s :=
   rfl
@@ -606,7 +610,7 @@ abbrev addVerts (H : Subgraph G) (s : Set V) : G.Subgraph :=
   H.induce (H.verts ∪ s)
 
 /-- The vertex set of `H.addVerts s` is `H.verts ∪ s`. -/
-@[simp]
+@[simp, grind =]
 lemma addVerts_verts (H : Subgraph G) (s : Set V) : (H.addVerts s).verts = H.verts ∪ s :=
   rfl
 
@@ -720,7 +724,7 @@ theorem addArc_arc : (addArc H h h₁).Adj x y n :=
   Or.inr ⟨rfl, rfl, rfl⟩
 
 /-- Adding an arc does not change the vertex set. -/
-@[simp]
+@[simp, grind =]
 theorem addArc_verts : (addArc H h h₁).verts = H.verts := rfl
 
 /-- `H` is below `H.addEdge h h₁`, the subgraph obtained by adding both orientations of the edge
@@ -746,7 +750,7 @@ theorem addEdge_edge [G.IsSymm] : (addEdge H h h₁).Adj x y n :=
   Or.inr <| Or.inl ⟨rfl, rfl, rfl⟩
 
 /-- Adding an edge does not change the vertex set. -/
-@[simp]
+@[simp, grind =]
 theorem addEdge_verts [G.IsSymm] : (addEdge H h h₁).verts = H.verts := rfl
 
 /-- The oriented `addArc` is the weaker of the two constructions. -/
@@ -1191,7 +1195,7 @@ def toSubgraph (H : TemporalGraph V) (h : H ≤ G) : G.Subgraph where
   edge_vert' _ := Set.mem_univ _
 
 /-- Adjacency in `toSubgraph H h` is adjacency in `H`. -/
-@[simp]
+@[simp, grind =]
 theorem toSubgraph_Adj (H : TemporalGraph V) (h : H ≤ G) {x y : V} {n : ℕ} :
     (toSubgraph H h).Adj x y n ↔ H.Adj x y n :=
   Iff.rfl

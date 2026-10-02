@@ -63,7 +63,7 @@ universe u
 
 /-- A temporal graph: edges are labeled by the time (ℕ) at which they exist.
 No symmetry or irreflexivity is required — see `IsSymm` and `IsLoopless`. -/
-@[ext, aesop safe constructors (rule_sets := [TemporalGraph])]
+@[ext, grind ext, aesop safe constructors (rule_sets := [TemporalGraph])]
 structure TemporalGraph (V : Type u) where
   /-- The adjacency labeled by a natural qualifying the time of existence -/
   Adj : V → V → ℕ → Prop
@@ -114,7 +114,7 @@ theorem IsSymm.of_adj {G : TemporalGraph V} (h : ∀ n ⦃x y⦄, G.Adj x y n �
   ⟨fun n ↦ ⟨fun _ _ hxy ↦ h n hxy⟩⟩
 
 /-- A loopless graph has no self-adjacency: `¬G.Adj x x n`, at any time `n`. -/
-@[simp, aesop safe (rule_sets := [TemporalGraph])]
+@[simp, grind ., aesop safe (rule_sets := [TemporalGraph])]
 protected theorem irrefl {G : TemporalGraph V} [hl : G.IsLoopless] {x : V} {n : ℕ} :
     ¬G.Adj x x n :=
   (hl.loopless n).irrefl x
@@ -132,7 +132,7 @@ Not `@[symm]`: the `symm` tactic does not synthesize the `[G.IsSymm]` instance a
 `@[symm]` lemma, so the kernel would reject the resulting proof (lean4#9997). Use the terms
 `h.symm` / `adj_symm h` instead of the tactic. For aesop, symmetry is a `forward` rule: from
 `h : G.Adj x y n` it adds `G.Adj y x n` once, where an `apply` rule would loop. -/
-@[aesop safe forward (rule_sets := [TemporalGraph])]
+@[grind →, aesop safe forward (rule_sets := [TemporalGraph])]
 theorem adj_symm [hs : G.IsSymm] (h : G.Adj x y n) : G.Adj y x n :=
   (hs.symm n).symm x y h
 
@@ -146,10 +146,12 @@ theorem ne_of_adj [G.IsLoopless] (h : G.Adj x y n) : x ≠ y := by
   exact G.irrefl h
 
 /-- Dot-notation form of `ne_of_adj`. -/
+@[grind →]
 protected theorem Adj.ne [G.IsLoopless] (h : G.Adj x y n) : x ≠ y :=
   G.ne_of_adj h
 
 /-- Symmetric form of `Adj.ne`: `y ≠ x` from `G.Adj x y n` in a loopless graph. -/
+@[grind →]
 protected theorem Adj.ne' [G.IsLoopless] (h : G.Adj x y n) : y ≠ x :=
   h.ne.symm
 
@@ -362,7 +364,7 @@ theorem mem_edgeSet_iff_or (G : TemporalGraph V) {x y : V} {n : ℕ} :
     · exact ⟨y, x, Sym2.eq_swap, h⟩
 
 /-- For a symmetric graph, `(s(x, y), n) ∈ G.edgeSet` iff `G.Adj x y n`. -/
-@[simp]
+@[simp, grind =]
 theorem mem_edgeSet (G : TemporalGraph V) [G.IsSymm] {x y : V} {n : ℕ} :
     (s(x,y), n) ∈ G.edgeSet ↔ G.Adj x y n := by
   rw [mem_edgeSet_iff_or]

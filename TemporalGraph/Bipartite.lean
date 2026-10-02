@@ -165,7 +165,7 @@ def between (s t : Set V) (G : TemporalGraph V) : TemporalGraph V where
 
 /-- Unfolding lemma for `between`: an arc of `G.between s t` is an arc of `G` crossing between `s`
 and `t`. -/
-@[simp]
+@[simp, grind =]
 theorem between_adj :
     (G.between s t).Adj v w n ↔ G.Adj v w n ∧ (v ∈ s ∧ w ∈ t ∨ v ∈ t ∧ w ∈ s) :=
   Iff.rfl
@@ -257,26 +257,26 @@ def completeBipartite (f : α → β → ℕ) : TemporalGraph (α ⊕ β) where
     | _, _, _ => False
 
 /-- An arc from the left summand to the right exists at time `f a b` only. -/
-@[simp]
+@[simp, grind =]
 theorem completeBipartite_adj_inl_inr {f : α → β → ℕ} {a : α} {b : β} {n : ℕ} :
     (completeBipartite f).Adj (.inl a) (.inr b) n ↔ f a b = n :=
   Iff.rfl
 
 /-- An arc from the right summand to the left exists at time `f a b` only (the reverse
 orientation of `completeBipartite_adj_inl_inr`). -/
-@[simp]
+@[simp, grind =]
 theorem completeBipartite_adj_inr_inl {f : α → β → ℕ} {a : α} {b : β} {n : ℕ} :
     (completeBipartite f).Adj (.inr b) (.inl a) n ↔ f a b = n :=
   Iff.rfl
 
 /-- There is no arc between two vertices of the left summand. -/
-@[simp]
+@[simp, grind .]
 theorem completeBipartite_adj_inl_inl {f : α → β → ℕ} {a a' : α} {n : ℕ} :
     ¬(completeBipartite f).Adj (.inl a) (.inl a') n :=
   id
 
 /-- There is no arc between two vertices of the right summand. -/
-@[simp]
+@[simp, grind .]
 theorem completeBipartite_adj_inr_inr {f : α → β → ℕ} {b b' : β} {n : ℕ} :
     ¬(completeBipartite f).Adj (.inr b) (.inr b') n :=
   id
@@ -374,13 +374,13 @@ def Subgraph.between (H : Subgraph G) (s t : Set V) : Subgraph G where
 
 /-- Unfolding lemma for `Subgraph.between`: an arc of `H.between s t` is an arc of `H` crossing
 between `s` and `t`. -/
-@[simp]
+@[simp, grind =]
 theorem Subgraph.between_adj {v w : V} {n : ℕ} :
     (H.between s t).Adj v w n ↔ H.Adj v w n ∧ (v ∈ s ∧ w ∈ t ∨ v ∈ t ∧ w ∈ s) :=
   Iff.rfl
 
 /-- `Subgraph.between` keeps the same vertex set as `H`: it only restricts the arcs. -/
-@[simp]
+@[simp, grind =]
 theorem Subgraph.between_verts : (H.between s t).verts = H.verts :=
   rfl
 

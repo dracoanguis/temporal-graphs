@@ -86,7 +86,7 @@ lemma dismount_clique (H : Subgraph G) (x : V) (h₀ : H.IsCliqueSubgraph) :
   exact ⟨hy.2, hz.2⟩
 
 /-- `H.dismount x` has vertex set `H.verts \ {x}`. -/
-@[simp]
+@[simp, grind =]
 lemma dismount_verts {H : Subgraph G} {x : V} : (H.dismount x).verts = H.verts \ {x} := by
   simp only [induce_verts]
 
@@ -107,7 +107,7 @@ def mount (H : Subgraph G) [G.IsSymm] {y z : V} {n m : ℕ} (hy : y ∈ H.verts)
   ((H.addVerts {x}).addEdge h₀ (by simp [hy])).addEdge h₁ (by simp [hz])
 
 /-- `H.mount hy hz x h₀ h₁` has vertex set `H.verts ∪ {x}`. -/
-@[simp]
+@[simp, grind =]
 lemma mount_verts {H : Subgraph G} [G.IsSymm] {x y z : V} {n m : ℕ} (hy : y ∈ H.verts)
     (hz : z ∈ H.verts) (h₀ : G.Adj y x n) (h₁ : G.Adj z x m) :
     (mount H hy hz x h₀ h₁).verts = H.verts ∪ {x} := by
@@ -269,7 +269,7 @@ def twoHopMount (H : Subgraph G) [G.IsSymm] {y y' z z' : V} {n n' m m' : ℕ} (h
     |>.addEdge h₃ (by simp [hz', hz])
 
 /-- `H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃` has vertex set `H.verts ∪ {x}`. -/
-@[simp]
+@[simp, grind =]
 lemma twoHopMount_verts (H : Subgraph G) [G.IsSymm] {y y' z z' : V} {n n' m m' : ℕ}
     (hy : y ∈ H.verts) (hy' : y' ∈ H.verts) (hz : z ∈ H.verts) (hz' : z' ∈ H.verts) (x : V)
     (h₀ : G.Adj x y' n') (h₁ : G.Adj y' y n) (h₂ : G.Adj x z' m') (h₃ : G.Adj z' z m) :

@@ -14,5 +14,6 @@ import TemporalGraph.Connectivity.Subgraph
 import TemporalGraph.Dismountability.Basic
 import TemporalGraph.Dismountability.Operations
 import TemporalGraph.Dismountability.OneSided
+import TemporalGraph.Dismountability.OneSidedBound
 import TemporalGraph.Bipartite
 import TemporalGraph.Examples

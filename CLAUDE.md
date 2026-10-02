@@ -97,7 +97,7 @@ besoin de le répéter ici.
 |---|---|---|
 | `TemporalGraph/Init.lean` | Rule-set aesop `TemporalGraph`, utilisé par la macro `aesop_temporal_graph` | `SimpleGraph/Init.lean` |
 | `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsCliqueGraph`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, demande `IsSymm`/`IsLoopless` en hypothèses explicites), `neighborSet`, `incidenceSet`, `arcSet`/`arcSize` (monde orienté), `edgeSet`/`size` (monde symétrique ; `mem_edgeSet` demande seulement `[IsSymm]`) ; `size`/`arcSize` sont des `def` calculables (pattern `SimpleGraph.degree` : `Fintype.card` sous une instance `[Fintype G.edgeSet]`/`[Fintype G.arcSet]`), avec la forme instance-free `Set.ncard` disponible via `size_eq_ncard`/`arcSize_eq_ncard` | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
-| `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Marches temporelles non strictes, à temps croissant | `SimpleGraph.Walk` |
+| `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Marches temporelles non strictes, à temps croissant ; API `length`/`support`/`arcs`/`append`/`mapLe` (`length_append`, `arcs_append`, `*_mapLe`, `mapLe_append`, `mapLe_mapLe`, `start_mem_support`, `end_mem_support`, `adj_of_mem_arcs`) | `SimpleGraph.Walk` |
 | `TemporalGraph/Subgraph.lean` | Sous-graphe temporel : `TemporalGraph.Subgraph` étend `TemporalGraph V`, ajoutant `verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `IsCliqueSubgraph` ; `edgeSet`, `neighborSet`, `size`, `incidenceSet` sont hérités de `TemporalGraph` ; treillis borné et union `⊔` (`SemilatticeSup`), `induce`/`deleteVerts`/`addVerts`/`addArc`/`addEdge` ; monotonie `toTemporalGraph_le`/`toTemporalGraph_le_self` | `SimpleGraph.Subgraph` |
 | `TemporalGraph/Bipartite.lean` | Bipartition temporelle `IsBipartiteWith`/`IsBipartite` (ensembles explicites, sans hypothèse de symétrie, non classe), pont `isBipartiteWith_iff_simpleFootprint` vers Mathlib, restriction `between` aux arcs entre deux ensembles, bi-cliques temporelles `IsBicliqueWith`/`IsBiclique` (SAND 2025 §1.1 ; prennent un ensemble de sommets), constructeur `completeBipartite` sur `α ⊕ β`, et au niveau `Subgraph` : `Subgraph.between` | `SimpleGraph/Bipartite.lean` |
 | `TemporalGraph/Connectivity/Basic.lean`, `Connectivity/Subgraph.lean` | `Reachable` (avec monotonie `Reachable.mono`), `TemporallyConnected` (prend un ensemble `S : Set V` ; shorthands `TemporallyConnectedGraph` pour `Set.univ` et `Subgraph.TemporallyConnectedSubgraph` pour `H.verts`) ; spanners au niveau sous-graphe sur `V` (`Subgraph.IsSpanner`, `Subgraph.IsSpannerOf`, `Subgraph.IsTCSpanner`) | `SimpleGraph.Connectivity` |
@@ -229,6 +229,23 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
   chaîne infinie et un timeout ; la symétrie en `apply` boucle ; et `fst_mem`, `safe` donc sans
   retour arrière, était choisi à tort sur un but `v ∈ H.verts`. `Subgraph.Adj.symm` n'a plus
   aucun attribut.
+
+### Annotations `grind`
+
+- Lemmes d'adjacence `H.Adj … → …` : `grind →` (miroir des règles aesop `safe forward`) ;
+  `irrefl`/`Adj.ne` : `grind .` ; caractérisations `*_adj`/`*_verts` des constructions : `grind =` ;
+  théorèmes `ext` : `grind ext`.
+- Définitions de prédicats d'arêtes (`EarliestEdge`, `LatestEdge`, `*Neighbor`, `IsProper`,
+  `IsSimple`) et équivalences d'ordre (`le_iff_adj`, `Subgraph.le_def`) : `grind =`. Jamais
+  `grind unfold` (casse les appels `grind [Def]`), jamais `grind =` sur `adj_comm`. `vminus`/`vplus`
+  ne sont volontairement pas annotées.
+- Définitions récursives de marches (`length`, `support`, `arcs`, `append`, `mapLe`, …) : `grind =`,
+  donc les lemmes d'API se prouvent par `induction p <;> grind`. Un lemme dont l'énoncé ne mentionne
+  pas la marche (`nondecreasing_time`, `time_bound_of_edge`) ne peut pas être annoté : le passer en
+  `have`. `grind` ne construit pas une marche (valeur dans `Type`) : les témoins de `Reachable`
+  restent explicites.
+- Preuves stables : `grind only […]` obtenu par `grind?` (retirer les ancres `#xxxx`) ; garder
+  `grind` nu si la liste dépasse 100 caractères ou dans `induction … <;> grind`.
 
 ### Autres conventions
 

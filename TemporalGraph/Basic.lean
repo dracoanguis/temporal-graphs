@@ -250,6 +250,22 @@ instance : Bot (TemporalGraph V) where
 
 end Order
 
+section Monotonicity
+
+/-- A spanning subgraph of a simple graph is simple. -/
+theorem IsSimple.mono {G H : TemporalGraph V} (h₀ : H.IsSimple) (h₁ : G ≤ H) : G.IsSimple :=
+  fun _ _ _ _ ⟨hn, hm⟩ ↦ h₀ _ _ _ _ ⟨h₁ hn, h₁ hm⟩
+
+/-- A spanning subgraph of a proper graph is proper. -/
+theorem IsProper.mono {G H : TemporalGraph V} (h₀ : H.IsProper) (h₁ : G ≤ H) : G.IsProper :=
+  fun _ _ _ _ ⟨hy, hz⟩ ↦ h₀ _ _ _ _ ⟨h₁ hy, h₁ hz⟩
+
+/-- A spanning subgraph of a happy graph is happy. -/
+theorem IsHappy.mono {G H : TemporalGraph V} (h₀ : H.IsHappy) (h₁ : G ≤ H) : G.IsHappy :=
+  ⟨h₀.1.mono h₁, h₀.2.mono h₁⟩
+
+end Monotonicity
+
 section neighborSet
 
 

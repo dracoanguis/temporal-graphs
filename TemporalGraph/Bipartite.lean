@@ -181,7 +181,7 @@ instance between_isLoopless [G.IsLoopless] : (G.between s t).IsLoopless :=
 /-- Restricting to the arcs between two parts keeps simplicity: at most one time per ordered
 pair. -/
 theorem IsSimple.between (h : G.IsSimple) (s t : Set V) : (G.between s t).IsSimple :=
-  fun x y n m hnm ↦ h x y n m ⟨hnm.1.1, hnm.2.1⟩
+  h.mono between_le
 
 /-- Restricting to the arcs between two parts keeps properness: at most one destination per
 source and time. -/

@@ -443,6 +443,12 @@ relation that would compete with `TemporalGraph.IsSubgraphOf`. -/
 instance : LE (Subgraph G) :=
   ⟨fun H H' => H.verts ⊆ H'.verts ∧ ∀ {x y : V} {n : ℕ}, H.Adj x y n → H'.Adj x y n⟩
 
+/-- `H ≤ H'` unfolds to vertex inclusion and pointwise adjacency implication. -/
+@[grind =]
+lemma le_def {H H' : Subgraph G} :
+    H ≤ H' ↔ H.verts ⊆ H'.verts ∧ ∀ {x y : V} {n : ℕ}, H.Adj x y n → H'.Adj x y n :=
+  .rfl
+
 instance : BoundedOrder (Subgraph G) where
   top := ⊤
   bot := ⊥

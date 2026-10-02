@@ -41,11 +41,13 @@ def temporalWalkSet (x y : V) :
 namespace TemporalWalk
 
 /-- The length of a TemporalWalk is the number of edges along it. -/
+@[grind =]
 def length {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → ℕ
   | Empty => 0
   | Nonempty p => p.length
 
 /-- The `support` of a TemporalWalk is the list of vertices it visits in order. -/
+@[grind =]
 def support {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List V
   | Empty => [x]
   | Nonempty p => p.support
@@ -53,6 +55,7 @@ def support {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List V
 
 /-- The `arcs` of a TemporalWalk is the list of arcs (edge with a direction) it visits in
 order. -/
+@[grind =]
 def arcs {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List (V × V × ℕ)
   | Empty => []
   | Nonempty p => p.arcs
@@ -65,6 +68,7 @@ lemma nondecreasing_time {x y : V} {n m : ℕ} (tw : G.TemporalWalk x n y m) : n
   | Nonempty p => exact p.nondecreasing_time
 
 /-- Map a walk along `G ≤ G'`, following `NonemptyTemporalWalk.mapLe`. -/
+@[grind =]
 protected def mapLe {G' : TemporalGraph V} (h : G ≤ G') {x y : V} {n m : ℕ} :
     G.TemporalWalk x n y m → G'.TemporalWalk x n y m
   | Empty => Empty

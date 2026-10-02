@@ -174,6 +174,7 @@ def simpleFootprint (G : TemporalGraph V) (hs : G.IsSymm) (hl : G.IsLoopless) : 
   }
 
 /-- `G` is simple: any two vertices are joined by an arc at no more than one time. -/
+@[grind =]
 def IsSimple (G : TemporalGraph V) : Prop :=
   ∀ (x y : V) (n m : ℕ), G.Adj x y n ∧ G.Adj x y m → n=m
 
@@ -194,6 +195,7 @@ instead: the inherited `H.IsCliqueGraph` asks for a clique on all of `V`. -/
 abbrev IsCliqueGraph (G : TemporalGraph V) : Prop := G.IsClique Set.univ
 
 /-- `G` is proper: at any given time, a vertex has at most one out-neighbor. -/
+@[grind =]
 def IsProper (G : TemporalGraph V) : Prop :=
   ∀ x y z : V, ∀ n : ℕ, G.Adj x y n ∧ G.Adj x z n → y = z
 
@@ -202,17 +204,21 @@ def IsHappy (G : TemporalGraph V) : Prop :=
   G.IsSimple ∧ G.IsProper
 
 /-- The *earliest edge* of *x*, with *y* destination at *n* -/
+@[grind =]
 def EarliestEdge (G : TemporalGraph V) (x y : V) (n : ℕ) : Prop :=
   G.Adj x y n ∧ ∀ z : V, ∀ j : ℕ, G.Adj x z j → n ≤ j
 
 /-- The *latest edge* of *x*, with *y* destination at *n* -/
+@[grind =]
 def LatestEdge (G : TemporalGraph V) (x y : V) (n : ℕ) : Prop :=
   G.Adj x y n ∧ ∀ z : V, ∀ j : ℕ, G.Adj x z j → j ≤ n
 
 /-- *y* is an *earliest neighbor* of *x* -/
+@[grind =]
 def EarliestNeighbor (G : TemporalGraph V) (x y : V) : Prop := ∃ n : ℕ, G.EarliestEdge x y n
 
 /-- *y* is a *latest neighbor* of *x* -/
+@[grind =]
 def LatestNeighbor (G : TemporalGraph V) (x y : V) : Prop := ∃ n : ℕ, G.LatestEdge x y n
 
 end Definitions
@@ -251,6 +257,7 @@ instance : LE (TemporalGraph V) :=
   ⟨IsSpanningSubgraph⟩
 
 /-- `G ≤ H` unfolds to pointwise adjacency implication: every arc of `G` is an arc of `H`. -/
+@[grind =]
 lemma le_iff_adj {G H : TemporalGraph V} :
     G ≤ H ↔ ∀ x y : V, ∀ n : ℕ, G.Adj x y n → H.Adj x y n :=
   .rfl

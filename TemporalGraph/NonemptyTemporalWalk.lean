@@ -43,11 +43,13 @@ inductive NonemptyTemporalWalk : V → ℕ → V → ℕ → Type u
 namespace NonemptyTemporalWalk
 
 /-- The length of a NonemptyTemporalWalk is the number of edges along it. -/
+@[grind =]
 def length {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → ℕ
   | Single _ => 1
   | Step p _ _ => 1 + p.length
 
 /-- The `support` of a NonemptyTemporalWalk is the list of vertices it visits in order. -/
+@[grind =]
 def support {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → List V
   | Single _ => y :: [x]
   | Step p _ _ => y :: p.support
@@ -55,11 +57,13 @@ def support {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → List V
 -- Arcs
 /-- The `arcs` of a NonemptyTemporalWalk is the list of arcs (edge with a direction) it visits in
 order. -/
+@[grind =]
 def arcs {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → List (V × V × ℕ)
   | @Single _ _ x y n _ => [⟨x ,⟨y, n⟩⟩]
   | @Step _ _ _ y z _ _ k p _ _ => ⟨y ,⟨ z, k⟩⟩ :: p.arcs
 
 /-- Concatenate two compatible NonemptyTemporalWalks. -/
+@[grind =]
 def append {x y z : V} {n m k l}
     (p : G.NonemptyTemporalWalk x n y m) (ext : G.NonemptyTemporalWalk y k z l)
     (h : m ≤ k := by decide) :
@@ -77,6 +81,7 @@ def prepend {x y z : V} {n m k : ℕ}
 
 /-- Map a walk along `G ≤ G'`: every arc of `G` is an arc of `G'`, so a walk of `G` is a walk of
 `G'`, unchanged in its vertices and times. -/
+@[grind =]
 protected def mapLe {G' : TemporalGraph V} (h : G ≤ G') {x y : V} {n m : ℕ} :
     G.NonemptyTemporalWalk x n y m → G'.NonemptyTemporalWalk x n y m
   | Single h' => Single (h h')

@@ -74,6 +74,47 @@ protected def mapLe {G' : TemporalGraph V} (h : G ≤ G') {x y : V} {n m : ℕ} 
   | Empty => Empty
   | Nonempty p => Nonempty (p.mapLe h)
 
+section API
+
+variable {x y : V} {n m : ℕ}
+
+/-- Mapping a walk along `G ≤ G'` preserves its length. -/
+@[simp, grind =]
+theorem length_mapLe {G' : TemporalGraph V} (h₀ : G ≤ G') (p : G.TemporalWalk x n y m) :
+    (p.mapLe h₀).length = p.length := by
+  cases p <;> grind
+
+/-- Mapping a walk along `G ≤ G'` preserves its support. -/
+@[simp, grind =]
+theorem support_mapLe {G' : TemporalGraph V} (h₀ : G ≤ G') (p : G.TemporalWalk x n y m) :
+    (p.mapLe h₀).support = p.support := by
+  cases p <;> grind
+
+/-- Mapping a walk along `G ≤ G'` preserves its arcs. -/
+@[simp, grind =]
+theorem arcs_mapLe {G' : TemporalGraph V} (h₀ : G ≤ G') (p : G.TemporalWalk x n y m) :
+    (p.mapLe h₀).arcs = p.arcs := by
+  cases p <;> grind
+
+/-- The start vertex of a walk belongs to its support. -/
+@[grind .]
+theorem start_mem_support (p : G.TemporalWalk x n y m) : x ∈ p.support := by
+  cases p <;> grind
+
+/-- The end vertex of a walk belongs to its support. -/
+@[grind .]
+theorem end_mem_support (p : G.TemporalWalk x n y m) : y ∈ p.support := by
+  cases p <;> grind
+
+/-- Every arc of a walk is an edge of the graph, at a time between the start and end times. -/
+theorem adj_of_mem_arcs (p : G.TemporalWalk x n y m) :
+    ∀ a ∈ p.arcs, G.Adj a.1 a.2.1 a.2.2 ∧ n ≤ a.2.2 ∧ a.2.2 ≤ m := by
+  cases p with
+  | Empty => grind
+  | Nonempty p => exact p.adj_of_mem_arcs
+
+end API
+
 end TemporalWalk
 
 namespace NonemptyTemporalWalk

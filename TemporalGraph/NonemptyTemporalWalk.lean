@@ -127,6 +127,74 @@ lemma LatestEdge.time_bound_of_edge {x y z : V} {n m k : ℕ} [G.IsSymm]
   | Step _ h' _ => exact h.right _ _ h'.symm
 
 
+section API
+
+variable {x y z : V} {n m k l : ℕ}
+
+/-- The length of a concatenation is the sum of the lengths, used to bound journeys assembled
+inside a spanner. -/
+@[simp, grind =]
+theorem length_append (p : G.NonemptyTemporalWalk x n y m) (q : G.NonemptyTemporalWalk y k z l)
+    (h₀ : m ≤ k) : (p.append q h₀).length = p.length + q.length := by
+  induction q <;> grind
+
+/-- The arcs of a concatenation are those of the second walk followed by those of the first
+(the lists are stored last arc first). -/
+@[simp, grind =]
+theorem arcs_append (p : G.NonemptyTemporalWalk x n y m) (q : G.NonemptyTemporalWalk y k z l)
+    (h₀ : m ≤ k) : (p.append q h₀).arcs = q.arcs ++ p.arcs := by
+  induction q <;> grind
+
+/-- Mapping a walk along `G ≤ G'` preserves its length. -/
+@[simp, grind =]
+theorem length_mapLe {G' : TemporalGraph V} (h₀ : G ≤ G') (p : G.NonemptyTemporalWalk x n y m) :
+    (p.mapLe h₀).length = p.length := by
+  induction p <;> grind
+
+/-- Mapping a walk along `G ≤ G'` preserves its support. -/
+@[simp, grind =]
+theorem support_mapLe {G' : TemporalGraph V} (h₀ : G ≤ G') (p : G.NonemptyTemporalWalk x n y m) :
+    (p.mapLe h₀).support = p.support := by
+  induction p <;> grind
+
+/-- Mapping a walk along `G ≤ G'` preserves its arcs. -/
+@[simp, grind =]
+theorem arcs_mapLe {G' : TemporalGraph V} (h₀ : G ≤ G') (p : G.NonemptyTemporalWalk x n y m) :
+    (p.mapLe h₀).arcs = p.arcs := by
+  induction p <;> grind
+
+/-- Mapping a walk along `G ≤ G'` commutes with concatenation. -/
+theorem mapLe_append {G' : TemporalGraph V} (h₀ : G ≤ G') (p : G.NonemptyTemporalWalk x n y m)
+    (q : G.NonemptyTemporalWalk y k z l) (h₁ : m ≤ k) :
+    (p.append q h₁).mapLe h₀ = (p.mapLe h₀).append (q.mapLe h₀) h₁ := by
+  induction q <;> grind
+
+/-- Mapping a walk along `G ≤ G'` then `G' ≤ G''` is mapping it along `G ≤ G''`. -/
+@[simp]
+theorem mapLe_mapLe {G' G'' : TemporalGraph V} (h₀ : G ≤ G') (h₁ : G' ≤ G'')
+    (p : G.NonemptyTemporalWalk x n y m) :
+    (p.mapLe h₀).mapLe h₁ = p.mapLe (fun h ↦ h₁ (h₀ h)) := by
+  induction p <;> grind
+
+/-- The start vertex of a walk belongs to its support. -/
+@[grind .]
+theorem start_mem_support (p : G.NonemptyTemporalWalk x n y m) : x ∈ p.support := by
+  induction p <;> grind
+
+/-- The end vertex of a walk belongs to its support. -/
+@[grind .]
+theorem end_mem_support (p : G.NonemptyTemporalWalk x n y m) : y ∈ p.support := by
+  cases p <;> grind
+
+/-- Every arc of a walk is an edge of the graph, at a time between the start and end times. -/
+theorem adj_of_mem_arcs (p : G.NonemptyTemporalWalk x n y m) :
+    ∀ a ∈ p.arcs, G.Adj a.1 a.2.1 a.2.2 ∧ n ≤ a.2.2 ∧ a.2.2 ≤ m := by
+  induction p with
+  | Single h => grind
+  | Step p h h' ih => have := p.nondecreasing_time; grind
+
+end API
+
 end NonemptyTemporalWalk
 
 end TemporalGraph

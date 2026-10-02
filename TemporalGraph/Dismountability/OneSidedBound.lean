@@ -117,56 +117,32 @@ section BigO
 
 open Asymptotics Filter
 
-/-- `Nat.clog 2 n` is within `1` of `log₂ n`, for `n ≥ 2`: `⌈log₂ n⌉` is `Nat.clog 2 n` (cast via
-`Real.natCeil_logb_natCast`), and a ceiling is below its argument plus one. -/
-private lemma clog_le_log_div_log_two {n : ℕ} (hn : 2 ≤ n) :
-    (Nat.clog 2 n : ℝ) ≤ Real.log n / Real.log 2 + 1 := by
-  have hx : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast (show 1 ≤ n by omega)
-  have hnonneg : 0 ≤ Real.logb 2 (n : ℝ) := Real.logb_nonneg (by norm_num) hx
-  have hceil : (⌈Real.logb 2 (n : ℝ)⌉₊ : ℝ) < Real.logb 2 (n : ℝ) + 1 :=
-    Nat.ceil_lt_add_one hnonneg
-  have heq : Nat.clog 2 n = ⌈Real.logb 2 (n : ℝ)⌉₊ := (Real.natCeil_logb_natCast 2 n).symm
-  rw [heq]
-  exact hceil.le
+/-- `⌈log₂ n⌉ ≤ log₂ n + 1`: `Nat.clog 2 n` is the ceiling of `Real.logb 2 n`
+(`Real.natCeil_logb_natCast`), and a ceiling is less than its argument plus one. -/
+private lemma clog_le_logb_add_one {n : ℕ} (hn : 1 ≤ n) :
+    (Nat.clog 2 n : ℝ) ≤ Real.logb 2 n + 1 := by
+  rw [← Real.natCeil_logb_natCast]
+  exact (Nat.ceil_lt_add_one (Real.logb_nonneg (by norm_num) (by exact_mod_cast hn))).le
 
-/-- For `n ≥ 2`, `log₂ n ≥ 1`: monotonicity of `log` from `2 ≤ n`. -/
-private lemma one_le_log_div_log_two {n : ℕ} (hn : 2 ≤ n) :
-    1 ≤ Real.log n / Real.log 2 := by
-  have h2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
-  have hle : (2 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
-  rw [one_le_div h2]
-  exact Real.log_le_log (by norm_num) hle
+/-- `1 ≤ log₂ n` for `n ≥ 2`. -/
+private lemma one_le_logb {n : ℕ} (hn : 2 ≤ n) : 1 ≤ Real.logb 2 n := by
+  rw [Real.le_logb_iff_rpow_le (by norm_num) (by positivity)]
+  norm_num
+  exact_mod_cast hn
 
-/-- `spannerBound` is `O(n log n)`: by `spannerBound_le` and `⌈log₂ n⌉ ≤ log₂ n + 1`. -/
+/-- `spannerBound` is `O(n log n)`. -/
 theorem spannerBound_isBigO :
     (fun n ↦ (spannerBound n : ℝ)) =O[atTop] fun n ↦ (n : ℝ) * Real.log n := by
-  refine Asymptotics.IsBigO.of_bound (5 / Real.log 2)
-    (Filter.eventually_atTop.2 ⟨2, fun n hn ↦ ?_⟩)
-  have h2 : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
-  have hnR : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
-  have hlogn : 0 ≤ Real.log n := Real.log_nonneg (by exact_mod_cast (show 1 ≤ n by omega))
-  rw [Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ (spannerBound n : ℝ)),
-      Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ (n : ℝ) * Real.log n)]
-  -- the nat recurrence bound, cast to `ℝ`
-  have hnat : spannerBound n ≤ 2 * n * Nat.clog 2 n + n := spannerBound_le (by omega)
-  have hcast : (spannerBound n : ℝ) ≤ 2 * (n : ℝ) * (Nat.clog 2 n : ℝ) + (n : ℝ) := by
-    exact_mod_cast hnat
-  -- `Nat.clog 2 n ≤ log₂ n + 1`, scaled by the nonnegative factor `2 n`
-  have hclog : (Nat.clog 2 n : ℝ) ≤ Real.log n / Real.log 2 + 1 := clog_le_log_div_log_two hn
-  have hone : 1 ≤ Real.log n / Real.log 2 := one_le_log_div_log_two hn
-  have e1 : 2 * (n : ℝ) * (Nat.clog 2 n : ℝ) ≤ 2 * (n : ℝ) * (Real.log n / Real.log 2 + 1) :=
-    mul_le_mul_of_nonneg_left hclog (by positivity)
-  -- the remaining `n` term absorbs into `n log₂ n`, since `log₂ n ≥ 1`
-  have e2 : (n : ℝ) ≤ (n : ℝ) * (Real.log n / Real.log 2) := by
-    calc (n : ℝ) = (n : ℝ) * 1 := (mul_one _).symm
-    _ ≤ (n : ℝ) * (Real.log n / Real.log 2) := mul_le_mul_of_nonneg_left hone hnR
-  have hfinal :
-      2 * (n : ℝ) * (Nat.clog 2 n : ℝ) + (n : ℝ) ≤ 5 / Real.log 2 * ((n : ℝ) * Real.log n) := by
-    have hrw : 5 / Real.log 2 * ((n : ℝ) * Real.log n)
-        = 5 * ((n : ℝ) * (Real.log n / Real.log 2)) := by ring
-    rw [hrw]
-    nlinarith [e1, e2]
-  linarith [hcast, hfinal]
+  refine IsBigO.of_bound (5 / Real.log 2) (eventually_atTop.2 ⟨2, fun n hn ↦ ?_⟩)
+  rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
+    show 5 / Real.log 2 * (n * Real.log n) = 5 * (n * Real.logb 2 n) by
+      rw [← Real.log_div_log]; ring]
+  -- `spannerBound n ≤ 2 n ⌈log₂ n⌉ + n ≤ 2 n (log₂ n + 1) + n ≤ 5 n log₂ n`, since `1 ≤ log₂ n`
+  have hb : (spannerBound n : ℝ) ≤ 2 * n * Nat.clog 2 n + n := by
+    exact_mod_cast spannerBound_le (by omega)
+  nlinarith [mul_le_mul_of_nonneg_left (clog_le_logb_add_one (by omega : 1 ≤ n))
+      (by positivity : (0 : ℝ) ≤ 2 * n),
+    le_mul_of_one_le_right (Nat.cast_nonneg n) (one_le_logb hn)]
 
 end BigO
 

@@ -18,6 +18,12 @@ to contain at least one edge. Times must be non-decreasing along the walk.
 * `arcs` : The list of directed edges (as triples `V × V × ℕ`)
 * `append` : Concatenate two compatible walks
 * `prepend` : Add an edge at the start of a walk
+* `mapLe` : Transport a walk along a spanning-subgraph inclusion `G ≤ G'`
+
+## Main results
+* `nondecreasing_time` : Times are non-decreasing along a walk
+* `exists_adj_fst` : The first vertex of a walk has an outgoing arc
+* `exists_adj_snd` : The last vertex of a walk has an incoming arc
 -/
 
 universe u
@@ -76,6 +82,7 @@ protected def mapLe {G' : TemporalGraph V} (h : G ≤ G') {x y : V} {n m : ℕ} 
   | Single h' => Single (h h')
   | Step p h' h'' => Step (p.mapLe h) (h h') h''
 
+/-- Times are non-decreasing along a walk: `n ≤ m`. -/
 @[simp]
 lemma nondecreasing_time {x y : V} {n m : ℕ} (tw : G.NonemptyTemporalWalk x n y m) : n ≤ m := by
   induction tw with
@@ -97,6 +104,7 @@ lemma exists_adj_snd {x y : V} {n m : ℕ} (tw : G.NonemptyTemporalWalk x n y m)
   | Single h => exact ⟨_, _, h⟩
   | Step _ h _ => exact ⟨_, _, h⟩
 
+/-- The earliest edge out of a walk's start vertex occurs no later than the walk's start time. -/
 lemma EarliestEdge.time_bound_of_edge {x y z : V} {n m k : ℕ}
     (tw : G.NonemptyTemporalWalk x n y m) (h : G.EarliestEdge x z k) :
     k ≤ n := by
@@ -105,6 +113,8 @@ lemma EarliestEdge.time_bound_of_edge {x y z : V} {n m k : ℕ}
   |Single h' => exact h.right _ _ h'
   |Step _ _ _ hi => exact hi
 
+/-- For a symmetric graph, the latest edge out of a walk's end vertex occurs no earlier than the
+walk's end time. -/
 lemma LatestEdge.time_bound_of_edge {x y z : V} {n m k : ℕ} [G.IsSymm]
     (tw : G.NonemptyTemporalWalk x n y m) (h : G.LatestEdge y z k) :
     m ≤ k := by

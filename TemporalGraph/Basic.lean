@@ -34,6 +34,9 @@ and its clean characterization `mem_edgeSet` needs `[G.IsSymm]` (the uncondition
 * `TemporalGraph.EarliestEdge`, `TemporalGraph.LatestEdge`, `TemporalGraph.EarliestNeighbor`,
   `TemporalGraph.LatestNeighbor` : the earliest/latest edge and neighbor of a vertex.
 * `TemporalGraph.arcSet`, `TemporalGraph.edgeSet` : the oriented and symmetric edge sets.
+* `TemporalGraph.arcSize`, `TemporalGraph.size` : their `Fintype.card` counts, computable under a
+  `Fintype` instance, with `Set.ncard`/`Finset.card` bridge lemmas (`arcSize_eq_ncard`,
+  `size_eq_ncard`, `arcSize_eq_card_toFinset`, `size_eq_card_toFinset`).
 * `TemporalGraph.neighborSet`, `TemporalGraph.incidenceSet` : the vertex-indexed counting notions,
   inherited by `Subgraph` (see `TemporalGraph.Subgraph` in `Subgraph.lean`).
 * `TemporalGraph.symmetrize`, `TemporalGraph.fromArcSet`, `TemporalGraph.fromEdgeSet` : graph
@@ -110,6 +113,7 @@ theorem IsSymm.of_adj {G : TemporalGraph V} (h : ∀ n ⦃x y⦄, G.Adj x y n �
     G.IsSymm :=
   ⟨fun n ↦ ⟨fun _ _ hxy ↦ h n hxy⟩⟩
 
+/-- A loopless graph has no self-adjacency: `¬G.Adj x x n`, at any time `n`. -/
 @[simp, aesop safe (rule_sets := [TemporalGraph])]
 protected theorem irrefl {G : TemporalGraph V} [hl : G.IsLoopless] {x : V} {n : ℕ} :
     ¬G.Adj x x n :=
@@ -119,27 +123,33 @@ section Adjacency
 
 variable {G : TemporalGraph V} {x y : V} {n : ℕ}
 
+/-- For a symmetric graph, adjacency is a commutative relation: `G.Adj x y n ↔ G.Adj y x n`. -/
 theorem adj_comm [hs : G.IsSymm] (x y : V) (n : ℕ) : G.Adj x y n ↔ G.Adj y x n :=
   (hs.symm n).iff x y
 
--- Not `@[symm]`: the `symm` tactic does not synthesize the `[G.IsSymm]` instance argument of a
--- `@[symm]` lemma, so the kernel would reject the resulting proof (lean4#9997). Use the terms
--- `h.symm` / `adj_symm h` instead of the tactic. For aesop, symmetry is a `forward` rule: from
--- `h : G.Adj x y n` it adds `G.Adj y x n` once, where an `apply` rule would loop.
+/-- `G.Adj y x n` from `G.Adj x y n`, as a term rather than through the `symm` tactic.
+Not `@[symm]`: the `symm` tactic does not synthesize the `[G.IsSymm]` instance argument of a
+`@[symm]` lemma, so the kernel would reject the resulting proof (lean4#9997). Use the terms
+`h.symm` / `adj_symm h` instead of the tactic. For aesop, symmetry is a `forward` rule: from
+`h : G.Adj x y n` it adds `G.Adj y x n` once, where an `apply` rule would loop. -/
 @[aesop safe forward (rule_sets := [TemporalGraph])]
 theorem adj_symm [hs : G.IsSymm] (h : G.Adj x y n) : G.Adj y x n :=
   (hs.symm n).symm x y h
 
+/-- Dot-notation form of `adj_symm`: `h.symm` symmetrizes an adjacency proof. -/
 theorem Adj.symm [G.IsSymm] (h : G.Adj x y n) : G.Adj y x n :=
   adj_symm h
 
+/-- In a loopless graph, adjacent vertices are distinct. -/
 theorem ne_of_adj [G.IsLoopless] (h : G.Adj x y n) : x ≠ y := by
   rintro rfl
   exact G.irrefl h
 
+/-- Dot-notation form of `ne_of_adj`. -/
 protected theorem Adj.ne [G.IsLoopless] (h : G.Adj x y n) : x ≠ y :=
   G.ne_of_adj h
 
+/-- Symmetric form of `Adj.ne`: `y ≠ x` from `G.Adj x y n` in a loopless graph. -/
 protected theorem Adj.ne' [G.IsLoopless] (h : G.Adj x y n) : y ≠ x :=
   h.ne.symm
 
@@ -163,6 +173,7 @@ def simpleFootprint (G : TemporalGraph V) (hs : G.IsSymm) (hl : G.IsLoopless) : 
     symm := ⟨fun _ _ ⟨n, h⟩ => ⟨n, (hs.symm n).symm _ _ h⟩⟩
   }
 
+/-- `G` is simple: any two vertices are joined by an arc at no more than one time. -/
 def IsSimple (G : TemporalGraph V) : Prop :=
   ∀ (x y : V) (n m : ℕ), G.Adj x y n ∧ G.Adj x y m → n=m
 
@@ -172,6 +183,8 @@ graph. -/
 abbrev IsClique (G : TemporalGraph V) (S : Set V) : Prop :=
   S.Pairwise fun x y ↦ ∃ n, G.Adj x y n
 
+/-- `G.IsClique S` unfolds to pairwise adjacency of `S` in the footprint of `G`, i.e. forgetting
+time. -/
 lemma isClique_iff_footprint_isComplete {G : TemporalGraph V} {S : Set V} :
     G.IsClique S ↔ S.Pairwise G.footprint.Adj := Iff.rfl
 
@@ -180,9 +193,11 @@ time. Shorthand for `G.IsClique Set.univ`. On a subgraph `H`, use `H.IsCliqueSub
 instead: the inherited `H.IsCliqueGraph` asks for a clique on all of `V`. -/
 abbrev IsCliqueGraph (G : TemporalGraph V) : Prop := G.IsClique Set.univ
 
+/-- `G` is proper: at any given time, a vertex has at most one out-neighbor. -/
 def IsProper (G : TemporalGraph V) : Prop :=
   ∀ x y z : V, ∀ n : ℕ, G.Adj x y n ∧ G.Adj x z n → y = z
 
+/-- `G` is happy: both simple and proper. -/
 def IsHappy (G : TemporalGraph V) : Prop :=
   G.IsSimple ∧ G.IsProper
 
@@ -235,10 +250,12 @@ def IsSpanningSubgraph (G H : TemporalGraph V) : Prop :=
 instance : LE (TemporalGraph V) :=
   ⟨IsSpanningSubgraph⟩
 
+/-- `G ≤ H` unfolds to pointwise adjacency implication: every arc of `G` is an arc of `H`. -/
 lemma le_iff_adj {G H : TemporalGraph V} :
     G ≤ H ↔ ∀ x y : V, ∀ n : ℕ, G.Adj x y n → H.Adj x y n :=
   .rfl
 
+/-- `IsSpanningSubgraph` is definitionally the `≤` order on `TemporalGraph`. -/
 @[simp]
 theorem isSpanningSubgraph_eq_le :
     (IsSpanningSubgraph : TemporalGraph V -> TemporalGraph V -> Prop) =
@@ -268,9 +285,10 @@ end Monotonicity
 
 section neighborSet
 
-
+/-- The set of out-neighbors of `x` in `G`, forgetting time. -/
 def neighborSet (G : TemporalGraph V) (x : V) := {y | ∃ n : ℕ, G.Adj x y n}
 
+/-- `y ∈ G.neighborSet x` iff `x` is adjacent to `y` at some time. -/
 @[simp]
 theorem mem_neighborSet (G : TemporalGraph V) (x y : V) :
     y ∈ G.neighborSet x ↔ ∃ n : ℕ, G.Adj x y n :=
@@ -294,6 +312,7 @@ the oriented world's notion, and it characterizes adjacency with no hypothesis a
 def arcSet (G : TemporalGraph V) : Set (V × V × ℕ) :=
   {a | G.Adj a.1 a.2.1 a.2.2}
 
+/-- `(x, y, n)` is an arc of `G` iff `G.Adj x y n`. -/
 @[simp]
 theorem mem_arcSet (G : TemporalGraph V) {x y : V} {n : ℕ} :
     (x, y, n) ∈ G.arcSet ↔ G.Adj x y n :=
@@ -304,11 +323,13 @@ symmetrized — see `fromEdgeSet` for the symmetric counterpart. -/
 def fromArcSet (s : Set (V × V × ℕ)) : TemporalGraph V where
   Adj x y n := (x, y, n) ∈ s
 
+/-- `(fromArcSet s).Adj x y n` iff `(x, y, n) ∈ s`. -/
 @[simp]
 theorem fromArcSet_adj {s : Set (V × V × ℕ)} {x y : V} {n : ℕ} :
     (fromArcSet s).Adj x y n ↔ (x, y, n) ∈ s :=
   Iff.rfl
 
+/-- `fromArcSet` and `arcSet` are mutually inverse: `(fromArcSet s).arcSet = s`. -/
 @[simp]
 theorem arcSet_fromArcSet (s : Set (V × V × ℕ)) : (fromArcSet (V := V) s).arcSet = s := by
   ext ⟨x, y, n⟩
@@ -340,6 +361,7 @@ theorem mem_edgeSet_iff_or (G : TemporalGraph V) {x y : V} {n : ℕ} :
     · exact ⟨x, y, rfl, h⟩
     · exact ⟨y, x, Sym2.eq_swap, h⟩
 
+/-- For a symmetric graph, `(s(x, y), n) ∈ G.edgeSet` iff `G.Adj x y n`. -/
 @[simp]
 theorem mem_edgeSet (G : TemporalGraph V) [G.IsSymm] {x y : V} {n : ℕ} :
     (s(x,y), n) ∈ G.edgeSet ↔ G.Adj x y n := by
@@ -391,6 +413,7 @@ smallest symmetric temporal graph above `G`. -/
 def symmetrize (G : TemporalGraph V) : TemporalGraph V where
   Adj x y n := G.Adj x y n ∨ G.Adj y x n
 
+/-- `G.symmetrize.Adj x y n` iff `G.Adj x y n ∨ G.Adj y x n`. -/
 @[simp]
 theorem symmetrize_adj {x y : V} {n : ℕ} :
     G.symmetrize.Adj x y n ↔ G.Adj x y n ∨ G.Adj y x n :=
@@ -403,6 +426,7 @@ instance symmetrize_isSymm (G : TemporalGraph V) : G.symmetrize.IsSymm :=
 instance symmetrize_isLoopless (G : TemporalGraph V) [G.IsLoopless] : G.symmetrize.IsLoopless :=
   ⟨fun _ ↦ ⟨fun _ h ↦ Or.elim h (fun h ↦ G.irrefl h) fun h ↦ G.irrefl h⟩⟩
 
+/-- `G` is a spanning subgraph of its own symmetrization. -/
 theorem le_symmetrize (G : TemporalGraph V) : G ≤ G.symmetrize := fun h ↦ Or.inl h
 
 /-- A symmetric graph is its own symmetrization. -/
@@ -423,6 +447,7 @@ unordered pair is read in both directions. -/
 def fromEdgeSet (s : Set ((Sym2 V) × ℕ)) : TemporalGraph V where
   Adj x y n := (s(x,y), n) ∈ s
 
+/-- `(fromEdgeSet s).Adj x y n` iff `(s(x, y), n) ∈ s`. -/
 @[simp]
 theorem fromEdgeSet_adj {s : Set ((Sym2 V) × ℕ)} {x y : V} {n : ℕ} :
     (fromEdgeSet s).Adj x y n ↔ (s(x,y), n) ∈ s :=
@@ -431,6 +456,7 @@ theorem fromEdgeSet_adj {s : Set ((Sym2 V) × ℕ)} {x y : V} {n : ℕ} :
 instance fromEdgeSet_isSymm (s : Set ((Sym2 V) × ℕ)) : (fromEdgeSet (V := V) s).IsSymm :=
   .of_adj fun _ _ _ h ↦ by simpa [Sym2.eq_swap] using h
 
+/-- `fromEdgeSet` and `edgeSet` are mutually inverse: `(fromEdgeSet s).edgeSet = s`. -/
 @[simp]
 theorem edgeSet_fromEdgeSet (s : Set ((Sym2 V) × ℕ)) : (fromEdgeSet (V := V) s).edgeSet = s := by
   ext ⟨p, n⟩

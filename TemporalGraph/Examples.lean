@@ -73,6 +73,7 @@ theorem square_between_isBicliqueWith :
   IsClique.between_isBicliqueWith square_clique (Set.subset_univ _) (Set.subset_univ _)
     (Set.disjoint_left.mpr (by decide))
 
+/-- The `vminus` set of the full `square` subgraph is `{0, 1}`. -/
 theorem square_vminus : (⊤ : square.Subgraph).vminus = {0, 1} := by
   ext x
   simp only [Subgraph.vminus, Set.mem_ofPred_eq, TemporalGraph.EarliestNeighbor,
@@ -96,6 +97,7 @@ theorem square_vminus : (⊤ : square.Subgraph).vminus = {0, 1} := by
     · exact ⟨1, 1, by simp [square], fun _ _ hadj ↦ square_adj_pos hadj⟩
     · exact ⟨0, 1, by simp [square], fun _ _ hadj ↦ square_adj_pos hadj⟩
 
+/-- The `vplus` set of the full `square` subgraph is `{2, 3}`. -/
 theorem square_vplus : (⊤ : square.Subgraph).vplus = {2, 3} := by
   ext x
   simp only [Subgraph.vplus, Set.mem_ofPred_eq, TemporalGraph.LatestNeighbor,
@@ -123,9 +125,11 @@ theorem square_vplus : (⊤ : square.Subgraph).vplus = {2, 3} := by
 /-- A temporal bi-clique `K₂,₂` with labels 1, 2, 3, 4. -/
 def biSquare : TemporalGraph (Fin 2 ⊕ Fin 2) := completeBipartite fun a b ↦ 2 * a.val + b.val + 1
 
+/-- `biSquare` is a bi-clique graph. -/
 theorem biSquare_isBiclique : biSquare.IsBiclique Set.univ :=
   completeBipartite_isBiclique _
 
+/-- `biSquare` is happy: both simple and proper. -/
 theorem biSquare_isHappy : biSquare.IsHappy :=
   ⟨completeBipartite_isSimple _, completeBipartite_isProper
     (fun a b b' h ↦ Fin.ext (by simpa using h))

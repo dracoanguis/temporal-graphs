@@ -22,11 +22,16 @@ spanner of another), and `IsTCSpanner` (temporally connected spanner).
 * `IsSpanner` : A spanning subgraph that preserves reachability
 * `IsSpannerOf` : One subgraph spanning and preserving reachability in another
 * `IsTCSpanner` : A temporally connected spanner
+* `TemporallyConnectedSubgraph` : abbreviation for `H.TemporallyConnected H.verts`
 
 ## Main results
 * `reachable_of_subgraph_reachable` : Reachability in subgraph implies reachability in parent
 * `reachable_of_le_reachable` : Reachability preserved under subgraph inclusion
 * `TCspanner_iff_TC` : Existence of a TC-spanner characterizes temporal connectivity
+* `mem_verts_of_reachable` : A reachable pair of distinct vertices lies in `H`'s own vertex set
+* `top_isSpanner` : The whole graph `⊤` is a spanner of itself
+* `addVerts_reachability`, `addEdge_reachability`, `deleteVerts_reachability` : reachability is
+  preserved by these subgraph constructions
 -/
 
 universe u
@@ -62,6 +67,9 @@ if it is spanning and it is temporally connected. -/
 def IsTCSpanner (H : Subgraph G) : Prop :=
   (H.IsSpanning) ∧ (H.TemporallyConnectedSubgraph)
 
+/-- `H.IsTCSpanner` is equivalent to `H.IsSpanner ∧ H.TemporallyConnectedSubgraph`: once `H` is
+temporally connected on its own vertices, the spanner condition holds vacuously (`H.Reachable x y`
+already holds, regardless of `G.Reachable x y`). -/
 theorem isTCSpanner_iff_isSpanner_and_TC {H : Subgraph G} :
     H.IsTCSpanner ↔ H.IsSpanner ∧ H.TemporallyConnectedSubgraph := by
   unfold IsTCSpanner IsSpanner
@@ -98,6 +106,9 @@ lemma reachable_of_le_reachable {H H' : Subgraph G} (h : H ≤ H') {x y : V} :
     H.Reachable x y → H'.Reachable x y :=
   Reachable.mono (toTemporalGraph_le h)
 
+/-- If `H` is spanning and temporally connected on its own vertices, then `H`'s own adjacency
+(`H.toTemporalGraph`) is temporally connected on all of `V`: spanning turns the quantification
+over `H.verts` into one over `Set.univ`. -/
 lemma toTemporalGraph_temporallyConnected_of_spanning_temporallyConnected
     {H : Subgraph G} :
     H.TemporallyConnectedSubgraph ∧ H.IsSpanning → H.toTemporalGraph.TemporallyConnectedGraph := by
@@ -105,6 +116,8 @@ lemma toTemporalGraph_temporallyConnected_of_spanning_temporallyConnected
   intro x _ y _
   exact h_tc x (h_span x) y (h_span y)
 
+/-- A TC-spanner of `G` witnesses that `G` itself is temporally connected: reachability in `H`
+transfers to `G` via `Reachable.mono`. -/
 protected lemma temporallyConnected_of_TCSpanner (H : Subgraph G) :
     H.IsTCSpanner → G.TemporallyConnectedGraph := by
   intro ⟨h_span, h_tc⟩
@@ -112,19 +125,26 @@ protected lemma temporallyConnected_of_TCSpanner (H : Subgraph G) :
   intro x _ y _
   exact Reachable.mono H.toTemporalGraph_le_self (h_tc x (h_span x) y (h_span y))
 
+/-- Reachability in `H` is preserved by adding vertices (`Subgraph.addVerts`), since
+`H ≤ H.addVerts s`. -/
 theorem addVerts_reachability {s : Set V} {H : Subgraph G} {x y : V} :
     H.Reachable x y → (H.addVerts s).Reachable x y :=
   reachable_of_le_reachable addVerts_le
 
+/-- Reachability in `H` is preserved by adding an edge (`Subgraph.addEdge`), since
+`H ≤ H.addEdge h h₁`. -/
 theorem addEdge_reachability {x y : V} {n : ℕ} {H : Subgraph G} [G.IsSymm]
     {h : G.Adj x y n} {h₁ : x ∈ H.verts ∧ y ∈ H.verts} {a b : V} :
     H.Reachable a b → (H.addEdge h h₁).Reachable a b :=
   reachable_of_le_reachable addEdge_le
 
+/-- Reachability in `H.deleteVerts s` implies reachability in `H`, since `H.deleteVerts s ≤ H`. -/
 theorem deleteVerts_reachability {s : Set V} {H : Subgraph G} {x y : V} :
     (H.deleteVerts s).Reachable x y → H.Reachable x y :=
   reachable_of_le_reachable deleteVerts_le
 
+/-- The whole graph `⊤ : Subgraph G` is a spanner of itself: it is spanning and trivially
+preserves reachability. -/
 lemma top_isSpanner : (⊤ : Subgraph G).IsSpanner :=
   ⟨top_isSpanning, fun _ _ _ _ h ↦ h⟩
 

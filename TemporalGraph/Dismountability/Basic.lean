@@ -34,7 +34,8 @@ and `vplus` (`earliestNeighborFn`, `latestNeighborFn`), which forces `vzero` to 
 * `TemporalGraph.Subgraph.TwoHopDismountable` : SAND 2025, §2.1, `{1,2}`-hop dismountability
   (`k`-hop with `k ≤ 2`).
 * `TemporalGraph.Subgraph.earliestNeighborFn`, `latestNeighborFn` : the bijections between
-  `vminus` and `vplus` obtained when `H` is not two-hop-dismountable.
+  `vminus` and `vplus` obtained when `H` is not two-hop-dismountable (as `V → V` functions, with
+  `Set.MapsTo`/`Set.InjOn`/`Set.BijOn` lemmas, suffixed `_mapsTo`/`_injOn`/`_bijOn`).
 
 ## Main results
 
@@ -45,8 +46,19 @@ and `vplus` (`earliestNeighborFn`, `latestNeighborFn`), which forces `vzero` to 
   `vplus` (resp. `vminus`) have distinct earliest (resp. latest) neighbors.
 * `TemporalGraph.Subgraph.earliestNeighborFn_bijOn`, `latestNeighborFn_bijOn` : `Set.BijOn`
   bijections between the sets `vminus` and `vplus` (SAND 2025, Corollary 3.3, via Lemma 3.2).
+* `TemporalGraph.Subgraph.vminus_card_eq_vplus_card` : SAND 2025, Corollary 3.3 (3),
+  `vminus.ncard = vplus.ncard`.
 * `TemporalGraph.Subgraph.vzero_empty_of_not_twoHopDismountable` : SAND 2025, Lemma 3.4,
   `vzero = ∅`.
+* `TemporalGraph.Subgraph.earliestEdge_reciprocity`, `latestEdge_reciprocity` : reciprocity
+  (SAND 2025, §3, as cited at each lemma below).
+* `TemporalGraph.Subgraph.biclique_of_not_twoHopDismountable`,
+  `between_TC_of_not_twoHopDismountable` : the bipartite subgraph between `vminus` and `vplus` is
+  a temporally connected bi-clique when `H` is not two-hop-dismountable (SAND 2025, §4, as cited
+  at each lemma below).
+* `TemporalGraph.temporallyConnected_of_reachable_of_matchings` (section `MatchingConnectivity`) :
+  if `t` is reached from `s` and matched to it on both the earliest-edge and latest-edge side,
+  `s ∪ t` is temporally connected (SAND 2025, §4.1, after Corollary 3.3).
 
 ## References
 

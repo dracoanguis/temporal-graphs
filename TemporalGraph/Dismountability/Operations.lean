@@ -28,6 +28,9 @@ few edges that made it dismountable (or two-hop-dismountable) in the first place
   adding at most 2 edges (`mount_size`).
 * `TemporalGraph.Subgraph.twoHopDismountability` : SAND 2025, §2.1 (the 2-hop case, unnumbered
   in SAND); the two-hop analogue, adding at most 4 edges (`twoHopMount_size`).
+* `ncard_pair_le`, `ncard_le_four` (section `CardHelpers`) : `Set.ncard` bounds on a set given by
+  2, resp. 4, elements, shared by the edge-count bounds of `mount`, `twoHopMount` and (in
+  `Dismountability/OneSided.lean`) `oneSidedMount`.
 
 ## References
 

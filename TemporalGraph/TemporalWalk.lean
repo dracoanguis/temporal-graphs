@@ -17,6 +17,7 @@ Defines `TemporalWalk`, an inductive type for temporal walks that may be empty. 
 * `support` : The list of vertices visited
 * `arcs` : The list of directed edges
 * `temporalWalkSet` : The set of all walks between two vertices
+* `mapLe` : Transport a walk along a spanning-subgraph inclusion `G ≤ G'`
 -/
 
 universe u
@@ -31,7 +32,8 @@ inductive TemporalWalk : V → ℕ → V → ℕ → Type u
   | Nonempty {x y : V} {n m : ℕ} (p : G.NonemptyTemporalWalk x n y m) : TemporalWalk x n y m
   deriving DecidableEq
 
--- Juste pluriels
+/-- The set of all `(n, m, walk)` triples witnessing a temporal walk from `x` to `y`, over every
+pair of start/end times. -/
 def temporalWalkSet (x y : V) :
     Set (Σ n m : ℕ, G.TemporalWalk x n y m) :=
   { p | ∃ (n m : ℕ), ∃ (tw : TemporalWalk x n y m), p = ⟨n, m, tw⟩ }
@@ -55,6 +57,7 @@ def arcs {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List (V × V × ℕ)
   | Empty => []
   | Nonempty p => p.arcs
 
+/-- Times are non-decreasing along a (possibly empty) walk: `n ≤ m`. -/
 @[simp]
 lemma nondecreasing_time {x y : V} {n m : ℕ} (tw : G.TemporalWalk x n y m) : n ≤ m := by
   cases tw with

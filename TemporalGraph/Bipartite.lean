@@ -47,6 +47,12 @@ does.
 * `TemporalGraph.IsClique.between_isBicliqueWith` : restricting a clique to the arcs between two
   disjoint parts gives a temporal bi-clique on those parts (the one-step link used by SAND 2025,
   Corollary 4.1).
+* `TemporalGraph.Subgraph.reachable_of_isBicliqueWith` : in a bi-clique on `s`/`t`, every vertex of
+  `s` reaches every vertex of `t`.
+* `TemporalGraph.Subgraph.isBicliqueWith_induce`,
+  `TemporalGraph.Subgraph.isBicliqueWith_deleteVerts` : restricting a bi-clique to `s' ∪ t` (for
+  `s' ⊆ s`), resp. deleting vertices from it, keeps a bi-clique on the corresponding parts
+  (SAND 2025, §4.1, feeding into one-sided dismountability).
 
 ## References
 
@@ -85,6 +91,7 @@ theorem IsBipartiteWith.symm (h : G.IsBipartiteWith s t) : G.IsBipartiteWith t s
   disjoint := h.disjoint.symm
   mem_of_adj _ _ _ hadj := (h.mem_of_adj hadj).symm
 
+/-- The iff form of `IsBipartiteWith.symm`: `G` is bipartite with parts `s`/`t` iff with `t`/`s`. -/
 theorem isBipartiteWith_comm : G.IsBipartiteWith s t ↔ G.IsBipartiteWith t s :=
   ⟨IsBipartiteWith.symm, IsBipartiteWith.symm⟩
 
@@ -121,6 +128,7 @@ theorem IsBipartiteWith.isLoopless (h : G.IsBipartiteWith s t) : G.IsLoopless :=
 theorem isBipartiteWith_bot : (⊥ : TemporalGraph V).IsBipartiteWith s t ↔ Disjoint s t :=
   ⟨fun h ↦ h.disjoint, fun h ↦ ⟨h, fun _ _ _ hadj ↦ hadj.elim⟩⟩
 
+/-- A bipartition witnesses that `G` is bipartite. -/
 theorem IsBipartiteWith.isBipartite (h : G.IsBipartiteWith s t) : G.IsBipartite := ⟨s, t, h⟩
 
 end IsBipartiteWith
@@ -155,13 +163,17 @@ variable {G : TemporalGraph V} {s t : Set V} {v w : V} {n : ℕ}
 def between (s t : Set V) (G : TemporalGraph V) : TemporalGraph V where
   Adj v w n := G.Adj v w n ∧ (v ∈ s ∧ w ∈ t ∨ v ∈ t ∧ w ∈ s)
 
+/-- Unfolding lemma for `between`: an arc of `G.between s t` is an arc of `G` crossing between `s`
+and `t`. -/
 @[simp]
 theorem between_adj :
     (G.between s t).Adj v w n ↔ G.Adj v w n ∧ (v ∈ s ∧ w ∈ t ∨ v ∈ t ∧ w ∈ s) :=
   Iff.rfl
 
+/-- `G.between s t` is a subgraph of `G`: restricting to the crossing arcs only removes arcs. -/
 theorem between_le : G.between s t ≤ G := fun h ↦ h.1
 
+/-- `between` is symmetric in its two parts. -/
 theorem between_comm : G.between s t = G.between t s := by
   ext v w n
   simp only [between_adj, or_comm]
@@ -244,21 +256,26 @@ def completeBipartite (f : α → β → ℕ) : TemporalGraph (α ⊕ β) where
     | .inr b, .inl a, n => f a b = n
     | _, _, _ => False
 
+/-- An arc from the left summand to the right exists at time `f a b` only. -/
 @[simp]
 theorem completeBipartite_adj_inl_inr {f : α → β → ℕ} {a : α} {b : β} {n : ℕ} :
     (completeBipartite f).Adj (.inl a) (.inr b) n ↔ f a b = n :=
   Iff.rfl
 
+/-- An arc from the right summand to the left exists at time `f a b` only (the reverse
+orientation of `completeBipartite_adj_inl_inr`). -/
 @[simp]
 theorem completeBipartite_adj_inr_inl {f : α → β → ℕ} {a : α} {b : β} {n : ℕ} :
     (completeBipartite f).Adj (.inr b) (.inl a) n ↔ f a b = n :=
   Iff.rfl
 
+/-- There is no arc between two vertices of the left summand. -/
 @[simp]
 theorem completeBipartite_adj_inl_inl {f : α → β → ℕ} {a a' : α} {n : ℕ} :
     ¬(completeBipartite f).Adj (.inl a) (.inl a') n :=
   id
 
+/-- There is no arc between two vertices of the right summand. -/
 @[simp]
 theorem completeBipartite_adj_inr_inr {f : α → β → ℕ} {b b' : β} {n : ℕ} :
     ¬(completeBipartite f).Adj (.inr b) (.inr b') n :=
@@ -355,18 +372,24 @@ def Subgraph.between (H : Subgraph G) (s t : Set V) : Subgraph G where
   edge_vert h := H.edge_vert h.1
   edge_vert' h := H.edge_vert' h.1
 
+/-- Unfolding lemma for `Subgraph.between`: an arc of `H.between s t` is an arc of `H` crossing
+between `s` and `t`. -/
 @[simp]
 theorem Subgraph.between_adj {v w : V} {n : ℕ} :
     (H.between s t).Adj v w n ↔ H.Adj v w n ∧ (v ∈ s ∧ w ∈ t ∨ v ∈ t ∧ w ∈ s) :=
   Iff.rfl
 
+/-- `Subgraph.between` keeps the same vertex set as `H`: it only restricts the arcs. -/
 @[simp]
 theorem Subgraph.between_verts : (H.between s t).verts = H.verts :=
   rfl
 
+/-- `H.between s t` is a subgraph of `H`. -/
 theorem Subgraph.between_le : H.between s t ≤ H :=
   ⟨subset_rfl, fun hadj ↦ hadj.1⟩
 
+/-- `Subgraph.between` commutes with `toTemporalGraph`: the subgraph-level restriction matches the
+ambient `TemporalGraph.between`. -/
 theorem Subgraph.toTemporalGraph_between :
     (H.between s t).toTemporalGraph = H.toTemporalGraph.between s t :=
   rfl

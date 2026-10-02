@@ -75,6 +75,19 @@ end TemporalConnectivity
 
 section ReachabilityPreservation
 
+/-- A reachable pair of distinct vertices lies in `H`'s own vertex set: a walk witnessing the
+reachability is nonempty (`x ≠ y` rules out `TemporalWalk.Empty`), and its first and last arcs
+give each endpoint's membership. -/
+lemma mem_verts_of_reachable {H : Subgraph G} {x y : V} (h₀ : H.Reachable x y) (h₁ : x ≠ y) :
+    x ∈ H.verts ∧ y ∈ H.verts := by
+  obtain ⟨n, m, ⟨w⟩⟩ := h₀
+  cases w with
+  | Empty => exact absurd rfl h₁
+  | Nonempty p =>
+    obtain ⟨z, j, hz⟩ := p.exists_adj_fst
+    obtain ⟨z', j', hz'⟩ := p.exists_adj_snd
+    exact ⟨H.edge_vert hz, H.edge_vert' hz'⟩
+
 /-- Reachability in a subgraph implies reachability in the ambient graph. -/
 lemma reachable_of_subgraph_reachable {H : Subgraph G} {x y : V} :
     H.Reachable x y → G.Reachable x y :=

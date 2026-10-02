@@ -82,6 +82,21 @@ lemma nondecreasing_time {x y : V} {n m : ℕ} (tw : G.NonemptyTemporalWalk x n 
   | Single h => rfl
   | Step h p h' ih => exact le_trans ih h'
 
+/-- The first vertex of a walk has an outgoing arc, found by recursing to the walk's innermost
+edge. -/
+lemma exists_adj_fst {x y : V} {n m : ℕ} (tw : G.NonemptyTemporalWalk x n y m) :
+    ∃ z j, G.Adj x z j := by
+  induction tw with
+  | Single h => exact ⟨_, _, h⟩
+  | Step _ _ _ ih => exact ih
+
+/-- The last vertex of a walk has an incoming arc: its outermost edge. -/
+lemma exists_adj_snd {x y : V} {n m : ℕ} (tw : G.NonemptyTemporalWalk x n y m) :
+    ∃ z j, G.Adj z y j := by
+  cases tw with
+  | Single h => exact ⟨_, _, h⟩
+  | Step _ h _ => exact ⟨_, _, h⟩
+
 lemma EarliestEdge.time_bound_of_edge {x y z : V} {n m k : ℕ}
     (tw : G.NonemptyTemporalWalk x n y m) (h : G.EarliestEdge x z k) :
     k ≤ n := by

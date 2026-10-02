@@ -624,7 +624,8 @@ lemma addVerts_verts (H : Subgraph G) (s : Set V) : (H.addVerts s).verts = H.ver
 
 /-- Every adjacency of `H` is still one of `H.addVerts s`. -/
 lemma addVerts_Adj {x y : V} {n : ℕ} {H : Subgraph G} {s : Set V} :
-    H.Adj x y n → (H.addVerts s).Adj x y n := by simp; grind only [→ Adj.fst_mem, → Adj.snd_mem]
+    H.Adj x y n → (H.addVerts s).Adj x y n :=
+  fun h ↦ ⟨.inl (H.edge_vert h), .inl (H.edge_vert' h), h⟩
 
 /-- `H` is below `H.addVerts s`. -/
 @[simp]
@@ -782,12 +783,12 @@ variable {x y : V} {n : ℕ}
 /-- `(x, y, n)` is `⊤ : Subgraph G`'s earliest edge at `x` iff it is `G`'s. -/
 lemma top_earliestEdge :
     (⊤ : Subgraph G).EarliestEdge x y n ↔ G.EarliestEdge x y n := by
-  grind only [= EarliestEdge.eq_1, top_adj]
+  simp [TemporalGraph.EarliestEdge, top_adj]
 
 /-- `(x, y, n)` is `⊤ : Subgraph G`'s latest edge at `x` iff it is `G`'s. -/
 lemma top_latestEdge :
     (⊤ : Subgraph G).LatestEdge x y n ↔ G.LatestEdge x y n := by
-  grind only [= LatestEdge.eq_1, top_adj]
+  simp [TemporalGraph.LatestEdge, top_adj]
 
 /-- In a proper subgraph, any adjacency out of `x` to a vertex other than its earliest neighbor
 `y` happens strictly after the earliest edge `(x, y, n)`. -/
@@ -808,12 +809,12 @@ lemma earliestEdge_lt_of_proper {H : Subgraph G} {z : V} {m : ℕ}
 /-- `y` is `⊤ : Subgraph G`'s earliest neighbor of `x` iff it is `G`'s. -/
 lemma top_earliestNeighbor :
     (⊤ : Subgraph G).EarliestNeighbor x y ↔ G.EarliestNeighbor x y := by
-  grind only [= EarliestNeighbor.eq_1, top_earliestEdge]
+  simp [TemporalGraph.EarliestNeighbor, top_earliestEdge]
 
 /-- `y` is `⊤ : Subgraph G`'s latest neighbor of `x` iff it is `G`'s. -/
 lemma top_latestNeighbor :
     (⊤ : Subgraph G).LatestNeighbor x y ↔ G.LatestNeighbor x y := by
-  grind only [= LatestNeighbor.eq_1, top_latestEdge]
+  simp [TemporalGraph.LatestNeighbor, top_latestEdge]
 
 /-- If `(x, y, n)` is `G`'s earliest edge at `x` and also an adjacency of `H`, it is the earliest
 edge at `x` in the subtype view `H.coe`. -/
@@ -845,8 +846,8 @@ lemma coe_latestEdge_of_graph_latestEdge {H : Subgraph G}
 @[simp]
 lemma coe_earliestEdge {H : Subgraph G} {x y : H.verts} {n : ℕ}
     (h₀ : H.EarliestEdge x y n) :
-    H.coe.EarliestEdge x y n := by
-  grind only [= EarliestEdge.eq_1, coe_Adj]
+    H.coe.EarliestEdge x y n :=
+  ⟨Adj.coe h₀.left, fun _ _ h ↦ h₀.right _ _ h⟩
 
 /-- An earliest edge of the subtype view `H.coe` is an earliest edge of `H`. -/
 @[simp]
@@ -862,23 +863,22 @@ lemma earliestEdge_of_coe {H : Subgraph G} {x y : H.verts} {n : ℕ}
 earliest edge at `x`. -/
 lemma earliestEdge_of_graph_earliestEdge {H : Subgraph G}
     (h₀ : G.EarliestEdge x y n) (h₁ : H.Adj x y n) :
-    H.EarliestEdge x y n := by
-  grind only [= EarliestEdge.eq_1, → Adj.adj_sub]
+    H.EarliestEdge x y n :=
+  ⟨h₁, fun _ _ h ↦ h₀.right _ _ (H.adj_sub h)⟩
 
 /-- If `H'`'s earliest edge at `x` is already an adjacency of the smaller `H ≤ H'`, it is `H`'s
 earliest edge at `x` too. -/
 lemma earliestEdge_of_ge {H H' : Subgraph G} (h₀ : H ≤ H') (h₁ : H'.EarliestEdge x y n)
     (h₂ : H.Adj x y n) :
-    H.EarliestEdge x y n := by
-  have := @h₀.2
-  grind only [= EarliestEdge.eq_1]
+    H.EarliestEdge x y n :=
+  ⟨h₂, fun _ _ h ↦ h₁.right _ _ (h₀.right h)⟩
 
 /-- A latest edge of `H` is a latest edge of its subtype view `H.coe`. -/
 @[simp]
 lemma coe_latestEdge {H : Subgraph G} {x y : H.verts} {n : ℕ}
     (h₀ : H.LatestEdge x y n) :
-    H.coe.LatestEdge x y n := by
-  grind only [= LatestEdge.eq_1, coe_Adj]
+    H.coe.LatestEdge x y n :=
+  ⟨Adj.coe h₀.left, fun _ _ h ↦ h₀.right _ _ h⟩
 
 /-- A latest edge of the subtype view `H.coe` is a latest edge of `H`. -/
 @[simp]
@@ -894,16 +894,15 @@ lemma latestEdge_of_coe {H : Subgraph G} {x y : H.verts} {n : ℕ}
 edge at `x`. -/
 lemma latestEdge_of_graph_latestEdge {H : Subgraph G}
     (h₀ : G.LatestEdge x y n) (h₁ : H.Adj x y n) :
-    H.LatestEdge x y n := by
-  grind only [= LatestEdge.eq_1, → Adj.adj_sub]
+    H.LatestEdge x y n :=
+  ⟨h₁, fun _ _ h ↦ h₀.right _ _ (H.adj_sub h)⟩
 
 /-- If `H'`'s latest edge at `x` is already an adjacency of the smaller `H ≤ H'`, it is `H`'s
 latest edge at `x` too. -/
 lemma latestEdge_of_ge {H H' : Subgraph G} (h₀ : H ≤ H') (h₁ : H'.LatestEdge x y n)
     (h₂ : H.Adj x y n) :
-    H.LatestEdge x y n := by
-  have := @h₀.2
-  grind only [= LatestEdge.eq_1]
+    H.LatestEdge x y n :=
+  ⟨h₂, fun _ _ h ↦ h₁.right _ _ (h₀.right h)⟩
 
 end EdgeProps
 

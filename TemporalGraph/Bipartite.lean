@@ -174,7 +174,9 @@ theorem between_adj :
 theorem between_le : G.between s t ≤ G := fun h ↦ h.1
 
 /-- `between` is symmetric in its two parts. -/
-theorem between_comm : G.between s t = G.between t s := by ext; grind only [= between_adj]
+theorem between_comm : G.between s t = G.between t s := by
+  ext v w n
+  simp only [between_adj, or_comm]
 
 /-- `G.between s t` is bipartite with parts `s` and `t` when they are disjoint. -/
 theorem between_isBipartiteWith (h : Disjoint s t) : (G.between s t).IsBipartiteWith s t where
@@ -323,7 +325,9 @@ theorem completeBipartite_isBiclique (f : α → β → ℕ) :
 
 /-- `completeBipartite f` is simple: at most one time per ordered pair. -/
 theorem completeBipartite_isSimple (f : α → β → ℕ) : (completeBipartite f).IsSimple := by
-  grind
+  -- case on the summands: an arc exists only between the two sides, at time `f a b`
+  grind only [= IsSimple.eq_1, completeBipartite_adj_inl_inl, = completeBipartite_adj_inl_inr,
+    = completeBipartite_adj_inr_inl, completeBipartite_adj_inr_inr]
 
 /-- `completeBipartite f` is proper when `f` is injective in each argument separately. -/
 theorem completeBipartite_isProper {f : α → β → ℕ} (h₁ : ∀ a, (f a).Injective)

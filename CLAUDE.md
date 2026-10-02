@@ -244,8 +244,13 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
   pas la marche (`nondecreasing_time`, `time_bound_of_edge`) ne peut pas être annoté : le passer en
   `have`. `grind` ne construit pas une marche (valeur dans `Type`) : les témoins de `Reachable`
   restent explicites.
-- Preuves stables : `grind only […]` obtenu par `grind?` (retirer les ancres `#xxxx`) ; garder
-  `grind` nu si la liste dépasse 100 caractères ou dans `induction … <;> grind`.
+- Preuves stables : `grind only […]` obtenu par `grind?` (retirer les ancres `#xxxx`).
+  Toute preuve stable utilise `grind only […]`, liste coupée sur plusieurs lignes si besoin :
+  jamais de repli sur `grind` nu pour une question de longueur. Exception : `induction p <;> grind`
+  / `cases p <;> grind` pour des lemmes d'API purement calculatoires. Ne pas remplacer par `grind`
+  une preuve courte qui porte l'argument du papier ; préférer un terme explicite quand il est aussi
+  court ; commenter en une ligne l'étape mathématique quand `grind only` remplace un raisonnement ;
+  pas de `simp` non restreint avant `grind`.
 
 ### Autres conventions
 

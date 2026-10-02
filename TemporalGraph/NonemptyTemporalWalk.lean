@@ -114,7 +114,7 @@ lemma EarliestEdge.time_bound_of_edge {x y z : V} {n m k : ℕ}
     (tw : G.NonemptyTemporalWalk x n y m) (h : G.EarliestEdge x z k) :
     k ≤ n := by
   induction tw with
-  |Single h' => grind
+  |Single h' => grind only [= EarliestEdge.eq_1]
   |Step _ _ _ hi => exact hi
 
 /-- For a symmetric graph, the latest edge out of a walk's end vertex occurs no earlier than the
@@ -123,7 +123,7 @@ lemma LatestEdge.time_bound_of_edge {x y z : V} {n m k : ℕ} [G.IsSymm]
     (tw : G.NonemptyTemporalWalk x n y m) (h : G.LatestEdge y z k) :
     m ≤ k := by
   cases tw with
-  | Single h' => grind
+  | Single h' => grind only [→ adj_symm, = LatestEdge.eq_1]
   | Step _ h' _ => exact h.right _ _ h'.symm
 
 
@@ -190,8 +190,8 @@ theorem end_mem_support (p : G.NonemptyTemporalWalk x n y m) : y ∈ p.support :
 theorem adj_of_mem_arcs (p : G.NonemptyTemporalWalk x n y m) :
     ∀ a ∈ p.arcs, G.Adj a.1 a.2.1 a.2.2 ∧ n ≤ a.2.2 ∧ a.2.2 ≤ m := by
   induction p with
-  | Single h => grind
-  | Step p h h' ih => have := p.nondecreasing_time; grind
+  | Single h => grind only [arcs, = List.mem_cons, ← List.not_mem_nil]
+  | Step p h h' ih => have := p.nondecreasing_time; grind only [arcs, = List.mem_cons]
 
 end API
 

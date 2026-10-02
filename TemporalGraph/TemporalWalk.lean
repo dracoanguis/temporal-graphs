@@ -110,7 +110,7 @@ theorem end_mem_support (p : G.TemporalWalk x n y m) : y ∈ p.support := by
 theorem adj_of_mem_arcs (p : G.TemporalWalk x n y m) :
     ∀ a ∈ p.arcs, G.Adj a.1 a.2.1 a.2.2 ∧ n ≤ a.2.2 ∧ a.2.2 ≤ m := by
   cases p with
-  | Empty => grind
+  | Empty => grind only [arcs, ← List.not_mem_nil]
   | Nonempty p => exact p.adj_of_mem_arcs
 
 end API

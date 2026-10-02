@@ -174,7 +174,7 @@ theorem between_adj :
 theorem between_le : G.between s t ≤ G := fun h ↦ h.1
 
 /-- `between` is symmetric in its two parts. -/
-theorem between_comm : G.between s t = G.between t s := by ext; grind
+theorem between_comm : G.between s t = G.between t s := by ext; grind only [= between_adj]
 
 /-- `G.between s t` is bipartite with parts `s` and `t` when they are disjoint. -/
 theorem between_isBipartiteWith (h : Disjoint s t) : (G.between s t).IsBipartiteWith s t where

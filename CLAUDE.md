@@ -234,7 +234,13 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
 
 - Lemmes d'adjacence `H.Adj … → …` : `grind →` (miroir des règles aesop `safe forward`) ;
   `irrefl`/`Adj.ne` : `grind .` ; caractérisations `*_adj`/`*_verts` des constructions : `grind =` ;
-  théorèmes `ext` : `grind ext`.
+  `grind ext` sur `TemporalGraph` seulement. **Jamais `grind ext` sur une structure qui porte des
+  champs de preuve, comme `Subgraph`** (`adj_sub`, `edge_vert`, `edge_vert'`) : `grind` développe
+  alors chaque terme `H : Subgraph G` en `⟨H.1, …⟩` (`propagateEtaStruct`), et les champs de preuve
+  deviennent des lemmes locaux instanciés sur chaque `H.Adj …`. Les attributs `ext` survivent à
+  `grind only` (`getOnlyExtensionState`, `Grind/Main.lean:39`). Mesuré (2026-10-02) : un
+  `grind only` de `twoHopDismountability` passait de 0,27 s à 1,6 s (751 instances au lieu de 263).
+  Au besoin, passer `Subgraph.ext` en paramètre local.
 - Définitions de prédicats d'arêtes (`EarliestEdge`, `LatestEdge`, `*Neighbor`, `IsProper`,
   `IsSimple`) et équivalences d'ordre (`le_iff_adj`, `Subgraph.le_def`) : `grind =`. Jamais
   `grind unfold` (casse les appels `grind [Def]`), jamais `grind =` sur `adj_comm`. `vminus`/`vplus`

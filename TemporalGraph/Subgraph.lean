@@ -82,7 +82,7 @@ universe u
 namespace TemporalGraph
 
 
-@[ext, grind ext]
+@[ext]
 structure Subgraph {V : Type u} (G : TemporalGraph V) extends TemporalGraph V where
   verts : Set V
 

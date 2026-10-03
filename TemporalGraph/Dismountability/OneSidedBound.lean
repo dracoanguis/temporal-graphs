@@ -15,13 +15,17 @@ Angrick et al. (ESA 2024), as recalled in SAND 2025, §4.1: splitting the source
 bi-clique into two halves of size `⌈n / 2⌉` and `⌊n / 2⌋`, then dismounting the other half's
 targets at two edges each, yields the recurrence
 `size(n) ≤ 2 * size(n / 2) + O(n)`. `spannerBound` is this recurrence made explicit (with the
-`O(n)` term instantiated to `2 * n`), and `spannerBound_le` solves it in closed form,
-`spannerBound n ≤ 2 * n * ⌈log₂ n⌉ + n`.
+`O(n)` term instantiated to `2 * n`), `spannerBound_le` solves it in closed form,
+`spannerBound n ≤ 2 * n * ⌈log₂ n⌉ + n`, and `exists_isSpannerFromTo_ncard_le` proves it is
+actually realized by a one-sided spanner of any balanced temporal bi-clique, yielding the
+`O(n log n)` bound `exists_isBigO_isOneSidedSpannerBound`.
 
 ## Main definitions
 
 * `TemporalGraph.Subgraph.spannerBound` : the SAND 2025, §4.1 recurrence on balanced one-sided
   instances.
+* `TemporalGraph.Subgraph.IsOneSidedSpannerBound` : `f` bounds the one-sided spanners of every
+  finite simple temporal bi-clique with balanced nonempty parts of size `n` by `f n`.
 
 ## Main results
 
@@ -32,6 +36,10 @@ targets at two edges each, yields the recurrence
 * `TemporalGraph.Subgraph.spannerBound_isBigO` : `spannerBound` is `O(n log n)`.
 * `TemporalGraph.Subgraph.exists_isSpannerFromTo_ncard_le` : the recursion itself, bounding the
   one-sided spanner of a balanced bi-clique by `spannerBound`.
+* `TemporalGraph.Subgraph.isOneSidedSpannerBound_spannerBound` : `spannerBound` is a one-sided
+  spanner bound.
+* `TemporalGraph.Subgraph.exists_isBigO_isOneSidedSpannerBound` : SAND 2025, §4.1 (Angrick et
+  al.): temporal bi-cliques admit one-sided spanners of size `O(n log n)`.
 
 ## References
 
@@ -243,6 +251,29 @@ theorem exists_isSpannerFromTo_ncard_le {H : Subgraph G} [Finite H.verts] [G.IsS
           rw [sup_edgeSet]; exact Set.ncard_union_le _ _
         omega
 
+/-- `f` bounds the one-sided spanners of temporal bi-cliques (Angrick et al.'s `𝒟(n) ≤ f n`, as
+recalled in SAND 2025, §4.1): every finite simple temporal bi-clique with balanced nonempty parts
+of size `n` admits a symmetric one-sided spanner from the source to the target with at most `f n`
+edges. -/
+def IsOneSidedSpannerBound (f : ℕ → ℕ) : Prop :=
+  ∀ {V : Type u} {G : TemporalGraph V} {H : Subgraph G} [Finite H.verts] [G.IsSymm] [H.IsSymm]
+    {s t : Set V}, H.IsSimple → H.IsBicliqueWith s t → s.Nonempty → s.ncard = t.ncard →
+    ∃ H' : Subgraph G, H'.IsSymm ∧ H'.IsSpannerFromTo H s t ∧ H'.edgeSet.ncard ≤ f s.ncard
+
+/-- A larger function is still a bound. -/
+lemma IsOneSidedSpannerBound.mono {f g : ℕ → ℕ} (h₀ : IsOneSidedSpannerBound.{u} f)
+    (h₁ : ∀ n, f n ≤ g n) : IsOneSidedSpannerBound.{u} g := by
+  intro V G H _ _ _ s t h₂ h₃ h₄ h₅
+  obtain ⟨H', hH'symm, hH'span, hH'bound⟩ := h₀ h₂ h₃ h₄ h₅
+  exact ⟨H', hH'symm, hH'span, hH'bound.trans (h₁ s.ncard)⟩
+
+/-- SAND 2025, §4.1: `spannerBound` bounds one-sided spanners. -/
+theorem isOneSidedSpannerBound_spannerBound : IsOneSidedSpannerBound.{u} spannerBound := by
+  intro V G H _ _ _ s t h₀ h₁ h₂ h₃
+  obtain ⟨H', hH'symm, hH'span, hH'bound⟩ :=
+    exists_isSpannerFromTo_ncard_le h₀ h₁ h₂ h₃.le
+  exact ⟨H', hH'symm, hH'span, by omega⟩
+
 section BigO
 
 open Asymptotics Filter
@@ -273,6 +304,13 @@ theorem spannerBound_isBigO :
   nlinarith [mul_le_mul_of_nonneg_left (clog_le_logb_add_one (by omega : 1 ≤ n))
       (by positivity : (0 : ℝ) ≤ 2 * n),
     le_mul_of_one_le_right (Nat.cast_nonneg n) (one_le_logb hn)]
+
+/-- SAND 2025, §4.1 (Angrick et al.): temporal bi-cliques admit one-sided spanners of size
+`O(n log n)`. -/
+theorem exists_isBigO_isOneSidedSpannerBound :
+    ∃ f : ℕ → ℕ, (fun n ↦ (f n : ℝ)) =O[atTop] (fun n ↦ (n : ℝ) * Real.log n) ∧
+      IsOneSidedSpannerBound.{u} f :=
+  ⟨spannerBound, spannerBound_isBigO, isOneSidedSpannerBound_spannerBound⟩
 
 end BigO
 

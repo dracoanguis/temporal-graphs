@@ -361,3 +361,81 @@ the source with another target can be dismounted at the cost of two edges.
   (taking $S_1, S_2 = S_1, S \setminus S_1$), this is the recursive splitting
   step of the one-sided dismounting strategy, SAND 2025 \S~4.1.
 \end{lemma}
+
+\begin{definition}[Spanner-size recurrence --- SAND \S~4.1]
+  \label{def:spanner-bound}
+  \uses{def:spanner-from-to}
+  \lean{TemporalGraph.Subgraph.spannerBound}
+  \leanok
+  $\mathrm{spannerBound}(n)$ is $1$ for $n \le 1$, and
+  $\mathrm{spannerBound}(\lceil n/2 \rceil) + \mathrm{spannerBound}(\lfloor n/2
+  \rfloor) + 2n$ for $n \ge 2$: split the source in halves
+  (Lemma~\ref{lem:exists-ncard-halves}), and in each half dismount the other
+  half's targets (Theorem~\ref{thm:one-sided-dismountability}) at two edges
+  each.
+\end{definition}
+
+\begin{lemma}[Closed form]
+  \label{lem:spanner-bound-closed-form}
+  \uses{def:spanner-bound}
+  \lean{TemporalGraph.Subgraph.spannerBound_le}
+  \leanok
+  $\mathrm{spannerBound}(n) \le 2n \lceil \log_2 n \rceil + n$ for $n \ge 1$.
+\end{lemma}
+
+\begin{theorem}[$\mathrm{spannerBound}$ is $O(n \log n)$]
+  \label{thm:spanner-bound-isBigO}
+  \uses{lem:spanner-bound-closed-form}
+  \lean{TemporalGraph.Subgraph.spannerBound_isBigO}
+  \leanok
+  $n \mapsto \mathrm{spannerBound}(n)$ is $O(n \log n)$.
+\end{theorem}
+
+\begin{theorem}[One-sided spanner bound --- SAND \S~4.1]
+  \label{thm:exists-spanner-from-to-ncard-le}
+  \uses{def:spanner-bound,lem:exists-one-sided-dismountable,
+    thm:one-sided-dismountability,lem:spanner-from-to-split,
+    lem:exists-ncard-halves}
+  \lean{TemporalGraph.Subgraph.exists_isSpannerFromTo_of_singleton}
+  \lean{TemporalGraph.Subgraph.exists_isSpannerFromTo_ncard_le}
+  \leanok
+  A finite simple temporal bi-clique on a nonempty source $S$ and a target $T$
+  with $|S| \le |T|$ admits a one-sided spanner from $S$ to $T$ with at most
+  $2(|T| - |S|) + \mathrm{spannerBound}(|S|)$ edges: by strong induction on
+  $|S| + |T|$, dismounting one target at a time while $|S| < |T|$
+  (Lemma~\ref{lem:exists-one-sided-dismountable},
+  Theorem~\ref{thm:one-sided-dismountability}), then, once $|S| = |T|$,
+  either taking the single bi-clique edge if $|S| = |T| = 1$, or splitting
+  $S$ in halves and recursing on each half (Lemma~\ref{lem:exists-ncard-halves},
+  Lemma~\ref{lem:spanner-from-to-split}).
+\end{theorem}
+
+\begin{definition}[One-sided spanner bound]
+  \label{def:one-sided-spanner-bound}
+  \uses{def:spanner-from-to}
+  \lean{TemporalGraph.Subgraph.IsOneSidedSpannerBound}
+  \leanok
+  $f$ \emph{bounds the one-sided spanners of temporal bi-cliques} (Angrick et
+  al.'s $\mathcal{D}(n) \le f(n)$, SAND 2025 \S~4.1) if every finite simple
+  temporal bi-clique with balanced nonempty parts of size $n$ admits a
+  one-sided spanner from the source to the target with at most $f(n)$ edges.
+\end{definition}
+
+\begin{lemma}[$\mathrm{spannerBound}$ is a one-sided spanner bound]
+  \label{lem:one-sided-spanner-bound-spannerBound}
+  \uses{def:spanner-bound,def:one-sided-spanner-bound,
+    thm:exists-spanner-from-to-ncard-le}
+  \lean{TemporalGraph.Subgraph.isOneSidedSpannerBound_spannerBound}
+  \leanok
+  $\mathrm{spannerBound}$ bounds the one-sided spanners of temporal
+  bi-cliques.
+\end{lemma}
+
+\begin{theorem}[$O(n \log n)$ one-sided spanners --- SAND \S~4.1]
+  \label{thm:exists-isBigO-one-sided-spanner-bound}
+  \uses{thm:spanner-bound-isBigO,lem:one-sided-spanner-bound-spannerBound}
+  \lean{TemporalGraph.Subgraph.exists_isBigO_isOneSidedSpannerBound}
+  \leanok
+  Temporal bi-cliques admit one-sided spanners of size $O(n \log n)$: there is
+  a one-sided spanner bound that is $O(n \log n)$.
+\end{theorem}

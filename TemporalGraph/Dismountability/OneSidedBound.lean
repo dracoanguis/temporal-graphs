@@ -152,6 +152,59 @@ theorem spannerBound_two_pow (k : ℕ) :
     rw [key, ih, pow_succ]
     ring
 
+/-- The subproblem induced by a part `s' ⊆ s` of the source (SAND 2025, §4.1, split step): still
+finite, simple, and a bi-clique on `s'`/`t`. -/
+lemma induce_subproblem {H : Subgraph G} [Finite H.verts] {s t s' : Set V} (h₀ : H.IsSimple)
+    (h₁ : H.IsBicliqueWith s t) (h₂ : s ∪ t ⊆ H.verts) (h₃ : s' ⊆ s) :
+    Finite (H.induce (s' ∪ t)).verts ∧ (H.induce (s' ∪ t)).IsSimple ∧
+      (H.induce (s' ∪ t)).IsBicliqueWith s' t := by
+  have hsub : s' ∪ t ⊆ H.verts := (Set.union_subset_union_left t h₃).trans h₂
+  have hle : H.induce (s' ∪ t) ≤ H := ⟨fun _ hv ↦ hsub hv, fun h ↦ h.2.2⟩
+  exact ⟨finite_induce_verts H hsub, h₀.mono (toTemporalGraph_le hle), isBicliqueWith_induce h₁ h₃⟩
+
+/-- The subproblem left by dismounting `x` (SAND 2025, §4.1, dismount step): still simple, a
+bi-clique on `s`/`t \ {x}`, and `t \ {x}` is one vertex smaller than `t`. -/
+lemma deleteVerts_subproblem {H : Subgraph G} {s t : Set V} {x : V} (h₀ : H.IsSimple)
+    (h₁ : H.IsBicliqueWith s t) (h₂ : x ∈ t) (h₃ : x ∉ s) :
+    (H.deleteVerts {x}).IsSimple ∧ (H.deleteVerts {x}).IsBicliqueWith s (t \ {x}) ∧
+      (t \ {x}).ncard = t.ncard - 1 := by
+  refine ⟨h₀.mono (toTemporalGraph_le deleteVerts_le), ?_, Set.ncard_sdiff_singleton_of_mem h₂⟩
+  have h' := isBicliqueWith_deleteVerts (u := ({x} : Set V)) h₁
+  rwa [Set.sdiff_singleton_eq_self h₃] at h'
+
+/-- SAND 2025, §4.1 (dismount step): if `x` is one-sided dismountable in the bi-clique on `s`/`t`
+and `H''` is a symmetric one-sided spanner of `H` without `x` from `s` to `t \ {x}`, then putting
+`x` back with its two delegation edges yields a symmetric one-sided spanner of `H` from `s` to `t`,
+with at most two more edges. -/
+lemma isSpannerFromTo_of_dismount {H : Subgraph G} [G.IsSymm] [H.IsSymm] {s t : Set V} {x : V}
+    (h₀ : H.IsBicliqueWith s t) (h₁ : H.OneSidedDismountable s t x)
+    {H'' : Subgraph G} [H''.IsSymm] (h₂ : H''.IsSpannerFromTo (H.deleteVerts {x}) s (t \ {x})) :
+    ∃ H' : Subgraph G, H'.IsSymm ∧ H'.IsSpannerFromTo H s t ∧
+      H'.edgeSet.ncard ≤ H''.edgeSet.ncard + 2 := by
+  obtain ⟨hx, x', hx', hne, y, hy, n, m, hlatest, hadj, hle⟩ := h₁
+  have hxns : x ∉ s := Set.disjoint_right.mp h₀.isBipartiteWith.disjoint hx
+  have hKbc : (H.deleteVerts {x}).IsBicliqueWith s (t \ {x}) := by
+    have h' := isBicliqueWith_deleteVerts (u := ({x} : Set V)) h₀
+    rwa [Set.sdiff_singleton_eq_self hxns] at h'
+  have hx'mem : x' ∈ t \ {x} := ⟨hx', fun he ↦ hne (Set.mem_singleton_iff.mp he)⟩
+  have hyne : y ≠ x' := fun he ↦ Set.disjoint_left.mp h₀.isBipartiteWith.disjoint hy (he ▸ hx')
+  have hreach : (H.deleteVerts {x}).Reachable y x' := reachable_of_isBicliqueWith hKbc hy hx'mem
+  obtain ⟨hyv, hx'v⟩ := mem_verts_of_reachable (h₂.2 y hy x' hx'mem hreach) hyne
+  exact ⟨_, inferInstance, oneSidedDismountability h₀ hx hx' hne hlatest hadj hle h₂ hx'v hyv,
+    ncard_edgeSet_oneSidedMount_le⟩
+
+/-- SAND 2025, §4.1 (split step): symmetric one-sided spanners of the two source-halves `s₁`,
+`s₂` combine, by union, into a symmetric one-sided spanner of `H` from `s₁ ∪ s₂` to `t`, with at
+most `k₁ + k₂` edges. -/
+lemma isSpannerFromTo_of_split {H H₁ H₂ : Subgraph G} {s t s₁ s₂ : Set V} [H₁.IsSymm] [H₂.IsSymm]
+    (h₀ : H.IsBicliqueWith s t) (h₁ : s ∪ t ⊆ H.verts) (h₂ : s₁ ⊆ s) (h₃ : s₂ ⊆ s)
+    (h₄ : H₁.IsSpannerFromTo (H.induce (s₁ ∪ t)) s₁ t)
+    (h₅ : H₂.IsSpannerFromTo (H.induce (s₂ ∪ t)) s₂ t) :
+    ∃ H' : Subgraph G, H'.IsSymm ∧ H'.IsSpannerFromTo H (s₁ ∪ s₂) t ∧
+      H'.edgeSet.ncard ≤ H₁.edgeSet.ncard + H₂.edgeSet.ncard :=
+  ⟨H₁ ⊔ H₂, inferInstance, isSpannerFromTo_sup_of_induce h₀ h₁ h₂ h₃ h₄ h₅,
+    by rw [sup_edgeSet]; exact Set.ncard_union_le _ _⟩
+
 /-- SAND 2025, §4.1 (strategy of Angrick et al.): a finite simple temporal bi-clique on a nonempty
 source `s` and a target `t` at least as large admits a symmetric one-sided spanner from `s` to `t`
 with at most `2 (|t| - |s|) + spannerBound |s|` edges: dismount `|t| - |s|` targets at two edges
@@ -168,88 +221,49 @@ theorem exists_isSpannerFromTo_ncard_le {H : Subgraph G} [Finite H.verts] [G.IsS
   induction hk : s.ncard + t.ncard using Nat.strong_induction_on generalizing H s t with
   | _ k ih =>
     have hsub : s ∪ t ⊆ H.verts := isBicliqueWith_subset_verts h₁ h₂ ht
-    have hsFin : s.Finite := (Set.toFinite H.verts).subset (Set.subset_union_left.trans hsub)
-    have hspos : 0 < s.ncard := h₂.ncard_pos hsFin
+    have hspos : 0 < s.ncard :=
+      h₂.ncard_pos ((Set.toFinite H.verts).subset (Set.subset_union_left.trans hsub))
+    -- recurse on a smaller part `s'` of the source, target `t` unchanged (split step, below)
+    have hrec : ∀ s' ⊆ s, s'.Nonempty → s'.ncard < s.ncard →
+        ∃ H' : Subgraph G, H'.IsSymm ∧ H'.IsSpannerFromTo (H.induce (s' ∪ t)) s' t ∧
+          H'.edgeSet.ncard ≤ 2 * (t.ncard - s'.ncard) + spannerBound s'.ncard := by
+      intro s' hs'sub hs'ne hs'lt
+      obtain ⟨hfin, hsimple, hbc⟩ := induce_subproblem h₀ h₁ hsub hs'sub
+      exact ih (s'.ncard + t.ncard) (by omega) hsimple hbc hs'ne (by omega) ht rfl
     rcases h₃.lt_or_eq with hlt | heq
     · -- SAND 2025, §4.1: dismount a target that delegates to another, through the pigeonhole
-      obtain ⟨x, hx, x', hx', hne, y, hy, n, m, hlatest, hadj, hle⟩ :=
-        exists_oneSidedDismountable_of_ncard_lt h₀ h₁ h₂ hlt
-      have hxns : x ∉ s := Set.disjoint_right.mp h₁.isBipartiteWith.disjoint hx
-      have hKbc : (H.deleteVerts {x}).IsBicliqueWith s (t \ {x}) := by
-        have h' := isBicliqueWith_deleteVerts (u := ({x} : Set V)) h₁
-        rwa [Set.sdiff_singleton_eq_self hxns] at h'
-      have hKsimple : (H.deleteVerts {x}).IsSimple := h₀.mono (toTemporalGraph_le deleteVerts_le)
-      have htx1 : (t \ {x}).ncard = t.ncard - 1 := Set.ncard_sdiff_singleton_of_mem hx
-      have hx'mem : x' ∈ t \ {x} := ⟨hx', fun he ↦ hne (Set.mem_singleton_iff.mp he)⟩
-      have htxNonempty : (t \ {x}).Nonempty := ⟨x', hx'mem⟩
-      have hle' : s.ncard ≤ (t \ {x}).ncard := by omega
+      obtain ⟨x, hdis⟩ := exists_oneSidedDismountable_of_ncard_lt h₀ h₁ h₂ hlt
+      have hxns : x ∉ s := Set.disjoint_right.mp h₁.isBipartiteWith.disjoint hdis.1
+      obtain ⟨hKsimple, hKbc, htx1⟩ := deleteVerts_subproblem h₀ h₁ hdis.1 hxns
+      have htxNonempty : (t \ {x}).Nonempty := Set.nonempty_of_ncard_ne_zero (by omega)
       obtain ⟨H'', hH''symm, hH''span, hH''bound⟩ :=
-        ih (s.ncard + (t \ {x}).ncard) (by omega) hKsimple hKbc h₂ hle' htxNonempty rfl
-      have := hH''symm
-      have hyne : y ≠ x' := fun he ↦
-        Set.disjoint_left.mp h₁.isBipartiteWith.disjoint hy (he ▸ hx')
-      have hreach : (H.deleteVerts {x}).Reachable y x' :=
-        reachable_of_isBicliqueWith hKbc hy hx'mem
-      obtain ⟨hyv, hx'v⟩ := mem_verts_of_reachable (hH''span.2 y hy x' hx'mem hreach) hyne
-      have hspan := oneSidedDismountability h₁ hx hx' hne hlatest hadj hle hH''span hx'v hyv
-      refine ⟨_, inferInstance, hspan, ?_⟩
-      have hbound2 :
-          (H''.oneSidedMount hx'v hyv x (H.adj_sub hlatest.1).symm (H.adj_sub hadj)).edgeSet.ncard
-            ≤ H''.edgeSet.ncard + 2 :=
-        ncard_edgeSet_oneSidedMount_le
-      omega
+        ih (s.ncard + (t \ {x}).ncard) (by omega) hKsimple hKbc h₂ (by omega) htxNonempty rfl
+      -- put `x` back with its two delegation edges (SAND 2025, §4.1, dismount step)
+      obtain ⟨H', hH'symm, hH'span, hH'bound⟩ := isSpannerFromTo_of_dismount h₁ hdis hH''span
+      exact ⟨H', hH'symm, hH'span, by omega⟩
     · -- `s.ncard = t.ncard`: split the source in two and recurse, or settle the base case
       rcases (by omega : s.ncard = 1 ∨ 2 ≤ s.ncard) with hone | htwo
       · -- base case: `s` and `t` are singletons joined by their one edge
         obtain ⟨a, hsa⟩ := Set.ncard_eq_one.mp hone
         obtain ⟨b, htb⟩ := Set.ncard_eq_one.mp (heq ▸ hone)
-        have ha : a ∈ s := by simp [hsa]
-        have hb : b ∈ t := by simp [htb]
-        obtain ⟨n', hadj⟩ := h₁.adj_of_mem ha hb
+        obtain ⟨n', hadj⟩ := h₁.adj_of_mem (hsa ▸ rfl : a ∈ s) (htb ▸ rfl : b ∈ t)
         obtain ⟨H', hH'symm, hH'span, hH'card⟩ := exists_isSpannerFromTo_of_singleton hadj
-        have ht1 : t.ncard = 1 := heq ▸ hone
         refine ⟨H', hH'symm, by rw [hsa, htb]; exact hH'span, ?_⟩
-        rw [hone, ht1, spannerBound_one]
-        omega
+        grind only [spannerBound_one]
       · -- split step (SAND 2025, §4.1): halve `s`, dismount the other half of `t` in each piece
         obtain ⟨s₁, hs₁sub, hs₁card, hs₂card⟩ := exists_ncard_halves s
         set s₂ := s \ s₁ with hs₂def
         have hs1ne : s₁.Nonempty := Set.nonempty_of_ncard_ne_zero (by omega)
         have hs2ne : s₂.Nonempty := Set.nonempty_of_ncard_ne_zero (by omega)
-        have hsub1 : s₁ ∪ t ⊆ H.verts := (Set.union_subset_union_left t hs₁sub).trans hsub
-        have hsub2 : s₂ ∪ t ⊆ H.verts :=
-          (Set.union_subset_union_left t Set.sdiff_subset).trans hsub
-        have hK1bc : (H.induce (s₁ ∪ t)).IsBicliqueWith s₁ t :=
-          isBicliqueWith_induce h₁ hs₁sub
-        have hK2bc : (H.induce (s₂ ∪ t)).IsBicliqueWith s₂ t :=
-          isBicliqueWith_induce h₁ Set.sdiff_subset
-        have hK1le : H.induce (s₁ ∪ t) ≤ H := ⟨fun _ hv ↦ hsub1 hv, fun h ↦ h.2.2⟩
-        have hK2le : H.induce (s₂ ∪ t) ≤ H := ⟨fun _ hv ↦ hsub2 hv, fun h ↦ h.2.2⟩
-        have hK1simple : (H.induce (s₁ ∪ t)).IsSimple := h₀.mono (toTemporalGraph_le hK1le)
-        have hK2simple : (H.induce (s₂ ∪ t)).IsSimple := h₀.mono (toTemporalGraph_le hK2le)
-        have := finite_induce_verts H hsub1
-        have := finite_induce_verts H hsub2
-        have hle1 : s₁.ncard ≤ t.ncard := by omega
-        have hle2 : s₂.ncard ≤ t.ncard := by omega
-        obtain ⟨H₁, hH₁symm, hH₁span, hH₁bound⟩ :=
-          ih (s₁.ncard + t.ncard) (by omega) hK1simple hK1bc hs1ne hle1 ht rfl
-        obtain ⟨H₂, hH₂symm, hH₂span, hH₂bound⟩ :=
-          ih (s₂.ncard + t.ncard) (by omega) hK2simple hK2bc hs2ne hle2 ht rfl
-        have := hH₁symm
-        have := hH₂symm
+        obtain ⟨H₁, hH₁symm, hH₁span, hH₁bound⟩ := hrec s₁ hs₁sub hs1ne (by omega)
+        obtain ⟨H₂, hH₂symm, hH₂span, hH₂bound⟩ := hrec s₂ Set.sdiff_subset hs2ne (by omega)
         have hunion : s₁ ∪ s₂ = s := Set.union_sdiff_cancel hs₁sub
-        have hspan := isSpannerFromTo_sup_of_induce h₁ hsub hs₁sub (s₂ := s₂)
-          Set.sdiff_subset hH₁span hH₂span
-        refine ⟨H₁ ⊔ H₂, inferInstance, hunion ▸ hspan, ?_⟩
+        -- halve the source and recombine the two sub-spanners by union (SAND 2025, §4.1, split)
+        obtain ⟨H', hH'symm, hH'span, hH'bound⟩ :=
+          isSpannerFromTo_of_split h₁ hsub hs₁sub (s₂ := s₂) Set.sdiff_subset hH₁span hH₂span
+        refine ⟨H', hH'symm, hunion ▸ hH'span, ?_⟩
         obtain ⟨p, hp⟩ : ∃ p, s.ncard = p + 2 := ⟨s.ncard - 2, by omega⟩
-        have hs1'' : s₁.ncard = (p + 3) / 2 := by rw [hs₁card, hp]
-        have hs2'' : s₂.ncard = (p + 2) / 2 := by rw [hs₂card, hp]
-        have hkey : spannerBound s.ncard =
-            spannerBound s₁.ncard + spannerBound s₂.ncard + 2 * s.ncard := by
-          rw [hp, spannerBound_add_two, ← hs1'', ← hs2'']
-        have hsum : (H₁ ⊔ H₂).edgeSet.ncard ≤ H₁.edgeSet.ncard + H₂.edgeSet.ncard := by
-          rw [sup_edgeSet]; exact Set.ncard_union_le _ _
-        omega
+        grind only [spannerBound_add_two]
 
 /-- `f` bounds the one-sided spanners of temporal bi-cliques (Angrick et al.'s `𝒟(n) ≤ f n`, as
 recalled in SAND 2025, §4.1): every finite simple temporal bi-clique with balanced nonempty parts

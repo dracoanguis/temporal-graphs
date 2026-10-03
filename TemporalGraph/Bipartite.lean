@@ -49,6 +49,8 @@ does.
   Corollary 4.1).
 * `TemporalGraph.Subgraph.reachable_of_isBicliqueWith` : in a bi-clique on `s`/`t`, every vertex of
   `s` reaches every vertex of `t`.
+* `TemporalGraph.Subgraph.isBicliqueWith_subset_verts` : with both parts nonempty, `s ∪ t` is
+  among `H`'s vertices.
 * `TemporalGraph.Subgraph.isBicliqueWith_induce`,
   `TemporalGraph.Subgraph.isBicliqueWith_deleteVerts` : restricting a bi-clique to `s' ∪ t` (for
   `s' ⊆ s`), resp. deleting vertices from it, keeps a bi-clique on the corresponding parts
@@ -397,6 +399,19 @@ lemma Subgraph.reachable_of_isBicliqueWith {s t : Set V} {x y : V}
     H.Reachable x y := by
   obtain ⟨n, hn⟩ := h₀.adj_of_mem h₁ h₂
   exact reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨.Single hn⟩⟩
+
+/-- In a bi-clique on `s` and `t`, with both parts nonempty, every vertex of either part is a
+vertex of `H`: each has an edge to a witness of the other part. -/
+lemma Subgraph.isBicliqueWith_subset_verts {s t : Set V}
+    (h₀ : H.IsBicliqueWith s t) (h₁ : s.Nonempty) (h₂ : t.Nonempty) :
+    s ∪ t ⊆ H.verts := by
+  rintro v (hv | hv)
+  · obtain ⟨w, hw⟩ := h₂
+    obtain ⟨n, hadj⟩ := h₀.adj_of_mem hv hw
+    exact H.edge_vert hadj
+  · obtain ⟨w, hw⟩ := h₁
+    obtain ⟨n, hadj⟩ := h₀.adj_of_mem hw hv
+    exact H.edge_vert' hadj
 
 /-- Restricting a bi-clique on `s` and `t` to `s' ∪ t`, for `s' ⊆ s`, gives a bi-clique on `s'` and
 `t`: the subproblem of SAND 2025, §4.1. -/

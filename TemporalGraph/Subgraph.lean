@@ -436,6 +436,10 @@ instance : Bot G.Subgraph where
     edge_vert' := False.elim
   }
 
+/-- `⊥ : Subgraph G` has no vertices. -/
+@[simp, grind =]
+theorem bot_verts : (⊥ : Subgraph G).verts = ∅ := rfl
+
 /-- `⊥ : Subgraph G` is symmetric, unconditionally: it has no adjacency to be asymmetric about. -/
 instance bot_isSymm : (⊥ : Subgraph G).IsSymm := .of_adj fun _ _ _ ↦ id
 
@@ -930,6 +934,14 @@ section edgeSet
 -- `edgeSet` is no longer redefined here: `Subgraph` now `extends TemporalGraph V`, so
 -- `H.edgeSet` resolves through generalized field notation to `TemporalGraph.edgeSet
 -- H.toTemporalGraph` — the fixed, hypothesis-free definition from `Basic.lean`.
+
+/-- `⊥ : Subgraph G` has no edges. -/
+@[simp, grind =]
+theorem bot_edgeSet : (⊥ : Subgraph G).edgeSet = ∅ := by
+  ext ⟨p, n⟩
+  simp only [TemporalGraph.edgeSet, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
+  rintro ⟨x, y, -, hadj⟩
+  exact hadj
 
 /-- An adjacency of `H` gives the corresponding undirected edge membership in `H.edgeSet`, with
 no hypothesis needed. -/

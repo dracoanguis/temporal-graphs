@@ -25,6 +25,8 @@ targets at two edges each, yields the recurrence
 
 ## Main results
 
+* `TemporalGraph.Subgraph.exists_isSpannerFromTo_of_singleton` : the base case of the recursion,
+  a single edge is a one-sided spanner of itself.
 * `TemporalGraph.Subgraph.spannerBound_le` : closed form, `spannerBound n ≤ 2 n ⌈log₂ n⌉ + n`.
 * `TemporalGraph.Subgraph.spannerBound_two_pow` : the bound is attained exactly at powers of two.
 * `TemporalGraph.Subgraph.spannerBound_isBigO` : `spannerBound` is `O(n log n)`.
@@ -38,9 +40,36 @@ targets at two edges each, yields the recurrence
   doi:10.4230/LIPIcs.ESA.2024.11, arXiv:2402.13624) — origin of the one-sided strategy.
 -/
 
+universe u
+
 namespace TemporalGraph
 
 namespace Subgraph
+
+variable {V : Type u} {G : TemporalGraph V}
+
+/-- SAND 2025, §4.1 (base case of the one-sided recursion): a single edge of `H` from `a` to `b`
+at time `n` is itself a one-sided spanner from `{a}` to `{b}`, with at most one edge. -/
+lemma exists_isSpannerFromTo_of_singleton {H : Subgraph G} [G.IsSymm] [H.IsSymm] {a b : V} {n : ℕ}
+    (h : H.Adj a b n) :
+    ∃ H' : Subgraph G, H'.IsSymm ∧ H'.IsSpannerFromTo H {a} {b} ∧ H'.edgeSet.ncard ≤ 1 := by
+  have ha : a ∈ H.verts := H.edge_vert h
+  have hb : b ∈ H.verts := H.edge_vert' h
+  set H' := ((⊥ : Subgraph G).addVerts {a, b}).addEdge (H.adj_sub h) (by simp) with hH'
+  refine ⟨H', inferInstance, ⟨?_, ?_⟩, ?_⟩
+  · -- `H' ≤ H`: its one edge is `H`'s own, and its two vertices are `H`'s
+    rw [le_iff_edgeSet_and_verts]
+    refine ⟨?_, ?_⟩
+    · rw [hH', addEdge_edgeSet, addVerts_edgeSet, bot_edgeSet, insert_empty_eq]
+      exact Set.singleton_subset_iff.mpr (Adj.mem_edgeSet h)
+    · rw [hH', addEdge_verts, addVerts_verts, bot_verts, Set.empty_union]
+      rintro v (rfl | rfl) <;> assumption
+  · -- `{a}` reaches `{b}`, through the edge just added
+    rintro x rfl y rfl -
+    refine reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨.Single ?_⟩⟩
+    rw [hH']; exact addEdge_edge
+  · -- at most one edge: `H'`'s edge set is `∅` plus the one edge just inserted
+    rw [hH']; simp
 
 /-- The recurrence of SAND 2025, §4.1, on balanced one-sided instances of size `n`: split the
 source in halves `⌈n/2⌉` and `⌊n/2⌋`; in each half, dismount the other half of the targets, at

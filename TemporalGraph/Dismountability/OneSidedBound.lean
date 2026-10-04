@@ -162,15 +162,21 @@ lemma induce_subproblem {H : Subgraph G} [Finite H.verts] {s t s' : Set V} (h₀
   have hle : H.induce (s' ∪ t) ≤ H := ⟨fun _ hv ↦ hsub hv, fun h ↦ h.2.2⟩
   exact ⟨finite_induce_verts H hsub, h₀.mono (toTemporalGraph_le hle), isBicliqueWith_induce h₁ h₃⟩
 
+/-- Removing a target vertex `x` (not in the source) from a bi-clique on `s`/`t` leaves a bi-clique
+on `s`/`t \ {x}`. -/
+lemma isBicliqueWith_deleteVerts_singleton {H : Subgraph G} {s t : Set V} {x : V}
+    (h₀ : H.IsBicliqueWith s t) (h₁ : x ∉ s) :
+    (H.deleteVerts {x}).IsBicliqueWith s (t \ {x}) := by
+  simpa [Set.sdiff_singleton_eq_self h₁] using isBicliqueWith_deleteVerts (u := ({x} : Set V)) h₀
+
 /-- The subproblem left by dismounting `x` (SAND 2025, §4.1, dismount step): still simple, a
 bi-clique on `s`/`t \ {x}`, and `t \ {x}` is one vertex smaller than `t`. -/
 lemma deleteVerts_subproblem {H : Subgraph G} {s t : Set V} {x : V} (h₀ : H.IsSimple)
     (h₁ : H.IsBicliqueWith s t) (h₂ : x ∈ t) (h₃ : x ∉ s) :
     (H.deleteVerts {x}).IsSimple ∧ (H.deleteVerts {x}).IsBicliqueWith s (t \ {x}) ∧
-      (t \ {x}).ncard = t.ncard - 1 := by
-  refine ⟨h₀.mono (toTemporalGraph_le deleteVerts_le), ?_, Set.ncard_sdiff_singleton_of_mem h₂⟩
-  have h' := isBicliqueWith_deleteVerts (u := ({x} : Set V)) h₁
-  rwa [Set.sdiff_singleton_eq_self h₃] at h'
+      (t \ {x}).ncard = t.ncard - 1 :=
+  ⟨h₀.mono (toTemporalGraph_le deleteVerts_le), isBicliqueWith_deleteVerts_singleton h₁ h₃,
+    Set.ncard_sdiff_singleton_of_mem h₂⟩
 
 /-- SAND 2025, §4.1 (dismount step): if `x` is one-sided dismountable in the bi-clique on `s`/`t`
 and `H''` is a symmetric one-sided spanner of `H` without `x` from `s` to `t \ {x}`, then putting
@@ -183,9 +189,7 @@ lemma isSpannerFromTo_of_dismount {H : Subgraph G} [G.IsSymm] [H.IsSymm] {s t : 
       H'.edgeSet.ncard ≤ H''.edgeSet.ncard + 2 := by
   obtain ⟨hx, x', hx', hne, y, hy, n, m, hlatest, hadj, hle⟩ := h₁
   have hxns : x ∉ s := Set.disjoint_right.mp h₀.isBipartiteWith.disjoint hx
-  have hKbc : (H.deleteVerts {x}).IsBicliqueWith s (t \ {x}) := by
-    have h' := isBicliqueWith_deleteVerts (u := ({x} : Set V)) h₀
-    rwa [Set.sdiff_singleton_eq_self hxns] at h'
+  have hKbc := isBicliqueWith_deleteVerts_singleton (x := x) h₀ hxns
   have hx'mem : x' ∈ t \ {x} := ⟨hx', fun he ↦ hne (Set.mem_singleton_iff.mp he)⟩
   have hyne : y ≠ x' := fun he ↦ Set.disjoint_left.mp h₀.isBipartiteWith.disjoint hy (he ▸ hx')
   have hreach : (H.deleteVerts {x}).Reachable y x' := reachable_of_isBicliqueWith hKbc hy hx'mem

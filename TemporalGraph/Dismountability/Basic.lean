@@ -44,6 +44,12 @@ and `vplus` (`earliestNeighborFn`, `latestNeighborFn`), which forces `vzero` to 
 * `TemporalGraph.Subgraph.vplus_ne_neighbor_of_not_twoHopDismountable`,
   `vminus_ne_neighbor_of_not_twoHopDismountable` : SAND 2025, Lemma 3.2, distinct vertices of
   `vplus` (resp. `vminus`) have distinct earliest (resp. latest) neighbors.
+* `TemporalGraph.Subgraph.exists_edgeSet_of_earliest`, `exists_edgeSet_of_latest` : each side
+  of `{1,2}`-hop dismountability, as a set of 1 or 2 edges of `H` through which `x` reaches (resp.
+  is reached by) everything a vertex `y ≠ x` does.
+* `ncard_pair_le`, `ncard_le_four` (section `CardHelpers`) : `Set.ncard` bounds on a set given by
+  2, resp. 4, elements, shared by the edge-count bounds of `mount`, `twoHopMount`,
+  `oneSidedMount` and the sides above.
 * `TemporalGraph.Subgraph.earliestNeighborFn_bijOn`, `latestNeighborFn_bijOn` : `Set.BijOn`
   bijections between the sets `vminus` and `vplus` (SAND 2025, Corollary 3.3, via Lemma 3.2).
 * `TemporalGraph.Subgraph.vminus_card_eq_vplus_card` : SAND 2025, Corollary 3.3 (3),
@@ -76,6 +82,26 @@ namespace TemporalGraph
 namespace Subgraph
 
 variable {G : TemporalGraph V}
+
+section CardHelpers
+
+/-- An unordered pair has `Set.ncard` at most 2. Shared by the `mount`/`twoHopMount`/
+`oneSidedMount` edge-count bounds below. -/
+lemma ncard_pair_le {α : Type*} (a b : α) : ({a, b} : Set α).ncard ≤ 2 := by
+  have h1 := Set.ncard_insert_le a ({b} : Set α)
+  have h2 := Set.ncard_singleton b
+  omega
+
+/-- A set given by (up to) four elements has `Set.ncard` at most 4. Shared by the `twoHopMount`
+edge-count bound below. -/
+lemma ncard_le_four {α : Type*} (a b c d : α) : ({a, b, c, d} : Set α).ncard ≤ 4 := by
+  have h1 := Set.ncard_insert_le a ({b, c, d} : Set α)
+  have h2 := Set.ncard_insert_le b ({c, d} : Set α)
+  have h3 := Set.ncard_insert_le c ({d} : Set α)
+  have h4 := Set.ncard_singleton d
+  omega
+
+end CardHelpers
 
 section Partition
 
@@ -293,6 +319,66 @@ lemma vminus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} [H.IsSymm]
       use y, z', m, n
       refine ⟨by simpa using h₂.symm, hle', ?_, by omega⟩
       grind only [= LatestEdge.eq_1, → TemporalGraph.adj_symm]
+
+/-- Earliest side of two-hop dismountability: one or two edges of `H` such that, in any `K`
+between them and `H`, whatever is reachable from `y` is reachable from `x`. -/
+lemma exists_edgeSet_of_earliest {H : Subgraph G} [G.IsSymm] [G.IsLoopless] [H.IsSymm] {x : V}
+    (h₀ : (∃ y : V, H.EarliestNeighbor y x)
+      ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.EarliestEdge y z n ∧ H.Adj z x m ∧ m ≤ n)) :
+    ∃ y ∈ H.verts, y ≠ x ∧ ∃ E : Set (Sym2 V × ℕ), E ⊆ H.edgeSet ∧ E.ncard ≤ 2 ∧
+      x ∈ (Subgraph.fromEdgeSet G E).verts ∧
+      ∀ (K : Subgraph G) [K.IsSymm], Subgraph.fromEdgeSet G E ≤ K → K ≤ H →
+        ∀ b, K.Reachable y b → K.Reachable x b := by
+  rcases h₀ with ⟨y, n, hE⟩ | ⟨y, z, n, m, hyx, hE, hzx, hmn⟩
+  · -- one hop: the earliest edge `y x`
+    have hadj : H.Adj y x n := hE.left
+    refine ⟨y, H.edge_vert hadj, hadj.ne, {(s(y, x), n)}, ?_, ?_,
+      ⟨⟨(s(y, x), n), rfl⟩, Sym2.mem_mk_right _ _⟩, ?_⟩
+    · exact Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hadj)
+    · rw [Set.ncard_singleton]; omega
+    · intro K _ hK hKH b
+      exact reachable_of_earliestEdge
+        (earliestEdge_of_ge hKH hE (adj_of_fromEdgeSet_le hK rfl (H.adj_sub hadj))) b
+  · -- two hops: the earliest edge `y z`, then the edge `z x`
+    have hyz : H.Adj y z n := hE.left
+    refine ⟨y, H.edge_vert hyz, hyx, {(s(y, z), n), (s(z, x), m)}, ?_,
+      ncard_pair_le _ _, ⟨⟨(s(z, x), m), by simp⟩, Sym2.mem_mk_right _ _⟩, ?_⟩
+    · exact Set.insert_subset (H.mem_edgeSet.mpr hyz)
+        (Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hzx))
+    · intro K _ hK hKH b
+      have hKyz : K.Adj y z n := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hyz)
+      have hzx' : K.Adj z x m := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hzx)
+      exact reachable_of_extended_earliestEdge (earliestEdge_of_ge hKH hE hKyz) hzx'.symm hmn b
+
+/-- Latest side of two-hop dismountability: one or two edges of `H` such that, in any `K`
+between them and `H`, whatever reaches `y` reaches `x`. -/
+lemma exists_edgeSet_of_latest {H : Subgraph G} [G.IsSymm] [G.IsLoopless] [H.IsSymm] {x : V}
+    (h₀ : (∃ y : V, H.LatestNeighbor y x)
+      ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.LatestEdge y z n ∧ H.Adj z x m ∧ n ≤ m)) :
+    ∃ y ∈ H.verts, y ≠ x ∧ ∃ E : Set (Sym2 V × ℕ), E ⊆ H.edgeSet ∧ E.ncard ≤ 2 ∧
+      x ∈ (Subgraph.fromEdgeSet G E).verts ∧
+      ∀ (K : Subgraph G) [K.IsSymm], Subgraph.fromEdgeSet G E ≤ K → K ≤ H →
+        ∀ b, K.Reachable b y → K.Reachable b x := by
+  rcases h₀ with ⟨y, n, hE⟩ | ⟨y, z, n, m, hyx, hE, hzx, hmn⟩
+  · -- one hop: the latest edge `y x`
+    have hadj : H.Adj y x n := hE.left
+    refine ⟨y, H.edge_vert hadj, hadj.ne, {(s(y, x), n)}, ?_, ?_,
+      ⟨⟨(s(y, x), n), rfl⟩, Sym2.mem_mk_right _ _⟩, ?_⟩
+    · exact Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hadj)
+    · rw [Set.ncard_singleton]; omega
+    · intro K _ hK hKH b
+      exact reachable_of_latestEdge
+        (latestEdge_of_ge hKH hE (adj_of_fromEdgeSet_le hK rfl (H.adj_sub hadj))) b
+  · -- two hops: the latest edge `y z`, then the edge `z x`
+    have hyz : H.Adj y z n := hE.left
+    refine ⟨y, H.edge_vert hyz, hyx, {(s(y, z), n), (s(z, x), m)}, ?_,
+      ncard_pair_le _ _, ⟨⟨(s(z, x), m), by simp⟩, Sym2.mem_mk_right _ _⟩, ?_⟩
+    · exact Set.insert_subset (H.mem_edgeSet.mpr hyz)
+        (Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hzx))
+    · intro K _ hK hKH b
+      have hKyz : K.Adj y z n := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hyz)
+      have hzx' : K.Adj z x m := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hzx)
+      exact reachable_of_extended_latestEdge (latestEdge_of_ge hKH hE hKyz) hzx' hmn b
 
 end TwoHop
 

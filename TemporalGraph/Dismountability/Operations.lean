@@ -6,6 +6,7 @@ Authors: Ethan Bargaud-Arm
 import TemporalGraph.Basic
 import TemporalGraph.Subgraph
 import TemporalGraph.Connectivity.Subgraph
+import TemporalGraph.Dismountability.Basic
 
 /-!
 # Dismounting and mounting
@@ -28,9 +29,10 @@ few edges that made it dismountable (or two-hop-dismountable) in the first place
   adding at most 2 edges (`mount_size`).
 * `TemporalGraph.Subgraph.twoHopDismountability` : SAND 2025, §2.1 (the 2-hop case, unnumbered
   in SAND); the two-hop analogue, adding at most 4 edges (`twoHopMount_size`).
-* `ncard_pair_le`, `ncard_le_four` (section `CardHelpers`) : `Set.ncard` bounds on a set given by
-  2, resp. 4, elements, shared by the edge-count bounds of `mount`, `twoHopMount` and (in
-  `Dismountability/OneSided.lean`) `oneSidedMount`.
+* `TemporalGraph.Subgraph.exists_isSpannerOf_of_twoHopDismountable` : SAND 2025, Theorem 2.1
+  and §2.1, a `{1,2}`-hop dismountable clique has a vertex `x` such that every spanner of
+  `H.dismount x` extends to a spanner of `H` with at most 4 more edges. The witness on each side
+  (earliest, latest) is a set of 1 or 2 edges, so the mixed 1/2-hop cases are handled at once.
 
 ## References
 
@@ -46,26 +48,6 @@ variable {V : Type u} {G : TemporalGraph V}
 namespace TemporalGraph
 
 namespace Subgraph
-
-section CardHelpers
-
-/-- An unordered pair has `Set.ncard` at most 2. Shared by the `mount`/`twoHopMount`/
-`oneSidedMount` edge-count bounds below. -/
-lemma ncard_pair_le {α : Type*} (a b : α) : ({a, b} : Set α).ncard ≤ 2 := by
-  have h1 := Set.ncard_insert_le a ({b} : Set α)
-  have h2 := Set.ncard_singleton b
-  omega
-
-/-- A set given by (up to) four elements has `Set.ncard` at most 4. Shared by the `twoHopMount`
-edge-count bound below. -/
-lemma ncard_le_four {α : Type*} (a b c d : α) : ({a, b, c, d} : Set α).ncard ≤ 4 := by
-  have h1 := Set.ncard_insert_le a ({b, c, d} : Set α)
-  have h2 := Set.ncard_insert_le b ({c, d} : Set α)
-  have h3 := Set.ncard_insert_le c ({d} : Set α)
-  have h4 := Set.ncard_singleton d
-  omega
-
-end CardHelpers
 
 section Dismount
 
@@ -464,6 +446,70 @@ theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSy
   exact htc u (by rw [heq]; exact hu) v (by rw [heq]; exact hv)
 
 end TwoHopMount
+
+section TwoHopDismountability
+
+/-- SAND 2025, Theorem 2.1 and §2.1: a `{1,2}`-hop dismountable clique has a vertex `x` such that
+every spanner of `H.dismount x` extends to a spanner of `H` with at most 4 more edges (1 or 2 on
+each side of `x`). -/
+theorem exists_isSpannerOf_of_twoHopDismountable {H : Subgraph G}
+    [G.IsSymm] [G.IsLoopless] [H.IsSymm] (h₀ : H.TwoHopDismountable) :
+    ∃ x ∈ H.verts, ∀ H' : Subgraph G, H'.IsSymm → H'.IsSpannerOf (H.dismount x) →
+      ∃ K : Subgraph G, K.IsSymm ∧ K.IsSpannerOf H ∧ K.edgeSet.ncard ≤ H'.edgeSet.ncard + 4 := by
+  obtain ⟨hcl, x, he, hl⟩ := h₀
+  obtain ⟨y, hy, hyx, Eₒ, hEₒ, hcₒ, hxₒ, hrₒ⟩ := exists_edgeSet_of_earliest he
+  obtain ⟨z, hz, hzx, Eᵢ, hEᵢ, hcᵢ, hxᵢ, hrᵢ⟩ := exists_edgeSet_of_latest hl
+  have hx : x ∈ H.verts := (fromEdgeSet_le hEₒ).left hxₒ
+  refine ⟨x, hx, fun H' hH' hS => ?_⟩
+  have := hH'
+  have hE : Eₒ ∪ Eᵢ ⊆ H.edgeSet := Set.union_subset hEₒ hEᵢ
+  have hEG : Eₒ ∪ Eᵢ ⊆ G.edgeSet := by
+    rintro ⟨p, n⟩ hp
+    induction p using Sym2.ind with
+    | _ a b => exact G.mem_edgeSet.mpr (H.adj_sub (H.mem_edgeSet.mp (hE hp)))
+  have hF : Subgraph.fromEdgeSet G (Eₒ ∪ Eᵢ) ≤ H := fromEdgeSet_le hE
+  have hFₒ : Subgraph.fromEdgeSet G Eₒ ≤ H' ⊔ Subgraph.fromEdgeSet G (Eₒ ∪ Eᵢ) :=
+    (fromEdgeSet_mono Set.subset_union_left).trans le_sup_right
+  have hFᵢ : Subgraph.fromEdgeSet G Eᵢ ≤ H' ⊔ Subgraph.fromEdgeSet G (Eₒ ∪ Eᵢ) :=
+    (fromEdgeSet_mono Set.subset_union_right).trans le_sup_right
+  have hKH : H' ⊔ Subgraph.fromEdgeSet G (Eₒ ∪ Eᵢ) ≤ H :=
+    sup_le (hS.left.trans dismount_le) hF
+  -- the vertex set is that of `H`: `H'` has all but `x`, and `x` is an endpoint of an edge
+  have hverts : (H' ⊔ Subgraph.fromEdgeSet G (Eₒ ∪ Eᵢ)).verts = H.verts := by
+    rw [sup_verts, hS.right.left, dismount_verts]
+    refine Set.Subset.antisymm (Set.union_subset Set.sdiff_subset hF.left) fun v hv ↦ ?_
+    by_cases hvx : v = x
+    · exact Or.inr ((fromEdgeSet_mono Set.subset_union_left).left (hvx ▸ hxₒ))
+    · exact Or.inl ⟨hv, hvx⟩
+  -- `H'` is temporally connected on `H.verts \ {x}`
+  have hdisTC : (H.dismount x).TemporallyConnectedSubgraph :=
+    TemporalGraph.temporallyConnected_of_isClique _ (dismount_clique H x hcl)
+  have hH'TC : ∀ a ∈ H.verts \ {x}, ∀ b ∈ H.verts \ {x}, H'.Reachable a b := by
+    intro a ha b hb
+    rw [← dismount_verts] at ha hb
+    exact hS.right.right a ha b hb (hdisTC a ha b hb)
+  refine ⟨H' ⊔ Subgraph.fromEdgeSet G (Eₒ ∪ Eᵢ), inferInstance, ⟨hKH, hverts, ?_⟩, ?_⟩
+  · intro a ha b hb _
+    have hmono : ∀ u v, H'.Reachable u v →
+        (H' ⊔ Subgraph.fromEdgeSet G (Eₒ ∪ Eᵢ)).Reachable u v :=
+      fun _ _ ↦ reachable_of_le_reachable le_sup_left
+    by_cases hax : a = x
+    · subst hax
+      by_cases hbx : b = a
+      · exact hbx ▸ reachable_of_self _
+      -- `a` reaches `b` as `y` does, and `y ≠ a` is in `H'`
+      · exact hrₒ _ hFₒ hKH b (hmono y b (hH'TC y ⟨hy, hyx⟩ b ⟨hb, hbx⟩))
+    · by_cases hbx : b = x
+      · subst hbx
+        -- `a` reaches `b` as it reaches `z`
+        exact hrᵢ _ hFᵢ hKH a (hmono a z (hH'TC a ⟨ha, hax⟩ z ⟨hz, hzx⟩))
+      · exact hmono a b (hH'TC a ⟨ha, hax⟩ b ⟨hb, hbx⟩)
+  · rw [sup_edgeSet, fromEdgeSet_eq hEG]
+    have h₁ := Set.ncard_union_le H'.edgeSet (Eₒ ∪ Eᵢ)
+    have h₂ := Set.ncard_union_le Eₒ Eᵢ
+    omega
+
+end TwoHopDismountability
 
 end Subgraph
 

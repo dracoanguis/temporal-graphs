@@ -41,6 +41,11 @@ the subgraph counterparts of the vertex- and edge-indexed notions of `TemporalGr
 
 ## Main results
 
+* `TemporalGraph.Subgraph.fromEdgeSet_le`, `fromEdgeSet_mono`, `adj_of_fromEdgeSet_le` : the
+  subgraph built from a set of edges of `H` lies in `H`, and grows with the set.
+* `TemporalGraph.Subgraph.exists_matchingEdges` : a family of unique partners `a ↦ (v, n)` over
+  a finite set `A` yields a set of at most `|A|` edges `(s(v, a), n)`.
+
 * Instances `BoundedOrder (Subgraph G)`, `PartialOrder (Subgraph G)` and
   `SemilatticeSup (Subgraph G)`, with `⊤` the whole of `G`, `⊥` the empty subgraph, and `⊔` the
   union of vertex sets and arcs (`sup_verts`, `sup_adj`, `sup_isSymm`, `sup_edgeSet`).
@@ -1267,6 +1272,62 @@ theorem fromEdgeSet_eq {G : TemporalGraph V} [G.IsSymm] [G.IsLoopless]
     obtain ⟨x, y⟩ := p
     exact ⟨x, y, rfl, ⟨(s(x,y), n), ha⟩, Sym2.mem_iff.mpr (Or.inl rfl),
       Sym2.mem_iff.mpr (Or.inr rfl), rfl, G.mem_edgeSet.mp (h₀ ha)⟩
+
+/-- A subgraph built from edges of `H` lies in `H`. -/
+lemma fromEdgeSet_le {H : Subgraph G} [G.IsLoopless] [H.IsSymm] {E : Set (Sym2 V × ℕ)}
+    (h₀ : E ⊆ H.edgeSet) : Subgraph.fromEdgeSet G E ≤ H := by
+  refine ⟨?_, ?_⟩
+  · rintro v ⟨⟨⟨e, n⟩, he⟩, hv⟩
+    induction e using Sym2.ind with
+    | _ a b =>
+      have hadj := H.mem_edgeSet.mp (h₀ he)
+      rcases Sym2.mem_iff.mp hv with rfl | rfl
+      · exact H.edge_vert hadj
+      · exact H.edge_vert' hadj
+  · rintro x y n ⟨⟨⟨e, m⟩, he⟩, hx, hy, rfl, hG⟩
+    have heq : e = s(x, y) := e.mem_and_mem_iff hG.ne |>.mp ⟨hx, hy⟩
+    exact H.mem_edgeSet.mp (heq ▸ h₀ he)
+
+/-- `Subgraph.fromEdgeSet` is monotone in the edge set. -/
+lemma fromEdgeSet_mono {E E' : Set (Sym2 V × ℕ)} (h₀ : E ⊆ E') :
+    Subgraph.fromEdgeSet G E ≤ Subgraph.fromEdgeSet G E' := by
+  refine ⟨?_, ?_⟩
+  · rintro v ⟨⟨p, hp⟩, hv⟩
+    exact ⟨⟨p, h₀ hp⟩, hv⟩
+  · rintro x y n ⟨⟨p, hp⟩, hx, hy, hn, hG⟩
+    exact ⟨⟨p, h₀ hp⟩, hx, hy, hn, hG⟩
+
+/-- An edge of `E` that lies in `G` is an adjacency of every subgraph above
+`Subgraph.fromEdgeSet G E`. -/
+lemma adj_of_fromEdgeSet_le {K : Subgraph G} {E : Set (Sym2 V × ℕ)} {a b : V} {n : ℕ}
+    (h₀ : Subgraph.fromEdgeSet G E ≤ K) (h₁ : (s(a, b), n) ∈ E) (h₂ : G.Adj a b n) :
+    K.Adj a b n :=
+  h₀.right ⟨⟨(s(a, b), n), h₁⟩, Sym2.mem_mk_left _ _, Sym2.mem_mk_right _ _, rfl, h₂⟩
+
+/-- A relation `R` that gives each `a ∈ A` a unique partner in `B` yields a set of at most
+`|A|` unordered edges, one per `a`, that contains every such edge and consists only of them. -/
+lemma exists_matchingEdges {A B : Set V} {R : V → V → ℕ → Prop} (h₀ : A.Finite)
+    (h₁ : ∀ a ∈ A, ∃! q : V × ℕ, q.1 ∈ B ∧ R q.1 a q.2) :
+    ∃ E : Set (Sym2 V × ℕ), E.ncard ≤ A.ncard ∧
+      (∀ a ∈ A, ∀ v n, v ∈ B → R v a n → (s(v, a), n) ∈ E) ∧
+      (∀ a ∈ A, ∃ v n, (s(v, a), n) ∈ E) ∧
+      ∀ e ∈ E, ∃ v a n, v ∈ B ∧ a ∈ A ∧ R v a n ∧ e = (s(v, a), n) := by
+  classical
+  -- the chosen partner of `a`, with a dummy value off `A`
+  let f : V → V × ℕ := fun a ↦ if ha : a ∈ A then (h₁ a ha).exists.choose else (a, 0)
+  have hf : ∀ a ∈ A, (f a).1 ∈ B ∧ R (f a).1 a (f a).2 := fun a ha ↦ by
+    simpa only [f, ha, ↓reduceDIte] using (h₁ a ha).exists.choose_spec
+  refine ⟨(fun a ↦ (s((f a).1, a), (f a).2)) '' A, Set.ncard_image_le h₀, ?_, ?_, ?_⟩
+  · -- uniqueness: any admissible partner is the chosen one
+    intro a ha v n hv hR
+    have : (v, n) = f a := by
+      simpa only [f, ha, ↓reduceDIte] using
+        (h₁ a ha).unique ⟨hv, hR⟩ (h₁ a ha).exists.choose_spec
+    obtain ⟨rfl, rfl⟩ := Prod.ext_iff.mp this
+    exact ⟨a, ha, rfl⟩
+  · exact fun a ha ↦ ⟨(f a).1, (f a).2, a, ha, rfl⟩
+  · rintro _ ⟨a, ha, rfl⟩
+    exact ⟨(f a).1, a, (f a).2, (hf a ha).1, ha, (hf a ha).2, rfl⟩
 
 end Subgraph
 

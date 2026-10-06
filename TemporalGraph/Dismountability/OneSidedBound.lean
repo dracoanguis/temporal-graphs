@@ -21,8 +21,9 @@ actually realized by a one-sided spanner of any balanced temporal bi-clique, yie
 `O(n log n)` bound `exists_isBigO_isOneSidedSpannerBound`.
 
 The last section transfers the bound to temporal cliques. A `{1,2}`-hop dismountable clique loses
-a vertex and gains at most 4 edges back. A non-dismountable one is spanned by a one-sided spanner
-of the bi-clique between `V⁻` and `V⁺`, plus the matchings `M⁻` and `M⁺`. Together, these give
+a vertex and gains at most 4 edges back (`exists_isSpannerOf_of_twoHopDismountable`, in
+`Dismountability/Operations.lean`). A non-dismountable one is spanned by a one-sided spanner of
+the bi-clique between `V⁻` and `V⁺`, plus the matchings `M⁻` and `M⁺`. Together, these give
 `exists_isBigO_isSpannerOf`: temporal cliques admit spanners of size `O(n log n)`.
 
 ## Main definitions
@@ -45,9 +46,6 @@ of the bi-clique between `V⁻` and `V⁺`, plus the matchings `M⁻` and `M⁺`
   spanner bound.
 * `TemporalGraph.Subgraph.exists_isBigO_isOneSidedSpannerBound` : SAND 2025, §4.1 (Angrick et
   al.): temporal bi-cliques admit one-sided spanners of size `O(n log n)`.
-* `TemporalGraph.Subgraph.exists_isSpannerOf_of_twoHopDismountable` : SAND 2025, Theorem 2.1 and
-  §2.1, a `{1,2}`-hop dismountable clique extends any spanner of `H.dismount x` with at most 4
-  edges (mixed 1/2-hop cases included).
 * `TemporalGraph.Subgraph.exists_isSpannerOf_of_not_twoHopDismountable` : SAND 2025, §4.1, a
   non-dismountable clique is spanned by a one-sided spanner of the bi-clique `H.between V⁻ V⁺`
   plus the matchings `M⁻` and `M⁺`.
@@ -327,10 +325,11 @@ private lemma one_le_logb {n : ℕ} (hn : 2 ≤ n) : 1 ≤ Real.logb 2 n := by
 /-- `spannerBound` is `O(n log n)`. -/
 theorem spannerBound_isBigO :
     (fun n ↦ (spannerBound n : ℝ)) =O[atTop] fun n ↦ (n : ℝ) * Real.log n := by
-  refine IsBigO.of_bound (5 / Real.log 2) (eventually_atTop.2 ⟨2, fun n hn ↦ ?_⟩)
+  refine IsBigO.of_bound (5 / Real.log 2) (eventually_atTop.mpr ⟨2, fun n hn ↦ ?_⟩)
   rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
     show 5 / Real.log 2 * (n * Real.log n) = 5 * (n * Real.logb 2 n) by
-      rw [← Real.log_div_log]; ring]
+      rw [← Real.log_div_log];
+      ring]
   -- `spannerBound n ≤ 2 n ⌈log₂ n⌉ + n ≤ 2 n (log₂ n + 1) + n ≤ 5 n log₂ n`, since `1 ≤ log₂ n`
   have hb : (spannerBound n : ℝ) ≤ 2 * n * Nat.clog 2 n + n := by
     exact_mod_cast spannerBound_le (by omega)
@@ -348,182 +347,6 @@ theorem exists_isBigO_isOneSidedSpannerBound :
 end BigO
 
 section CliqueBound
-
-/-- A subgraph built from edges of `H` lies in `H`. -/
-lemma fromEdgeSet_le {H : Subgraph G} [G.IsLoopless] [H.IsSymm] {E : Set (Sym2 V × ℕ)}
-    (h₀ : E ⊆ H.edgeSet) : Subgraph.fromEdgeSet G E ≤ H := by
-  refine ⟨?_, ?_⟩
-  · rintro v ⟨⟨⟨e, n⟩, he⟩, hv⟩
-    induction e using Sym2.ind with
-    | _ a b =>
-      have hadj := H.mem_edgeSet.mp (h₀ he)
-      rcases Sym2.mem_iff.mp hv with rfl | rfl
-      · exact H.edge_vert hadj
-      · exact H.edge_vert' hadj
-  · rintro x y n ⟨⟨⟨e, m⟩, he⟩, hx, hy, rfl, hG⟩
-    have heq : e = s(x, y) := e.mem_and_mem_iff hG.ne |>.mp ⟨hx, hy⟩
-    exact H.mem_edgeSet.mp (heq ▸ h₀ he)
-
-/-- `Subgraph.fromEdgeSet` is monotone in the edge set. -/
-lemma fromEdgeSet_mono {E E' : Set (Sym2 V × ℕ)} (h₀ : E ⊆ E') :
-    Subgraph.fromEdgeSet G E ≤ Subgraph.fromEdgeSet G E' := by
-  refine ⟨?_, ?_⟩
-  · rintro v ⟨⟨p, hp⟩, hv⟩
-    exact ⟨⟨p, h₀ hp⟩, hv⟩
-  · rintro x y n ⟨⟨p, hp⟩, hx, hy, hn, hG⟩
-    exact ⟨⟨p, h₀ hp⟩, hx, hy, hn, hG⟩
-
-/-- An edge of `E` that lies in `G` is an adjacency of every subgraph above
-`Subgraph.fromEdgeSet G E`. -/
-lemma adj_of_fromEdgeSet_le {K : Subgraph G} {E : Set (Sym2 V × ℕ)} {a b : V} {n : ℕ}
-    (h₀ : Subgraph.fromEdgeSet G E ≤ K) (h₁ : (s(a, b), n) ∈ E) (h₂ : G.Adj a b n) :
-    K.Adj a b n :=
-  h₀.right ⟨⟨(s(a, b), n), h₁⟩, Sym2.mem_mk_left _ _, Sym2.mem_mk_right _ _, rfl, h₂⟩
-
-/-- Earliest side of two-hop dismountability: one or two edges of `H` such that, in any `K`
-between them and `H`, whatever is reachable from `y` is reachable from `x`. -/
-lemma exists_edgeSet_of_earliest {H : Subgraph G} [G.IsSymm] [G.IsLoopless] [H.IsSymm] {x : V}
-    (h₀ : (∃ y : V, H.EarliestNeighbor y x)
-      ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.EarliestEdge y z n ∧ H.Adj z x m ∧ m ≤ n)) :
-    ∃ y ∈ H.verts, y ≠ x ∧ ∃ E : Set (Sym2 V × ℕ), E ⊆ H.edgeSet ∧ E.ncard ≤ 2 ∧
-      x ∈ (Subgraph.fromEdgeSet G E).verts ∧
-      ∀ (K : Subgraph G) [K.IsSymm], Subgraph.fromEdgeSet G E ≤ K → K ≤ H →
-        ∀ b, K.Reachable y b → K.Reachable x b := by
-  rcases h₀ with ⟨y, n, hE⟩ | ⟨y, z, n, m, hyx, hE, hzx, hmn⟩
-  · -- one hop: the earliest edge `y x`
-    have hadj : H.Adj y x n := hE.left
-    refine ⟨y, H.edge_vert hadj, hadj.ne, {(s(y, x), n)}, ?_, ?_,
-      ⟨⟨(s(y, x), n), rfl⟩, Sym2.mem_mk_right _ _⟩, ?_⟩
-    · exact Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hadj)
-    · rw [Set.ncard_singleton]; omega
-    · intro K _ hK hKH b
-      exact reachable_of_earliestEdge
-        (earliestEdge_of_ge hKH hE (adj_of_fromEdgeSet_le hK rfl (H.adj_sub hadj))) b
-  · -- two hops: the earliest edge `y z`, then the edge `z x`
-    have hyz : H.Adj y z n := hE.left
-    refine ⟨y, H.edge_vert hyz, hyx, {(s(y, z), n), (s(z, x), m)}, ?_,
-      ncard_pair_le _ _, ⟨⟨(s(z, x), m), by simp⟩, Sym2.mem_mk_right _ _⟩, ?_⟩
-    · exact Set.insert_subset (H.mem_edgeSet.mpr hyz)
-        (Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hzx))
-    · intro K _ hK hKH b
-      have hKyz : K.Adj y z n := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hyz)
-      have hzx' : K.Adj z x m := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hzx)
-      exact reachable_of_extended_earliestEdge (earliestEdge_of_ge hKH hE hKyz) hzx'.symm hmn b
-
-/-- Latest side of two-hop dismountability: one or two edges of `H` such that, in any `K`
-between them and `H`, whatever reaches `y` reaches `x`. -/
-lemma exists_edgeSet_of_latest {H : Subgraph G} [G.IsSymm] [G.IsLoopless] [H.IsSymm] {x : V}
-    (h₀ : (∃ y : V, H.LatestNeighbor y x)
-      ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.LatestEdge y z n ∧ H.Adj z x m ∧ n ≤ m)) :
-    ∃ y ∈ H.verts, y ≠ x ∧ ∃ E : Set (Sym2 V × ℕ), E ⊆ H.edgeSet ∧ E.ncard ≤ 2 ∧
-      x ∈ (Subgraph.fromEdgeSet G E).verts ∧
-      ∀ (K : Subgraph G) [K.IsSymm], Subgraph.fromEdgeSet G E ≤ K → K ≤ H →
-        ∀ b, K.Reachable b y → K.Reachable b x := by
-  rcases h₀ with ⟨y, n, hE⟩ | ⟨y, z, n, m, hyx, hE, hzx, hmn⟩
-  · -- one hop: the latest edge `y x`
-    have hadj : H.Adj y x n := hE.left
-    refine ⟨y, H.edge_vert hadj, hadj.ne, {(s(y, x), n)}, ?_, ?_,
-      ⟨⟨(s(y, x), n), rfl⟩, Sym2.mem_mk_right _ _⟩, ?_⟩
-    · exact Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hadj)
-    · rw [Set.ncard_singleton]; omega
-    · intro K _ hK hKH b
-      exact reachable_of_latestEdge
-        (latestEdge_of_ge hKH hE (adj_of_fromEdgeSet_le hK rfl (H.adj_sub hadj))) b
-  · -- two hops: the latest edge `y z`, then the edge `z x`
-    have hyz : H.Adj y z n := hE.left
-    refine ⟨y, H.edge_vert hyz, hyx, {(s(y, z), n), (s(z, x), m)}, ?_,
-      ncard_pair_le _ _, ⟨⟨(s(z, x), m), by simp⟩, Sym2.mem_mk_right _ _⟩, ?_⟩
-    · exact Set.insert_subset (H.mem_edgeSet.mpr hyz)
-        (Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hzx))
-    · intro K _ hK hKH b
-      have hKyz : K.Adj y z n := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hyz)
-      have hzx' : K.Adj z x m := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hzx)
-      exact reachable_of_extended_latestEdge (latestEdge_of_ge hKH hE hKyz) hzx' hmn b
-
-/-- SAND 2025, Theorem 2.1 and §2.1: a `{1,2}`-hop dismountable clique has a vertex `x` such that
-every spanner of `H.dismount x` extends to a spanner of `H` with at most 4 more edges (1 or 2 on
-each side of `x`). -/
-theorem exists_isSpannerOf_of_twoHopDismountable {H : Subgraph G}
-    [G.IsSymm] [G.IsLoopless] [H.IsSymm] (h₀ : H.TwoHopDismountable) :
-    ∃ x ∈ H.verts, ∀ H' : Subgraph G, H'.IsSymm → H'.IsSpannerOf (H.dismount x) →
-      ∃ K : Subgraph G, K.IsSymm ∧ K.IsSpannerOf H ∧ K.edgeSet.ncard ≤ H'.edgeSet.ncard + 4 := by
-  obtain ⟨hcl, x, he, hl⟩ := h₀
-  obtain ⟨y, hy, hyx, Eₒ, hEₒ, hcₒ, hxₒ, hrₒ⟩ := exists_edgeSet_of_earliest he
-  obtain ⟨z, hz, hzx, Eᵢ, hEᵢ, hcᵢ, hxᵢ, hrᵢ⟩ := exists_edgeSet_of_latest hl
-  have hx : x ∈ H.verts := (fromEdgeSet_le hEₒ).left hxₒ
-  refine ⟨x, hx, fun H' hH' hS => ?_⟩
-  have := hH'
-  have hE : Eₒ ∪ Eᵢ ⊆ H.edgeSet := Set.union_subset hEₒ hEᵢ
-  have hEG : Eₒ ∪ Eᵢ ⊆ G.edgeSet := by
-    rintro ⟨p, n⟩ hp
-    induction p using Sym2.ind with
-    | _ a b => exact G.mem_edgeSet.mpr (H.adj_sub (H.mem_edgeSet.mp (hE hp)))
-  have hF : Subgraph.fromEdgeSet G (Eₒ ∪ Eᵢ) ≤ H := fromEdgeSet_le hE
-  have hFₒ : Subgraph.fromEdgeSet G Eₒ ≤ H' ⊔ Subgraph.fromEdgeSet G (Eₒ ∪ Eᵢ) :=
-    (fromEdgeSet_mono Set.subset_union_left).trans le_sup_right
-  have hFᵢ : Subgraph.fromEdgeSet G Eᵢ ≤ H' ⊔ Subgraph.fromEdgeSet G (Eₒ ∪ Eᵢ) :=
-    (fromEdgeSet_mono Set.subset_union_right).trans le_sup_right
-  have hKH : H' ⊔ Subgraph.fromEdgeSet G (Eₒ ∪ Eᵢ) ≤ H :=
-    sup_le (hS.left.trans dismount_le) hF
-  -- the vertex set is that of `H`: `H'` has all but `x`, and `x` is an endpoint of an edge
-  have hverts : (H' ⊔ Subgraph.fromEdgeSet G (Eₒ ∪ Eᵢ)).verts = H.verts := by
-    rw [sup_verts, hS.right.left, dismount_verts]
-    refine Set.Subset.antisymm (Set.union_subset Set.sdiff_subset hF.left) fun v hv ↦ ?_
-    by_cases hvx : v = x
-    · exact Or.inr ((fromEdgeSet_mono Set.subset_union_left).left (hvx ▸ hxₒ))
-    · exact Or.inl ⟨hv, hvx⟩
-  -- `H'` is temporally connected on `H.verts \ {x}`
-  have hdisTC : (H.dismount x).TemporallyConnectedSubgraph :=
-    TemporalGraph.temporallyConnected_of_isClique _ (dismount_clique H x hcl)
-  have hH'TC : ∀ a ∈ H.verts \ {x}, ∀ b ∈ H.verts \ {x}, H'.Reachable a b := by
-    intro a ha b hb
-    rw [← dismount_verts] at ha hb
-    exact hS.right.right a ha b hb (hdisTC a ha b hb)
-  refine ⟨H' ⊔ Subgraph.fromEdgeSet G (Eₒ ∪ Eᵢ), inferInstance, ⟨hKH, hverts, ?_⟩, ?_⟩
-  · intro a ha b hb _
-    have hmono : ∀ u v, H'.Reachable u v →
-        (H' ⊔ Subgraph.fromEdgeSet G (Eₒ ∪ Eᵢ)).Reachable u v :=
-      fun _ _ ↦ reachable_of_le_reachable le_sup_left
-    by_cases hax : a = x
-    · subst hax
-      by_cases hbx : b = a
-      · exact hbx ▸ reachable_of_self _
-      -- `a` reaches `b` as `y` does, and `y ≠ a` is in `H'`
-      · exact hrₒ _ hFₒ hKH b (hmono y b (hH'TC y ⟨hy, hyx⟩ b ⟨hb, hbx⟩))
-    · by_cases hbx : b = x
-      · subst hbx
-        -- `a` reaches `b` as it reaches `z`
-        exact hrᵢ _ hFᵢ hKH a (hmono a z (hH'TC a ⟨ha, hax⟩ z ⟨hz, hzx⟩))
-      · exact hmono a b (hH'TC a ⟨ha, hax⟩ b ⟨hb, hbx⟩)
-  · rw [sup_edgeSet, fromEdgeSet_eq hEG]
-    have h₁ := Set.ncard_union_le H'.edgeSet (Eₒ ∪ Eᵢ)
-    have h₂ := Set.ncard_union_le Eₒ Eᵢ
-    omega
-
-/-- A relation `R` that gives each `a ∈ A` a unique partner in `B` yields a set of at most
-`|A|` unordered edges, one per `a`, that contains every such edge and consists only of them. -/
-lemma exists_matchingEdges {A B : Set V} {R : V → V → ℕ → Prop} (h₀ : A.Finite)
-    (h₁ : ∀ a ∈ A, ∃! q : V × ℕ, q.1 ∈ B ∧ R q.1 a q.2) :
-    ∃ E : Set (Sym2 V × ℕ), E.ncard ≤ A.ncard ∧
-      (∀ a ∈ A, ∀ v n, v ∈ B → R v a n → (s(v, a), n) ∈ E) ∧
-      (∀ a ∈ A, ∃ v n, (s(v, a), n) ∈ E) ∧
-      ∀ e ∈ E, ∃ v a n, v ∈ B ∧ a ∈ A ∧ R v a n ∧ e = (s(v, a), n) := by
-  classical
-  -- the chosen partner of `a`, with a dummy value off `A`
-  let f : V → V × ℕ := fun a ↦ if ha : a ∈ A then (h₁ a ha).exists.choose else (a, 0)
-  have hf : ∀ a ∈ A, (f a).1 ∈ B ∧ R (f a).1 a (f a).2 := fun a ha ↦ by
-    simpa only [f, ha, ↓reduceDIte] using (h₁ a ha).exists.choose_spec
-  refine ⟨(fun a ↦ (s((f a).1, a), (f a).2)) '' A, Set.ncard_image_le h₀, ?_, ?_, ?_⟩
-  · -- uniqueness: any admissible partner is the chosen one
-    intro a ha v n hv hR
-    have : (v, n) = f a := by
-      simpa only [f, ha, ↓reduceDIte] using
-        (h₁ a ha).unique ⟨hv, hR⟩ (h₁ a ha).exists.choose_spec
-    obtain ⟨rfl, rfl⟩ := Prod.ext_iff.mp this
-    exact ⟨a, ha, rfl⟩
-  · exact fun a ha ↦ ⟨(f a).1, (f a).2, a, ha, rfl⟩
-  · rintro _ ⟨a, ha, rfl⟩
-    exact ⟨(f a).1, a, (f a).2, (hf a ha).1, ha, (hf a ha).2, rfl⟩
 
 /-- SAND 2025, §4.1: a clique that is not `{1,2}`-hop dismountable has a spanner made of a
 one-sided spanner of the bi-clique between `V⁺` and `V⁻`, plus the matchings `M⁻` and `M⁺`. -/
@@ -670,10 +493,11 @@ theorem exists_isBigO_isSpannerOf :
         ∃ K : Subgraph G, K.IsSymm ∧ K.IsSpannerOf H ∧ K.edgeSet.ncard ≤ f H.verts.ncard := by
   refine ⟨fun n ↦ 2 * n * Nat.clog 2 n + 4 * n, ?_, fun h₀ h₁ h₂ ↦
     exists_isSpannerOf_ncard_le h₀ h₁ h₂⟩
-  refine IsBigO.of_bound (8 / Real.log 2) (eventually_atTop.2 ⟨2, fun n hn ↦ ?_⟩)
+  refine IsBigO.of_bound (8 / Real.log 2) (eventually_atTop.mpr ⟨2, fun n hn ↦ ?_⟩)
   rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
     show 8 / Real.log 2 * (n * Real.log n) = 8 * (n * Real.logb 2 n) by
-      rw [← Real.log_div_log]; ring]
+      rw [← Real.log_div_log];
+      ring]
   -- `2 n ⌈log₂ n⌉ + 4 n ≤ 2 n (log₂ n + 1) + 4 n ≤ 8 n log₂ n`, since `1 ≤ log₂ n`
   push_cast
   nlinarith [mul_le_mul_of_nonneg_left (clog_le_logb_add_one (by omega : 1 ≤ n))

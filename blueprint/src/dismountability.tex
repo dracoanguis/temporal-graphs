@@ -439,3 +439,55 @@ the source with another target can be dismounted at the cost of two edges.
   Temporal bi-cliques admit one-sided spanners of size $O(n \log n)$: there is
   a one-sided spanner bound that is $O(n \log n)$.
 \end{theorem}
+
+\section*{Spanners of temporal cliques (SAND 2025, \S~4.1)}
+
+\begin{theorem}[Mounting back, mixed $\{1,2\}$-hop case]
+  \label{thm:spanner-of-two-hop-dismountable}
+  \uses{def:two-hop-dismountable,def:dismount-mount,thm:dismountability}
+  \lean{TemporalGraph.Subgraph.exists_isSpannerOf_of_twoHopDismountable}
+  \leanok
+  A $\{1,2\}$-hop dismountable clique $H$ has a vertex $x$ such that every
+  spanner of $H - x$ extends to a spanner of $H$ with at most $4$ more edges.
+  On each side of $x$ (earliest and latest) the witness of dismountability
+  gives a set of $1$ or $2$ edges, which are added at once. The four
+  combinations of $1$ or $2$ hops are thus handled uniformly, and only the
+  count takes the worst case.
+\end{theorem}
+
+\begin{theorem}[Spanner of a non-dismountable clique]
+  \label{thm:spanner-of-not-two-hop-dismountable}
+  \uses{lem:vminus-vplus-matchings,lem:vzero-empty,thm:tc-of-spanner-from-to,
+    thm:exists-spanner-from-to-ncard-le}
+  \lean{TemporalGraph.Subgraph.exists_isSpannerOf_of_not_twoHopDismountable}
+  \leanok
+  A finite simple proper temporal clique $H$ that is not $\{1,2\}$-hop
+  dismountable has a spanner with at most
+  $\mathrm{spannerBound}(|V^+|) + |V^+| + |V^-|$ edges. It is the union of a
+  one-sided spanner from $V^+$ to $V^-$ of the bi-clique between $V^-$ and
+  $V^+$ and of the matchings $M^-$ and $M^+$.
+\end{theorem}
+
+\begin{theorem}[Spanners of temporal cliques]
+  \label{thm:clique-spanner-ncard-le}
+  \uses{thm:spanner-of-two-hop-dismountable,thm:spanner-of-not-two-hop-dismountable,
+    lem:spanner-bound-closed-form}
+  \lean{TemporalGraph.Subgraph.exists_isSpannerOf_ncard_le}
+  \leanok
+  Every finite simple proper temporal clique on $n$ vertices admits a spanner
+  with at most $2n\lceil\log_2 n\rceil + 4n$ edges. The proof is by strong
+  induction on $n$:
+  \begin{itemize}
+    \item if $H$ is $\{1,2\}$-hop dismountable, dismount a vertex, recurse,
+      and mount it back with at most $4$ edges;
+    \item otherwise, $n = 2|V^+|$ and the bi-clique case applies.
+  \end{itemize}
+\end{theorem}
+
+\begin{theorem}[$O(n \log n)$ spanners of temporal cliques --- SAND \S~4.1]
+  \label{thm:exists-isBigO-clique-spanner}
+  \uses{thm:clique-spanner-ncard-le}
+  \lean{TemporalGraph.Subgraph.exists_isBigO_isSpannerOf}
+  \leanok
+  Temporal cliques admit spanners of size $O(n \log n)$.
+\end{theorem}

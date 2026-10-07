@@ -62,11 +62,8 @@ theorem reachable_of_nonempty_NonemptyTemporalWalk {G : TemporalGraph V} {x y : 
 theorem reachable_of_self {G : TemporalGraph V} (x : V) : G.Reachable x x := by
   use 0, 0, TemporalWalk.Empty
 
-/-- Abbreviation for `reachable_of_self`: every vertex reaches itself. -/
-abbrev self_reachable {G : TemporalGraph V} (x : V) := G.reachable_of_self x
-
-/-- `Reachable` restated with `Set.univ` nonemptiness standing in for the type being `Nonempty`, a
-bridging form towards `reachable_iff_nonempty_temporalWalkSet`. -/
+/-- `Reachable` restated with `Set.univ` nonemptiness standing in for the type being `Nonempty`
+(the name and form of Mathlib's `SimpleGraph.reachable_iff_nonempty_univ`). -/
 theorem reachable_iff_nonempty_univ {G : TemporalGraph V} {x y : V} :
     G.Reachable x y ↔ ∃ n m : ℕ, (Set.univ : Set (G.TemporalWalk x n y m)).Nonempty := by
   unfold Reachable
@@ -74,16 +71,6 @@ theorem reachable_iff_nonempty_univ {G : TemporalGraph V} {x y : V} :
   · intro ⟨n, ⟨m, ⟨p⟩⟩⟩
     exact ⟨n, ⟨m, ⟨p, trivial⟩⟩⟩
   · intro ⟨n, ⟨m, ⟨p, _⟩⟩⟩
-    exact ⟨n, ⟨m, ⟨p⟩⟩⟩
-
-/-- `G.Reachable x y` holds iff the set of temporal walks from `x` to `y`, `temporalWalkSet`, is
-nonempty. -/
-theorem reachable_iff_nonempty_temporalWalkSet {G : TemporalGraph V} {x y : V} :
-    G.Reachable x y ↔ (G.temporalWalkSet x y).Nonempty := by
-  apply Iff.intro
-  · rintro ⟨n, ⟨m, ⟨p⟩⟩⟩
-    exact ⟨⟨n, m, p⟩, ⟨n, m, p, rfl⟩⟩
-  · rintro ⟨⟨n, m, p⟩, _⟩
     exact ⟨n, ⟨m, ⟨p⟩⟩⟩
 
 /-- Reachability is monotone along `≤`: every pair reachable in `G` stays reachable in a graph

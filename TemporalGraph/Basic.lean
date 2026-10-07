@@ -262,9 +262,6 @@ structure IsSubgraphOf {P : Y → Prop} {P' : Y → Prop} (G : TemporalGraph {x 
                                                                 ⟨_, incl y y.prop⟩
                                                                 n
 
-instance : Coe (TemporalGraph V) (TemporalGraph {x : V // True}) where
-  coe G := ⟨fun x y n => G.Adj x y n⟩
-
 end Inclusion
 
 section Order

@@ -211,13 +211,6 @@ protected theorem Adj.coe {H : G.Subgraph} {x y : V} {n : ℕ} (h : H.Adj x y n)
     H.coe.Adj ⟨x, H.edge_vert h⟩ ⟨y, H.edge_vert' h⟩ n :=
   h
 
-/-- The subtype view of a subgraph is a subgraph of the ambient graph, in the general sense of
-`TemporalGraph.IsSubgraphOf`: its vertices are vertices of `G`, and its adjacencies are `G`'s. -/
-theorem coe_sub (H : Subgraph G) :
-    IsSubgraphOf H.coe (G : TemporalGraph {x : V // True}) where
-  incl _ _ := trivial
-  incl' hadj := H.adj_sub hadj
-
 end CoeAdjacency
 
 section Spanning
@@ -286,12 +279,10 @@ lemma isProper_iff_coe {H : Subgraph G} : H.IsProper ↔ H.coe.IsProper := by
   constructor
   · intro h x y z n h'
     have := h x y z n h'
-    rw [Subtype.val_inj] at this
-    assumption
+    rwa [Subtype.val_inj] at this
   · intro h x y z n h'
     have := h ⟨x, H.edge_vert h'.1⟩ ⟨y, H.edge_vert' h'.1⟩ ⟨z, H.edge_vert' h'.2⟩ n h'
-    rw [←Subtype.val_inj] at this
-    assumption
+    rwa [← Subtype.val_inj] at this
 
 -- `IsHappy` is no longer redefined here; `H.IsHappy` resolves to `TemporalGraph.IsHappy
 -- H.toTemporalGraph`.
@@ -346,6 +337,7 @@ lemma finite_incidenceSet_of_finite_simple {H : Subgraph G} [h : Finite H.verts]
 Useful for stating cardinalities of incidence sets (`Fintype.card`), not for computing with them.
 This is deliberately not an instance: `h₀` cannot be synthesised, so an instance carrying it could
 never fire. -/
+@[instance_reducible]
 noncomputable def fintypeIncidenceSetOfSimple (H : Subgraph G) [Finite H.verts]
     (h₀ : H.IsSimple) (x : V) : Fintype (H.incidenceSet x) :=
   (finite_incidenceSet_of_finite_simple h₀ x).fintype
@@ -521,6 +513,23 @@ instance : PartialOrder (Subgraph G) where
     · constructor
       · intro h'' ; apply h.left ; assumption
       · intro h'' ; apply h'.left ; assumption
+
+/-- The general inclusion `TemporalGraph.IsSubgraphOf` of two subtype views is the order on
+subgraphs: `H.coe` is a subgraph of `H'.coe` iff `H ≤ H'`. -/
+theorem isSubgraphOf_coe_iff {H H' : Subgraph G} :
+    IsSubgraphOf (P := (· ∈ H.verts)) (P' := (· ∈ H'.verts)) H.coe H'.coe ↔ H ≤ H' := by
+  constructor
+  · rintro ⟨h₀, h₁⟩
+    exact ⟨fun x hx ↦ h₀ x hx, fun h ↦ h₁ (x := ⟨_, H.edge_vert h⟩) (y := ⟨_, H.edge_vert' h⟩) h⟩
+  · rintro ⟨h₀, h₁⟩
+    exact ⟨fun x hx ↦ h₀ hx, fun h ↦ h₁ h⟩
+
+/-- The subtype view of a subgraph is a subgraph, in the general sense of
+`TemporalGraph.IsSubgraphOf`, of the subtype view of `⊤`, i.e. of the ambient graph `G`. -/
+theorem isSubgraphOf_coe_top (H : Subgraph G) :
+    IsSubgraphOf (P := (· ∈ H.verts)) (P' := (· ∈ (⊤ : Subgraph G).verts)) H.coe
+      (⊤ : Subgraph G).coe :=
+  isSubgraphOf_coe_iff.mpr le_top
 
 /-- The union of two subgraphs: the union of their vertex sets and of their arcs. -/
 instance : SemilatticeSup (Subgraph G) where

@@ -19,7 +19,6 @@ Defines `TemporalWalk`, an inductive type for temporal walks that may be empty. 
 * `support` : The list of vertices visited, stored from the end vertex back to the start
 * `arcs` : The list of directed edges, stored last arc first
 * `IsStrict` : The walk's times increase strictly from each arc to the next
-* `temporalWalkSet` : The set of all walks between two vertices
 * `mapLe` : Transport a walk along a spanning-subgraph inclusion `G ≤ G'`
 
 ## Main results
@@ -46,12 +45,6 @@ inductive TemporalWalk : V → ℕ → V → ℕ → Type u
   | Empty {x : V} {n : ℕ} : TemporalWalk x n x n
   | Nonempty {x y : V} {n m : ℕ} (p : G.NonemptyTemporalWalk x n y m) : TemporalWalk x n y m
   deriving DecidableEq
-
-/-- The set of all `(n, m, walk)` triples witnessing a temporal walk from `x` to `y`, over every
-pair of start/end times. -/
-def temporalWalkSet (x y : V) :
-    Set (Σ n m : ℕ, G.TemporalWalk x n y m) :=
-  { p | ∃ (n m : ℕ), ∃ (tw : TemporalWalk x n y m), p = ⟨n, m, tw⟩ }
 
 namespace TemporalWalk
 

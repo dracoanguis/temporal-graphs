@@ -61,6 +61,12 @@ the bi-clique between `V⁻` and `V⁺`, plus the matchings `M⁻` and `M⁺`. T
 * Angrick, Bals, Friedrich, Gawendowicz, Hastrich, Klodt, Lenzner, Schmidt, Skretas & Wells,
   *How to Reduce Temporal Cliques to Find Sparse Spanners*, ESA 2024 (LIPIcs 308,
   doi:10.4230/LIPIcs.ESA.2024.11, arXiv:2402.13624) — origin of the one-sided strategy.
+* Sorrachai Yingchareonthawornchai, CSLib, `Cslib/Algorithms/Lean/MergeSort/MergeSort.lean`
+  (https://github.com/leanprover/cslib, commit `9a99cbb`) — the explicit computation of the
+  bound follows its merge-sort analysis: the recurrence on the halves `⌊n/2⌋`, `⌈n/2⌉`
+  (`timeMergeSortRec`, here `spannerBound`), the halving lemma for `Nat.clog 2`
+  (`clog2_half_le`, here `clog_half_le`), and the closed form `n * ⌈log₂ n⌉`
+  (`timeMergeSortRec_le`, here `spannerBound_le`).
 -/
 
 universe u

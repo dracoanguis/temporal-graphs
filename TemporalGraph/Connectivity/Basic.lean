@@ -29,7 +29,7 @@ Spanner notions (`Subgraph.IsSpanner`, `Subgraph.IsSpannerOf` and `Subgraph.IsTC
 defined at the `Subgraph` level, in `Connectivity/Subgraph.lean`.
 
 ## Main results
-* `reachable_of_self`, `strictReachable_of_self` : Every vertex reaches itself
+* `Reachable.refl`, `StrictReachable.refl` : Every vertex reaches itself
 * `StrictReachable.reachable` : Strict reachability implies reachability
 * `Reachable.mono`, `StrictReachable.mono` : Reachability is monotone along `≤`
 * `reachable_iff_strictReachable` : in a proper symmetric graph, strict and non-strict
@@ -52,14 +52,13 @@ def Reachable (G : TemporalGraph V) (x y : V) : Prop :=
   ∃ n m : ℕ, Nonempty (G.TemporalWalk x n y m)
 
 /-- The type of `NonemptyTemporalWalk` is `Nonempty`. -/
-theorem reachable_of_nonempty_NonemptyTemporalWalk {G : TemporalGraph V} {x y : V} :
-    (∃ n m : ℕ, Nonempty (G.NonemptyTemporalWalk x n y m)) → G.Reachable x y := by
-  intro ⟨n, m, ⟨h⟩⟩
-  use n, m, ↑h
+theorem NonemptyTemporalWalk.reachable {G : TemporalGraph V} {x y : V} {n m : ℕ}
+    (p : G.NonemptyTemporalWalk x n y m) : G.Reachable x y :=
+  ⟨n, m, ⟨.ofNonempty p⟩⟩
 
 /-- Every vertex reaches itself, via the empty walk. -/
 @[refl]
-theorem reachable_of_self {G : TemporalGraph V} (x : V) : G.Reachable x x := by
+theorem Reachable.refl {G : TemporalGraph V} (x : V) : G.Reachable x x := by
   use 0, 0, TemporalWalk.nil
 
 /-- `Reachable` restated with `Set.univ` nonemptiness standing in for the type being `Nonempty`
@@ -86,7 +85,7 @@ def StrictReachable (G : TemporalGraph V) (x y : V) : Prop :=
   ∃ n m : ℕ, ∃ p : G.TemporalWalk x n y m, p.IsStrict
 
 /-- Every vertex strictly reaches itself, via the empty walk. -/
-theorem strictReachable_of_self {G : TemporalGraph V} (x : V) : G.StrictReachable x x :=
+theorem StrictReachable.refl {G : TemporalGraph V} (x : V) : G.StrictReachable x x :=
   ⟨0, 0, .nil, trivial⟩
 
 /-- Strict reachability implies reachability: forget that the walk is strict. -/
@@ -111,7 +110,7 @@ theorem reachable_iff_strictReachable {G : TemporalGraph V} [G.IsSymm] {x y : V}
   refine ⟨?_, StrictReachable.reachable⟩
   rintro ⟨n, m, ⟨p⟩⟩
   cases p with
-  | nil => exact strictReachable_of_self x
+  | nil => exact StrictReachable.refl x
   | ofNonempty p =>
     obtain ⟨n', m', q, hq, -, -⟩ := p.exists_isStrict h₀
     exact ⟨n', m', q, hq⟩
@@ -133,8 +132,8 @@ theorem temporallyConnected_of_isClique (G : TemporalGraph V) {S : Set V} :
   intro h x hx y hy
   by_cases hdiff : x ≠ y
   · have ⟨n, h'⟩ := h hx hy hdiff
-    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨NonemptyTemporalWalk.single h'⟩⟩
-  · simp_all [reachable_of_self]
+    exact NonemptyTemporalWalk.reachable (NonemptyTemporalWalk.single h')
+  · simp_all [Reachable.refl]
 
 /-- If `n` is the time of `x`'s earliest edge, to `y`, then anything reachable from `x` is also
 reachable from `y`: prepend the reversed edge (time `n`, necessarily `≤` any walk out of `x`) to
@@ -146,11 +145,10 @@ lemma reachable_of_earliestEdge {x y : V} {n : ℕ} {G : TemporalGraph V} [G.IsS
   intro _ ⟨m, _, ⟨p⟩⟩
   cases p with
   | nil =>
-    apply reachable_of_nonempty_NonemptyTemporalWalk ;
-    exact ⟨_, _, ⟨NonemptyTemporalWalk.single h.left.symm⟩⟩
+    exact (NonemptyTemporalWalk.single h.left.symm).reachable
   | ofNonempty p =>
-    have hst : n ≤ m := NonemptyTemporalWalk.EarliestEdge.time_bound_of_edge p h
-    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.prepend h.left.symm hst⟩⟩
+    have hst : n ≤ m := EarliestEdge.le_start h p
+    exact NonemptyTemporalWalk.reachable (p.prepend h.left.symm hst)
 
 /-- A variant of `reachable_of_earliestEdge`: given also an edge `z -m-> y` with `m ≤ n`, anything
 reachable from `x` is also reachable from `z`, via `z -m-> y -n-> x` followed by the witnessing
@@ -165,11 +163,10 @@ lemma reachable_of_extended_earliestEdge {x y z : V} {n m : ℕ} {G : TemporalGr
     NonemptyTemporalWalk.single h₁ |>.step h₀.left.symm h₂
   cases p with
   | nil =>
-      apply reachable_of_nonempty_NonemptyTemporalWalk ;
-      use  m, n, p'
+      exact p'.reachable
   | ofNonempty p =>
-    have h : n ≤ k := NonemptyTemporalWalk.EarliestEdge.time_bound_of_edge p h₀
-    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p'.append p h⟩⟩
+    have h : n ≤ k := h₀.le_start p
+    exact NonemptyTemporalWalk.reachable (p'.append p h)
 
 /-- If `n` is the time of `x`'s latest edge, to `y`, then anything that reaches `x` also reaches
 `y`: append the edge (time `n`, necessarily `≥` any walk into `x`) to the witnessing walk. -/
@@ -179,10 +176,10 @@ lemma reachable_of_latestEdge {x y : V} {n : ℕ} {G : TemporalGraph V} [G.IsSym
   intro _ ⟨_, m, ⟨p⟩⟩
   cases p with
   | nil =>
-    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨NonemptyTemporalWalk.single h.left⟩⟩
+    exact NonemptyTemporalWalk.reachable (NonemptyTemporalWalk.single h.left)
   | ofNonempty p =>
-    have het : m ≤ n := NonemptyTemporalWalk.LatestEdge.time_bound_of_edge p h
-    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.step h.left het⟩⟩
+    have het : m ≤ n := h.end_le p
+    exact NonemptyTemporalWalk.reachable (p.step h.left het)
 
 /-- A variant of `reachable_of_latestEdge`: given also an edge `y -m-> z` with `n ≤ m`, anything
 that reaches `x` also reaches `z`, by appending `x -n-> y -m-> z` to the witnessing walk. -/
@@ -195,10 +192,9 @@ lemma reachable_of_extended_latestEdge {x y z : V} {n m : ℕ} {G : TemporalGrap
   let p' : NonemptyTemporalWalk x n z m := NonemptyTemporalWalk.single h₀.left |>.step h₁ h₂
   cases p with
   | nil =>
-      apply reachable_of_nonempty_NonemptyTemporalWalk ;
-      use  n, m, p'
+      exact p'.reachable
   | ofNonempty p =>
-    have h : k ≤ n := NonemptyTemporalWalk.LatestEdge.time_bound_of_edge p h₀
-    exact reachable_of_nonempty_NonemptyTemporalWalk ⟨_, _, ⟨p.append p' h⟩⟩
+    have h : k ≤ n := h₀.end_le p
+    exact NonemptyTemporalWalk.reachable (p.append p' h)
 
 end TemporalGraph

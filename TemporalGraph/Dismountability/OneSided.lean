@@ -134,7 +134,7 @@ lemma oneSidedMount_le {H H₀ : Subgraph G} [G.IsSymm] [H₀.IsSymm] {x' y x : 
   apply le_iff_edgeSet_and_verts.mpr
   refine ⟨?_, ?_⟩
   · rw [H.oneSidedMount_edgeSet]
-    refine Set.union_subset (edgeSet_le h₂) ?_
+    refine Set.union_subset (edgeSet_mono h₂) ?_
     rintro p (rfl | rfl)
     · exact Adj.mem_edgeSet h₅
     · exact Adj.mem_edgeSet h₄
@@ -198,7 +198,7 @@ theorem temporallyConnected_of_isSpannerFromTo {H S : Subgraph G}
   · -- `V⁺ → V⁻`: a direct edge of the bi-clique, kept by the one-sided spanner
     intro x hx y hy
     obtain ⟨n, hn⟩ := hbc.adj_of_mem' hy hx
-    exact h₄.2 x hx y hy (reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨.single hn⟩⟩)
+    exact h₄.2 x hx y hy (NonemptyTemporalWalk.reachable (.single hn))
 
 /-- SAND 2025, §4.1: correctness of one-sided dismounting. In a bi-clique on `s` and `t`, if `x`
 is one-sided dismountable through `x'` and `y`, and `H'` is a one-sided spanner from `s` to
@@ -228,7 +228,7 @@ theorem oneSidedDismountability {H H' : Subgraph G} [G.IsSymm] [H.IsSymm] [H'.Is
       simp only [deleteVerts, induce_Adj, Set.mem_sdiff, Set.mem_singleton_iff]
       exact ⟨⟨H.edge_vert hadj, hzx⟩, ⟨H.edge_vert' hadj, hw'.2⟩, hadj⟩
     have hrd : (H.deleteVerts {x}).Reachable z w' :=
-      reachable_of_nonempty_NonemptyTemporalWalk ⟨k, k, ⟨.single hzw'del⟩⟩
+      NonemptyTemporalWalk.reachable (.single hzw'del)
     have hle : H' ≤ M := le_oneSidedMount hx' hy (H.adj_sub h₄.1).symm (H.adj_sub h₅)
     exact Reachable.mono (toTemporalGraph_le hle) (h₇.2 z hz w' hw' hrd)
   by_cases hwx : w = x

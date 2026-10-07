@@ -102,7 +102,7 @@ lemma exists_isSpannerFromTo_of_singleton {H : Subgraph G} [G.IsSymm] [H.IsSymm]
       rintro v (rfl | rfl) <;> assumption
   · -- `{a}` reaches `{b}`, through the edge just added
     rintro x rfl y rfl -
-    refine reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨.single ?_⟩⟩
+    refine NonemptyTemporalWalk.reachable (.single (n := n) ?_)
     rw [hH']; exact addEdge_edge
   · -- at most one edge: `H'`'s edge set is `∅` plus the one edge just inserted
     rw [hH']; simp

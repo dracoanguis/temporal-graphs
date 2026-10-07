@@ -413,7 +413,7 @@ lemma Subgraph.reachable_of_isBicliqueWith {s t : Set V} {x y : V}
     (h₀ : H.IsBicliqueWith s t) (h₁ : x ∈ s) (h₂ : y ∈ t) :
     H.Reachable x y := by
   obtain ⟨n, hn⟩ := h₀.adj_of_mem h₁ h₂
-  exact reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨.single hn⟩⟩
+  exact NonemptyTemporalWalk.reachable (.single hn)
 
 /-- In a bi-clique on `s` and `t`, with both parts nonempty, every vertex of either part is a
 vertex of `H`: each has an edge to a witness of the other part. -/

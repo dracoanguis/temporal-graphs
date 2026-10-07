@@ -59,7 +59,7 @@ between two sets, bi-cliques) is in \texttt{TemporalGraph/Bipartite.lean}.
 \begin{lemma}[Clique iff complete footprint]
   \label{lem:isClique-iff-footprint-complete}
   \uses{def:is-simple-clique,def:footprint}
-  \lean{TemporalGraph.isClique_iff_footprint_isComplete}
+  \lean{TemporalGraph.isClique_iff_pairwise_footprint_adj}
   \leanok
   A set $S$ of vertices forms a clique in $G$ exactly when the vertices of $S$
   are pairwise adjacent in $G$'s footprint (i.e.\ the footprint restricted to

@@ -779,8 +779,8 @@ lemma between_TC_of_not_twoHopDismountable {H : Subgraph G}
       K.toTemporalGraph.Reachable v w ∧ K.toTemporalGraph.Reachable w v := by
     intro v w hv hw
     obtain ⟨n, hn⟩ := hbc.adj_of_mem hv hw
-    exact ⟨reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨.single hn⟩⟩,
-      reachable_of_nonempty_NonemptyTemporalWalk ⟨n, n, ⟨.single hn.symm⟩⟩⟩
+    exact ⟨NonemptyTemporalWalk.reachable (.single hn),
+      NonemptyTemporalWalk.reachable (.single hn.symm)⟩
   intro x hx y hy
   rcases hmem x hx with hxm | hxp <;> rcases hmem y hy with hym | hyp
   · -- both in `V⁻`: through the vertex of `V⁺` whose earliest edge goes to `x`

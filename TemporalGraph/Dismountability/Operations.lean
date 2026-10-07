@@ -115,14 +115,14 @@ lemma mem_mount_verts {H : Subgraph G} [G.IsSymm] {x y z : V} {n m : ℕ} {hy : 
     x' ∈ (mount H hy hz x h₀ h₁).verts := by simp [mount_verts, hx']
 
 /-- `H.mount hy hz x h₀ h₁` contains the edge from `x` to `y` at time `n`. -/
-lemma mount_edge (H : Subgraph G) [G.IsSymm] {x y z : V} {n m : ℕ} (hy : y ∈ H.verts)
+lemma mount_adj_left (H : Subgraph G) [G.IsSymm] {x y z : V} {n m : ℕ} (hy : y ∈ H.verts)
     (hz : z ∈ H.verts) (h₀ : G.Adj y x n) (h₁ : G.Adj z x m) :
     (mount H hy hz x h₀ h₁).Adj x y n := by
   simp only [mount, addEdge, induce_verts, Set.union_singleton, induce_Adj,
     Set.mem_insert_iff, true_or, true_and, and_true, and_self, or_true]
 
 /-- `H.mount hy hz x h₀ h₁` contains the edge from `z` to `x` at time `m`. -/
-lemma mount_edge' (H : Subgraph G) [G.IsSymm] {x y z : V} {n m : ℕ} (hy : y ∈ H.verts)
+lemma mount_adj_right (H : Subgraph G) [G.IsSymm] {x y z : V} {n m : ℕ} (hy : y ∈ H.verts)
     (hz : z ∈ H.verts) (h₀ : G.Adj y x n) (h₁ : G.Adj z x m) :
     (mount H hy hz x h₀ h₁).Adj z x m := by
   rw [mount]
@@ -148,8 +148,8 @@ lemma mount_edgeSet (H : Subgraph G) [G.IsSymm] {x y z : V} {n m : ℕ}
 /-- If dismounting `x` from `H` (via its earliest edge to `y` and latest edge to `z`) is
 temporally connected, so is `H.mount hy hz x h₀ h₁`, provided those edges are indeed the earliest
 and latest edges at `x`. -/
-theorem mount_tc (H : Subgraph G) [H.IsSymm] [G.IsSymm] {x y z : V} {n m : ℕ} (hy : y ∈ H.verts)
-    (hz : z ∈ H.verts) (h₀ : G.Adj y x n) (h₁ : G.Adj z x m)
+theorem mount_temporallyConnected (H : Subgraph G) [H.IsSymm] [G.IsSymm] {x y z : V} {n m : ℕ}
+    (hy : y ∈ H.verts) (hz : z ∈ H.verts) (h₀ : G.Adj y x n) (h₁ : G.Adj z x m)
     (h₂ : (mount H hy hz x h₀ h₁).EarliestEdge y x n)
     (h₃ : (mount H hy hz x h₀ h₁).LatestEdge z x m) :
     H.TemporallyConnectedSubgraph → (mount H hy hz x h₀ h₁).TemporallyConnectedSubgraph := by
@@ -160,7 +160,7 @@ theorem mount_tc (H : Subgraph G) [H.IsSymm] [G.IsSymm] {x y z : V} {n m : ℕ} 
   simp only [mount_verts, Set.union_singleton, Set.mem_insert_iff] at ha hb
   rcases ha with rfl | ha
   · rcases hb with rfl | hb
-    · exact reachable_of_self _
+    · exact Reachable.refl _
     · exact reachable_of_earliestEdge h₂ b (hReach y b (hTC y hy b hb))
   · rcases hb with rfl | hb
     · exact reachable_of_latestEdge h₃ a (hReach a z (hTC a ha z hz))
@@ -206,7 +206,7 @@ theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G
     apply le_iff_edgeSet_and_verts.mpr
     constructor
     · rw [H'.mount_edgeSet]
-      refine Set.union_subset (edgeSet_le (h₅.left.trans dismount_le)) ?_
+      refine Set.union_subset (edgeSet_mono (h₅.left.trans dismount_le)) ?_
       -- the two edges added by the mount are edges of `H`
       have : (s(z, x), m) ∈ H.edgeSet := H.mem_edgeSet.mpr h₄.left
       have : (s(y, x), n) ∈ H.edgeSet := H.mem_edgeSet.mpr h₃.left
@@ -214,12 +214,12 @@ theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G
     · simp only [mount_verts, h₅.right.1, induce_verts, Set.union_singleton, hx,
       Set.insert_sdiff_self_of_mem, subset_refl]
   have htc : (H'.mount hy hz x h₁ h₂).TemporallyConnectedSubgraph := by
-    apply mount_tc H'
+    apply mount_temporallyConnected H'
     · apply earliestEdge_of_ge _ h₃
-      · exact (mount_edge H' hy hz h₁ h₂).symm
+      · exact (mount_adj_left H' hy hz h₁ h₂).symm
       · trivial
     · apply latestEdge_of_ge _ h₄
-      · apply mount_edge'
+      · apply mount_adj_right
       · trivial
     · have hdisTC : (H.dismount x).TemporallyConnectedSubgraph :=
         TemporalGraph.temporallyConnected_of_isClique _ (dismount_clique H x h₀)
@@ -290,7 +290,7 @@ lemma twoHopMount_edgeSet (H : Subgraph G) [G.IsSymm] {y y' z z' : V}
 `n'`. -/
 -- The four edges below are the ones `twoHopMount` inserts directly, so each is obtained by
 -- lifting `addEdge_edge` along the later `addEdge_le` layers: no symmetry needed.
-lemma twoHopMount_edge {H : Subgraph G} [G.IsSymm] {y y' z z' : V} {n n' m m' : ℕ}
+lemma twoHopMount_adj_x_y' {H : Subgraph G} [G.IsSymm] {y y' z z' : V} {n n' m m' : ℕ}
     (hy : y ∈ H.verts) (hy' : y' ∈ H.verts) (hz : z ∈ H.verts) (hz' : z' ∈ H.verts) {x : V}
     {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n} {h₂ : G.Adj x z' m'} {h₃ : G.Adj z' z m} :
     (H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃).Adj x y' n' := by
@@ -299,7 +299,7 @@ lemma twoHopMount_edge {H : Subgraph G} [G.IsSymm] {y y' z z' : V} {n n' m m' : 
 
 /-- `H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃` contains the edge from `x` to `z'` at time
 `m'`. -/
-lemma twoHopMount_edge' {H : Subgraph G} [G.IsSymm] {y y' z z' : V} {n n' m m' : ℕ}
+lemma twoHopMount_adj_x_z' {H : Subgraph G} [G.IsSymm] {y y' z z' : V} {n n' m m' : ℕ}
     (hy : y ∈ H.verts) (hy' : y' ∈ H.verts) (hz : z ∈ H.verts) (hz' : z' ∈ H.verts) {x : V}
     {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n} {h₂ : G.Adj x z' m'} {h₃ : G.Adj z' z m} :
     (H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃).Adj x z' m' := by
@@ -307,7 +307,7 @@ lemma twoHopMount_edge' {H : Subgraph G} [G.IsSymm] {y y' z z' : V} {n n' m m' :
   exact addEdge_le.right addEdge_edge
 
 /-- `H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃` contains the edge from `y'` to `y` at time `n`. -/
-lemma twoHopMount_edge'' {H : Subgraph G} [G.IsSymm] {y y' z z' : V} {n n' m m' : ℕ}
+lemma twoHopMount_adj_y'_y {H : Subgraph G} [G.IsSymm] {y y' z z' : V} {n n' m m' : ℕ}
     (hy : y ∈ H.verts) (hy' : y' ∈ H.verts) (hz : z ∈ H.verts) (hz' : z' ∈ H.verts) {x : V}
     {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n} {h₂ : G.Adj x z' m'} {h₃ : G.Adj z' z m} :
     (H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃).Adj y' y n := by
@@ -315,7 +315,7 @@ lemma twoHopMount_edge'' {H : Subgraph G} [G.IsSymm] {y y' z z' : V} {n n' m m' 
   exact addEdge_le.right <| addEdge_le.right addEdge_edge
 
 /-- `H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃` contains the edge from `z'` to `z` at time `m`. -/
-lemma twoHopMount_edge''' {H : Subgraph G} [G.IsSymm] {y y' z z' : V} {n n' m m' : ℕ}
+lemma twoHopMount_adj_z'_z {H : Subgraph G} [G.IsSymm] {y y' z z' : V} {n n' m m' : ℕ}
     (hy : y ∈ H.verts) (hy' : y' ∈ H.verts) (hz : z ∈ H.verts) (hz' : z' ∈ H.verts) {x : V}
     {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n} {h₂ : G.Adj x z' m'} {h₃ : G.Adj z' z m} :
     (H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃).Adj z' z m := by
@@ -336,7 +336,7 @@ lemma twoHopMount_le {H : Subgraph G} [G.IsSymm] {y y' z z' : V} {n n' m m' : �
 
 /-- If dismounting `x` (via `y'`, `y` on the earliest side and `z'`, `z` on the latest side) is
 temporally connected, so is `H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃`. -/
-theorem twoHopMount_TC (H : Subgraph G) [H.IsSymm] [G.IsSymm] {y y' z z' : V}
+theorem twoHopMount_temporallyConnected (H : Subgraph G) [H.IsSymm] [G.IsSymm] {y y' z z' : V}
     {n n' m m' : ℕ} (hy : y ∈ H.verts) (hy' : y' ∈ H.verts) (hz : z ∈ H.verts)
     (hz' : z' ∈ H.verts) (x : V) (h₀ : G.Adj x y' n') (h₁ : G.Adj y' y n) (h₂ : G.Adj x z' m')
     (h₃ : G.Adj z' z m)
@@ -352,11 +352,11 @@ theorem twoHopMount_TC (H : Subgraph G) [H.IsSymm] [G.IsSymm] {y y' z z' : V}
   simp only [twoHopMount_verts, Set.union_singleton, Set.mem_insert_iff] at ha hb
   rcases ha with rfl | ha
   · rcases hb with rfl | hb
-    · exact reachable_of_self _
-    · exact reachable_of_extended_earliestEdge h₄.left (twoHopMount_edge hy hy' hz hz')
+    · exact Reachable.refl _
+    · exact reachable_of_extended_earliestEdge h₄.left (twoHopMount_adj_x_y' hy hy' hz hz')
         h₄.right b (hReach y b (hTC y hy b hb))
   · rcases hb with rfl | hb
-    · exact reachable_of_extended_latestEdge h₅.left (twoHopMount_edge' hy hy' hz hz').symm
+    · exact reachable_of_extended_latestEdge h₅.left (twoHopMount_adj_x_z' hy hy' hz hz').symm
         h₅.right a (hReach a z (hTC a ha z hz))
     · exact hReach a b (hTC a ha b hb)
 
@@ -410,7 +410,7 @@ theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSy
     apply le_iff_edgeSet_and_verts.mpr
     constructor
     · rw [H'.twoHopMount_edgeSet hy hy' hz hz' x h₁ h₂ h₃ h₄]
-      refine Set.union_subset (edgeSet_le (h₇.left.trans dismount_le)) ?_
+      refine Set.union_subset (edgeSet_mono (h₇.left.trans dismount_le)) ?_
       -- the four edges added by the mount are edges of `H`
       have : (s(z, z'), m) ∈ H.edgeSet := H.mem_edgeSet.mpr h₆.1.1
       have : (s(x, z'), m') ∈ H.edgeSet := H.mem_edgeSet.mpr h₆.2.2
@@ -420,15 +420,15 @@ theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSy
         = Prod.swap_prod_mk, = Set.mem_singleton_iff]
     · exact heq.le
   have htc : (H'.twoHopMount hy hy' hz hz' x h₁ h₂ h₃ h₄).TemporallyConnectedSubgraph := by
-    apply twoHopMount_TC H' hy hy' hz hz' x
+    apply twoHopMount_temporallyConnected H' hy hy' hz hz' x
     · apply And.intro
       · apply earliestEdge_of_ge _ h₅.left
-        · exact (twoHopMount_edge'' hy hy' hz hz').symm
+        · exact (twoHopMount_adj_y'_y hy hy' hz hz').symm
         · trivial
       · exact h₅.2.1
     · apply And.intro
       · apply latestEdge_of_ge _ h₆.left
-        · exact (twoHopMount_edge''' hy hy' hz hz').symm
+        · exact (twoHopMount_adj_z'_z hy hy' hz hz').symm
         · trivial
       · exact h₆.2.1
     · have hdisTC : (H.dismount x).TemporallyConnectedSubgraph :=
@@ -492,7 +492,7 @@ theorem exists_isSpannerOf_of_twoHopDismountable {H : Subgraph G}
     by_cases hax : a = x
     · subst hax
       by_cases hbx : b = a
-      · exact hbx ▸ reachable_of_self _
+      · exact hbx ▸ Reachable.refl _
       -- `a` reaches `b` as `y` does, and `y ≠ a` is in `H'`
       · exact hrₒ _ hFₒ hKH b (hmono y b (hH'TC y ⟨hy, hyx⟩ b ⟨hb, hbx⟩))
     · by_cases hbx : b = x

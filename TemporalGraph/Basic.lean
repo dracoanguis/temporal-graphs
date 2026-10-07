@@ -205,7 +205,7 @@ abbrev IsClique (G : TemporalGraph V) (S : Set V) : Prop :=
 
 /-- `G.IsClique S` unfolds to pairwise adjacency of `S` in the footprint of `G`, i.e. forgetting
 time. -/
-lemma isClique_iff_footprint_isComplete {G : TemporalGraph V} {S : Set V} :
+lemma isClique_iff_pairwise_footprint_adj {G : TemporalGraph V} {S : Set V} :
     G.IsClique S ↔ S.Pairwise G.footprint.Adj := Iff.rfl
 
 /-- `G` is a temporal clique graph: every two distinct vertices are joined by an arc at some

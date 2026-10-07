@@ -427,7 +427,7 @@ theorem top_verts : (⊤ : Subgraph G).verts = Set.univ := rfl
 theorem top_toTemporalGraph : (⊤ : Subgraph G).toTemporalGraph = G := rfl
 
 /-- `⊤ : Subgraph G` is spanning. -/
-theorem top_isSpanning : (⊤ : Subgraph G).IsSpanning := by
+theorem isSpanning_top : (⊤ : Subgraph G).IsSpanning := by
   simp [IsSpanning, top_verts]
 
 /-- `⊤ : Subgraph G` is symmetric whenever `G` is. -/
@@ -650,7 +650,7 @@ lemma addVerts_verts (H : Subgraph G) (s : Set V) : (H.addVerts s).verts = H.ver
   rfl
 
 /-- Every adjacency of `H` is still one of `H.addVerts s`. -/
-lemma addVerts_Adj {x y : V} {n : ℕ} {H : Subgraph G} {s : Set V} :
+lemma addVerts_adj {x y : V} {n : ℕ} {H : Subgraph G} {s : Set V} :
     H.Adj x y n → (H.addVerts s).Adj x y n :=
   fun h ↦ ⟨.inl (H.edge_vert h), .inl (H.edge_vert' h), h⟩
 
@@ -659,7 +659,7 @@ lemma addVerts_Adj {x y : V} {n : ℕ} {H : Subgraph G} {s : Set V} :
 lemma addVerts_le {H : Subgraph G} {s : Set V} : H ≤ (H.addVerts s) := by
   constructor
   · simp
-  · intro _ _ _ h ; exact addVerts_Adj h
+  · intro _ _ _ h ; exact addVerts_adj h
 
 /-- Adding vertices to a symmetric subgraph keeps it symmetric. -/
 instance addVerts_isSymm (H : Subgraph G) [H.IsSymm] (s : Set V) :
@@ -919,7 +919,7 @@ section NeighborHoodSet
 -- H.toTemporalGraph`, whose binder is `x : V` (not `H.verts`).
 
 /-- The neighbor set of `x` in `⊤ : Subgraph G` is `x`'s neighbor set in `G`. -/
-theorem neighborhoodSet_top (x : V) :
+theorem top_neighborSet (x : V) :
     (⊤ : G.Subgraph).neighborSet x = G.neighborSet x := rfl
 
 /-- The neighbor set of any vertex is contained in `H.verts`. -/
@@ -956,7 +956,7 @@ protected theorem Adj.mem_edgeSet {H : Subgraph G} {x y : V} {n : ℕ} (h : H.Ad
 
 /-- The edge set is monotone: `H ≤ H'` implies `H.edgeSet ⊆ H'.edgeSet`. -/
 @[simp]
-lemma edgeSet_le {H : Subgraph G} {H' : Subgraph G} (h₀ : H ≤ H') :
+lemma edgeSet_mono {H : Subgraph G} {H' : Subgraph G} (h₀ : H ≤ H') :
     H.edgeSet ⊆ H'.edgeSet := by
   intro _ ⟨x, y, hp, h⟩
   exact ⟨x, y, hp, h₀.right h⟩
@@ -975,7 +975,7 @@ lemma le_iff_edgeSet_and_verts {H H' : Subgraph G} [H'.IsSymm] :
   constructor
   · intro h
     constructor
-    · apply edgeSet_le h
+    · apply edgeSet_mono h
     · exact h.left
   · intro h
     constructor
@@ -1179,7 +1179,7 @@ def toSubgraph (H : TemporalGraph V) (h : H ≤ G) : G.Subgraph where
 
 /-- Adjacency in `toSubgraph H h` is adjacency in `H`. -/
 @[simp, grind =]
-theorem toSubgraph_Adj (H : TemporalGraph V) (h : H ≤ G) {x y : V} {n : ℕ} :
+theorem toSubgraph_adj (H : TemporalGraph V) (h : H ≤ G) {x y : V} {n : ℕ} :
     (toSubgraph H h).Adj x y n ↔ H.Adj x y n :=
   Iff.rfl
 

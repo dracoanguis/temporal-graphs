@@ -64,6 +64,43 @@ least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
   $H.\mathrm{Reachable}\,x\,y \Rightarrow H'.\mathrm{Reachable}\,x\,y$.
 \end{definition}
 
+\begin{definition}[Strict walk, strict reachability]
+  \label{def:strict-reachable}
+  \uses{def:temporal-walk,def:reachable}
+  \lean{TemporalGraph.NonemptyTemporalWalk.IsStrict}
+  \lean{TemporalGraph.TemporalWalk.IsStrict}
+  \lean{TemporalGraph.StrictReachable}
+  \lean{TemporalGraph.StrictReachable.mono}
+  \leanok
+  A temporal walk is \emph{strict} if its times increase strictly from each arc
+  to the next; the empty walk is strict. $y$ is \emph{strictly reachable} from
+  $x$ if some strict temporal walk goes from $x$ to $y$. Strict reachability
+  implies reachability and is monotone along $\le$.
+\end{definition}
+
+\begin{lemma}[Strict and non-strict reachability agree in proper symmetric graphs]
+  \label{lem:reachable-iff-strict}
+  \uses{def:strict-reachable,def:is-symm-loopless,def:is-proper-happy}
+  \lean{TemporalGraph.NonemptyTemporalWalk.exists_isStrict}
+  \lean{TemporalGraph.reachable_iff_strictReachable}
+  \leanok
+  If $G$ is symmetric and proper, then $y$ is reachable from $x$ if and only if
+  it is strictly reachable from $x$.
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  Walks themselves differ: crossing an edge and immediately crossing it back at
+  the same time is a non-strict walk that is not strict. Consider two consecutive
+  arcs $w \to y \to z$ of a walk with the same time $t$. By symmetry, $y$ has the
+  two edges $yw$ and $yz$ at time $t$, so properness forces $w = z$: the two arcs
+  are a round trip, which can be deleted. The arc before them arrives at $w$ no
+  later than $t$, and the arc after them leaves $z = w$ no earlier than $t$, so the
+  shortened walk is still a temporal walk. Repeating this yields a strict walk,
+  possibly empty. Symmetry is needed: in the oriented, proper graph with the two
+  arcs $a \to y$ and $y \to z$ at time $1$, $a$ reaches $z$ but not strictly.
+\end{proof}
+
 \begin{lemma}[Cliques are temporally connected]
   \label{lem:clique-temporally-connected}
   \uses{def:reachable,def:is-simple-clique}

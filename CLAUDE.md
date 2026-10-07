@@ -259,6 +259,23 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
   court ; commenter en une ligne l'étape mathématique quand `grind only` remplace un raisonnement ;
   pas de `simp` non restreint avant `grind`.
 
+### Système de modules
+
+- **Fichiers en modules** : `Init`, `Basic`, `NonemptyTemporalWalk`, `TemporalWalk`,
+  `Connectivity/Basic`, `Subgraph`, `Connectivity/Subgraph`, `Bipartite`. **Pas encore** :
+  `Dismountability/*` (peut-être extrait dans son propre dépôt), `Examples` (importe
+  `Dismountability.Basic`) et la racine `TemporalGraph.lean`. Un module n'importe que des
+  modules, mais un non-module peut importer un module : on porte donc de bas en haut.
+- **Motif (celui de Mathlib)** : copyright, `module`, imports en `public import` (en `import`
+  simple s'ils ne servent qu'aux preuves), docstring de module, puis `@[expose] public section`
+  sans `end`. Le `@[expose]` est indispensable : la bibliothèque déplie ses définitions d'un
+  fichier à l'autre (`simp [def]`, `grind =`, `unfold`, égalités par définition), ce qu'un
+  corps non exposé interdit. Tout nouveau fichier de la base suit ce motif.
+- **Gain mesuré (2026-10-07)** : après une modification de preuve dans `Basic`, aucun des 6 modules
+  en aval n'est recompilé ; seuls les non-modules le sont. `lake env lean` et `checkdecls` (169
+  déclarations du blueprint) fonctionnent. doc-gen4 n'a pas encore été relancé sur les modules.
+- Explications détaillées : note Obsidian `R&D/Annexes/systeme-de-modules-lean.md`.
+
 ### Autres conventions
 
 - Dot-notation façon Mathlib : `protected theorem Adj.ne`, etc. (pour les lemmes récursif sur

@@ -469,38 +469,12 @@ instance : BoundedOrder (Subgraph G) where
   le_top x := ⟨Set.subset_univ _, by intro _ _ _ h ; rw [top_adj] ; exact x.adj_sub h⟩
   bot_le _ := ⟨Set.empty_subset _, False.elim⟩
 
-instance : LT (Subgraph G) where
-  lt H H' :=
-    ((H.verts ⊂ H'.verts) ∧ (∀ {x y : V} {n : ℕ}, H.Adj x y n → H'.Adj x y n))
-    ∨
-    ((H.verts = H'.verts) ∧ (∀ {x y : V} {n : ℕ}, H.Adj x y n → H'.Adj x y n)
-      ∧ (∃ (x y : V) (n : ℕ), H'.Adj x y n ∧ ¬ H.Adj x y n))
-
 instance : Preorder (Subgraph G) where
   le_refl H := ⟨by simp, by simp⟩
   le_trans A B C h h' := ⟨h.left.trans h'.left , by
     intro _ _ _ hadj
     exact h'.right <| h.right hadj
   ⟩
-  lt_iff_le_not_ge A B := by
-    constructor
-    · intro h ; constructor
-      · apply h.elim
-        · intro h' ; exact ⟨h'.left.subset, h'.right⟩
-        · intro h' ; exact ⟨h'.left.subset, h'.right.left⟩
-      · apply h.elim
-        · intro h h' ; apply h'.left.not_ssubset ; exact h.left
-        · intro h h' ; have ⟨x, y, t, hB, hnA⟩ := h.right.right ; apply hnA.elim ; exact h'.right hB
-    · intro h ; apply h.left.left.eq_or_ssubset.elim
-      · intro h' ; right ; constructor
-        · assumption
-        · constructor
-          · exact h.left.right
-          · have h := h.right ; dsimp [LE.le] at h ; push Not at h
-            exact h h'.symm.subset
-      · intro h' ; left ; constructor
-        · assumption
-        · exact h.left.right
 
 instance : PartialOrder (Subgraph G) where
   le_antisymm A B h h' := by
@@ -509,6 +483,34 @@ instance : PartialOrder (Subgraph G) where
     · constructor
       · intro h'' ; apply h.left ; assumption
       · intro h'' ; apply h'.left ; assumption
+
+/-- `H < H'` explicitly: either `H` has strictly fewer vertices (and no arc outside `H'`), or the
+same vertices and strictly fewer arcs. -/
+theorem lt_iff {H H' : Subgraph G} :
+    H < H' ↔
+      (H.verts ⊂ H'.verts ∧ ∀ {x y : V} {n : ℕ}, H.Adj x y n → H'.Adj x y n) ∨
+      (H.verts = H'.verts ∧ (∀ {x y : V} {n : ℕ}, H.Adj x y n → H'.Adj x y n) ∧
+        ∃ (x y : V) (n : ℕ), H'.Adj x y n ∧ ¬H.Adj x y n) := by
+  rw [lt_iff_le_not_ge]
+  symm
+  constructor
+  · intro h ; constructor
+    · apply h.elim
+      · intro h' ; exact ⟨h'.left.subset, h'.right⟩
+      · intro h' ; exact ⟨h'.left.subset, h'.right.left⟩
+    · apply h.elim
+      · intro h h' ; apply h'.left.not_ssubset ; exact h.left
+      · intro h h' ; have ⟨x, y, t, hB, hnA⟩ := h.right.right ; apply hnA.elim ; exact h'.right hB
+  · intro h ; apply h.left.left.eq_or_ssubset.elim
+    · intro h' ; right ; constructor
+      · assumption
+      · constructor
+        · exact h.left.right
+        · have h := h.right ; dsimp [LE.le] at h ; push Not at h
+          exact h h'.symm.subset
+    · intro h' ; left ; constructor
+      · assumption
+      · exact h.left.right
 
 /-- The general inclusion `TemporalGraph.IsSubgraphOf` of two subtype views is the order on
 subgraphs: `H.coe` is a subgraph of `H'.coe` iff `H ≤ H'`. -/

@@ -11,7 +11,8 @@ public import TemporalGraph.Basic
 # Nonempty Temporal Walks
 
 Defines `NonemptyTemporalWalk`, an inductive type for temporal walks that are guaranteed
-to contain at least one edge. Times must be non-decreasing along the walk.
+to contain at least one edge. Times must be non-decreasing along the walk (*non-strict* walks);
+`IsStrict` selects the walks whose times increase strictly.
 
 ## Main definitions
 * `NonemptyTemporalWalk` : A walk with at least one edge and non-decreasing times
@@ -21,6 +22,7 @@ to contain at least one edge. Times must be non-decreasing along the walk.
 * `append` : Concatenate two compatible walks
 * `prepend` : Add an edge at the start of a walk
 * `mapLe` : Transport a walk along a spanning-subgraph inclusion `G ≤ G'`
+* `IsStrict` : the walk's times increase strictly from each arc to the next
 
 ## Main results
 * `nondecreasing_time` : Times are non-decreasing along a walk
@@ -29,6 +31,7 @@ to contain at least one edge. Times must be non-decreasing along the walk.
 * `length_append`, `arcs_append` : Concatenation lemmas for walk length and arcs
 * `length_mapLe`, `support_mapLe`, `arcs_mapLe` : Mapping preserves length, support and arcs
 * `mapLe_append`, `mapLe_mapLe` : Composition lemmas for `mapLe`
+* `isStrict_mapLe`, `isStrict_append` : Strictness under mapping and concatenation
 * `start_mem_support`, `end_mem_support` : Walk endpoints belong to the support
 * `adj_of_mem_arcs` : Every arc in a walk is an edge within the time bounds
 -/
@@ -41,7 +44,8 @@ namespace TemporalGraph
 
 variable {V : Type u} {G : TemporalGraph V}
 
-/-- This is a Nonempty Non-strict TemporalWalk. -/
+/-- A nonempty *non-strict* temporal walk from `x` at time `n` to `y` at time `m`: times are only
+required to be non-decreasing along the walk. `IsStrict` singles out the strict ones. -/
 inductive NonemptyTemporalWalk : V → ℕ → V → ℕ → Type u
   | Single {x y : V} {n : ℕ} (h: G.Adj x y n) : NonemptyTemporalWalk x n y n
   | Step {x y z : V} {n m k : ℕ}
@@ -70,6 +74,15 @@ order. -/
 def arcs {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → List (V × V × ℕ)
   | @Single _ _ x y n _ => [⟨x ,⟨y, n⟩⟩]
   | @Step _ _ _ y z _ _ k p _ _ => ⟨y ,⟨ z, k⟩⟩ :: p.arcs
+
+/-- A walk is *strict* when the time increases strictly from each arc to the next. A
+`NonemptyTemporalWalk` is only required to be non-decreasing; the two notions differ even in a
+proper symmetric graph, where crossing an edge and immediately crossing it back at the same time
+is a non-strict walk but not a strict one. -/
+@[grind =]
+def IsStrict {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → Prop
+  | Single _ => True
+  | @Step _ _ _ _ _ _ m k p _ _ => m < k ∧ p.IsStrict
 
 /-- Concatenate two compatible NonemptyTemporalWalks. -/
 @[grind =]
@@ -183,6 +196,18 @@ theorem mapLe_mapLe {G' G'' : TemporalGraph V} (h₀ : G ≤ G') (h₁ : G' ≤ 
     (p : G.NonemptyTemporalWalk x n y m) :
     (p.mapLe h₀).mapLe h₁ = p.mapLe (fun h ↦ h₁ (h₀ h)) := by
   induction p <;> grind
+
+/-- Mapping a walk along `G ≤ G'` preserves strictness. -/
+@[simp, grind =]
+theorem isStrict_mapLe {G' : TemporalGraph V} (h₀ : G ≤ G') (p : G.NonemptyTemporalWalk x n y m) :
+    (p.mapLe h₀).IsStrict ↔ p.IsStrict := by
+  induction p <;> grind
+
+/-- A concatenation is strict iff both walks are, and the junction is strict. -/
+@[simp, grind =]
+theorem isStrict_append (p : G.NonemptyTemporalWalk x n y m) (q : G.NonemptyTemporalWalk y k z l)
+    (h₀ : m ≤ k) : (p.append q h₀).IsStrict ↔ p.IsStrict ∧ q.IsStrict ∧ m < k := by
+  induction q <;> grind
 
 /-- The start vertex of a walk belongs to its support. -/
 @[grind .]

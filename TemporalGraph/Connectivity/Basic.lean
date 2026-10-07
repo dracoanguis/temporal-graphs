@@ -3,7 +3,9 @@ Copyright (c) 2026 Ethan Bargaud-Arm. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ethan Bargaud-Arm
 -/
-import TemporalGraph.TemporalWalk
+module
+
+public import TemporalGraph.TemporalWalk
 
 /-!
 # Reachability and Connectivity
@@ -29,6 +31,8 @@ defined at the `Subgraph` level, in `Connectivity/Subgraph.lean`.
 * `temporallyConnected_of_isClique` : Cliques are temporally connected
 * `reachable_of_earliestEdge`, `reachable_of_latestEdge` : Reachability preservation lemmas
 -/
+
+@[expose] public section
 
 universe u
 variable {V : Type u}

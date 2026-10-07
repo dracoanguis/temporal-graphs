@@ -3,8 +3,10 @@ Copyright (c) 2026 Ethan Bargaud-Arm. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ethan Bargaud-Arm
 -/
-import TemporalGraph.Subgraph
-import TemporalGraph.Connectivity.Basic
+module
+
+public import TemporalGraph.Subgraph
+public import TemporalGraph.Connectivity.Basic
 
 /-!
 # Bipartite temporal graphs
@@ -64,6 +66,8 @@ does.
   `SimpleGraph.completeBipartiteGraph` (`Mathlib/Combinatorics/SimpleGraph/Bipartite.lean`) — the
   static model this file mirrors.
 -/
+
+@[expose] public section
 
 universe u
 

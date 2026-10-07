@@ -3,7 +3,9 @@ Copyright (c) 2026 Ethan Bargaud-Arm. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ethan Bargaud-Arm
 -/
-import TemporalGraph.NonemptyTemporalWalk
+module
+
+public import TemporalGraph.NonemptyTemporalWalk
 
 /-!
 # Temporal Walks
@@ -25,6 +27,8 @@ Defines `TemporalWalk`, an inductive type for temporal walks that may be empty. 
 * `start_mem_support`, `end_mem_support` : Walk endpoints belong to the support
 * `adj_of_mem_arcs` : Every arc in a walk is an edge within the time bounds
 -/
+
+@[expose] public section
 
 universe u
 

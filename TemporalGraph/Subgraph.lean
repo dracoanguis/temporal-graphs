@@ -3,8 +3,10 @@ Copyright (c) 2026 Ethan Bargaud-Arm. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ethan Bargaud-Arm
 -/
-import TemporalGraph.Basic
-import TemporalGraph.TemporalWalk
+module
+
+public import TemporalGraph.Basic
+public import TemporalGraph.TemporalWalk
 
 /-!
 # Sub-temporal-graphs
@@ -81,6 +83,8 @@ the subgraph counterparts of the vertex- and edge-indexed notions of `TemporalGr
   as `h.adj_sub`, `h.fst_mem`, `h.snd_mem`, `h.symm`. The fully qualified spellings, such as
   `TemporalGraph.Subgraph.Adj.snd_mem h`, keep working.
 -/
+
+@[expose] public section
 
 universe u
 

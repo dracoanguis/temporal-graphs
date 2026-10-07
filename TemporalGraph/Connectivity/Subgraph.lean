@@ -3,8 +3,10 @@ Copyright (c) 2026 Ethan Bargaud-Arm. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ethan Bargaud-Arm
 -/
-import TemporalGraph.Connectivity.Basic
-import TemporalGraph.Subgraph
+module
+
+public import TemporalGraph.Connectivity.Basic
+public import TemporalGraph.Subgraph
 
 /-!
 # Subgraph Reachability and Spanners
@@ -33,6 +35,8 @@ spanner of another), and `IsTCSpanner` (temporally connected spanner).
 * `addVerts_reachability`, `addEdge_reachability`, `deleteVerts_reachability` : reachability is
   preserved by these subgraph constructions
 -/
+
+@[expose] public section
 
 universe u
 variable {V : Type u} {G : TemporalGraph V}

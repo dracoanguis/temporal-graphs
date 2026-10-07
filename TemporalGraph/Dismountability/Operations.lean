@@ -133,8 +133,8 @@ lemma mount_le {H : Subgraph G} [G.IsSymm] {x y z : V} {n m : ℕ} (hy : y ∈ H
     (hz : z ∈ H.verts) {h₀ : G.Adj y x n} {h₁ : G.Adj z x m} :
     H ≤ H.mount hy hz x h₀ h₁ := by
   unfold mount
-  have h := addVerts_le' H {x}
-  have h' := h.trans <| addEdge_le' (H.addVerts {x}) h₀ (by simp [hy])
+  have h := addVerts_le (H := H) (s := {x})
+  have h' := h.trans <| addEdge_le (h := h₀) (h₁ := by simp [hy])
   exact le_trans h' addEdge_le
 
 /-- `H.mount hy hz x h₀ h₁` has edge set `H.edgeSet` plus the two new edges `z x` at `m` and `y x`
@@ -328,11 +328,11 @@ lemma twoHopMount_le {H : Subgraph G} [G.IsSymm] {y y' z z' : V} {n n' m m' : �
     (hy : y ∈ H.verts) (hy' : y' ∈ H.verts) (hz : z ∈ H.verts) (hz' : z' ∈ H.verts) {x : V}
     {h₀ : G.Adj x y' n'} {h₁ : G.Adj y' y n} {h₂ : G.Adj x z' m'} {h₃ : G.Adj z' z m} :
     H ≤ H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃ :=
-  addVerts_le' H {x}
-    |>.trans (addEdge_le' _ h₀ (by simp [hy']))
-    |>.trans (addEdge_le' _ h₁ (by simp [hy', hy]))
-    |>.trans (addEdge_le' _ h₂ (by simp [hz']))
-    |>.trans (addEdge_le' _ h₃ (by simp [hz', hz]))
+  addVerts_le (H := H) (s := {x})
+    |>.trans (addEdge_le (h := h₀) (h₁ := by simp [hy']))
+    |>.trans (addEdge_le (h := h₁) (h₁ := by simp [hy', hy]))
+    |>.trans (addEdge_le (h := h₂) (h₁ := by simp [hz']))
+    |>.trans (addEdge_le (h := h₃) (h₁ := by simp [hz', hz]))
 
 /-- If dismounting `x` (via `y'`, `y` on the earliest side and `z'`, `z` on the latest side) is
 temporally connected, so is `H.twoHopMount hy hy' hz hz' x h₀ h₁ h₂ h₃`. -/

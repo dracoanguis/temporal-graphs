@@ -99,8 +99,8 @@ lemma le_oneSidedMount {H : Subgraph G} [G.IsSymm] {x' y x : V} {n m : ℕ}
     (hx' : x' ∈ H.verts) (hy : y ∈ H.verts) (h₀ : G.Adj y x' n) (h₁ : G.Adj y x m) :
     H ≤ H.oneSidedMount hx' hy x h₀ h₁ := by
   unfold oneSidedMount
-  have h := addVerts_le' H {x}
-  have h' := h.trans <| addEdge_le' (H.addVerts {x}) h₀ (by simp [hy, hx'])
+  have h := addVerts_le (H := H) (s := {x})
+  have h' := h.trans <| addEdge_le (h := h₀) (h₁ := by simp [hy, hx'])
   exact le_trans h' addEdge_le
 
 /-- `H.oneSidedMount hx' hy x h₀ h₁` contains the edge from `y` to `x'` at time `n`. -/

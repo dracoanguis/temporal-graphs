@@ -626,10 +626,6 @@ lemma deleteVerts_verts (H : Subgraph G) (s : Set V) :
 theorem deleteVerts_le {H : Subgraph G} {s : Set V} : (H.deleteVerts s) ≤ H := by
   constructor <;> simp
 
-/-- Explicit-argument form of `deleteVerts_le`. -/
-theorem deleteVerts_le' (H : Subgraph G) (s : Set V) : (H.deleteVerts s) ≤ H := by
-  constructor <;> simp
-
 /-- Deleting vertices from a symmetric subgraph keeps it symmetric. -/
 instance deleteVerts_isSymm (H : Subgraph G) [H.IsSymm] (s : Set V) :
     (H.deleteVerts s).IsSymm :=
@@ -665,9 +661,6 @@ lemma addVerts_le {H : Subgraph G} {s : Set V} : H ≤ (H.addVerts s) := by
   constructor
   · simp
   · intro _ _ _ h ; exact addVerts_Adj h
-
-/-- Explicit-argument form of `addVerts_le`. -/
-lemma addVerts_le' (H : Subgraph G) (s : Set V) : H ≤ (H.addVerts s) := addVerts_le
 
 /-- Adding vertices to a symmetric subgraph keeps it symmetric. -/
 instance addVerts_isSymm (H : Subgraph G) [H.IsSymm] (s : Set V) :
@@ -748,12 +741,6 @@ theorem addArc_le : H ≤ addArc H h h₁ := by
   · intro _ _ _ hadj
     exact Or.inl hadj
 
-/-- Explicit-argument form of `addArc_le`. -/
-theorem addArc_le' (H : Subgraph G) (h : G.Adj x y n)
-    (h₁ : x ∈ H.verts ∧ y ∈ H.verts) :
-    H ≤ addArc H h h₁ :=
-  addArc_le
-
 /-- The arc `(x, y)` at time `n` just added is indeed an adjacency of `H.addArc h h₁`. -/
 @[simp]
 theorem addArc_arc : (addArc H h h₁).Adj x y n :=
@@ -772,12 +759,6 @@ theorem addEdge_le [G.IsSymm] : H ≤ addEdge H h h₁ := by
     exact hx
   · intro _ _ _ hadj
     exact Or.inl hadj
-
-/-- Explicit-argument form of `addEdge_le`. -/
-theorem addEdge_le' (H : Subgraph G) [G.IsSymm] (h : G.Adj x y n)
-    (h₁ : x ∈ H.verts ∧ y ∈ H.verts) :
-    H ≤ addEdge H h h₁ :=
-  addEdge_le
 
 /-- The orientation `(x, y)` at time `n` of the edge just added is an adjacency of
 `H.addEdge h h₁`. -/
@@ -1018,14 +999,6 @@ lemma addEdge_edgeSet (H : Subgraph G) {x y : V} {n : ℕ}
       Sym2.eq_iff]
     tauto
 
-/-- Explicit-argument form of `addEdge_edgeSet`. -/
-lemma addEdge_edgeSet' (H : Subgraph G) {x y : V} {n : ℕ}
-    [G.IsSymm]
-    (h₀ : G.Adj x y n)
-    (h₁ : x ∈ H.verts ∧ y ∈ H.verts) :
-    (H.addEdge h₀ h₁).edgeSet = insert ⟨s(x,y), n⟩ H.edgeSet :=
-  H.addEdge_edgeSet
-
 instance {H : Subgraph G} [h : Finite H.edgeSet] {x y : V} {n : ℕ}
     [G.IsSymm]
     {h₀ : G.Adj x y n}
@@ -1048,10 +1021,6 @@ lemma addVerts_edgeSet {H : Subgraph G} {s : Set V} :
     exact ⟨a, b, hp, hadj⟩
   · rintro ⟨a, b, hp, hadj⟩
     exact ⟨a, b, hp, Or.inl (H.edge_vert hadj), Or.inl (H.edge_vert' hadj), hadj⟩
-
-/-- Explicit-argument form of `addVerts_edgeSet`. -/
-lemma addVerts_edgeSet' {H : Subgraph G} (s : Set V) :
-    (H.addVerts s).edgeSet = H.edgeSet := addVerts_edgeSet
 
 instance {H : Subgraph G} {s : Set V} [h₀ : Finite H.edgeSet] [Finite s] :
     Finite (H.addVerts s).edgeSet := by
@@ -1174,15 +1143,6 @@ theorem addEdge_size_le (H : Subgraph G) {x y : V} {n : ℕ}
     (H.addEdge h₀ h₁).size ≤ H.size + 1 := by
   rw [size_eq_ncard, size_eq_ncard]
   exact H.ncard_edgeSet_addEdge_le
-
-/-- Explicit-argument form of `addEdge_size_le`. -/
-theorem addEdge_size_le' (H : Subgraph G) {x y : V} {n : ℕ}
-    [G.IsSymm]
-    (h₀ : G.Adj x y n)
-    (h₁ : x ∈ H.verts ∧ y ∈ H.verts)
-    [Fintype H.edgeSet] [Fintype (H.addEdge h₀ h₁).edgeSet] :
-    (H.addEdge h₀ h₁).size ≤ H.size + 1 :=
-  H.addEdge_size_le
 
 /-- Instance-free form of `addVerts_size`: adding vertices does not change the edge set's
 `Set.ncard`. -/

@@ -3,8 +3,10 @@ Copyright (c) 2026 Ethan Bargaud-Arm. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ethan Bargaud-Arm
 -/
-import TemporalGraph.Dismountability.OneSided
-import Mathlib.Analysis.SpecialFunctions.Log.Base
+module
+
+public import TemporalGraph.Dismountability.OneSided
+public import Mathlib.Analysis.SpecialFunctions.Log.Base
 
 /-!
 # Size of one-sided spanners
@@ -68,6 +70,8 @@ the bi-clique between `V⁻` and `V⁺`, plus the matchings `M⁻` and `M⁺`. T
   (`clog2_half_le`, here `clog_half_le`), and the closed form `n * ⌈log₂ n⌉`
   (`timeMergeSortRec_le`, here `spannerBound_le`).
 -/
+
+@[expose] public section
 
 universe u
 

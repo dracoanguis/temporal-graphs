@@ -261,10 +261,9 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
 
 ### Système de modules
 
-- **Fichiers en modules** : `Init`, `Basic`, `NonemptyTemporalWalk`, `TemporalWalk`,
-  `Connectivity/Basic`, `Subgraph`, `Connectivity/Subgraph`, `Bipartite`. **Pas encore** :
-  `Dismountability/*` (peut-être extrait dans son propre dépôt), `Examples` (importe
-  `Dismountability.Basic`) et la racine `TemporalGraph.lean`. Un module n'importe que des
+- **Fichiers en modules** : tous sauf `Examples` et la racine `TemporalGraph.lean`, c'est-à-dire
+  `Init`, `Basic`, `NonemptyTemporalWalk`, `TemporalWalk`, `Connectivity/*`, `Subgraph`,
+  `Bipartite` et `Dismountability/*`. Un module n'importe que des
   modules, mais un non-module peut importer un module : on porte donc de bas en haut.
 - **Motif (celui de Mathlib)** : copyright, `module`, imports en `public import` (en `import`
   simple s'ils ne servent qu'aux preuves), docstring de module, puis `@[expose] public section`

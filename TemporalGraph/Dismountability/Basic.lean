@@ -3,10 +3,12 @@ Copyright (c) 2026 Ethan Bargaud-Arm. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ethan Bargaud-Arm
 -/
-import TemporalGraph.Basic
-import TemporalGraph.Subgraph
-import TemporalGraph.Bipartite
-import TemporalGraph.Connectivity.Subgraph
+module
+
+public import TemporalGraph.Basic
+public import TemporalGraph.Subgraph
+public import TemporalGraph.Bipartite
+public import TemporalGraph.Connectivity.Subgraph
 
 /-!
 # Dismountability
@@ -73,6 +75,8 @@ and `vplus` (`earliestNeighborFn`, `latestNeighborFn`), which forces `vzero` to 
 * Casteigts, Peters & Schoeters, *Temporal Cliques Admit Sparse Spanners*, ICALP 2019 / JCSS
   (original source of the argument).
 -/
+
+@[expose] public section
 
 universe u
 variable {V : Type u}

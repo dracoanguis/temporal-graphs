@@ -3,8 +3,10 @@ Copyright (c) 2026 Ethan Bargaud-Arm. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ethan Bargaud-Arm
 -/
-import TemporalGraph.Dismountability.Basic
-import TemporalGraph.Dismountability.Operations
+module
+
+public import TemporalGraph.Dismountability.Basic
+public import TemporalGraph.Dismountability.Operations
 
 /-!
 # One-sided dismountability
@@ -44,6 +46,8 @@ tracked (`IsSpannerFromTo`); the matchings `M⁻`, `M⁺` then upgrade it to tem
   *How to Reduce Temporal Cliques to Find Sparse Spanners*, ESA 2024 (LIPIcs 308,
   doi:10.4230/LIPIcs.ESA.2024.11, arXiv:2402.13624) — origin of the one-sided strategy.
 -/
+
+@[expose] public section
 
 universe u
 variable {V : Type u}

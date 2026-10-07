@@ -7,6 +7,7 @@ module
 
 public import TemporalGraph.Subgraph
 public import TemporalGraph.Connectivity.Basic
+public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 
 /-!
 # Bipartite temporal graphs

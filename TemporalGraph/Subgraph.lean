@@ -8,6 +8,9 @@ module
 public import TemporalGraph.Basic
 public import TemporalGraph.TemporalWalk
 
+import Mathlib.Data.Fintype.Lattice
+import Mathlib.Data.Set.Finite.Lattice
+
 /-!
 # Sub-temporal-graphs
 

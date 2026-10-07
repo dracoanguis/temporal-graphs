@@ -6,7 +6,9 @@ Authors: Ethan Bargaud-Arm
 module
 
 public import TemporalGraph.Init
-public import Mathlib
+public import Mathlib.Combinatorics.Digraph.Basic
+public import Mathlib.Combinatorics.SimpleGraph.Basic
+public import Mathlib.Data.Set.Card
 
 /-!
 # Temporal graphs

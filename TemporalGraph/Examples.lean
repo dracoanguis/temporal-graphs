@@ -6,6 +6,7 @@ Authors: Ethan Bargaud-Arm
 import TemporalGraph.Subgraph
 import TemporalGraph.Bipartite
 import TemporalGraph.Dismountability.Basic
+import Mathlib.Tactic.IntervalCases
 
 /-!
 # Worked Examples

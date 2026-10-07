@@ -56,6 +56,11 @@ spanners at the subgraph level).
   $\mathrm{Verts}(H) \subseteq \mathrm{Verts}(H')$.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  ($\Rightarrow$) An arc of $H$ is an arc of $H'$, so edges map to edges; the vertex inclusion is part of $H \le H'$. ($\Leftarrow$) An arc of $H$ gives an edge of $H$, hence an edge of $H'$, hence (by symmetry of $H'$) an arc of $H'$.
+\end{proof}
+
 \begin{lemma}[$\le$ is compatible with \texttt{toTemporalGraph}]
   \label{lem:toTemporalGraph-le}
   \uses{def:subgraph-order}
@@ -68,6 +73,11 @@ spanners at the subgraph level).
   $\mathrm{toTemporalGraph}$ is, in particular, a spanning sub-temporal-graph
   of $G$ itself.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  Direct from the definitions: the order on sub-temporal-graphs includes the implication on adjacencies, and every arc of $H$ is an arc of $G$ by the compatibility field.
+\end{proof}
 
 \begin{definition}[Union of sub-temporal-graphs]
   \label{def:subgraph-sup}
@@ -113,6 +123,11 @@ spanners at the subgraph level).
   $\mathrm{Verts}(H)$.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  Both vertex sets are subsets of the finite set $\mathrm{Verts}(H)$.
+\end{proof}
+
 \begin{lemma}[Finitely many vertices, simple: finitely many edges]
   \label{lem:subgraph-finite-edgeSet-of-simple}
   \uses{def:sub-spanning-clique,def:arcset-edgeset}
@@ -123,6 +138,11 @@ spanners at the subgraph level).
   at most one time per unordered pair of vertices, and there are finitely
   many such pairs.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  Every edge is the image of an arc $(x,y,n)$ with $x \in \mathrm{Verts}(H)$. For each such $x$ the incidence set is finite by simplicity (one time per neighbor), so the edge set is contained in the image of a finite union of finite sets.
+\end{proof}
 
 \begin{definition}[Adding a single edge]
   \label{def:subgraph-addEdge}
@@ -148,6 +168,11 @@ spanners at the subgraph level).
   $|\mathrm{EdgeSet}(H)| + 1$, with no finiteness hypothesis needed.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  Unfold $\mathrm{addEdge}$: its adjacency is that of $H$ plus both orientations of the new arc, so the edge set gains exactly the pair $(\{x,y\},n)$. The cardinality bound is \texttt{Set.ncard\_insert\_le}.
+\end{proof}
+
 \begin{lemma}[Earliest / latest edge from a finite incidence set]
   \label{lem:earliest-latest-edge-exists}
   \uses{def:incidence-set,def:earliest-latest-neighbor}
@@ -161,6 +186,11 @@ spanners at the subgraph level).
   clique gives every vertex both an earliest and a latest edge — the
   starting point of Chapter~\ref{chap:dismountability}.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  Take an element of the finite nonempty incidence set with minimal (resp.\ maximal) time.
+\end{proof}
 
 \begin{definition}[Footprint edge set]
   \label{def:subgraph-footprint-edgeSet}
@@ -191,6 +221,11 @@ spanners at the subgraph level).
   (\lean{TemporalGraph.Subgraph.size_of_simple}).
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  Surjective: a footprint edge comes from an arc at some time. Injective: two edges over the same unordered pair carry times $n$ and $m$ of arcs between the same two vertices, in either orientation (use the symmetry of $H$), and simplicity forces $n = m$.
+\end{proof}
+
 \begin{definition}[Matching]
   \label{def:subgraph-matching}
   \uses{def:sub-temporal-graph,def:sub-spanning-clique}
@@ -211,7 +246,7 @@ spanners at the subgraph level).
   Any temporal graph $H$ with $H \le G$ (Definition~\ref{def:spanning-order})
   gives a spanning sub-temporal-graph of $G$ with the same adjacency,
   licensed by $H \le G$. Dually, a set of unordered edges yields a
-  sub-temporal-graph of $G$: its vertices are those touched by an edge of
+  sub-temporal-graph of $G$: its vertices are the endpoints of members of
   the set, and its adjacencies are exactly the members of the set that
   already are edges of $G$ — the sub-temporal-graph analogue of
   Definition~\ref{def:from-arc-edge-set}'s $\mathrm{fromEdgeSet}$.
@@ -242,6 +277,11 @@ spanners at the subgraph level).
   last edge, both of $H$, giving each endpoint's membership.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  Since $x \neq y$ the witnessing walk is not empty, so it has a first arc leaving $x$ and a last arc entering $y$; the endpoints of an arc of $H$ lie in $\mathrm{Verts}(H)$.
+\end{proof}
+
 \begin{definition}[Temporal spanner]
   \label{def:spanner}
   \uses{def:sub-spanning-clique,def:reachable,def:subgraph-reachable-tc-spannerOf}
@@ -261,3 +301,8 @@ spanners at the subgraph level).
   \leanok
   $G$ admits a TC-spanner if and only if $G$ is temporally connected.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  ($\Rightarrow$) A TC-spanner $H$ is spanning and temporally connected on $\mathrm{Verts}(H) = V$; reachability in $H$ transfers to $G$ by monotonicity. ($\Leftarrow$) The top sub-temporal-graph $G$ is spanning and has the reachability of $G$.
+\end{proof}

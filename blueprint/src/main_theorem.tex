@@ -1,45 +1,58 @@
-\chapter{Main goal: sparse spanners for temporal cliques}
+\chapter{Main theorem: sparse spanners for temporal cliques}
 \label{chap:main-theorem}
 
-This is the target result of the project (see \texttt{README.md} and
-\texttt{CLAUDE.md}): not yet formalized, stated here only to record the
-goal and its dependency on the dismountability machinery of
-Chapter~\ref{chap:dismountability}.
+This is the target result of the project, now fully formalized. It was first
+proved by Casteigts, Peters \& Schoeters, \emph{Temporal Cliques Admit Sparse
+Spanners}, ICALP 2019 / JCSS. The formal proof follows the dismountability-only
+proof of Daniele Carnevale, Arnaud Casteigts \& Timothée Corsini,
+\emph{Dismountability in Temporal Cliques Revisited}, SAND 2025 (LIPIcs 330,
+6:1--6:18, doi:10.4230/LIPIcs.SAND.2025.6, arXiv:2502.01321), \S\S~2--4, which
+concludes with the one-sided dismountability of Angrick et al.\ (ESA 2024).
 
-\begin{theorem}[$O(n \log n)$ spanner for temporal cliques]
+\begin{theorem}[$O(n \log n)$ spanners of temporal cliques --- SAND \S~4.1]
   \label{thm:main-spanner-bound}
-  \uses{thm:dismountability,thm:neighbor-fn-bijective,lem:vzero-empty,def:spanner,def:sub-spanning-clique}
-  Every temporal clique on $n$ vertices admits a temporally-connected
-  spanner (Definition~\ref{def:spanner}) with $O(n \log n)$ edges.
+  \uses{thm:clique-spanner-ncard-le,thm:spanner-bound-isBigO}
+  \lean{TemporalGraph.Subgraph.exists_isBigO_isSpannerOf}
+  \leanok
+  There is a function $f(n) = O(n \log n)$, chosen once for all temporal
+  cliques, such that every finite, simple, proper temporal clique $H$ on $n$
+  vertices (with $H$ and its ambient graph symmetric, the ambient graph
+  loopless) admits a symmetric spanner $K$ of $H$ (Definition~\ref{def:spanner})
+  with at most $f(n)$ edges. One can take
+  $f(n) = 2n\lceil\log_2 n\rceil + 4n$
+  (Theorem~\ref{thm:clique-spanner-ncard-le}).
 \end{theorem}
+
+\begin{proof}
+  \leanok
+  Take $f(n) = 2n\lceil\log_2 n\rceil + 4n$, which bounds the spanners of
+  every such clique by Theorem~\ref{thm:clique-spanner-ncard-le}. Since
+  $\lceil\log_2 n\rceil \le \log_2 n + 1$ and $1 \le \log_2 n$ for $n \ge 2$,
+  $f(n) \le 8 n \log_2 n$ eventually, so $f(n) = O(n \log n)$.
+\end{proof}
 
 \section*{Proof strategy}
 
-The proof uses a recursive argument via \emph{dismounting}:
+Theorem~\ref{thm:clique-spanner-ncard-le} is proved by strong induction on the
+number $n$ of vertices.
 \begin{enumerate}
 \item
-  Choose a dismountable vertex $x$ (guaranteed to exist if the clique is not
-  a base case). If none exists, then either the clique is small (fitting in
-  the base case), or $|V^+(H)| = |V^-(H)|$ exactly (Theorem
-  ~\ref{thm:neighbor-fn-bijective}), tightly constraining the clique's size.
+  If $H$ is $\{1,2\}$-hop dismountable (Definition~\ref{def:two-hop-dismountable}),
+  some vertex $x$ can be dismounted: a spanner of $H - x$, given by induction,
+  extends to a spanner of $H$ with at most $4$ more edges
+  (Theorem~\ref{thm:spanner-of-two-hop-dismountable}).
 \item
-  Recursively construct a TC-spanner of $H \setminus \{x\}$.
+  Otherwise $V^0 = \emptyset$ (Lemma~\ref{lem:vzero-empty}) and
+  $|V^-| = |V^+|$ (Theorem~\ref{thm:neighbor-fn-bijective}), so $n = 2|V^+|$.
+  The restriction of $H$ to the edges between $V^-$ and $V^+$ is a temporal
+  bi-clique (Corollary~\ref{cor:biclique-of-not-two-hop}). A one-sided spanner
+  of this bi-clique from $V^+$ to $V^-$, of size at most
+  $\mathrm{spannerBound}(|V^+|)$
+  (Theorem~\ref{thm:exists-spanner-from-to-ncard-le}), together with the two
+  perfect matchings $M^-$ and $M^+$ (Lemma~\ref{lem:vminus-vplus-matchings}),
+  is a spanner of $H$ (Theorem~\ref{thm:spanner-of-not-two-hop-dismountable}).
 \item
-  Use the mount/twoHopMount operations (Theorem~\ref{thm:dismountability})
-  to reconstruct a TC-spanner of the full clique, adding $O(1)$ edges per
-  vertex removed.
-\item
-  The recursion depth is $O(\log n)$ by a careful charging argument that
-  exploits the $V^-$/$V^+$ bijection, yielding $O(n \log n)$ total edges.
+  The one-sided bound comes from the halving recurrence of Angrick et al.:
+  $\mathrm{spannerBound}(n) \le 2n\lceil\log_2 n\rceil + n$
+  (Lemma~\ref{lem:spanner-bound-closed-form}).
 \end{enumerate}
-
-\noindent\textbf{Status.} The high-level theorem is stated but not yet proved
-in Lean. The machinery required (Chapters~\ref{chap:model} through
-\ref{chap:dismountability}) is fully formalized and provides all the
-necessary lemmas. The final formalization is expected to instantiate the
-recursive strategy above in Lean, drawing on Daniele Carnevale, Arnaud
-Casteigts \& Timothée Corsini, \emph{Dismountability in Temporal Cliques
-Revisited}, SAND 2025 (LIPIcs 330, 6:1--6:18,
-doi:10.4230/LIPIcs.SAND.2025.6, arXiv:2502.01321), whose dismountability
-technique originates with Casteigts, Peters \& Schoeters, \emph{Temporal
-Cliques Admit Sparse Spanners}, ICALP 2019 / JCSS.

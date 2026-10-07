@@ -1,8 +1,12 @@
 \chapter{Dismountability}
 \label{chap:dismountability}
 
-\noindent Formalized in \texttt{TemporalGraph/Dismountability/Basic.lean} and
-\texttt{TemporalGraph/Dismountability/Operations.lean}. The dismountability
+\noindent Formalized in \texttt{TemporalGraph/Dismountability/Basic.lean} (the
+partition $V^-$, $V^+$, $V^0$, the bijections, reciprocity, the bi-clique),
+\texttt{TemporalGraph/Dismountability/Operations.lean} (dismount and mount),
+\texttt{TemporalGraph/Dismountability/OneSided.lean} (one-sided
+dismountability) and \texttt{TemporalGraph/Dismountability/OneSidedBound.lean}
+(the size of one-sided spanners and the bound for cliques). The dismountability
 technique originates with Casteigts, Peters \& Schoeters, \emph{Temporal
 Cliques Admit Sparse Spanners}, ICALP 2019 / JCSS. The numbering of the
 definitions, lemmas, and theorems below instead follows the more recent
@@ -44,17 +48,25 @@ SAND below — do not introduce a different numbering here.
   $V^0(H)$ partition $\mathrm{Verts}(H)$.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  \uses{lem:dismountable-iff-intersection}
+  A vertex lying in both $V^-$ and $V^+$ would make $H$ dismountable (Lemma~\ref{lem:dismountable-iff-intersection}), so $V^-$ and $V^+$ are disjoint; $V^0$ is by definition disjoint from both. A case split on $x \in V^-$, $x \in V^+$ shows that each vertex of $H$ lies in exactly one of the three sets.
+\end{proof}
+
 \begin{lemma}[Vertex set decomposition]
   \label{lem:vminus-vplus-vzero-decomp}
-  \uses{def:vminus-vplus-vzero}
-  \lean{TemporalGraph.Subgraph.vminus_sub_verts}
-  \lean{TemporalGraph.Subgraph.vplus_sub_verts}
-  \lean{TemporalGraph.Subgraph.vzero_sub_verts}
+  \uses{def:vminus-vplus-vzero,lem:partition-finite}
   \lean{TemporalGraph.Subgraph.vunion_eq_univ}
   \leanok
   All three sets $V^-(H)$, $V^+(H)$, $V^0(H)$ are subsets of
   $\mathrm{Verts}(H)$, and their union is all of $\mathrm{Verts}(H)$.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  The inclusions are Lemma~\ref{lem:partition-finite}. The union is then $\mathrm{Verts}(H)$ by set algebra, since $V^0 = \mathrm{Verts}(H) \setminus (V^- \cup V^+)$.
+\end{proof}
 
 \begin{lemma}[Dismountability via intersection]
   \label{lem:dismountable-iff-intersection}
@@ -66,17 +78,23 @@ SAND below — do not introduce a different numbering here.
   neighbor.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  Unfold the definitions: a vertex that is a latest neighbor of someone and an earliest neighbor of someone is exactly an element of $V^+(H) \cap V^-(H)$.
+\end{proof}
+
 \begin{definition}[Two-hop dismountable --- SAND \S~2.1]
   \label{def:two-hop-dismountable}
   \uses{def:dismountable}
   \lean{TemporalGraph.Subgraph.TwoHopDismountable}
   \leanok
-  A variant of dismountability allowing the witnessing vertices to be
-  identified up to a two-hop condition: a clique $H$ is \emph{two-hop
-  dismountable} if there exists a vertex $x$ such that either $x$ is an
-  earliest neighbor of some vertex, or some vertex two-hop-reaches $x$ via an
-  earliest edge, and similarly for latest neighbors. Every dismountable
-  clique is two-hop dismountable.
+  A clique $H$ is \emph{$\{1,2\}$-hop dismountable} if there is a vertex $x$ such
+  that (earliest side) either $x$ is an earliest neighbor of some vertex, or
+  there are $y \neq x$ and $z$ such that $(y,z,n)$ is the earliest edge of $y$
+  and $z$ is joined to $x$ at a time $m \le n$; and (latest side) either $x$ is
+  a latest neighbor of some vertex, or there are $y \neq x$ and $z$ such that
+  $(y,z,n)$ is the latest edge of $y$ and $z$ is joined to $x$ at a time
+  $m \ge n$. Every dismountable clique is two-hop dismountable.
 \end{definition}
 
 \begin{lemma}[Dismountable implies two-hop dismountable]
@@ -87,7 +105,12 @@ SAND below — do not introduce a different numbering here.
   Every dismountable clique is two-hop dismountable.
 \end{lemma}
 
-\begin{lemma}[$V^+$/$V^-$ are not neighbors --- SAND Lemma 3.2]
+\begin{proof}
+  \leanok
+  Take the same vertex $x$; the two one-hop alternatives of the definition hold.
+\end{proof}
+
+\begin{lemma}[Distinct earliest / latest neighbors --- SAND Lemma 3.2]
   \label{lem:vplus-vminus-not-neighbors}
   \uses{def:two-hop-dismountable,def:vminus-vplus-vzero,def:is-symm-loopless}
   \lean{TemporalGraph.Subgraph.vplus_ne_neighbor_of_not_twoHopDismountable}
@@ -98,26 +121,43 @@ SAND below — do not introduce a different numbering here.
   distinct vertices of $V^-(H)$ have distinct latest neighbors.
 \end{lemma}
 
-\begin{lemma}[Vertex sets are finite]
+\begin{proof}
+  \leanok
+  \uses{def:two-hop-dismountable}
+  Let $x \neq y$ in $V^+$ with a common earliest neighbor $z$, at times $n$ (for $x$) and $m$ (for $y$). If $m \le n$, the vertex $y$ is reached in two hops from the earliest edge $(x,z,n)$ and the edge $zy$ at $m \le n$ (symmetry), and it is a latest neighbor since $y \in V^+$: $H$ is two-hop dismountable at $y$. If $m > n$, exchange the roles of $x$ and $y$. Both contradict the hypothesis. The statement for $V^-$ and latest neighbors is dual.
+\end{proof}
+
+\begin{lemma}[$V^-$, $V^+$, $V^0$ are subsets of $V(H)$]
   \label{lem:partition-finite}
   \uses{def:vminus-vplus-vzero}
   \lean{TemporalGraph.Subgraph.vminus_sub_verts}
   \lean{TemporalGraph.Subgraph.vplus_sub_verts}
   \lean{TemporalGraph.Subgraph.vzero_sub_verts}
   \leanok
-  When $H$ has finitely many vertices, $V^-(H)$, $V^+(H)$, and $V^0(H)$ are
-  all finite.
+  $V^-(H)$, $V^+(H)$ and $V^0(H)$ are subsets of $\mathrm{Verts}(H)$; in
+  particular they are finite when $H$ has finitely many vertices.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  An endpoint of an earliest or latest edge of $H$ is a vertex of $H$, and $V^0$ is a subset of $\mathrm{Verts}(H)$ by definition. A subset of a finite set is finite.
+\end{proof}
 
 \begin{lemma}[$V^0$ is empty --- SAND Lemma 3.4]
   \label{lem:vzero-empty}
-  \uses{lem:vplus-vminus-not-neighbors,def:vminus-vplus-vzero,def:is-simple-clique,def:is-proper-happy,def:is-symm-loopless}
+  \uses{lem:vplus-vminus-not-neighbors,lem:vminus-vplus-matchings,def:vminus-vplus-vzero,def:is-simple-clique,def:is-proper-happy,def:is-symm-loopless}
   \lean{TemporalGraph.Subgraph.vzero_empty_of_not_twoHopDismountable}
   \leanok
   If $H$ is a finite, nontrivial, simple, proper, symmetric clique that is
   not two-hop dismountable, then $V^0(H) = \emptyset$: every vertex is an
   earliest or a latest neighbor of some vertex.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  \uses{lem:earliestEdge-exists-finite-clique}
+  Suppose $x \in V^0$. It has an earliest edge to some $y \in V^-$ at time $n$ and a latest edge to some $z \in V^+$ at time $m$ (Lemma~\ref{lem:earliestEdge-exists-finite-clique}). By the matchings (Lemma~\ref{lem:vminus-vplus-matchings}), $y$ is the endpoint of the earliest edge of some $y' \in V^+$ at time $n'$, and $z$ of the latest edge of some $z' \in V^-$ at time $m'$. If $n' \le n$, the vertex $y'$ is reached in two hops from $x$ and is a latest neighbor, so $H$ is two-hop dismountable at $y'$; if $m \le m'$, likewise at $z'$. Otherwise $n < n'$ and $m' < m$, and $H$ is two-hop dismountable at $x$ itself, through $y'$ on the earliest side and $z'$ on the latest side. Each case contradicts the hypothesis.
+\end{proof}
 
 \section*{Bijections and cardinality (SAND Corollary 3.3)}
 
@@ -131,6 +171,12 @@ SAND below — do not introduce a different numbering here.
   earliest and a latest edge.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  \uses{lem:earliest-latest-edge-exists}
+  A nontrivial clique gives every vertex a nonempty incidence set, which is finite since $H$ is finite and simple; apply Lemma~\ref{lem:earliest-latest-edge-exists}.
+\end{proof}
+
 \begin{lemma}[Earliest edges are uniquely witnessed in proper cliques]
   \label{lem:earliestEdge-unique-proper-clique}
   \uses{def:is-proper-happy,def:is-simple-clique}
@@ -141,6 +187,12 @@ SAND below — do not introduce a different numbering here.
   unique earliest (resp.\ latest) edge.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  \uses{lem:earliestEdge-exists-finite-clique}
+  Existence is the previous lemma. Two earliest edges of $x$ have the same time, both being minimal; properness then forces the same neighbor.
+\end{proof}
+
 \begin{definition}[Earliest/latest neighbor functions]
   \label{def:neighbor-functions}
   \uses{lem:earliestEdge-unique-proper-clique}
@@ -148,9 +200,10 @@ SAND below — do not introduce a different numbering here.
   \lean{TemporalGraph.Subgraph.latestNeighborFn}
   \leanok
   Given a finite, nontrivial, simple, proper clique $H$, define
-  $\mathrm{f_{ee}} : V^+(H) \to V^-(H)$ and
-  $\mathrm{f_{le}} : V^-(H) \to V^+(H)$ as the functions that map each vertex
-  to its unique earliest (resp.\ latest) neighbor.
+  $\mathrm{f_{ee}}$ and $\mathrm{f_{le}}$ as the functions on $V$ that map each
+  vertex of $\mathrm{Verts}(H)$ to its unique earliest (resp.\ latest) neighbor
+  (and are the identity elsewhere). They map $V^+(H)$ into $V^-(H)$, resp.\
+  $V^-(H)$ into $V^+(H)$.
 \end{definition}
 
 \begin{lemma}[Neighbor functions characterize membership]
@@ -159,9 +212,16 @@ SAND below — do not introduce a different numbering here.
   \lean{TemporalGraph.Subgraph.earliestNeighborFn_eq}
   \lean{TemporalGraph.Subgraph.latestNeighborFn_eq}
   \leanok
-  The equality $\mathrm{f_{ee}}(x) = y$ is equivalent to $H.\mathrm{EarliestNeighbor}(x, y)$ for $x
-  \in V^+(H)$ and $y \in V^-(H)$, and similarly for $\mathrm{f_{le}}$.
+  Let $H$ be a finite, nontrivial, simple, proper clique and $x \in \mathrm{Verts}(H)$.
+  Then $\mathrm{f_{ee}}(x) = y$ if and only if $H.\mathrm{EarliestNeighbor}(x, y)$,
+  and similarly for $\mathrm{f_{le}}$ and $H.\mathrm{LatestNeighbor}(x,y)$.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  \uses{lem:earliestEdge-unique-proper-clique}
+  $\mathrm{f_{ee}}(x)$ is by definition the (unique) earliest neighbor of $x$ (Lemma~\ref{lem:earliestEdge-unique-proper-clique}), so the equality is the uniqueness of the earliest neighbor.
+\end{proof}
 
 \begin{lemma}[Neighbor functions are injective outside two-hop dismountability]
   \label{lem:neighbor-fn-injective}
@@ -169,9 +229,15 @@ SAND below — do not introduce a different numbering here.
   \lean{TemporalGraph.Subgraph.earliestNeighborFn_injOn}
   \lean{TemporalGraph.Subgraph.latestNeighborFn_injOn}
   \leanok
-  When $H$ is symmetric and not two-hop dismountable, both
-  $\mathrm{f_{ee}}$ and $\mathrm{f_{le}}$ are injective.
+  Let $H$ be a finite, nontrivial, simple, proper, symmetric clique that is not
+  two-hop dismountable. Then $\mathrm{f_{ee}}$ is injective on $V^+(H)$ and
+  $\mathrm{f_{le}}$ is injective on $V^-(H)$.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  If $\mathrm{f_{ee}}(x) = \mathrm{f_{ee}}(y) = z$ for $x \neq y$ in $V^+$, then $z$ is an earliest neighbor of both (Lemma~\ref{lem:neighbor-fn-eq}), contradicting Lemma~\ref{lem:vplus-vminus-not-neighbors}. The case of $\mathrm{f_{le}}$ is dual.
+\end{proof}
 
 \begin{lemma}[Cardinality bounds from injectivity --- SAND Corollary 3.3 (3)]
   \label{lem:card-bounds}
@@ -180,10 +246,16 @@ SAND below — do not introduce a different numbering here.
   \lean{TemporalGraph.Subgraph.vminus_card_le_vplus_card}
   \lean{TemporalGraph.Subgraph.vminus_card_eq_vplus_card}
   \leanok
-  For a symmetric, non-two-hop-dismountable clique $H$:
+  For a finite, nontrivial, simple, proper, symmetric clique $H$ that is not
+  two-hop dismountable:
   $$|V^+(H)| \le |V^-(H)| \quad \text{and} \quad |V^-(H)| \le |V^+(H)|$$
   so the cardinalities are equal: $|V^-(H)| = |V^+(H)|$.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  An injective map from $V^+$ into $V^-$ gives $|V^+| \le |V^-|$, and dually.
+\end{proof}
 
 \begin{theorem}[Neighbor functions are bijections --- SAND Corollary 3.3]
   \label{thm:neighbor-fn-bijective}
@@ -193,7 +265,7 @@ SAND below — do not introduce a different numbering here.
   \lean{TemporalGraph.Subgraph.earliestNeighborFn_bijOn}
   \lean{TemporalGraph.Subgraph.latestNeighborFn_bijOn}
   \leanok
-  When $H$ is finite, nontrivial, simple, proper, symmetric, and not
+  When $H$ is a finite, nontrivial, simple, proper, symmetric clique that is not
   two-hop dismountable, both $\mathrm{f_{ee}}$ and $\mathrm{f_{le}}$ are bijections between the
   sets $V^+(H)$ and $V^-(H)$ (\texttt{Set.BijOn}): $\mathrm{f_{ee}}$ maps $V^+(H)$ into
   $V^-(H)$ and $\mathrm{f_{le}}$ maps $V^-(H)$ into $V^+(H)$
@@ -201,19 +273,98 @@ SAND below — do not introduce a different numbering here.
   bijective by the cardinality equality.
 \end{theorem}
 
+\begin{proof}
+  \leanok
+  $\mathrm{f_{ee}}$ maps $V^+$ into $V^-$ (an earliest neighbor lies in $V^-$) and is injective there. Its image has $|V^+| = |V^-|$ elements, so, $V^-$ being finite, the image is all of $V^-$. The argument for $\mathrm{f_{le}}$ is dual.
+\end{proof}
+
 \begin{lemma}[Perfect matchings between $V^-$ and $V^+$ --- SAND Corollary 3.3 (1)--(2)]
   \label{lem:vminus-vplus-matchings}
   \uses{thm:neighbor-fn-bijective,def:vminus-vplus-vzero,def:earliest-latest-neighbor}
   \lean{TemporalGraph.Subgraph.existsUnique_vplus_earliestEdge}
   \lean{TemporalGraph.Subgraph.existsUnique_vminus_latestEdge}
   \leanok
-  Under the same hypotheses, the earliest/latest-edge structure gives a
+  Let $H$ be a finite, nontrivial, simple, proper, symmetric clique that is not
+  two-hop dismountable. The earliest/latest-edge structure gives a
   perfect matching in each direction: every vertex $x \in V^-(H)$ has a
   unique pair $(y, n) \in V^+(H) \times \mathbb{N}$ with $y$'s earliest edge
   to $x$ at time $n$; dually, every vertex $x \in V^+(H)$ has a unique pair
   $(y, n) \in V^-(H) \times \mathbb{N}$ with $y$'s latest edge to $x$ at time
   $n$.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  Let $x \in V^-$. Surjectivity of $\mathrm{f_{ee}}$ gives $y \in V^+$ whose earliest neighbor is $x$, hence an earliest edge $(y,x,n)$. If $(z,m)$ is another such pair, injectivity gives $z = y$, and simplicity gives $m = n$. The statement for $V^+$ and latest edges is dual.
+\end{proof}
+
+\begin{lemma}[Reciprocity --- SAND Lemma 3.5]
+  \label{lem:reciprocity}
+  \uses{def:two-hop-dismountable,def:vminus-vplus-vzero,def:earliest-latest-neighbor,def:is-symm-loopless}
+  \lean{TemporalGraph.Subgraph.earliestEdge_reciprocity}
+  \lean{TemporalGraph.Subgraph.latestEdge_reciprocity}
+  \leanok
+  Let $H$ be a symmetric clique that is not $\{1,2\}$-hop dismountable.
+  \begin{itemize}
+    \item If $(v,u,n)$ is the earliest edge of $v$, then every edge from $u$ to a
+      vertex $w \in V^+(H)$ occurs at a time $j \ge n$.
+    \item If $(u,v,n)$ is the latest edge of $u$, then every edge from $v$ to a
+      vertex $w \in V^-(H)$ occurs at a time $j \le n$.
+  \end{itemize}
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  Suppose an edge $uw$ at a time $j < n$ with $w \in V^+$. Then $w \neq v$ (the
+  earliest edge of $v$ has the minimal time $n$) and $w$ is reached from $v$'s
+  earliest edge in two hops, through $u$ at a time $j \le n$; it is also a
+  latest neighbor since $w \in V^+$. So $H$ is two-hop dismountable at $w$,
+  a contradiction. The second statement is dual, with $w \in V^-$ and the latest
+  edge of $u$.
+\end{proof}
+
+\begin{corollary}[Bi-clique between $V^-$ and $V^+$ --- SAND Corollary 4.1]
+  \label{cor:biclique-of-not-two-hop}
+  \uses{lem:dismountable-iff-intersection,lem:twoHop-of-dismountable,lem:partition-finite,def:is-biclique,def:between}
+  \lean{TemporalGraph.Subgraph.biclique_of_not_twoHopDismountable}
+  \leanok
+  Let $H$ be a finite, nontrivial, symmetric clique that is not
+  $\{1,2\}$-hop dismountable. The restriction $H.\mathrm{between}\ V^-(H)\ V^+(H)$
+  of $H$ to the arcs between $V^-$ and $V^+$ is a temporal bi-clique on
+  $(V^-(H), V^+(H))$.
+\end{corollary}
+
+\begin{proof}
+  \leanok
+  $V^-$ and $V^+$ are disjoint, since a common vertex would make $H$
+  dismountable (Lemma~\ref{lem:dismountable-iff-intersection}), hence two-hop
+  dismountable (Lemma~\ref{lem:twoHop-of-dismountable}); both are contained in
+  $\mathrm{Verts}(H)$ (Lemma~\ref{lem:partition-finite}), which is a clique.
+  Restricting a clique to the arcs between two disjoint parts yields a
+  bi-clique on these parts.
+\end{proof}
+
+\begin{lemma}[The bi-clique is temporally connected --- SAND remark after Corollary 4.1]
+  \label{lem:between-tc}
+  \uses{cor:biclique-of-not-two-hop,lem:vzero-empty,lem:vminus-vplus-matchings,lem:reachable-of-earliestEdge,lem:reachable-of-latestEdge}
+  \lean{TemporalGraph.Subgraph.between_TC_of_not_twoHopDismountable}
+  \leanok
+  Let $H$ be a finite, nontrivial, simple, proper, symmetric clique that is not
+  $\{1,2\}$-hop dismountable. Then $H.\mathrm{between}\ V^-(H)\ V^+(H)$ is
+  temporally connected on $\mathrm{Verts}(H)$.
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  Since $V^0 = \emptyset$ (Lemma~\ref{lem:vzero-empty}), every vertex lies in
+  $V^-$ or $V^+$. A vertex of $V^-$ and a vertex of $V^+$ are joined by an edge
+  of the bi-clique (Corollary~\ref{cor:biclique-of-not-two-hop}), in both
+  directions. For $x, y \in V^-$: by Lemma~\ref{lem:vminus-vplus-matchings}, $x$
+  is the endpoint of the earliest edge of some $p \in V^+$, which is still its
+  earliest edge in the bi-clique; $y$ reaches $p$ directly, and
+  Lemma~\ref{lem:reachable-of-earliestEdge} gives that $y$ reaches $x$. The case
+  of two vertices of $V^+$ is dual, with latest edges.
+\end{proof}
 
 \section*{Dismounting and mounting operations}
 
@@ -240,6 +391,11 @@ SAND below — do not introduce a different numbering here.
   Dismounting a vertex from a clique yields a clique.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  Two distinct vertices of $\mathrm{Verts}(H) \setminus \{x\}$ are joined in $H$, and the edge survives in the induced subgraph since neither endpoint is $x$.
+\end{proof}
+
 \begin{lemma}[Mount operations increase edge count]
   \label{lem:mount-size}
   \uses{def:dismount-mount,def:arcset-edgeset}
@@ -248,21 +404,51 @@ SAND below — do not introduce a different numbering here.
   \lean{TemporalGraph.Subgraph.twoHopMount_size}
   \lean{TemporalGraph.Subgraph.ncard_edgeSet_twoHopMount_le}
   \leanok
-  Mounting a single vertex adds at most 2 edges to the edge set;
-  two-hop mounting adds at most 4 edges.
+  In a symmetric ambient graph, mounting a single vertex adds at most 2 edges
+  to the edge set; two-hop mounting adds at most 4 edges.
 \end{lemma}
 
-\begin{theorem}[Dismount/mount preserves spanning correctness --- SAND Theorem 2.1 (1-hop), \S~2.1 (2-hop)]
+\begin{proof}
+  \leanok
+  The edge set of the mounted graph is that of $H$ plus two pairs (four for the two-hop mount), and \texttt{Set.ncard} of a union is at most the sum of the cardinalities.
+\end{proof}
+
+\begin{theorem}[Dismount/mount preserves spanners --- SAND Theorem 2.1 (1-hop), \S~2.1 (2-hop)]
   \label{thm:dismountability}
-  \uses{def:dismount-mount,def:spanner,def:sub-spanning-clique}
+  \uses{def:dismount-mount,def:subgraph-reachable-tc-spannerOf,def:sub-spanning-clique,def:earliest-latest-neighbor,def:two-hop-dismountable}
   \lean{TemporalGraph.Subgraph.dismountability}
   \lean{TemporalGraph.Subgraph.twoHopDismountability}
   \leanok
-  Let $H$ be a clique and $H'$ a spanning sub-temporal-graph of
-  $H.\mathrm{dismount}(x)$. If $H'$ is a TC-spanner of the dismounted graph,
-  then mounting $x$ back (via $\mathrm{mount}$ or $\mathrm{twoHopMount}$) with
-  the appropriate edges from $H$ yields a TC-spanner of $H$ itself.
+  Let the ambient graph $G$ be symmetric and loopless, let $H$ be a symmetric
+  clique sub-temporal-graph of $G$ and $x \in \mathrm{Verts}(H)$, and let $H'$
+  be a symmetric sub-temporal-graph of $G$ that is a spanner of
+  $H.\mathrm{dismount}(x)$ (Definition~\ref{def:subgraph-reachable-tc-spannerOf}).
+  \begin{itemize}
+    \item (1-hop) Let $y, z \in \mathrm{Verts}(H')$ with $yx$ an edge of $G$ at
+      time $n$ and $zx$ an edge of $G$ at time $m$. If $(y,x,n)$ is the
+      earliest edge of $y$ in $H$ and $(z,x,m)$ is the latest edge of $z$ in
+      $H$, then $H'.\mathrm{mount}(x,y,z,n,m)$ is a spanner of $H$.
+    \item ($2$-hop) Let $y, y', z, z' \in \mathrm{Verts}(H')$, with edges
+      $xy'$ at $n'$, $y'y$ at $n$, $xz'$ at $m'$ and $z'z$ at $m$ in $G$. If
+      $(y,y',n)$ is the earliest edge of $y$ in $H$ with $n' \le n$ and $xy'$
+      an edge of $H$ at $n'$, and $(z,z',m)$ is the latest edge of $z$ in $H$
+      with $m \le m'$ and $xz'$ an edge of $H$ at $m'$, then
+      $H'.\mathrm{twoHopMount}(x,y',y,z',z,n',n,m',m)$ is a spanner of $H$.
+  \end{itemize}
 \end{theorem}
+
+\begin{proof}
+  \leanok
+  \uses{lem:dismount-clique,lem:clique-temporally-connected,lem:reachable-of-earliestEdge,lem:reachable-of-latestEdge}
+  The mounted graph has the vertex set of $H$ and is below $H$: $H'$ is below
+  $H - x$, and the added edges are edges of $H$. It is temporally connected:
+  $H - x$ is a clique, hence temporally connected, so $H'$ is temporally
+  connected on $\mathrm{Verts}(H) \setminus \{x\}$ as a spanner of it; the new
+  vertex $x$ reaches everything $y$ reaches (through the earliest edge of $y$,
+  or in two hops with $y'$, Lemma~\ref{lem:reachable-of-earliestEdge}) and is
+  reached from everything that reaches $z$ (Lemma~\ref{lem:reachable-of-latestEdge}).
+  A temporally connected spanning subgraph preserves every reachability of $H$.
+\end{proof}
 
 \section*{One-sided dismountability (SAND 2025, \S~4.1)}
 
@@ -299,19 +485,44 @@ the source with another target can be dismounted at the cost of two edges.
   from $S_1 \cup S_2$ to $T$.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  \uses{def:spanner-from-to}
+  The union is below $H$. A walk in $H_1$ or in $H_2$ is also a walk in the union (monotonicity of reachability), and a vertex of $S_1 \cup S_2$ lies in $S_1$ or in $S_2$.
+\end{proof}
+
 \begin{theorem}[Temporal connectivity from the matchings]
   \label{thm:tc-of-spanner-from-to}
-  \uses{def:spanner-from-to,lem:spanner-from-to-sup}
+  \uses{def:spanner-from-to,lem:vminus-vplus-matchings,lem:vzero-empty,cor:biclique-of-not-two-hop}
   \lean{TemporalGraph.temporallyConnected_of_reachable_of_matchings}
   \lean{TemporalGraph.Subgraph.temporallyConnected_of_isSpannerFromTo}
   \leanok
-  If every vertex of $T$ is the endpoint of the earliest edge of a vertex of
-  $S$, every vertex of $S$ the endpoint of the latest edge of a vertex of $T$,
-  and $S$ reaches $T$, then $S \cup T$ is temporally connected. In
-  particular, a one-sided spanner from $V^+$ to $V^-$ of the bi-clique of
-  Corollary~4.1 that contains the matchings $M^-$ and $M^+$ is temporally
-  connected on $V(H)$.
+  In a symmetric temporal graph, if every vertex of $T$ is the endpoint of the
+  earliest edge of a vertex of $S$, every vertex of $S$ the endpoint of the
+  latest edge of a vertex of $T$, and every vertex of $S$ reaches every vertex
+  of $T$, then $S \cup T$ is temporally connected. In particular, let $H$ be a
+  finite, nontrivial, simple, proper, symmetric clique that is not
+  $\{1,2\}$-hop dismountable, and $S$ a symmetric one-sided spanner from $V^+$
+  to $V^-$ of the bi-clique of Corollary~\ref{cor:biclique-of-not-two-hop} that
+  contains the earliest edges of the vertices of $V^+$ and the latest edges of
+  the vertices of $V^-$ (the matchings $M^-$ and $M^+$). Then $S$ is temporally
+  connected on $\mathrm{Verts}(H)$.
 \end{theorem}
+
+\begin{proof}
+  \leanok
+  \uses{lem:reachable-of-earliestEdge,lem:reachable-of-latestEdge}
+  Distinguish where the two vertices lie. From $s \in S$ to $t \in T$ it is the
+  hypothesis. From $s$ to $s' \in S$: reach a vertex $b \in T$ whose latest edge
+  ends at $s'$, and extend along it (Lemma~\ref{lem:reachable-of-latestEdge}).
+  From $t \in T$ to $t'$: leave along the earliest edge into $t$ towards its
+  matched $v \in S$, which reaches $t'$ (Lemma~\ref{lem:reachable-of-earliestEdge}).
+  The case $T \to S$ combines the two. For the spanner version, $V^0 = \emptyset$
+  (Lemma~\ref{lem:vzero-empty}), so $\mathrm{Verts}(H) = V^+ \cup V^-$; the
+  matchings of Lemma~\ref{lem:vminus-vplus-matchings} are in $S$ and are still
+  earliest/latest edges there since $S \le H$; and $V^+ \to V^-$ reachability
+  is a direct edge of the bi-clique, kept by the one-sided spanner.
+\end{proof}
 
 \begin{theorem}[One-sided dismounting]
   \label{thm:one-sided-dismountability}
@@ -320,11 +531,20 @@ the source with another target can be dismounted at the cost of two edges.
   \lean{TemporalGraph.Subgraph.oneSidedMount_size}
   \lean{TemporalGraph.Subgraph.ncard_edgeSet_oneSidedMount_le}
   \leanok
-  In a bi-clique on $(S, T)$, if $x \in T$ is one-sided dismountable through
-  $x'$ and $y$, a one-sided spanner from $S$ to $T \setminus \{x\}$ of the
-  bi-clique without $x$, extended by the two edges $yx'$ and $yx$, is a
-  one-sided spanner from $S$ to $T$; it has at most two more edges.
+  Let $G$ and $H$ be symmetric and $H$ a bi-clique on $(S, T)$. Let $x \in T$
+  be one-sided dismountable through $x' \in T \setminus\{x\}$ and $y \in S$
+  ($(x',y,n)$ is the latest edge of $x'$ in $H$, $yx$ is an edge of $H$ at a
+  time $m \ge n$), and let $H'$ be a symmetric one-sided spanner from $S$ to
+  $T \setminus \{x\}$ of the bi-clique without $x$, containing $x'$ and $y$.
+  Extended by the two edges $yx'$ and $yx$, $H'$ is a one-sided spanner of $H$
+  from $S$ to $T$; it has at most two more edges.
 \end{theorem}
+
+\begin{proof}
+  \leanok
+  \uses{lem:reachable-of-latestEdge}
+  The mounted graph is below $H$. For $z \in S$ and $w \in T \setminus \{x\}$, $z$ reaches $w$ in the bi-clique without $x$ by a direct edge, hence in $H'$, hence in the mounted graph. For $w = x$: $z$ reaches $x'$ this way, and extends along the latest edge $(x', y, n)$ then the edge $yx$ at $m \ge n$ (Lemma~\ref{lem:reachable-of-latestEdge}). The count is that of two added edges.
+\end{proof}
 
 \begin{lemma}[Pigeonhole]
   \label{lem:exists-one-sided-dismountable}
@@ -332,15 +552,19 @@ the source with another target can be dismounted at the cost of two edges.
   \lean{TemporalGraph.Subgraph.exists_latestEdge_of_isBicliqueWith}
   \lean{TemporalGraph.Subgraph.exists_oneSidedDismountable_of_ncard_lt}
   \leanok
-  In a finite simple bi-clique on $(S, T)$ with $S$ nonempty and
+  In a finite, simple, symmetric bi-clique on $(S, T)$ with $S$ nonempty and
   $|S| < |T|$, two vertices of $T$ share their latest neighbor in $S$, so
   some vertex of $T$ is one-sided dismountable.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  Every $x \in T$ has a latest edge, towards some $f(x) \in S$ (finiteness and simplicity). Since $|S| < |T|$, the pigeonhole principle gives $a \neq b$ in $T$ with $f(a) = f(b) = y$, at times $n_a, n_b$. If $n_a \le n_b$ then $b$ is one-sided dismountable through $a$ and $y$ (the edge $yb$ occurs at $n_b \ge n_a$); otherwise $a$ is dismountable through $b$.
+\end{proof}
+
 \begin{lemma}[Split, full step]
   \label{lem:spanner-from-to-split}
-  \uses{lem:spanner-from-to-sup}
-  \lean{TemporalGraph.Subgraph.isBicliqueWith_induce}
+  \uses{lem:spanner-from-to-sup,lem:isBicliqueWith-induce-deleteVerts,lem:reachable-of-isBicliqueWith}
   \lean{TemporalGraph.Subgraph.IsSpannerFromTo.of_le}
   \lean{TemporalGraph.Subgraph.isSpannerFromTo_sup_of_induce}
   \leanok
@@ -349,6 +573,11 @@ the source with another target can be dismounted at the cost of two edges.
   two subproblems combine, by union, into a one-sided spanner of the
   bi-clique from $S_1 \cup S_2$ to $T$.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  For each $i$, $H.\mathrm{induce}(S_i \cup T)$ is below $H$ and is a bi-clique on $(S_i, T)$ (Lemma~\ref{lem:isBicliqueWith-induce-deleteVerts}), so every vertex of $S_i$ reaches every vertex of $T$ in it (Lemma~\ref{lem:reachable-of-isBicliqueWith}). A one-sided spanner of the induced subgraph is therefore a one-sided spanner of $H$ from $S_i$ to $T$; conclude with Lemma~\ref{lem:spanner-from-to-sup}.
+\end{proof}
 
 \begin{lemma}[Splitting a set into halves]
   \label{lem:exists-ncard-halves}
@@ -361,6 +590,11 @@ the source with another target can be dismounted at the cost of two edges.
   (taking $S_1, S_2 = S_1, S \setminus S_1$), this is the recursive splitting
   step of the one-sided dismounting strategy, SAND 2025 \S~4.1.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  If $S$ is finite, pick a subset of the required size and compute the cardinality of the difference; if $S$ is infinite, $\emptyset$ works as all cardinalities are $0$.
+\end{proof}
 
 \begin{definition}[Spanner-size recurrence --- SAND \S~4.1]
   \label{def:spanner-bound}
@@ -383,6 +617,11 @@ the source with another target can be dismounted at the cost of two edges.
   $\mathrm{spannerBound}(n) \le 2n \lceil \log_2 n \rceil + n$ for $n \ge 1$.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  Strong induction using the recurrence: both halves have a ceiling logarithm at most $\lceil \log_2 n\rceil - 1$ (halving with a ceiling lowers $\lceil\log_2\rceil$ by at least one for $n \ge 2$), and the two halves sum to $n$; the inequality then follows by arithmetic.
+\end{proof}
+
 \begin{theorem}[$\mathrm{spannerBound}$ is $O(n \log n)$]
   \label{thm:spanner-bound-isBigO}
   \uses{lem:spanner-bound-closed-form}
@@ -390,6 +629,12 @@ the source with another target can be dismounted at the cost of two edges.
   \leanok
   $n \mapsto \mathrm{spannerBound}(n)$ is $O(n \log n)$.
 \end{theorem}
+
+\begin{proof}
+  \leanok
+  \uses{lem:spanner-bound-closed-form}
+  By the closed form and $\lceil \log_2 n\rceil \le \log_2 n + 1$, $\mathrm{spannerBound}(n) \le 2n(\log_2 n + 1) + n \le 5 n \log_2 n$ for $n \ge 2$, since $1 \le \log_2 n$.
+\end{proof}
 
 \begin{theorem}[One-sided spanner bound --- SAND \S~4.1]
   \label{thm:exists-spanner-from-to-ncard-le}
@@ -399,16 +644,23 @@ the source with another target can be dismounted at the cost of two edges.
   \lean{TemporalGraph.Subgraph.exists_isSpannerFromTo_of_singleton}
   \lean{TemporalGraph.Subgraph.exists_isSpannerFromTo_ncard_le}
   \leanok
-  A finite simple temporal bi-clique on a nonempty source $S$ and a target $T$
-  with $|S| \le |T|$ admits a one-sided spanner from $S$ to $T$ with at most
-  $2(|T| - |S|) + \mathrm{spannerBound}(|S|)$ edges: by strong induction on
-  $|S| + |T|$, dismounting one target at a time while $|S| < |T|$
-  (Lemma~\ref{lem:exists-one-sided-dismountable},
-  Theorem~\ref{thm:one-sided-dismountability}), then, once $|S| = |T|$,
-  either taking the single bi-clique edge if $|S| = |T| = 1$, or splitting
-  $S$ in halves and recursing on each half (Lemma~\ref{lem:exists-ncard-halves},
-  Lemma~\ref{lem:spanner-from-to-split}).
+  Let $G$ and $H$ be symmetric, and $H$ a finite simple temporal bi-clique on a
+  nonempty source $S$ and a target $T$ with $|S| \le |T|$. Then $H$ admits a
+  symmetric one-sided spanner from $S$ to $T$ with at most
+  $2(|T| - |S|) + \mathrm{spannerBound}(|S|)$ edges.
 \end{theorem}
+
+\begin{proof}
+  \leanok
+  Strong induction on $|S| + |T|$, dismounting one target at a time while
+  $|S| < |T|$ (Lemma~\ref{lem:exists-one-sided-dismountable},
+  Theorem~\ref{thm:one-sided-dismountability}), then, once $|S| = |T|$,
+  either taking the single bi-clique edge if $|S| = |T| = 1$ (base case
+  \texttt{exists\_isSpannerFromTo\_of\_singleton}), or splitting
+  $S$ in halves and recursing on each half (Lemma~\ref{lem:exists-ncard-halves},
+  Lemma~\ref{lem:spanner-from-to-split}); the edge count follows the recurrence
+  defining $\mathrm{spannerBound}$.
+\end{proof}
 
 \begin{definition}[One-sided spanner bound]
   \label{def:one-sided-spanner-bound}
@@ -417,8 +669,9 @@ the source with another target can be dismounted at the cost of two edges.
   \leanok
   $f$ \emph{bounds the one-sided spanners of temporal bi-cliques} (Angrick et
   al.'s $\mathcal{D}(n) \le f(n)$, SAND 2025 \S~4.1) if every finite simple
-  temporal bi-clique with balanced nonempty parts of size $n$ admits a
-  one-sided spanner from the source to the target with at most $f(n)$ edges.
+  temporal bi-clique, with symmetric ambient graph and bi-clique, and with
+  balanced nonempty parts of size $n$, admits a symmetric one-sided spanner
+  from the source to the target with at most $f(n)$ edges.
 \end{definition}
 
 \begin{lemma}[$\mathrm{spannerBound}$ is a one-sided spanner bound]
@@ -431,6 +684,11 @@ the source with another target can be dismounted at the cost of two edges.
   bi-cliques.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  Apply Theorem~\ref{thm:exists-spanner-from-to-ncard-le} with $|S| = |T|$, so the term $2(|T|-|S|)$ vanishes.
+\end{proof}
+
 \begin{theorem}[$O(n \log n)$ one-sided spanners --- SAND \S~4.1]
   \label{thm:exists-isBigO-one-sided-spanner-bound}
   \uses{thm:spanner-bound-isBigO,lem:one-sided-spanner-bound-spannerBound}
@@ -440,6 +698,11 @@ the source with another target can be dismounted at the cost of two edges.
   a one-sided spanner bound that is $O(n \log n)$.
 \end{theorem}
 
+\begin{proof}
+  \leanok
+  Take $f = \mathrm{spannerBound}$.
+\end{proof}
+
 \section*{Spanners of temporal cliques (SAND 2025, \S~4.1)}
 
 \begin{theorem}[Mounting back, mixed $\{1,2\}$-hop case]
@@ -447,26 +710,39 @@ the source with another target can be dismounted at the cost of two edges.
   \uses{def:two-hop-dismountable,def:dismount-mount,thm:dismountability}
   \lean{TemporalGraph.Subgraph.exists_isSpannerOf_of_twoHopDismountable}
   \leanok
-  A $\{1,2\}$-hop dismountable clique $H$ has a vertex $x$ such that every
-  spanner of $H - x$ extends to a spanner of $H$ with at most $4$ more edges.
+  Let $G$ be symmetric and loopless. A symmetric $\{1,2\}$-hop dismountable
+  clique $H$ has a vertex $x$ such that every symmetric spanner $H'$ of $H - x$
+  extends to a symmetric spanner of $H$ with at most $4$ more edges.
   On each side of $x$ (earliest and latest) the witness of dismountability
   gives a set of $1$ or $2$ edges, which are added at once. The four
   combinations of $1$ or $2$ hops are thus handled uniformly, and only the
   count takes the worst case.
 \end{theorem}
 
+\begin{proof}
+  \leanok
+  \uses{lem:reachable-of-earliestEdge,lem:reachable-of-latestEdge}
+  Each side of the two-hop condition yields a set of at most two edges of $H$ (the edge $yx$, or the two edges $yz$ and $zx$) such that, in any symmetric $K$ between these edges and $H$, everything reachable from $y$ is reachable from $x$ (Lemma~\ref{lem:reachable-of-earliestEdge}); dually on the latest side. Given a spanner $H'$ of $H - x$, take $K = H' \sqcup \mathrm{fromEdgeSet}(E_o \cup E_i)$. It is below $H$, has the vertex set of $H$ and at most four more edges. Pairs not involving $x$ are reachable in $H'$ ($H - x$ is a clique); from $x$, go as $y$ does, and to $x$, as one goes to $z$.
+\end{proof}
+
 \begin{theorem}[Spanner of a non-dismountable clique]
   \label{thm:spanner-of-not-two-hop-dismountable}
-  \uses{lem:vminus-vplus-matchings,lem:vzero-empty,thm:tc-of-spanner-from-to,
-    thm:exists-spanner-from-to-ncard-le}
+  \uses{lem:vminus-vplus-matchings,lem:vzero-empty,cor:biclique-of-not-two-hop,
+    thm:tc-of-spanner-from-to,thm:exists-spanner-from-to-ncard-le}
   \lean{TemporalGraph.Subgraph.exists_isSpannerOf_of_not_twoHopDismountable}
   \leanok
-  A finite simple proper temporal clique $H$ that is not $\{1,2\}$-hop
-  dismountable has a spanner with at most
+  Let $G$ be symmetric and loopless. A finite, nontrivial, simple, proper,
+  symmetric temporal clique $H$ that is not $\{1,2\}$-hop dismountable has a
+  symmetric spanner with at most
   $\mathrm{spannerBound}(|V^+|) + |V^+| + |V^-|$ edges. It is the union of a
   one-sided spanner from $V^+$ to $V^-$ of the bi-clique between $V^-$ and
   $V^+$ and of the matchings $M^-$ and $M^+$.
 \end{theorem}
+
+\begin{proof}
+  \leanok
+  Here $V^0 = \emptyset$ and $|V^+| = |V^-|$, and the bi-clique between $V^-$ and $V^+$ has a one-sided spanner $S$ from $V^+$ to $V^-$ with at most $\mathrm{spannerBound}(|V^+|)$ edges (Theorem~\ref{thm:exists-spanner-from-to-ncard-le}). Choose the matchings $M^-$ (earliest edges into $V^-$) and $M^+$ (latest edges into $V^+$) of Lemma~\ref{lem:vminus-vplus-matchings}. Then $S \sqcup M^- \sqcup M^+$ is below $H$, spans $\mathrm{Verts}(H) = V^- \cup V^+$, has the stated number of edges, and is temporally connected (Theorem~\ref{thm:tc-of-spanner-from-to}), which is enough since $H$ is a clique.
+\end{proof}
 
 \begin{theorem}[Spanners of temporal cliques]
   \label{thm:clique-spanner-ncard-le}
@@ -474,20 +750,22 @@ the source with another target can be dismounted at the cost of two edges.
     lem:spanner-bound-closed-form}
   \lean{TemporalGraph.Subgraph.exists_isSpannerOf_ncard_le}
   \leanok
-  Every finite simple proper temporal clique on $n$ vertices admits a spanner
-  with at most $2n\lceil\log_2 n\rceil + 4n$ edges. The proof is by strong
-  induction on $n$:
-  \begin{itemize}
-    \item if $H$ is $\{1,2\}$-hop dismountable, dismount a vertex, recurse,
-      and mount it back with at most $4$ edges;
-    \item otherwise, $n = 2|V^+|$ and the bi-clique case applies.
-  \end{itemize}
+  Let $G$ be symmetric and loopless and $H$ a finite, simple, proper,
+  symmetric temporal clique on $n$ vertices. Then $H$ admits a symmetric
+  spanner with at most $2n\lceil\log_2 n\rceil + 4n$ edges.
 \end{theorem}
 
-\begin{theorem}[$O(n \log n)$ spanners of temporal cliques --- SAND \S~4.1]
-  \label{thm:exists-isBigO-clique-spanner}
-  \uses{thm:clique-spanner-ncard-le}
-  \lean{TemporalGraph.Subgraph.exists_isBigO_isSpannerOf}
+\begin{proof}
   \leanok
-  Temporal cliques admit spanners of size $O(n \log n)$.
-\end{theorem}
+  Strong induction on $n$. With at most one vertex, $H$ has no edge and is its
+  own spanner. Otherwise:
+  \begin{itemize}
+    \item if $H$ is $\{1,2\}$-hop dismountable, dismount a vertex, recurse,
+      and mount it back with at most $4$ edges
+      (Theorem~\ref{thm:spanner-of-two-hop-dismountable});
+    \item otherwise, $n = 2|V^+|$ (since $V^0 = \emptyset$ and
+      $|V^-| = |V^+|$) and the bi-clique case applies
+      (Theorem~\ref{thm:spanner-of-not-two-hop-dismountable}, with the closed
+      form of Lemma~\ref{lem:spanner-bound-closed-form}).
+  \end{itemize}
+\end{proof}

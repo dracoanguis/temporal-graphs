@@ -2,9 +2,13 @@
 \label{chap:walks}
 
 A \emph{temporal walk} is a sequence of edges whose times are
-non-decreasing; a \emph{non-empty} temporal walk additionally requires at
-least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
-\texttt{TemporalGraph/NonemptyTemporalWalk.lean}.
+non-decreasing (a \emph{non-strict} walk: several edges may be crossed at the
+same time); a \emph{non-empty} temporal walk additionally requires at
+least one edge. A walk is \emph{strict} when its times increase strictly.
+Walks are formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
+\texttt{TemporalGraph/NonemptyTemporalWalk.lean} (which also define strictness).
+Reachability, strict reachability and temporal connectivity live in
+\texttt{TemporalGraph/Connectivity/Basic.lean}.
 
 \begin{definition}[Temporal walk]
   \label{def:temporal-walk}
@@ -29,9 +33,9 @@ least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
   \lean{TemporalGraph.NonemptyTemporalWalk.arcs}
   \leanok
   The \emph{length} of a temporal walk is its number of edges; its
-  \emph{support} is the list of vertices it visits, in order; its
+  \emph{support} is the list of vertices it visits (stored from the end vertex back to the start); its
   \emph{arcs} is the list of directed edges $(x_i, x_{i+1}, t_{i+1})$ it
-  traverses.
+  traverses (stored last arc first).
 \end{definition}
 
 \begin{lemma}[Non-decreasing time]
@@ -44,6 +48,11 @@ least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
   $n \le m$.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  Induction on the walk: a one-edge walk starts and ends at the same time, and each further edge has a time at least that of the previous end.
+\end{proof}
+
 \begin{definition}[Reachability, temporal connectivity]
   \label{def:reachable}
   \uses{def:temporal-walk}
@@ -53,10 +62,11 @@ least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
   \lean{TemporalGraph.Subgraph.TemporallyConnectedSubgraph}
   \lean{TemporalGraph.Reachable.mono}
   \leanok
-  $y$ is \emph{reachable} from $x$ in $G$ if there is a non-empty temporal
-  walk from $x$ to $y$ (at some times $n \le m$). A set $S$ of vertices is
+  $y$ is \emph{reachable} from $x$ in $G$ if there is a temporal walk from $x$ to
+  $y$ (at some times $n \le m$); the walk may be empty, so every vertex reaches
+  itself. A set $S$ of vertices is
   \emph{temporally connected} in $G$ (denoted $G.\mathrm{TemporallyConnected}\,S$)
-  if every pair of vertices in $S$ is mutually reachable. $G$ \emph{is temporally
+  if every vertex of $S$ reaches every vertex of $S$. $G$ \emph{is temporally
   connected} (shorthand $G.\mathrm{TemporallyConnectedGraph}$) if all of $V$
   is temporally connected; a sub-temporal-graph $H$ is temporally connected
   (shorthand $H.\mathrm{TemporallyConnectedSubgraph}$) if all of $\mathrm{Verts}(H)$
@@ -106,8 +116,15 @@ least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
   \uses{def:reachable,def:is-simple-clique}
   \lean{TemporalGraph.temporallyConnected_of_isClique}
   \leanok
-  Every temporal clique is temporally connected.
+  If $S$ forms a clique in $G$ (Definition~\ref{def:is-simple-clique}), then $S$ is
+  temporally connected in $G$.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  \uses{def:reachable}
+  Two distinct vertices of $S$ are joined by an arc, which is a one-edge walk; a vertex reaches itself by the empty walk.
+\end{proof}
 
 \begin{lemma}[Reachability through an earliest edge]
   \label{lem:reachable-of-earliestEdge}
@@ -124,6 +141,12 @@ least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
   everything $x$ reaches, via $z \to y \to x \to \cdots$.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  \uses{lem:nondecreasing-time}
+  Take a walk from $x$ to $z$. If it is empty, the reversed edge $y \to x$ at time $n$ (by symmetry) is a walk to $x = z$. Otherwise prepend this edge to the walk: it is admissible because $n$ is at most the time of every edge at $x$, in particular of the first edge of the walk. For the extended version, prepend $z \to y$ at time $m \le n$ followed by $y \to x$ at time $n$.
+\end{proof}
+
 \begin{lemma}[Reachability through a latest edge]
   \label{lem:reachable-of-latestEdge}
   \uses{def:reachable,def:earliest-latest-neighbor}
@@ -136,3 +159,9 @@ least one edge. Formalized in \texttt{TemporalGraph/TemporalWalk.lean} and
   has an edge to some vertex $z$ at a time $m \ge n$, then everything that
   reaches $x$ also reaches $z$, via $\cdots \to x \to y \to z$.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  \uses{lem:nondecreasing-time}
+  Take a walk from $z$ to $x$. If it is empty, the edge $x \to y$ at time $n$ is a walk. Otherwise append this edge to the walk: it is admissible because $n$ is at least the time of every edge at $x$, in particular of the last edge of the walk. For the extended version, append $x \to y$ at time $n$ followed by $y \to z$ at time $m \ge n$.
+\end{proof}

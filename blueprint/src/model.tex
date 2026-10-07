@@ -4,7 +4,9 @@
 This chapter fixes the basic model: a temporal graph is a relation labeled by
 discrete time, and we recall the handful of predicates on such a relation
 (symmetry, looplessness, simplicity, being a clique) that the rest of the
-library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
+library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}; the
+bipartite section (Section~\ref{sec:bipartite}: bipartiteness, restriction to the arcs
+between two sets, bi-cliques) is in \texttt{TemporalGraph/Bipartite.lean}.
 
 \begin{definition}[Temporal graph]
   \label{def:temporal-graph}
@@ -35,8 +37,9 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   \lean{TemporalGraph.IsClique}
   \lean{TemporalGraph.IsCliqueGraph}
   \leanok
-  $G$ \emph{is simple} if between any two vertices there is at most one edge
-  at a given time (i.e.\ $\mathrm{Adj}_G(x,y,n) \wedge \mathrm{Adj}_G(x,y,m)
+  $G$ \emph{is simple} if each ordered pair of vertices is joined at most
+  at one time: there is at most one time $n$ with $\mathrm{Adj}_G(x,y,n)$
+  (i.e.\ $\mathrm{Adj}_G(x,y,n) \wedge \mathrm{Adj}_G(x,y,m)
   \Rightarrow n = m$). A set $S$ of vertices \emph{forms a clique} in $G$ if
   every pair of distinct vertices in $S$ is joined by an edge of $G$ at some
   time; $G$ \emph{is a clique graph} (\texttt{IsCliqueGraph}) when $S$ is the set of all vertices.
@@ -62,6 +65,11 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   are pairwise adjacent in $G$'s footprint (i.e.\ the footprint restricted to
   $S$ is complete).
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  Direct from the definitions: both sides say that distinct vertices of $S$ are joined by an arc at some time.
+\end{proof}
 
 \begin{definition}[Proper, happy]
   \label{def:is-proper-happy}
@@ -125,6 +133,11 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   resp.\ happy): each of these predicates only restricts the edges that are
   present, so it is inherited by any spanning sub-temporal-graph.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  An arc of $G$ is an arc of $H$, so two arcs of $G$ violating simplicity (resp.\ properness) would violate it in $H$. Happiness is the conjunction of the two.
+\end{proof}
 
 \begin{definition}[General sub-temporal-graph]
   \label{def:is-subgraph-of}
@@ -211,10 +224,12 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   \label{def:between}
   \uses{def:temporal-graph}
   \lean{TemporalGraph.between}
+  \lean{TemporalGraph.Subgraph.between}
   \leanok
   The temporal graph \emph{between} two sets of vertices $s$ and $t$ is the
   restriction of $G$ to arcs that connect a vertex in $s$ to a vertex in $t$
-  (in either direction).
+  (in either direction). For a sub-temporal-graph $H$, $H.\mathrm{between}\ s\ t$
+  is the same restriction of $H$, keeping the vertex set of $H$.
 \end{definition}
 
 \begin{definition}[Temporal bi-clique]
@@ -248,6 +263,11 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   Mathlib's \texttt{SimpleGraph.IsBipartiteWith}.
 \end{lemma}
 
+\begin{proof}
+  \leanok
+  Both sides say that $s$ and $t$ are disjoint and that every adjacent pair goes from one part to the other. Adjacency in the simple footprint is $\exists n,\ \mathrm{Adj}_G(x,y,n)$, so the two conditions unfold to the same statement.
+\end{proof}
+
 \begin{lemma}[A bi-clique part reaches the other]
   \label{lem:reachable-of-isBicliqueWith}
   \uses{def:is-biclique,def:reachable}
@@ -256,6 +276,11 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   If $H$ is a bi-clique with witness $(s, t)$, every vertex of $s$ reaches
   every vertex of $t$ in $H$: they are joined directly by an edge.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  The bi-clique property gives an edge from $x$ to $y$ at some time $n$, which is a one-edge temporal walk.
+\end{proof}
 
 \begin{lemma}[Bi-cliques under induce and deleteVerts]
   \label{lem:isBicliqueWith-induce-deleteVerts}
@@ -269,3 +294,8 @@ library builds on. Formalized in \texttt{TemporalGraph/Basic.lean}.
   split step). Dually, deleting any set $u$ of vertices from $H$ leaves a
   bi-clique with witness $(s \setminus u, t \setminus u)$.
 \end{lemma}
+
+\begin{proof}
+  \leanok
+  Disjointness restricts to subsets. An arc of the induced (resp.\ reduced) graph is an arc of $H$ with both endpoints kept, so it crosses between the parts, and the disjointness of $s$ and $t$ rules out the wrong orientation. The edges required between the kept parts are those of $H$, whose endpoints are kept.
+\end{proof}

@@ -195,9 +195,9 @@ lemma deleteVerts_subproblem {H : Subgraph G} {s t : Set V} {x : V} (h₀ : H.Is
 and `H''` is a symmetric one-sided spanner of `H` without `x` from `s` to `t \ {x}`, then putting
 `x` back with its two delegation edges yields a symmetric one-sided spanner of `H` from `s` to `t`,
 with at most two more edges. -/
-lemma isSpannerFromTo_of_dismount {H : Subgraph G} [G.IsSymm] [H.IsSymm] {s t : Set V} {x : V}
-    (h₀ : H.IsBicliqueWith s t) (h₁ : H.OneSidedDismountable s t x)
-    {H'' : Subgraph G} [H''.IsSymm] (h₂ : H''.IsSpannerFromTo (H.deleteVerts {x}) s (t \ {x})) :
+lemma isSpannerFromTo_of_dismount {H H'' : Subgraph G} [G.IsSymm] [H.IsSymm] [H''.IsSymm]
+    {s t : Set V} {x : V} (h₀ : H.IsBicliqueWith s t) (h₁ : H.OneSidedDismountable s t x)
+    (h₂ : H''.IsSpannerFromTo (H.deleteVerts {x}) s (t \ {x})) :
     ∃ H' : Subgraph G, H'.IsSymm ∧ H'.IsSpannerFromTo H s t ∧
       H'.edgeSet.ncard ≤ H''.edgeSet.ncard + 2 := by
   obtain ⟨hx, x', hx', hne, y, hy, n, m, hlatest, hadj, hle⟩ := h₁
@@ -213,7 +213,7 @@ lemma isSpannerFromTo_of_dismount {H : Subgraph G} [G.IsSymm] [H.IsSymm] {s t : 
 /-- SAND 2025, §4.1 (split step): symmetric one-sided spanners of the two source-halves `s₁`,
 `s₂` combine, by union, into a symmetric one-sided spanner of `H` from `s₁ ∪ s₂` to `t`, with at
 most `k₁ + k₂` edges. -/
-lemma isSpannerFromTo_of_split {H H₁ H₂ : Subgraph G} {s t s₁ s₂ : Set V} [H₁.IsSymm] [H₂.IsSymm]
+lemma isSpannerFromTo_of_split {H H₁ H₂ : Subgraph G} [H₁.IsSymm] [H₂.IsSymm] {s t s₁ s₂ : Set V}
     (h₀ : H.IsBicliqueWith s t) (h₁ : s ∪ t ⊆ H.verts) (h₂ : s₁ ⊆ s) (h₃ : s₂ ⊆ s)
     (h₄ : H₁.IsSpannerFromTo (H.induce (s₁ ∪ t)) s₁ t)
     (h₅ : H₂.IsSpannerFromTo (H.induce (s₂ ∪ t)) s₂ t) :

@@ -3,8 +3,10 @@ Copyright (c) 2026 Ethan Bargaud-Arm. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ethan Bargaud-Arm
 -/
-import TemporalGraph.Init
-import Mathlib
+module
+
+public import TemporalGraph.Init
+public import Mathlib
 
 /-!
 # Temporal graphs
@@ -50,6 +52,8 @@ and its clean characterization `mem_edgeSet` needs `[G.IsSymm]` (the uncondition
 * Casteigts, Peters & Schoeters, *Temporal Cliques Admit Sparse Spanners*, ICALP 2019 / JCSS 2021
   — the original source of the dismountability technique.
 -/
+
+@[expose] public section
 
 macro (name := aesop_temporal_graph) "aesop_temporal_graph" c:Aesop.tactic_clause* : tactic =>
   `(tactic|

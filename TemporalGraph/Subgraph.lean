@@ -240,17 +240,17 @@ lemma isSymm_iff_coe {H : Subgraph G} : H.IsSymm ↔ H.coe.IsSymm := by
       (h.symm n).symm (⟨x, H.edge_vert h'⟩) (⟨y, H.edge_vert' h'⟩) h'
 
 -- `IsSimple` is no longer redefined here; `H.IsSimple` resolves to `TemporalGraph.IsSimple
--- H.toTemporalGraph`, whose binders are EXPLICIT (unlike the old implicit-binder local
--- definition), so call sites below must supply `x y n m` explicitly.
+-- H.toTemporalGraph`, a curried statement with strict-implicit binders: apply it to the two
+-- adjacencies, `h₀ h₁ h₂`.
 
 /-- A subgraph is simple iff its subtype view `H.coe` is. -/
 lemma isSimple_iff_coe {H : Subgraph G} : H.IsSimple ↔ H.coe.IsSimple := by
   unfold TemporalGraph.IsSimple
   constructor
-  · intro h _ _ _ _ h'
-    exact h _ _ _ _ h'
-  · intro h x y _ _ h'
-    exact h ⟨x, H.edge_vert h'.1⟩ ⟨y, H.edge_vert' h'.1⟩ _ _ h'
+  · intro h _ _ _ _ h₁ h₂
+    exact h h₁ h₂
+  · intro h x y _ _ h₁ h₂
+    exact @h ⟨x, H.edge_vert h₁⟩ ⟨y, H.edge_vert' h₁⟩ _ _ h₁ h₂
 
 /-- `H` is a clique on its own vertex set. Shorthand for `H.IsClique H.verts`. Deliberately not
 named `IsClique`: that would shadow the inherited `TemporalGraph.IsClique`, so that
@@ -268,18 +268,17 @@ lemma isClique_iff_coe {H : Subgraph G} : H.IsCliqueSubgraph ↔ H.coe.IsCliqueG
       (fun heq ↦ hne (congrArg Subtype.val heq))
 
 -- `IsProper` is no longer redefined here; `H.IsProper` resolves to `TemporalGraph.IsProper
--- H.toTemporalGraph`, whose binders are EXPLICIT, so call sites below supply `x y z n` explicitly.
+-- H.toTemporalGraph`, a curried statement with strict-implicit binders.
 
 /-- A subgraph is proper iff its subtype view `H.coe` is. -/
 lemma isProper_iff_coe {H : Subgraph G} : H.IsProper ↔ H.coe.IsProper := by
   unfold TemporalGraph.IsProper
   constructor
-  · intro h x y z n h'
-    have := h x y z n h'
-    rwa [Subtype.val_inj] at this
-  · intro h x y z n h'
-    have := h ⟨x, H.edge_vert h'.1⟩ ⟨y, H.edge_vert' h'.1⟩ ⟨z, H.edge_vert' h'.2⟩ n h'
-    rwa [← Subtype.val_inj] at this
+  · intro h x y z n h₁ h₂
+    exact Subtype.ext (h h₁ h₂)
+  · intro h x y z n h₁ h₂
+    exact congrArg Subtype.val
+      (@h ⟨x, H.edge_vert h₁⟩ ⟨y, H.edge_vert' h₁⟩ ⟨z, H.edge_vert' h₂⟩ n h₁ h₂)
 
 -- `IsHappy` is no longer redefined here; `H.IsHappy` resolves to `TemporalGraph.IsHappy
 -- H.toTemporalGraph`.
@@ -326,7 +325,7 @@ lemma finite_incidenceSet_of_finite_simple {H : Subgraph G} [h : Finite H.verts]
     simp only at heq
     subst heq
     congr
-    exact h₁ x y n m ⟨hyn, hzm⟩
+    exact h₁ hyn hzm
   · exact h
 
 /-- Noncomputable: obtained from `finite_incidenceSet_of_finite_simple` via `Classical.choice`.
@@ -815,7 +814,7 @@ lemma earliestEdge_lt_of_proper {H : Subgraph G} {z : V} {m : ℕ}
   apply hle.lt_of_ne
   by_contra h
   rw [←h] at h₂
-  absurd (h₀ x y z n ⟨h₁.left, h₂⟩)
+  absurd (h₀ h₁.left h₂)
   exact h₄
 
 /-- `y` is `⊤ : Subgraph G`'s earliest neighbor of `x` iff it is `G`'s. -/
@@ -1061,9 +1060,9 @@ lemma edgeSetToFootprintEdgeSet_injective (H : Subgraph G) [H.IsSymm]
   · apply Sym2.ext_iff.mp h
   · rcases Sym2.eq_iff.mp (hp.symm.trans (h.trans hp')) with heq | heq
     · rw [heq.1.symm, heq.2.symm] at hadj'
-      exact h₀ a b x.1.2 y.1.2 ⟨hadj, hadj'⟩
+      exact h₀ hadj hadj'
     · rw [heq.1.symm, heq.2.symm] at hadj'
-      exact h₀ a b x.1.2 y.1.2 ⟨hadj, H.adj_symm hadj'⟩
+      exact h₀ hadj (H.adj_symm hadj')
 
 /-- For a symmetric, simple subgraph, `edgeSetToFootprintEdgeSet` is a bijection between the
 edge set and the footprint edge set. -/

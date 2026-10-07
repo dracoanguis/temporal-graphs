@@ -199,7 +199,7 @@ def simpleFootprint (G : TemporalGraph V) (hs : G.IsSymm) (hl : G.IsLoopless) : 
 /-- `G` is simple: any two vertices are joined by an arc at no more than one time. -/
 @[grind =]
 def IsSimple (G : TemporalGraph V) : Prop :=
-  ∀ (x y : V) (n m : ℕ), G.Adj x y n ∧ G.Adj x y m → n=m
+  ∀ ⦃x y : V⦄ ⦃n m : ℕ⦄, G.Adj x y n → G.Adj x y m → n = m
 
 /-- `S` is a temporal clique of `G`: every two distinct vertices of `S` are joined by an arc at
 some time (Mathlib's `SimpleGraph.IsClique`, with time). `G.IsClique Set.univ` is a clique
@@ -220,7 +220,7 @@ abbrev IsCliqueGraph (G : TemporalGraph V) : Prop := G.IsClique Set.univ
 /-- `G` is proper: at any given time, a vertex has at most one out-neighbor. -/
 @[grind =]
 def IsProper (G : TemporalGraph V) : Prop :=
-  ∀ x y z : V, ∀ n : ℕ, G.Adj x y n ∧ G.Adj x z n → y = z
+  ∀ ⦃x y z : V⦄ ⦃n : ℕ⦄, G.Adj x y n → G.Adj x z n → y = z
 
 /-- `G` is happy: both simple and proper. -/
 def IsHappy (G : TemporalGraph V) : Prop :=
@@ -298,11 +298,11 @@ section Monotonicity
 
 /-- A spanning subgraph of a simple graph is simple. -/
 theorem IsSimple.mono {G H : TemporalGraph V} (h₀ : H.IsSimple) (h₁ : G ≤ H) : G.IsSimple :=
-  fun _ _ _ _ ⟨hn, hm⟩ ↦ h₀ _ _ _ _ ⟨h₁ hn, h₁ hm⟩
+  fun _ _ _ _ hn hm ↦ h₀ (h₁ hn) (h₁ hm)
 
 /-- A spanning subgraph of a proper graph is proper. -/
 theorem IsProper.mono {G H : TemporalGraph V} (h₀ : H.IsProper) (h₁ : G ≤ H) : G.IsProper :=
-  fun _ _ _ _ ⟨hy, hz⟩ ↦ h₀ _ _ _ _ ⟨h₁ hy, h₁ hz⟩
+  fun _ _ _ _ hy hz ↦ h₀ (h₁ hy) (h₁ hz)
 
 /-- A spanning subgraph of a happy graph is happy. -/
 theorem IsHappy.mono {G H : TemporalGraph V} (h₀ : H.IsHappy) (h₁ : G ≤ H) : G.IsHappy :=

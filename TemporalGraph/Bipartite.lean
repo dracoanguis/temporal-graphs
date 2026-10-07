@@ -209,7 +209,7 @@ theorem IsSimple.between (h : G.IsSimple) (s t : Set V) : (G.between s t).IsSimp
 /-- Restricting to the arcs between two parts keeps properness: at most one destination per
 source and time. -/
 theorem IsProper.between (h : G.IsProper) (s t : Set V) : (G.between s t).IsProper :=
-  fun x y z n hyz ↦ h x y z n ⟨hyz.1.1, hyz.2.1⟩
+  fun _ _ _ _ hy hz ↦ h hy.1 hz.1
 
 end Between
 
@@ -344,20 +344,20 @@ theorem completeBipartite_isSimple (f : α → β → ℕ) : (completeBipartite 
 /-- `completeBipartite f` is proper when `f` is injective in each argument separately. -/
 theorem completeBipartite_isProper {f : α → β → ℕ} (h₁ : ∀ a, (f a).Injective)
     (h₂ : ∀ b, (f · b).Injective) : (completeBipartite f).IsProper := by
-  intro x y z n h
-  match x, y, z, h with
-  | .inl a, .inr b, .inr b', ⟨h1, h2⟩ =>
+  intro x y z n h1 h2
+  match x, y, z, h1, h2 with
+  | .inl a, .inr b, .inr b', h1, h2 =>
     have h1' : f a b = n := h1
     have h2' : f a b' = n := h2
     exact congrArg Sum.inr (h₁ a (h1'.trans h2'.symm))
-  | .inr b, .inl a, .inl a', ⟨h1, h2⟩ =>
+  | .inr b, .inl a, .inl a', h1, h2 =>
     have h1' : f a b = n := h1
     have h2' : f a' b = n := h2
     exact congrArg Sum.inl (h₂ b (h1'.trans h2'.symm))
-  | .inl _, .inl _, _, ⟨h1, _⟩ => exact h1.elim
-  | .inr _, .inr _, _, ⟨h1, _⟩ => exact h1.elim
-  | .inl _, .inr _, .inl _, ⟨_, h2⟩ => exact h2.elim
-  | .inr _, .inl _, .inr _, ⟨_, h2⟩ => exact h2.elim
+  | .inl _, .inl _, _, h1, _ => exact h1.elim
+  | .inr _, .inr _, _, h1, _ => exact h1.elim
+  | .inl _, .inr _, .inl _, _, h2 => exact h2.elim
+  | .inr _, .inl _, .inr _, _, h2 => exact h2.elim
 
 end CompleteBipartite
 

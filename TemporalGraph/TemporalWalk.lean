@@ -170,11 +170,11 @@ theorem exists_isStrict [G.IsSymm] {x y : V} {n m : ℕ} (h₀ : G.IsProper)
       cases q with
       | Single h₂ =>
         -- the walk is `x → y → z` at a single time: a round trip, so `z = x`
-        obtain rfl := h₀ y x z n' ⟨h₂.symm, h⟩
+        obtain rfl := h₀ h₂.symm h
         exact ⟨n', n', .Empty, trivial, hn, le_rfl⟩
       | Step q h₂ h₃ =>
         -- the last two arcs `w → y → z` share their time: a round trip, so `z = w`
-        obtain rfl := h₀ _ _ z m' ⟨h₂.symm, h⟩
+        obtain rfl := h₀ h₂.symm h
         exact ⟨n', _, .Nonempty q, hq.2, hn, h₃⟩
 
 end NonemptyTemporalWalk

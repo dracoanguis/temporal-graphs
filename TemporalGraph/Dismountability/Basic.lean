@@ -183,55 +183,24 @@ lemma nonempty_vplus_inter_vminus_iff_dismountable (H : Subgraph G) :
 
 /-- SAND 2025, Lemma 3.1: for a clique that is not dismountable, `vminus`, `vplus` and `vzero`
 partition `H.verts` into a disjoint cover. -/
-lemma partition_of_not_dismountable {H : Subgraph G} (h : H.IsCliqueSubgraph ∧ ¬H.Dismountable) :
+lemma partition_of_not_dismountable {H : Subgraph G} (h₀ : H.IsCliqueSubgraph)
+    (h₁ : ¬H.Dismountable) :
     ∀ x ∈ H.verts, ∃! s ∈ ({H.vminus, H.vplus, H.vzero} : Set (Set V)), x ∈ s := by
-  have ⟨hClique, hnDis⟩ := h
-  conv at hnDis => rhs ; rw [←nonempty_vplus_inter_vminus_iff_dismountable]
-  push Not at hnDis
-  have hnDis := hnDis hClique
-  simp only [Set.ext_iff, Set.mem_inter_iff, Set.mem_empty_iff_false, iff_false] at hnDis
-  have hnDis' := hnDis
-  simp only [And.comm] at hnDis'
-  simp only [not_and] at hnDis hnDis'
-  have hvm : H.vminus ⊆ (Set.univ : Set V) := Set.subset_univ H.vminus
-  have hvz : H.vzero ⊆ (Set.univ : Set V) := Set.subset_univ H.vzero
-  have hvp : H.vplus ⊆ (Set.univ : Set V) := Set.subset_univ H.vplus
-  intro u
-  by_cases hempty : (Set.univ : Set V) = ∅
-  · intro _
-    use H.vminus
-    rw [hempty] at hvm hvp hvz
-    have hvmeqe := Set.eq_empty_of_subset_empty hvm
-    have hvpeqe := Set.eq_empty_of_subset_empty hvp
-    have hvzeqe := Set.eq_empty_of_subset_empty hvz
-    rw [←hempty] at hvmeqe hvpeqe hvzeqe
-    simp ; constructor
-    <;> simp [hvpeqe, hvzeqe, hvmeqe]
-  · by_cases huin : u ∈ H.vzero
-    · intro _
-      use H.vzero ; simp only [Set.mem_insert_iff, Set.mem_singleton_iff, or_true, true_and,
-      and_imp, forall_eq_or_imp, forall_eq, implies_true, and_true]
-      constructor ; assumption' ; constructor
-      <;> intro huin' <;> absurd huin' <;> simp [(vzero_mem u huin)]
-    · by_cases huin' : u ∈ H.vminus
-      · intro _
-        use H.vminus ; simp only [Set.mem_insert_iff, Set.mem_singleton_iff, true_or, true_and,
-        and_imp, forall_eq_or_imp, implies_true, forall_eq]
-        constructor ; assumption' ; constructor
-        <;> intro huin'' <;> absurd huin''
-        · exact hnDis' u huin'
-        · trivial
-      · by_cases huin'' : u ∈ H.vplus
-        · intro _
-          use H.vplus ; simp only [Set.mem_insert_iff, Set.mem_singleton_iff, true_or, or_true,
-          true_and, and_imp, forall_eq_or_imp, implies_true, forall_eq]
-          split_ands
-          assumption'
-          all_goals intro _ ; contradiction
-        · intro hin
-          push Not at hempty ; rw [Set.nonempty_def] at hempty
-          have hunin : u ∉ H.verts := by rw [←H.vunion_eq_univ] ; simp [huin, huin', huin'']
-          contradiction
+  intro x hx
+  -- a vertex in both `V⁻` and `V⁺` would make `H` dismountable
+  have hd : x ∈ H.vminus → x ∉ H.vplus := fun hm hp ↦
+    h₁ ((nonempty_vplus_inter_vminus_iff_dismountable H).mp ⟨h₀, x, hp, hm⟩)
+  by_cases hm : x ∈ H.vminus
+  · refine ⟨H.vminus, ⟨by simp, hm⟩, ?_⟩
+    rintro s ⟨(rfl | rfl | rfl), hs⟩
+    exacts [rfl, absurd hs (hd hm), absurd hm (vzero_mem x hs).1]
+  by_cases hp : x ∈ H.vplus
+  · refine ⟨H.vplus, ⟨by simp, hp⟩, ?_⟩
+    rintro s ⟨(rfl | rfl | rfl), hs⟩
+    exacts [absurd hs hm, rfl, absurd hp (vzero_mem x hs).2]
+  · refine ⟨H.vzero, ⟨by simp, hx, by simp [hm, hp]⟩, ?_⟩
+    rintro s ⟨(rfl | rfl | rfl), hs⟩
+    exacts [absurd hs hm, absurd hs hp, rfl]
 
 end Partition
 
@@ -262,13 +231,10 @@ lemma twoHopDismountable_of_dismountable {H : Subgraph G} (h : H.Dismountable) :
     · exists α
     · exists β
 
-/-- A clique that is not `{1,2}`-hop dismountable is not dismountable. -/
-@[simp]
+/-- A subgraph that is not `{1,2}`-hop dismountable is not dismountable. -/
 lemma not_dismountable_of_not_twoHopDismountable {H : Subgraph G}
-    (h : H.IsCliqueSubgraph ∧ ¬H.TwoHopDismountable) :
-    ¬H.Dismountable := by
-  contrapose h
-  simp only [h, twoHopDismountable_of_dismountable, not_true_eq_false, and_false, not_false_eq_true]
+    (h₀ : ¬H.TwoHopDismountable) : ¬H.Dismountable :=
+  mt twoHopDismountable_of_dismountable h₀
 
 /-- SAND 2025, Lemma 3.2: distinct vertices of `vplus` have distinct earliest neighbors. -/
 lemma vplus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} [H.IsSymm]
@@ -744,26 +710,26 @@ section Reciprocity
 /-- SAND 2025, Lemma 3.5 (Reciprocity), first statement: if `v u` occurs at time `n` as `v`'s
 earliest edge, every edge from `u` to a vertex of `vplus` occurs no earlier than `n`. -/
 lemma earliestEdge_reciprocity {H : Subgraph G} [H.IsSymm] {u v : V} {n : ℕ}
-    (h₀ : H.IsCliqueSubgraph) (h₁ : ¬H.TwoHopDismountable) (h : H.EarliestEdge v u n) :
+    (h₀ : H.IsCliqueSubgraph) (h₁ : ¬H.TwoHopDismountable) (h₂ : H.EarliestEdge v u n) :
     ∀ w ∈ H.vplus, ∀ j, H.Adj u w j → n ≤ j := by
   intro w hw j hj
   by_contra! hlt
   -- `w` reaches `v` in two hops, through `u` then `e⁻(v)`; and `w ∈ V⁺`
-  refine h₁ ⟨h₀, w, Or.inr ⟨v, u, n, j, ?_, h, hj, hlt.le⟩, Or.inl hw⟩
+  refine h₁ ⟨h₀, w, Or.inr ⟨v, u, n, j, ?_, h₂, hj, hlt.le⟩, Or.inl hw⟩
   rintro rfl
-  exact absurd (h.2 u j hj.symm) (by omega)
+  exact absurd (h₂.2 u j hj.symm) (by omega)
 
 /-- SAND 2025, Lemma 3.5 (Reciprocity), second statement: if `u v` occurs at time `n` as `u`'s
 latest edge, every edge from `v` to a vertex of `vminus` occurs no later than `n`. -/
 lemma latestEdge_reciprocity {H : Subgraph G} [H.IsSymm] {u v : V} {n : ℕ}
-    (h₀ : H.IsCliqueSubgraph) (h₁ : ¬H.TwoHopDismountable) (h : H.LatestEdge u v n) :
+    (h₀ : H.IsCliqueSubgraph) (h₁ : ¬H.TwoHopDismountable) (h₂ : H.LatestEdge u v n) :
     ∀ w ∈ H.vminus, ∀ j, H.Adj v w j → j ≤ n := by
   intro w hw j hj
   by_contra! hlt
   -- `w ∈ V⁻`; and `u` reaches `w` in two hops, through `e⁺(u)` then `v`
-  refine h₁ ⟨h₀, w, Or.inl hw, Or.inr ⟨u, v, n, j, ?_, h, hj, hlt.le⟩⟩
+  refine h₁ ⟨h₀, w, Or.inl hw, Or.inr ⟨u, v, n, j, ?_, h₂, hj, hlt.le⟩⟩
   rintro rfl
-  exact absurd (h.2 v j hj.symm) (by omega)
+  exact absurd (h₂.2 v j hj.symm) (by omega)
 
 end Reciprocity
 
@@ -775,13 +741,10 @@ lemma biclique_of_not_twoHopDismountable {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
     (h₀ : H.IsCliqueSubgraph) (h₁ : ¬H.TwoHopDismountable) :
     (H.between H.vminus H.vplus).IsBicliqueWith H.vminus H.vplus := by
-  apply IsClique.between_isBicliqueWith h₀ vminus_sub_verts vplus_sub_verts
-  apply Set.disjoint_iff_inter_eq_empty.mpr
-  have hnDis := not_dismountable_of_not_twoHopDismountable ⟨h₀, h₁⟩
-  conv at hnDis => rhs ; rw [←nonempty_vplus_inter_vminus_iff_dismountable]
-  push Not at hnDis
-  conv => lhs ; apply Set.inter_comm
-  apply hnDis h₀
+  refine IsClique.between_isBicliqueWith h₀ vminus_sub_verts vplus_sub_verts ?_
+  -- a vertex in both `V⁻` and `V⁺` would make `H` dismountable (Lemma 3.1)
+  exact Set.disjoint_left.mpr fun x hm hp ↦ not_dismountable_of_not_twoHopDismountable h₁
+    ((nonempty_vplus_inter_vminus_iff_dismountable H).mp ⟨h₀, x, hp, hm⟩)
 
 /-- SAND 2025, remark after Corollary 4.1: the bi-clique between `vminus` and `vplus` is always
 temporally connected. -/

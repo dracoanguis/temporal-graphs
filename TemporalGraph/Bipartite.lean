@@ -24,7 +24,8 @@ to the edges crossing a disjoint partition (`between`) is exactly a bi-clique on
 (`IsClique.between_isBicliqueWith`). This file develops the definitions, their basic API, the
 bridge to Mathlib's static bipartite graphs (`isBipartite_iff_simpleFootprint`), and a labelled
 complete bipartite graph constructor (`completeBipartite`); the reduction itself (SAND 2025,
-Corollary 4.1) is left to a future development.
+Corollary 4.1) is carried out in `Dismountability/Basic.lean`
+(`Subgraph.biclique_of_not_twoHopDismountable` and `Subgraph.between_TC_of_not_twoHopDismountable`).
 
 ## Main definitions
 
@@ -189,11 +190,13 @@ theorem between_isBipartiteWith (h : Disjoint s t) : (G.between s t).IsBipartite
   disjoint := h
   mem_of_adj _ _ _ hadj := hadj.2
 
+/-- Restricting to the arcs between two parts preserves symmetry. -/
 instance between_isSymm [G.IsSymm] : (G.between s t).IsSymm :=
   IsSymm.of_adj fun _ _ _ h ↦ by
     obtain ⟨hadj, hor⟩ := h
     exact ⟨hadj.symm, by tauto⟩
 
+/-- Restricting to the arcs between two parts preserves looplessness. -/
 instance between_isLoopless [G.IsLoopless] : (G.between s t).IsLoopless :=
   ⟨fun _ ↦ ⟨fun _ h ↦ G.irrefl h.1⟩⟩
 
@@ -213,9 +216,9 @@ section IsBicliqueWith
 
 variable {G : TemporalGraph V} {S s t : Set V} {v w : V}
 
-/-- `G` is a temporal bi-clique on parts `s` and `t` (SAND 2025, §1.1): it is bipartite with these
-parts, and every vertex of `s` has an arc, at some time, to every vertex of `t`. Two fields rather
-than `extends`, per the library's convention. -/
+/-- SAND 2025, §1.1: `G` is a temporal bi-clique on parts `s` and `t` when it is bipartite with
+these parts, and every vertex of `s` has an arc, at some time, to every vertex of `t`. Two fields
+rather than `extends`, per the library's convention. -/
 structure IsBicliqueWith (G : TemporalGraph V) (s t : Set V) : Prop where
   isBipartiteWith : G.IsBipartiteWith s t
   adj_of_mem ⦃v w : V⦄ : v ∈ s → w ∈ t → ∃ n, G.Adj v w n
@@ -239,7 +242,7 @@ theorem IsBicliqueWith.symm [G.IsSymm] (h : G.IsBicliqueWith s t) : G.IsBiclique
   adj_of_mem _ _ hv hw := h.adj_of_mem' hw hv
 
 /-- Restricting a clique to the arcs between two disjoint parts gives a temporal bi-clique on
-these parts (SAND 2025, the one-step link used by Corollary 4.1). -/
+these parts (the one-step link used by SAND 2025, Corollary 4.1). -/
 theorem IsClique.between_isBicliqueWith (hc : G.IsClique S) (hs : s ⊆ S) (ht : t ⊆ S)
     (h : Disjoint s t) : (G.between s t).IsBicliqueWith s t where
   isBipartiteWith := between_isBipartiteWith h
@@ -287,6 +290,7 @@ theorem completeBipartite_adj_inr_inr {f : α → β → ℕ} {b b' : β} {n : �
     ¬(completeBipartite f).Adj (.inr b) (.inr b') n :=
   id
 
+/-- A complete bipartite graph is symmetric. -/
 instance completeBipartite_isSymm (f : α → β → ℕ) : (completeBipartite f).IsSymm :=
   IsSymm.of_adj fun n x y h ↦ by
     match x, y with
@@ -295,6 +299,7 @@ instance completeBipartite_isSymm (f : α → β → ℕ) : (completeBipartite f
     | .inl _, .inl _ => exact h.elim
     | .inr _, .inr _ => exact h.elim
 
+/-- A complete bipartite graph is loopless. -/
 instance completeBipartite_isLoopless (f : α → β → ℕ) : (completeBipartite f).IsLoopless :=
   ⟨fun _ ↦ ⟨fun x h ↦ by
     match x with
@@ -360,8 +365,8 @@ section Subgraph
 variable {G : TemporalGraph V} {H : Subgraph G} {s t : Set V}
 
 /-- The subgraph of `H` restricted to the arcs crossing between `s` and `t` — the spanning
-restriction used by SAND 2025 when restricting the ambient graph to the edges between `V⁻` and
-`V⁺`. Follows the `induce` pattern (`Subgraph.induce`). -/
+restriction used in SAND 2025, §4 (Corollary 4.1) to restrict the graph to the edges between `V⁻`
+and `V⁺`. Follows the `induce` pattern (`Subgraph.induce`). -/
 def Subgraph.between (H : Subgraph G) (s t : Set V) : Subgraph G where
   verts := H.verts
   Adj v w n := H.Adj v w n ∧ (v ∈ s ∧ w ∈ t ∨ v ∈ t ∧ w ∈ s)
@@ -391,6 +396,7 @@ theorem Subgraph.toTemporalGraph_between :
     (H.between s t).toTemporalGraph = H.toTemporalGraph.between s t :=
   rfl
 
+/-- Restricting a symmetric subgraph to the arcs between two parts keeps it symmetric. -/
 instance Subgraph.between_isSymm [H.IsSymm] : (H.between s t).IsSymm :=
   IsSymm.of_adj fun _ _ _ h ↦ by
     obtain ⟨hadj, hor⟩ := h
@@ -418,7 +424,7 @@ lemma Subgraph.isBicliqueWith_subset_verts {s t : Set V}
     exact H.edge_vert' hadj
 
 /-- Restricting a bi-clique on `s` and `t` to `s' ∪ t`, for `s' ⊆ s`, gives a bi-clique on `s'` and
-`t`: the subproblem of SAND 2025, §4.1. -/
+`t`: the subproblem arising in the one-sided dismountability of SAND 2025, §4.1. -/
 lemma Subgraph.isBicliqueWith_induce {s t s' : Set V}
     (h₀ : H.IsBicliqueWith s t) (h₁ : s' ⊆ s) :
     (H.induce (s' ∪ t)).IsBicliqueWith s' t where
@@ -435,7 +441,8 @@ lemma Subgraph.isBicliqueWith_induce {s t s' : Set V}
     exact ⟨n, Or.inl hv, Or.inr hw, hn⟩
 
 /-- Deleting vertices from a temporal bi-clique keeps a bi-clique, on the two parts with those
-vertices removed (SAND 2025, §4.1, the `deleteVerts` counterpart of `isBicliqueWith_induce`). -/
+vertices removed (the `deleteVerts` counterpart of `isBicliqueWith_induce`, used in SAND 2025,
+§4.1). -/
 lemma Subgraph.isBicliqueWith_deleteVerts {s t u : Set V} (h₀ : H.IsBicliqueWith s t) :
     (H.deleteVerts u).IsBicliqueWith (s \ u) (t \ u) where
   isBipartiteWith :=

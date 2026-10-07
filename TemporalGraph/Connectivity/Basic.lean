@@ -29,12 +29,15 @@ Spanner notions (`Subgraph.IsSpanner`, `Subgraph.IsSpannerOf` and `Subgraph.IsTC
 defined at the `Subgraph` level, in `Connectivity/Subgraph.lean`.
 
 ## Main results
-* `reachable_of_self` : Every vertex reaches itself
+* `reachable_of_self`, `strictReachable_of_self` : Every vertex reaches itself
+* `StrictReachable.reachable` : Strict reachability implies reachability
 * `Reachable.mono`, `StrictReachable.mono` : Reachability is monotone along `≤`
 * `reachable_iff_strictReachable` : in a proper symmetric graph, strict and non-strict
   reachability coincide
 * `temporallyConnected_of_isClique` : Cliques are temporally connected
 * `reachable_of_earliestEdge`, `reachable_of_latestEdge` : Reachability preservation lemmas
+* `reachable_of_extended_earliestEdge`, `reachable_of_extended_latestEdge` : Variants of these
+  lemmas, starting from a vertex `z` joined to the neighbor by an edge at a compatible time
 -/
 
 @[expose] public section

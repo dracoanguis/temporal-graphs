@@ -19,8 +19,10 @@ targets at two edges each, yields the recurrence
 `size(n) ≤ 2 * size(n / 2) + O(n)`. `spannerBound` is this recurrence made explicit (with the
 `O(n)` term instantiated to `2 * n`), `spannerBound_le` solves it in closed form,
 `spannerBound n ≤ 2 * n * ⌈log₂ n⌉ + n`, and `exists_isSpannerFromTo_ncard_le` proves it is
-actually realized by a one-sided spanner of any balanced temporal bi-clique, yielding the
-`O(n log n)` bound `exists_isBigO_isOneSidedSpannerBound`.
+actually realized by a symmetric one-sided spanner of any finite simple temporal bi-clique with a
+nonempty source part `s` and a target part `t` at least as large as `s`. That spanner has at most
+`2 (|t| - |s|) + spannerBound |s|` edges. The balanced case `|s| = |t|` yields the `O(n log n)`
+bound `exists_isBigO_isOneSidedSpannerBound`.
 
 The last section transfers the bound to temporal cliques. A `{1,2}`-hop dismountable clique loses
 a vertex and gains at most 4 edges back (`exists_isSpannerOf_of_twoHopDismountable`, in
@@ -40,10 +42,11 @@ the bi-clique between `V⁻` and `V⁺`, plus the matchings `M⁻` and `M⁺`. T
 * `TemporalGraph.Subgraph.exists_isSpannerFromTo_of_singleton` : the base case of the recursion,
   a single edge is a one-sided spanner of itself.
 * `TemporalGraph.Subgraph.spannerBound_le` : closed form, `spannerBound n ≤ 2 n ⌈log₂ n⌉ + n`.
-* `TemporalGraph.Subgraph.spannerBound_two_pow` : the bound is attained exactly at powers of two.
+* `TemporalGraph.Subgraph.spannerBound_two_pow` : the bound is attained at powers of two.
 * `TemporalGraph.Subgraph.spannerBound_isBigO` : `spannerBound` is `O(n log n)`.
-* `TemporalGraph.Subgraph.exists_isSpannerFromTo_ncard_le` : the recursion itself, bounding the
-  one-sided spanner of a balanced bi-clique by `spannerBound`.
+* `TemporalGraph.Subgraph.exists_isSpannerFromTo_ncard_le` : the recursion itself. For a finite
+  simple bi-clique on `s`/`t` with `s` nonempty and `|s| ≤ |t|`, there is a symmetric one-sided
+  spanner with at most `2 (|t| - |s|) + spannerBound |s|` edges.
 * `TemporalGraph.Subgraph.isOneSidedSpannerBound_spannerBound` : `spannerBound` is a one-sided
   spanner bound.
 * `TemporalGraph.Subgraph.exists_isBigO_isOneSidedSpannerBound` : SAND 2025, §4.1 (Angrick et
@@ -104,7 +107,7 @@ lemma exists_isSpannerFromTo_of_singleton {H : Subgraph G} [G.IsSymm] [H.IsSymm]
   · -- at most one edge: `H'`'s edge set is `∅` plus the one edge just inserted
     rw [hH']; simp
 
-/-- The recurrence of SAND 2025, §4.1, on balanced one-sided instances of size `n`: split the
+/-- SAND 2025, §4.1: the recurrence on balanced one-sided instances of size `n`: split the
 source in halves `⌈n/2⌉` and `⌊n/2⌋`; in each half, dismount the other half of the targets, at
 two edges each. -/
 def spannerBound : ℕ → ℕ
@@ -113,9 +116,11 @@ def spannerBound : ℕ → ℕ
   | n + 2 => spannerBound ((n + 3) / 2) + spannerBound ((n + 2) / 2) + 2 * (n + 2)
 decreasing_by all_goals omega
 
+/-- `spannerBound 0 = 1`, a base case of the recurrence. -/
 @[simp, grind =]
 lemma spannerBound_zero : spannerBound 0 = 1 := by simp [spannerBound]
 
+/-- `spannerBound 1 = 1`, a base case of the recurrence. -/
 @[simp, grind =]
 lemma spannerBound_one : spannerBound 1 = 1 := by simp [spannerBound]
 
@@ -175,7 +180,7 @@ theorem spannerBound_two_pow (k : ℕ) :
     rw [key, ih, pow_succ]
     ring
 
-/-- The subproblem induced by a part `s' ⊆ s` of the source (SAND 2025, §4.1, split step): still
+/-- SAND 2025, §4.1 (split step): the subproblem induced by a part `s' ⊆ s` of the source is still
 finite, simple, and a bi-clique on `s'`/`t`. -/
 lemma induce_subproblem {H : Subgraph G} [Finite H.verts] {s t s' : Set V} (h₀ : H.IsSimple)
     (h₁ : H.IsBicliqueWith s t) (h₂ : s ∪ t ⊆ H.verts) (h₃ : s' ⊆ s) :
@@ -192,7 +197,7 @@ lemma isBicliqueWith_deleteVerts_singleton {H : Subgraph G} {s t : Set V} {x : V
     (H.deleteVerts {x}).IsBicliqueWith s (t \ {x}) := by
   simpa [Set.sdiff_singleton_eq_self h₁] using isBicliqueWith_deleteVerts (u := ({x} : Set V)) h₀
 
-/-- The subproblem left by dismounting `x` (SAND 2025, §4.1, dismount step): still simple, a
+/-- SAND 2025, §4.1 (dismount step): the subproblem left by dismounting `x` is still simple, a
 bi-clique on `s`/`t \ {x}`, and `t \ {x}` is one vertex smaller than `t`. -/
 lemma deleteVerts_subproblem {H : Subgraph G} {s t : Set V} {x : V} (h₀ : H.IsSimple)
     (h₁ : H.IsBicliqueWith s t) (h₂ : x ∈ t) (h₃ : x ∉ s) :
@@ -359,7 +364,10 @@ end BigO
 section CliqueBound
 
 /-- SAND 2025, §4.1: a clique that is not `{1,2}`-hop dismountable has a spanner made of a
-one-sided spanner of the bi-clique between `V⁺` and `V⁻`, plus the matchings `M⁻` and `M⁺`. -/
+one-sided spanner of the bi-clique between `V⁺` and `V⁻`, plus the matchings `M⁻` and `M⁺`.
+Here `H` is a finite, simple, proper clique subgraph with at least two vertices, symmetric, in a
+symmetric loopless ambient graph `G`; the spanner has at most
+`spannerBound |V⁺| + |V⁺| + |V⁻|` edges. -/
 theorem exists_isSpannerOf_of_not_twoHopDismountable {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [G.IsSymm] [G.IsLoopless] [H.IsSymm]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
@@ -437,7 +445,8 @@ theorem exists_isSpannerOf_of_not_twoHopDismountable {H : Subgraph G}
     omega
 
 /-- SAND 2025, §4.1: every finite simple proper temporal clique on `n` vertices admits a
-symmetric spanner with at most `2 n ⌈log₂ n⌉ + 4 n` edges. -/
+symmetric spanner with at most `2 n ⌈log₂ n⌉ + 4 n` edges. Here `H` is a finite, simple, proper
+clique subgraph of `G`, symmetric, with `G` symmetric and loopless, and `n = H.verts.ncard`. -/
 theorem exists_isSpannerOf_ncard_le {H : Subgraph G} [Finite H.verts]
     [G.IsSymm] [G.IsLoopless] [H.IsSymm]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
@@ -494,7 +503,10 @@ theorem exists_isSpannerOf_ncard_le {H : Subgraph G} [Finite H.verts]
       nlinarith [Nat.mul_le_mul_left k hc]
 
 open Asymptotics Filter in
-/-- SAND 2025, §4.1: temporal cliques admit spanners of size `O(n log n)`. -/
+/-- SAND 2025, §4.1: temporal cliques admit spanners of size `O(n log n)`. Precisely, there is
+`f = O(n log n)` such that every finite, simple, proper clique subgraph `H` (symmetric, in a
+symmetric loopless ambient graph `G`) has a symmetric spanner with at most `f n` edges, where
+`n = H.verts.ncard`. -/
 theorem exists_isBigO_isSpannerOf :
     ∃ f : ℕ → ℕ, (fun n ↦ (f n : ℝ)) =O[atTop] (fun n ↦ (n : ℝ) * Real.log n) ∧
       ∀ {V : Type u} {G : TemporalGraph V} {H : Subgraph G} [Finite H.verts]

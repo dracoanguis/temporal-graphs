@@ -30,6 +30,10 @@ and its clean characterization `mem_edgeSet` needs `[G.IsSymm]` (the uncondition
 ## Main definitions
 
 * `TemporalGraph.IsSymm`, `TemporalGraph.IsLoopless` : symmetry and looplessness, as classes.
+* `TemporalGraph.adjAt` : the time slice `fun x y ↦ G.Adj x y n` of the adjacency at time `n`.
+* `TemporalGraph.footprint`, `TemporalGraph.simpleFootprint` : the static footprint, as a
+  `Digraph` resp. a `SimpleGraph` (the latter needs `IsSymm` and `IsLoopless` as explicit
+  hypotheses).
 * `TemporalGraph.IsClique`, `TemporalGraph.IsSimple`, `TemporalGraph.IsProper`,
   `TemporalGraph.IsHappy` : the graph predicates used by Casteigts–Peters–Schoeters and by
   Carnevale–Casteigts–Corsini (see References).
@@ -44,6 +48,16 @@ and its clean characterization `mem_edgeSet` needs `[G.IsSymm]` (the uncondition
 * `TemporalGraph.symmetrize`, `TemporalGraph.fromArcSet`, `TemporalGraph.fromEdgeSet` : graph
   builders.
 
+## Main results
+
+* `TemporalGraph.IsSimple.mono`, `IsProper.mono`, `IsHappy.mono` : these predicates pass to
+  spanning subgraphs (`G ≤ H`).
+* `TemporalGraph.mem_edgeSet_iff_or` : unconditional characterization of `edgeSet` membership, as
+  a disjunction of the two orientations.
+* `TemporalGraph.mem_edgeSet` : under `[G.IsSymm]`, `(s(x, y), n) ∈ G.edgeSet ↔ G.Adj x y n`.
+* `TemporalGraph.size_eq_ncard`, `TemporalGraph.arcSize_eq_ncard` : the counts `size`/`arcSize`
+  equal `Set.ncard` of `edgeSet`/`arcSet`.
+
 ## References
 
 * Carnevale, Casteigts & Corsini, *Dismountability in Temporal Cliques Revisited*, SAND 2025
@@ -55,6 +69,9 @@ and its clean characterization `mem_edgeSet` needs `[G.IsSymm]` (the uncondition
 
 @[expose] public section
 
+/-- `aesop_temporal_graph` runs `aesop` with the `TemporalGraph` rule set (declared in `Init.lean`),
+at default transparency for introductions and as a terminal tactic (it either closes the goal or
+fails). Extra `aesop` clauses are passed through. -/
 macro (name := aesop_temporal_graph) "aesop_temporal_graph" c:Aesop.tactic_clause* : tactic =>
   `(tactic|
     aesop $c*
@@ -430,6 +447,7 @@ theorem symmetrize_adj {x y : V} {n : ℕ} :
     G.symmetrize.Adj x y n ↔ G.Adj x y n ∨ G.Adj y x n :=
   Iff.rfl
 
+/-- The symmetrization of a temporal graph is symmetric. -/
 instance symmetrize_isSymm (G : TemporalGraph V) : G.symmetrize.IsSymm :=
   .of_adj fun _ _ _ h ↦ Or.symm h
 
@@ -464,6 +482,7 @@ theorem fromEdgeSet_adj {s : Set ((Sym2 V) × ℕ)} {x y : V} {n : ℕ} :
     (fromEdgeSet s).Adj x y n ↔ (s(x,y), n) ∈ s :=
   Iff.rfl
 
+/-- A graph built from a set of unordered edges is symmetric. -/
 instance fromEdgeSet_isSymm (s : Set ((Sym2 V) × ℕ)) : (fromEdgeSet (V := V) s).IsSymm :=
   .of_adj fun _ _ _ h ↦ by simpa [Sym2.eq_swap] using h
 

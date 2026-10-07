@@ -91,12 +91,20 @@ universe u
 namespace TemporalGraph
 
 
+/-- A subgraph of the temporal graph `G`: a temporal graph (the inherited adjacency `Adj`) together
+with a vertex set `verts`, whose adjacency is contained in that of `G` and whose arcs have both
+endpoints in `verts`. The structure is unbundled: it carries no symmetry or looplessness field
+(these are the classes `IsSymm`/`IsLoopless`), so a subgraph may be oriented. -/
 @[ext]
 structure Subgraph {V : Type u} (G : TemporalGraph V) extends TemporalGraph V where
+  /-- The vertex set of the subgraph. -/
   verts : Set V
-
+  /-- Every arc of the subgraph is an arc of `G`, at the same time. -/
   adj_sub : ∀ {x y : V} {n : ℕ}, Adj x y n → G.Adj x y n
+  /-- The tail of every arc of the subgraph is a vertex of the subgraph. -/
   edge_vert : ∀ {x y : V} {n : ℕ}, Adj x y n → x ∈ verts
+  /-- The head of every arc of the subgraph is a vertex of the subgraph. This field replaces
+  symmetry: without it, `edge_vert` alone would not control the head of an oriented arc. -/
   edge_vert' : ∀ {x y : V} {n : ℕ}, Adj x y n → y ∈ verts
 
 namespace Subgraph
@@ -557,6 +565,7 @@ they are adjacent in `G`. -/
 def IsInduced (H : Subgraph G) : Prop :=
   ∀ ⦃x⦄, x ∈ H.verts → ∀ ⦃y⦄, y ∈ H.verts → ∀ ⦃n : ℕ⦄, G.Adj x y n → H.Adj x y n
 
+/-- The top subgraph `⊤` of `G` is induced: it has all the arcs of `G` on its vertices. -/
 @[simp] lemma IsInduced.top : (⊤ : G.Subgraph).IsInduced :=
   fun _ _ _ _ _ ↦ id
 

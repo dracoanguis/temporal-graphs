@@ -52,21 +52,29 @@ and `vplus` (`earliestNeighborFn`, `latestNeighborFn`), which forces `vzero` to 
 * `ncard_pair_le`, `ncard_le_four` (section `CardHelpers`) : `Set.ncard` bounds on a set given by
   2, resp. 4, elements, shared by the edge-count bounds of `mount`, `twoHopMount`,
   `oneSidedMount` and the sides above.
+* `TemporalGraph.Subgraph.existsUnique_vplus_earliestEdge`, `existsUnique_vminus_latestEdge` :
+  SAND 2025, Corollary 3.3 (1)–(2), perfect matchings between `vminus` and `vplus` given by the
+  earliest (resp. latest) edges.
 * `TemporalGraph.Subgraph.earliestNeighborFn_bijOn`, `latestNeighborFn_bijOn` : `Set.BijOn`
   bijections between the sets `vminus` and `vplus` (SAND 2025, Corollary 3.3, via Lemma 3.2).
 * `TemporalGraph.Subgraph.vminus_card_eq_vplus_card` : SAND 2025, Corollary 3.3 (3),
   `vminus.ncard = vplus.ncard`.
 * `TemporalGraph.Subgraph.vzero_empty_of_not_twoHopDismountable` : SAND 2025, Lemma 3.4,
   `vzero = ∅`.
-* `TemporalGraph.Subgraph.earliestEdge_reciprocity`, `latestEdge_reciprocity` : reciprocity
-  (SAND 2025, §3, as cited at each lemma below).
-* `TemporalGraph.Subgraph.biclique_of_not_twoHopDismountable`,
-  `between_TC_of_not_twoHopDismountable` : the bipartite subgraph between `vminus` and `vplus` is
-  a temporally connected bi-clique when `H` is not two-hop-dismountable (SAND 2025, §4, as cited
-  at each lemma below).
+* `TemporalGraph.Subgraph.earliestEdge_reciprocity`, `latestEdge_reciprocity` : SAND 2025,
+  Lemma 3.5 (Reciprocity), first and second statements.
+* `TemporalGraph.Subgraph.biclique_of_not_twoHopDismountable` : SAND 2025, Corollary 4.1, the
+  bipartite subgraph between `vminus` and `vplus` is a bi-clique when `H` is not
+  two-hop-dismountable.
+* `TemporalGraph.Subgraph.between_TC_of_not_twoHopDismountable` : SAND 2025, remark after
+  Corollary 4.1, this bi-clique is temporally connected.
+* `TemporalGraph.reachable_of_earliestEdge_matching`, `reachable_of_latestEdge_matching`
+  (section `MatchingConnectivity`) : if `s` reaches `t` and every vertex of `t` (resp. `s`) is the
+  endpoint of an earliest (resp. latest) edge of a vertex of `s` (resp. `t`), then `t` (resp. `s`)
+  is temporally connected.
 * `TemporalGraph.temporallyConnected_of_reachable_of_matchings` (section `MatchingConnectivity`) :
   if `t` is reached from `s` and matched to it on both the earliest-edge and latest-edge side,
-  `s ∪ t` is temporally connected (SAND 2025, §4.1, after Corollary 3.3).
+  `s ∪ t` is temporally connected (SAND 2025, §4.1, after Corollary 4.1).
 
 ## References
 

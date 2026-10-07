@@ -61,15 +61,16 @@ def length {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → ℕ
   | Single _ => 1
   | Step p _ _ => 1 + p.length
 
-/-- The `support` of a NonemptyTemporalWalk is the list of vertices it visits in order. -/
+/-- The `support` of a NonemptyTemporalWalk is the list of vertices it visits, stored from the end
+vertex back to the start vertex. -/
 @[grind =]
 def support {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → List V
   | Single _ => y :: [x]
   | Step p _ _ => y :: p.support
 
 -- Arcs
-/-- The `arcs` of a NonemptyTemporalWalk is the list of arcs (edge with a direction) it visits in
-order. -/
+/-- The `arcs` of a NonemptyTemporalWalk is the list of arcs (edge with a direction) it traverses,
+stored last arc first. -/
 @[grind =]
 def arcs {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → List (V × V × ℕ)
   | @Single _ _ x y n _ => [⟨x ,⟨y, n⟩⟩]

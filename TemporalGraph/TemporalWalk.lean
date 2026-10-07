@@ -16,14 +16,19 @@ Defines `TemporalWalk`, an inductive type for temporal walks that may be empty. 
 ## Main definitions
 * `TemporalWalk` : A (possibly empty) walk with non-decreasing times
 * `length` : The number of edges
-* `support` : The list of vertices visited
-* `arcs` : The list of directed edges
+* `support` : The list of vertices visited, stored from the end vertex back to the start
+* `arcs` : The list of directed edges, stored last arc first
+* `IsStrict` : The walk's times increase strictly from each arc to the next
 * `temporalWalkSet` : The set of all walks between two vertices
 * `mapLe` : Transport a walk along a spanning-subgraph inclusion `G ≤ G'`
 
 ## Main results
 * `nondecreasing_time` : Times are non-decreasing along a walk
 * `length_mapLe`, `support_mapLe`, `arcs_mapLe` : Mapping preserves length, support and arcs
+* `isStrict_mapLe`, `isStrict_nonempty` : Strictness is preserved by `mapLe` and by the coercion
+  from `NonemptyTemporalWalk`
+* `NonemptyTemporalWalk.exists_isStrict` : In a proper symmetric graph, every walk can be shortened
+  into a strict one
 * `start_mem_support`, `end_mem_support` : Walk endpoints belong to the support
 * `adj_of_mem_arcs` : Every arc in a walk is an edge within the time bounds
 -/
@@ -56,15 +61,16 @@ def length {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → ℕ
   | Empty => 0
   | Nonempty p => p.length
 
-/-- The `support` of a TemporalWalk is the list of vertices it visits in order. -/
+/-- The `support` of a TemporalWalk is the list of vertices it visits, stored from the end vertex
+back to the start vertex. -/
 @[grind =]
 def support {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List V
   | Empty => [x]
   | Nonempty p => p.support
 
 
-/-- The `arcs` of a TemporalWalk is the list of arcs (edge with a direction) it visits in
-order. -/
+/-- The `arcs` of a TemporalWalk is the list of arcs (edge with a direction) it traverses, stored
+last arc first. -/
 @[grind =]
 def arcs {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List (V × V × ℕ)
   | Empty => []
@@ -142,7 +148,7 @@ end TemporalWalk
 
 namespace NonemptyTemporalWalk
 
--- Auto coercion to a TemporalWalk since they are never empty
+/-- Automatic coercion of a `NonemptyTemporalWalk` to a `TemporalWalk`, since it is never empty. -/
 instance {x y : V} {n m : ℕ} : Coe (G.NonemptyTemporalWalk x n y m) (G.TemporalWalk x n y m) where
   coe  p := TemporalWalk.Nonempty p
 

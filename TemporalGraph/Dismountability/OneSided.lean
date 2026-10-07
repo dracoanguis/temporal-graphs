@@ -85,9 +85,9 @@ lemma oneSidedMount_verts {H : Subgraph G} [G.IsSymm] {x' y x : V} {n m : ℕ}
     (H.oneSidedMount hx' hy x h₀ h₁).verts = H.verts ∪ {x} := by
   rw [oneSidedMount, addEdge_verts, addEdge_verts, addVerts_verts]
 
-/-- `H.oneSidedMount hx' hy x h₀ h₁` is symmetric when `H` and `G` are. -/
--- `oneSidedMount` is a plain `def`, so instance resolution cannot see the `addEdge`/`addVerts`
--- layers it is built from; this instance unfolds it once and hands the goal back to resolution.
+/-- `H.oneSidedMount hx' hy x h₀ h₁` is symmetric when `H` and `G` are. `oneSidedMount` is a plain
+`def`, so instance resolution cannot see the `addEdge`/`addVerts` layers it is built from; this
+instance unfolds it once and hands the goal back to resolution. -/
 instance oneSidedMount_isSymm {H : Subgraph G} [H.IsSymm] [G.IsSymm] {x' y x : V} {n m : ℕ}
     (hx' : x' ∈ H.verts) (hy : y ∈ H.verts) (h₀ : G.Adj y x' n) (h₁ : G.Adj y x m) :
     (H.oneSidedMount hx' hy x h₀ h₁).IsSymm := by

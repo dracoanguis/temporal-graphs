@@ -29,6 +29,11 @@ spanner of another), and `IsTCSpanner` (temporally connected spanner).
 ## Main results
 * `reachable_of_subgraph_reachable` : Reachability in subgraph implies reachability in parent
 * `reachable_of_le_reachable` : Reachability preserved under subgraph inclusion
+* `isTCSpanner_iff_isSpanner_and_TC` : A TC-spanner is a spanner that is temporally connected
+* `toTemporalGraph_temporallyConnected_of_spanning_temporallyConnected` : A spanning subgraph
+  temporally connected on its vertices is temporally connected as a graph on all of `V`
+* `Subgraph.temporallyConnected_of_TCSpanner` : A TC-spanner of `G` witnesses that `G` is
+  temporally connected
 * `TCspanner_iff_TC` : Existence of a TC-spanner characterizes temporal connectivity
 * `mem_verts_of_reachable` : A reachable pair of distinct vertices lies in `H`'s own vertex set
 * `top_isSpanner` : The whole graph `⊤` is a spanner of itself

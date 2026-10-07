@@ -244,7 +244,6 @@ lemma isSymm_iff_coe {H : Subgraph G} : H.IsSymm ↔ H.coe.IsSymm := by
 -- definition), so call sites below must supply `x y n m` explicitly.
 
 /-- A subgraph is simple iff its subtype view `H.coe` is. -/
-@[simp]
 lemma isSimple_iff_coe {H : Subgraph G} : H.IsSimple ↔ H.coe.IsSimple := by
   unfold TemporalGraph.IsSimple
   constructor
@@ -260,7 +259,6 @@ abbrev IsCliqueSubgraph (H : Subgraph G) : Prop := H.IsClique H.verts
 
 /-- `H` is a clique on its own vertices iff its subtype view `H.coe` is a clique on all of
 `H.verts`. -/
-@[simp]
 lemma isClique_iff_coe {H : Subgraph G} : H.IsCliqueSubgraph ↔ H.coe.IsCliqueGraph := by
   constructor
   · intro h x _ y _ hne
@@ -273,7 +271,6 @@ lemma isClique_iff_coe {H : Subgraph G} : H.IsCliqueSubgraph ↔ H.coe.IsCliqueG
 -- H.toTemporalGraph`, whose binders are EXPLICIT, so call sites below supply `x y z n` explicitly.
 
 /-- A subgraph is proper iff its subtype view `H.coe` is. -/
-@[simp]
 lemma isProper_iff_coe {H : Subgraph G} : H.IsProper ↔ H.coe.IsProper := by
   unfold TemporalGraph.IsProper
   constructor
@@ -288,7 +285,6 @@ lemma isProper_iff_coe {H : Subgraph G} : H.IsProper ↔ H.coe.IsProper := by
 -- H.toTemporalGraph`.
 
 /-- A subgraph is happy iff its subtype view `H.coe` is. -/
-@[simp]
 lemma isHappy_iff_coe {H : Subgraph G} : H.IsHappy ↔ H.coe.IsHappy := by
   unfold TemporalGraph.IsHappy
   simp only [isSimple_iff_coe, isProper_iff_coe]
@@ -826,7 +822,6 @@ lemma top_latestEdge :
 
 /-- In a proper subgraph, any adjacency out of `x` to a vertex other than its earliest neighbor
 `y` happens strictly after the earliest edge `(x, y, n)`. -/
-@[simp]
 lemma earliestEdge_lt_of_proper {H : Subgraph G} {z : V} {m : ℕ}
     (h₀ : H.IsProper)
     (h₁ : H.EarliestEdge x y n)
@@ -877,14 +872,12 @@ lemma coe_latestEdge_of_graph_latestEdge {H : Subgraph G}
     | mk z hz => exact hmin z m <| H.adj_sub hadj
 
 /-- An earliest edge of `H` is an earliest edge of its subtype view `H.coe`. -/
-@[simp]
 lemma coe_earliestEdge {H : Subgraph G} {x y : H.verts} {n : ℕ}
     (h₀ : H.EarliestEdge x y n) :
     H.coe.EarliestEdge x y n :=
   ⟨Adj.coe h₀.left, fun _ _ h ↦ h₀.right _ _ h⟩
 
 /-- An earliest edge of the subtype view `H.coe` is an earliest edge of `H`. -/
-@[simp]
 lemma earliestEdge_of_coe {H : Subgraph G} {x y : H.verts} {n : ℕ}
     (h₀ : H.coe.EarliestEdge x y n) :
     H.EarliestEdge x y n := by
@@ -908,14 +901,12 @@ lemma earliestEdge_of_ge {H H' : Subgraph G} (h₀ : H ≤ H') (h₁ : H'.Earlie
   ⟨h₂, fun _ _ h ↦ h₁.right _ _ (h₀.right h)⟩
 
 /-- A latest edge of `H` is a latest edge of its subtype view `H.coe`. -/
-@[simp]
 lemma coe_latestEdge {H : Subgraph G} {x y : H.verts} {n : ℕ}
     (h₀ : H.LatestEdge x y n) :
     H.coe.LatestEdge x y n :=
   ⟨Adj.coe h₀.left, fun _ _ h ↦ h₀.right _ _ h⟩
 
 /-- A latest edge of the subtype view `H.coe` is a latest edge of `H`. -/
-@[simp]
 lemma latestEdge_of_coe {H : Subgraph G} {x y : H.verts} {n : ℕ}
     (h₀ : H.coe.LatestEdge x y n) :
     H.LatestEdge x y n := by
@@ -1173,7 +1164,6 @@ theorem ncard_edgeSet_addEdge_le (H : Subgraph G) {x y : V} {n : ℕ}
   exact Set.ncard_insert_le _ _
 
 /-- Adding an edge increases `H.size` by at most one. -/
-@[simp]
 theorem addEdge_size_le (H : Subgraph G) {x y : V} {n : ℕ}
     [G.IsSymm]
     {h₀ : G.Adj x y n}

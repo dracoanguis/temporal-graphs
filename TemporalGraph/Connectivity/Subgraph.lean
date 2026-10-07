@@ -151,7 +151,6 @@ lemma top_isSpanner : (⊤ : Subgraph G).IsSpanner :=
   ⟨top_isSpanning, fun _ _ _ _ h ↦ h⟩
 
 /-- A temporal graph admits a spanner if and only if it is Temporally Connected -/
-@[simp]
 theorem TCspanner_iff_TC :
     (∃ (H : Subgraph G), H.IsTCSpanner) ↔ G.TemporallyConnectedGraph := by
   unfold Subgraph.IsTCSpanner

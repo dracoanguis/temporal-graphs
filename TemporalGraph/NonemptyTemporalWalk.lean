@@ -111,7 +111,6 @@ protected def mapLe {G' : TemporalGraph V} (h : G ≤ G') {x y : V} {n m : ℕ} 
   | Step p h' h'' => Step (p.mapLe h) (h h') h''
 
 /-- Times are non-decreasing along a walk: `n ≤ m`. -/
-@[simp]
 lemma nondecreasing_time {x y : V} {n m : ℕ} (tw : G.NonemptyTemporalWalk x n y m) : n ≤ m := by
   induction tw with
   | Single h => rfl

@@ -70,7 +70,6 @@ def arcs {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List (V × V × ℕ)
   | Nonempty p => p.arcs
 
 /-- Times are non-decreasing along a (possibly empty) walk: `n ≤ m`. -/
-@[simp]
 lemma nondecreasing_time {x y : V} {n m : ℕ} (tw : G.TemporalWalk x n y m) : n ≤ m := by
   cases tw with
   | Empty => trivial

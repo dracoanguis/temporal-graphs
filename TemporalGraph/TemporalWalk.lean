@@ -24,7 +24,7 @@ Defines `TemporalWalk`, an inductive type for temporal walks that may be empty. 
 ## Main results
 * `nondecreasing_time` : Times are non-decreasing along a walk
 * `length_mapLe`, `support_mapLe`, `arcs_mapLe` : Mapping preserves length, support and arcs
-* `isStrict_mapLe`, `isStrict_nonempty` : Strictness is preserved by `mapLe` and by the coercion
+* `isStrict_mapLe`, `isStrict_ofNonempty` : Strictness is preserved by `mapLe` and by the coercion
   from `NonemptyTemporalWalk`
 * `NonemptyTemporalWalk.exists_isStrict` : In a proper symmetric graph, every walk can be shortened
   into a strict one
@@ -42,8 +42,8 @@ namespace TemporalGraph
 
 /-- We define a Non-strict TemporalWalk, meaning multiple edges can be crossed at a given time. -/
 inductive TemporalWalk : V → ℕ → V → ℕ → Type u
-  | Empty {x : V} {n : ℕ} : TemporalWalk x n x n
-  | Nonempty {x y : V} {n m : ℕ} (p : G.NonemptyTemporalWalk x n y m) : TemporalWalk x n y m
+  | nil {x : V} {n : ℕ} : TemporalWalk x n x n
+  | ofNonempty {x y : V} {n m : ℕ} (p : G.NonemptyTemporalWalk x n y m) : TemporalWalk x n y m
   deriving DecidableEq
 
 namespace TemporalWalk
@@ -51,43 +51,43 @@ namespace TemporalWalk
 /-- The length of a TemporalWalk is the number of edges along it. -/
 @[grind =]
 def length {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → ℕ
-  | Empty => 0
-  | Nonempty p => p.length
+  | nil => 0
+  | ofNonempty p => p.length
 
 /-- The `support` of a TemporalWalk is the list of vertices it visits, stored from the end vertex
 back to the start vertex. -/
 @[grind =]
 def support {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List V
-  | Empty => [x]
-  | Nonempty p => p.support
+  | nil => [x]
+  | ofNonempty p => p.support
 
 
 /-- The `arcs` of a TemporalWalk is the list of arcs (edge with a direction) it traverses, stored
 last arc first. -/
 @[grind =]
 def arcs {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List (V × V × ℕ)
-  | Empty => []
-  | Nonempty p => p.arcs
+  | nil => []
+  | ofNonempty p => p.arcs
 
 /-- Times are non-decreasing along a (possibly empty) walk: `n ≤ m`. -/
 lemma nondecreasing_time {x y : V} {n m : ℕ} (tw : G.TemporalWalk x n y m) : n ≤ m := by
   cases tw with
-  | Empty => trivial
-  | Nonempty p => exact p.nondecreasing_time
+  | nil => trivial
+  | ofNonempty p => exact p.nondecreasing_time
 
 /-- A (possibly empty) walk is *strict* when its times increase strictly from each arc to the
 next, following `NonemptyTemporalWalk.IsStrict`. The empty walk is strict. -/
 @[grind =]
 def IsStrict {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → Prop
-  | Empty => True
-  | Nonempty p => p.IsStrict
+  | nil => True
+  | ofNonempty p => p.IsStrict
 
 /-- Map a walk along `G ≤ G'`, following `NonemptyTemporalWalk.mapLe`. -/
 @[grind =]
 protected def mapLe {G' : TemporalGraph V} (h : G ≤ G') {x y : V} {n m : ℕ} :
     G.TemporalWalk x n y m → G'.TemporalWalk x n y m
-  | Empty => Empty
-  | Nonempty p => Nonempty (p.mapLe h)
+  | nil => nil
+  | ofNonempty p => ofNonempty (p.mapLe h)
 
 section API
 
@@ -131,8 +131,8 @@ theorem end_mem_support (p : G.TemporalWalk x n y m) : y ∈ p.support := by
 theorem adj_of_mem_arcs (p : G.TemporalWalk x n y m) :
     ∀ a ∈ p.arcs, G.Adj a.1 a.2.1 a.2.2 ∧ n ≤ a.2.2 ∧ a.2.2 ≤ m := by
   cases p with
-  | Empty => grind only [arcs, ← List.not_mem_nil]
-  | Nonempty p => exact p.adj_of_mem_arcs
+  | nil => grind only [arcs, ← List.not_mem_nil]
+  | ofNonempty p => exact p.adj_of_mem_arcs
 
 end API
 
@@ -142,12 +142,12 @@ namespace NonemptyTemporalWalk
 
 /-- Automatic coercion of a `NonemptyTemporalWalk` to a `TemporalWalk`, since it is never empty. -/
 instance {x y : V} {n m : ℕ} : Coe (G.NonemptyTemporalWalk x n y m) (G.TemporalWalk x n y m) where
-  coe  p := TemporalWalk.Nonempty p
+  coe  p := TemporalWalk.ofNonempty p
 
 /-- Seen as a `TemporalWalk`, a nonempty walk keeps its strictness. -/
 @[simp, grind =]
-theorem isStrict_nonempty {x y : V} {n m : ℕ} (p : G.NonemptyTemporalWalk x n y m) :
-    (TemporalWalk.Nonempty p).IsStrict ↔ p.IsStrict :=
+theorem isStrict_ofNonempty {x y : V} {n m : ℕ} (p : G.NonemptyTemporalWalk x n y m) :
+    (TemporalWalk.ofNonempty p).IsStrict ↔ p.IsStrict :=
   Iff.rfl
 
 /-- In a proper symmetric graph, every non-strict walk can be shortened into a strict one with the
@@ -158,24 +158,24 @@ theorem exists_isStrict [G.IsSymm] {x y : V} {n m : ℕ} (h₀ : G.IsProper)
     (p : G.NonemptyTemporalWalk x n y m) :
     ∃ n' m', ∃ q : G.TemporalWalk x n' y m', q.IsStrict ∧ n ≤ n' ∧ m' ≤ m := by
   induction p with
-  | Single h => exact ⟨_, _, .Nonempty (.Single h), trivial, le_rfl, le_rfl⟩
-  | @Step y z n m k p h h₁ ih =>
+  | single h => exact ⟨_, _, .ofNonempty (.single h), trivial, le_rfl, le_rfl⟩
+  | @step y z n m k p h h₁ ih =>
     obtain ⟨n', m', q, hq, hn, hm⟩ := ih
     cases q with
-    | Empty => exact ⟨k, k, .Nonempty (.Single h), trivial, p.nondecreasing_time.trans h₁, le_rfl⟩
-    | Nonempty q =>
+    | nil => exact ⟨k, k, .ofNonempty (.single h), trivial, p.nondecreasing_time.trans h₁, le_rfl⟩
+    | ofNonempty q =>
       by_cases hlt : m' < k
-      · exact ⟨n', k, .Nonempty (q.Step h hlt.le), ⟨hlt, hq⟩, hn, le_rfl⟩
+      · exact ⟨n', k, .ofNonempty (q.step h hlt.le), ⟨hlt, hq⟩, hn, le_rfl⟩
       obtain rfl : m' = k := by omega
       cases q with
-      | Single h₂ =>
+      | single h₂ =>
         -- the walk is `x → y → z` at a single time: a round trip, so `z = x`
         obtain rfl := h₀ h₂.symm h
-        exact ⟨n', n', .Empty, trivial, hn, le_rfl⟩
-      | Step q h₂ h₃ =>
+        exact ⟨n', n', .nil, trivial, hn, le_rfl⟩
+      | step q h₂ h₃ =>
         -- the last two arcs `w → y → z` share their time: a round trip, so `z = w`
         obtain rfl := h₀ h₂.symm h
-        exact ⟨n', _, .Nonempty q, hq.2, hn, h₃⟩
+        exact ⟨n', _, .ofNonempty q, hq.2, hn, h₃⟩
 
 end NonemptyTemporalWalk
 

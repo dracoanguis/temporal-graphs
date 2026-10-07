@@ -192,7 +192,7 @@ theorem mount_size {H : Subgraph G} [G.IsSymm] {x y z : V} {n m : ℕ}
 /-- SAND 2025, Theorem 2.1 (1-hop case): re-mounting `x` via its earliest edge to `y` and latest
 edge to `z` extends a spanner of `H.dismount x` to a spanner of `H`, when `H` is a clique. -/
 theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G.IsLoopless]
-    {x y z : V} (hx : x ∈ H.verts) (hy : y ∈ H'.verts) (hz : z ∈ H'.verts) {n m : ℕ}
+    {x y z : V} {n m : ℕ} (hx : x ∈ H.verts) (hy : y ∈ H'.verts) (hz : z ∈ H'.verts)
     (h₀ : H.IsCliqueSubgraph) (h₁ : G.Adj y x n) (h₂ : G.Adj z x m) (h₃ : H.EarliestEdge y x n)
     (h₄ : H.LatestEdge z x m) (h₅ : H'.IsSpannerOf (H.dismount x)) :
     H'.mount hy hz x h₁ h₂ |>.IsSpannerOf H := by
@@ -202,15 +202,11 @@ theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G
     apply le_iff_edgeSet_and_verts.mpr
     constructor
     · rw [H'.mount_edgeSet]
-      have hsplit : H.edgeSet = H.edgeSet ∪ H.edgeSet := by simp
-      rw [hsplit]
-      apply Set.union_subset_union
-      · apply edgeSet_le
-        apply le_trans h₅.left dismount_le
-      · -- the two edges added by the mount are edges of `H`
-        have : (s(z, x), m) ∈ H.edgeSet := H.mem_edgeSet.mpr h₄.left
-        have : (s(y, x), n) ∈ H.edgeSet := H.mem_edgeSet.mpr h₃.left
-        grind only [= Sym2.eq, = Set.subset_def, = Set.mem_insert_iff, = Set.mem_singleton_iff]
+      refine Set.union_subset (edgeSet_le (h₅.left.trans dismount_le)) ?_
+      -- the two edges added by the mount are edges of `H`
+      have : (s(z, x), m) ∈ H.edgeSet := H.mem_edgeSet.mpr h₄.left
+      have : (s(y, x), n) ∈ H.edgeSet := H.mem_edgeSet.mpr h₃.left
+      grind only [= Sym2.eq, = Set.subset_def, = Set.mem_insert_iff, = Set.mem_singleton_iff]
     · simp only [mount_verts, h₅.right.1, induce_verts, Set.union_singleton, hx,
       Set.insert_sdiff_self_of_mem, subset_refl]
   have htc : (H'.mount hy hz x h₁ h₂).TemporallyConnectedSubgraph := by
@@ -398,10 +394,10 @@ theorem twoHopMount_size {H : Subgraph G} [G.IsSymm]
 /-- SAND 2025, §2.1 (2-hop case): re-mounting `x` via two hops on each side extends a spanner of
 `H.dismount x` to a spanner of `H`, when `H` is a clique. -/
 theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G.IsLoopless]
-    {x y y' z z' : V} (hx : x ∈ H.verts) (hy : y ∈ H'.verts) (hy' : y' ∈ H'.verts)
-    (hz : z ∈ H'.verts) (hz' : z' ∈ H'.verts) {n n' m m' : ℕ}
-    (h₀ : H.IsCliqueSubgraph) (h₁ : G.Adj x y' n') (h₂ : G.Adj y' y n) (h₃ : G.Adj x z' m')
-    (h₄ : G.Adj z' z m) (h₅ : H.EarliestEdge y y' n ∧ n' ≤ n ∧ H.Adj x y' n')
+    {x y y' z z' : V} {n n' m m' : ℕ} (hx : x ∈ H.verts) (hy : y ∈ H'.verts)
+    (hy' : y' ∈ H'.verts) (hz : z ∈ H'.verts) (hz' : z' ∈ H'.verts) (h₀ : H.IsCliqueSubgraph)
+    (h₁ : G.Adj x y' n') (h₂ : G.Adj y' y n) (h₃ : G.Adj x z' m') (h₄ : G.Adj z' z m)
+    (h₅ : H.EarliestEdge y y' n ∧ n' ≤ n ∧ H.Adj x y' n')
     (h₆ : H.LatestEdge z z' m ∧ m ≤ m' ∧ H.Adj x z' m') (h₇ : H'.IsSpannerOf (H.dismount x)) :
     H'.twoHopMount hy hy' hz hz' x h₁ h₂ h₃ h₄ |>.IsSpannerOf H := by
   have heq : (H'.twoHopMount hy hy' hz hz' x h₁ h₂ h₃ h₄).verts = H.verts := by
@@ -410,18 +406,14 @@ theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSy
     apply le_iff_edgeSet_and_verts.mpr
     constructor
     · rw [H'.twoHopMount_edgeSet hy hy' hz hz' x h₁ h₂ h₃ h₄]
-      have hsplit : H.edgeSet = H.edgeSet ∪ H.edgeSet := by simp
-      rw [hsplit]
-      apply Set.union_subset_union
-      · apply edgeSet_le
-        apply le_trans h₇.left dismount_le
-      · -- the four edges added by the mount are edges of `H`
-        have : (s(z, z'), m) ∈ H.edgeSet := H.mem_edgeSet.mpr h₆.1.1
-        have : (s(x, z'), m') ∈ H.edgeSet := H.mem_edgeSet.mpr h₆.2.2
-        have : (s(y, y'), n) ∈ H.edgeSet := H.mem_edgeSet.mpr h₅.1.1
-        have : (s(x, y'), n') ∈ H.edgeSet := H.mem_edgeSet.mpr h₅.2.2
-        grind only [= Set.subset_def, = Sym2.eq, = Sym2.rel_iff', = Set.mem_insert_iff,
-          = Prod.swap_prod_mk, = Set.mem_singleton_iff]
+      refine Set.union_subset (edgeSet_le (h₇.left.trans dismount_le)) ?_
+      -- the four edges added by the mount are edges of `H`
+      have : (s(z, z'), m) ∈ H.edgeSet := H.mem_edgeSet.mpr h₆.1.1
+      have : (s(x, z'), m') ∈ H.edgeSet := H.mem_edgeSet.mpr h₆.2.2
+      have : (s(y, y'), n) ∈ H.edgeSet := H.mem_edgeSet.mpr h₅.1.1
+      have : (s(x, y'), n') ∈ H.edgeSet := H.mem_edgeSet.mpr h₅.2.2
+      grind only [= Set.subset_def, = Sym2.eq, = Sym2.rel_iff', = Set.mem_insert_iff,
+        = Prod.swap_prod_mk, = Set.mem_singleton_iff]
     · exact heq.le
   have htc : (H'.twoHopMount hy hy' hz hz' x h₁ h₂ h₃ h₄).TemporallyConnectedSubgraph := by
     apply twoHopMount_TC H' hy hy' hz hz' x

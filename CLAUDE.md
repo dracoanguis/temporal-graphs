@@ -98,7 +98,7 @@ besoin de le répéter ici.
 | Fichier | Rôle | Analogue Mathlib |
 |---|---|---|
 | `TemporalGraph/Init.lean` | Rule-set aesop `TemporalGraph`, utilisé par la macro `aesop_temporal_graph` | `SimpleGraph/Init.lean` |
-| `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsCliqueGraph`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, demande `IsSymm`/`IsLoopless` en hypothèses explicites), `adjAt`, `symmetrize`, `fromEdgeSet`, `neighborSet`, `incidenceSet`, `arcSet`/`arcSize` (monde orienté), `edgeSet`/`size` (monde symétrique ; `mem_edgeSet` demande seulement `[IsSymm]`) ; `size`/`arcSize` sont des `def` calculables (pattern `SimpleGraph.degree` : `Fintype.card` sous une instance `[Fintype G.edgeSet]`/`[Fintype G.arcSet]`), avec la forme instance-free `Set.ncard` disponible via `size_eq_ncard`/`arcSize_eq_ncard` | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
+| `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsCliqueGraph`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, via `SimpleGraph.fromRel`, sans hypothèse), `adjAt`, `symmetrize`, `fromEdgeSet`, `neighborSet`, `incidenceSet`, `arcSet`/`arcSize` (monde orienté), `edgeSet`/`size` (monde symétrique ; `mem_edgeSet` demande seulement `[IsSymm]`) ; `size`/`arcSize` sont des `def` calculables (pattern `SimpleGraph.degree` : `Fintype.card` sous une instance `[Fintype G.edgeSet]`/`[Fintype G.arcSet]`), avec la forme instance-free `Set.ncard` disponible via `size_eq_ncard`/`arcSize_eq_ncard` | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
 | `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Marches temporelles non strictes, à temps croissant ; prédicat `IsStrict` (temps strictement croissants, propagé de `NonemptyTemporalWalk` à `TemporalWalk`) et raccourcissement `NonemptyTemporalWalk.exists_isStrict` ; API `length`/`support`/`arcs`/`append`/`mapLe` (`length_append`, `arcs_append`, `*_mapLe`, `mapLe_append`, `mapLe_mapLe`, `start_mem_support`, `end_mem_support`, `adj_of_mem_arcs`) | `SimpleGraph.Walk` |
 | `TemporalGraph/Subgraph.lean` | Sous-graphe temporel : `TemporalGraph.Subgraph` étend `TemporalGraph V`, ajoutant `verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `IsCliqueSubgraph` ; `edgeSet`, `neighborSet`, `size`, `incidenceSet` sont hérités de `TemporalGraph` ; treillis borné et union `⊔` (`SemilatticeSup`), `induce`/`deleteVerts`/`addVerts`/`addArc`/`addEdge` ; monotonie `toTemporalGraph_le`/`toTemporalGraph_le_self` | `SimpleGraph.Subgraph` |
 | `TemporalGraph/Bipartite.lean` | Bipartition temporelle `IsBipartiteWith`/`IsBipartite` (ensembles explicites, sans hypothèse de symétrie, non classe), pont `isBipartiteWith_iff_simpleFootprint` vers Mathlib, restriction `between` aux arcs entre deux ensembles, bi-cliques temporelles `IsBicliqueWith`/`IsBiclique` (SAND 2025 §1.1 ; prennent un ensemble de sommets), constructeur `completeBipartite` sur `α ⊕ β`, et au niveau `Subgraph` : `Subgraph.between` | `SimpleGraph/Bipartite.lean` |
@@ -168,7 +168,7 @@ utilisaient vraiment).
   le constructeur à deux orientations qui demande `[G.IsSymm]` s'appelle maintenant `addEdge`
   (l'ancien `addEdgeSymm`, corps de définition inchangé, argument de symétrie perdu au profit de
   l'instance) — et reste celui qu'utilisent `mount`/`twoHopMount`. Les lemmes ont suivi :
-  `addEdge_edgeSet`, `addEdge_edgeSet'`, `addEdge_size`, `addEdge_size_le`, `addEdge_size_le'`
+  `addEdge_edgeSet`, `addEdge_size`, `addEdge_size_le`
   (`Subgraph.lean`), `Reachable.addEdge` (`Connectivity/Subgraph.lean`) et l'instance
   `addEdge_isSymm` ; plus aucun nom ne porte le suffixe `addEdgeSymm`.
 - `spanningCoe` a été supprimé, remplacé par la projection héritée `toTemporalGraph`. Les lemmes
@@ -251,7 +251,7 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
   ne sont volontairement pas annotées.
 - Définitions récursives de marches (`length`, `support`, `arcs`, `append`, `mapLe`, …) : `grind =`,
   donc les lemmes d'API se prouvent par `induction p <;> grind`. Un lemme dont l'énoncé ne mentionne
-  pas la marche (`nondecreasing_time`, `time_bound_of_edge`) ne peut pas être annoté : le passer en
+  pas la marche (`nondecreasing_time`, `EarliestEdge.le_start`) ne peut pas être annoté : le passer en
   `have`. `grind` ne construit pas une marche (valeur dans `Type`) : les témoins de `Reachable`
   restent explicites.
 - Preuves stables : `grind only […]` obtenu par `grind?` (retirer les ancres `#xxxx`).
@@ -264,6 +264,9 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
 
 ### Système de modules
 
+- **Imports Mathlib précis, jamais `import Mathlib`** : `Basic` importe `Combinatorics.Digraph.Basic`,
+  `Combinatorics.SimpleGraph.Basic` et `Data.Set.Card` ; chaque fichier ajoute ce qu'il utilise
+  (`import` simple si seules les preuves en ont besoin). Le build est passé de 8977 à 2095 tâches.
 - **Fichiers en modules** : tous sauf `Examples` et la racine `TemporalGraph.lean`, c'est-à-dire
   `Init`, `Basic`, `NonemptyTemporalWalk`, `TemporalWalk`, `Connectivity/*`, `Subgraph`,
   `Bipartite` et `Dismountability/*`. Un module n'importe que des
@@ -279,6 +282,13 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
 - Explications détaillées : note Obsidian `R&D/Annexes/systeme-de-modules-lean.md`.
 
 ### Autres conventions
+
+- **Forme Mathlib** (2026-10-07) : `IsSimple`/`IsProper` sont curryfiés à binders stricts
+  (`∀ ⦃x y n m⦄, G.Adj x y n → G.Adj x y m → n = m`) : s'appliquent en `h₀ h₁ h₂`. Constructeurs
+  de marches en minuscules : `single`/`step` (`step` ajoute un arc à la fin) et `nil`/`ofNonempty`.
+  Lemmes de construction (`addEdge_le`, `deleteVerts_le`, …) à arguments implicites, comme dans
+  Mathlib, sans doublon primé : passer les arguments par nom (`addEdge_le (h := h₀) (h₁ := …)`).
+  L'ordre strict de `Subgraph` est celui par défaut ; sa forme explicite est le lemme `lt_iff`.
 
 - Dot-notation façon Mathlib : `protected theorem Adj.ne`, etc. (pour les lemmes récursif sur
   l'adjacence).

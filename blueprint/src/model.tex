@@ -152,6 +152,25 @@ between two sets, bi-cliques) is in \texttt{TemporalGraph/Bipartite.lean}.
   Definition~\ref{def:spanning-order} is its special case $P = P'$.
 \end{definition}
 
+\begin{lemma}[General inclusion of subgraph views]
+  \label{lem:is-subgraph-of-coe}
+  \uses{def:is-subgraph-of,def:sub-temporal-graph}
+  \lean{TemporalGraph.Subgraph.isSubgraphOf_coe_iff}
+  \lean{TemporalGraph.Subgraph.isSubgraphOf_coe_top}
+  \leanok
+  For two sub-temporal-graphs $H, H'$ of $G$, the temporal graph that $H$ induces on its own
+  vertices is a sub-temporal-graph of the one $H'$ induces on its vertices, in the general sense
+  above, exactly when $H \le H'$. In particular every $H$ is, in this sense, a sub-temporal-graph
+  of the whole graph $G$ (the case $H' = \top$).
+\end{lemma}
+
+\begin{proof}
+  \leanok
+  Both say that the vertices of $H$ are vertices of $H'$ and that the arcs of $H$ are arcs of
+  $H'$; an arc of $H$ has both endpoints in $\mathrm{Verts}(H)$, so the arcs of the subtype view
+  are exactly those of $H$.
+\end{proof}
+
 \begin{definition}[Arcs and edges]
   \label{def:arcset-edgeset}
   \uses{def:temporal-graph,def:is-symm-loopless}
@@ -257,15 +276,20 @@ between two sets, bi-cliques) is in \texttt{TemporalGraph/Bipartite.lean}.
   \uses{def:is-bipartite,def:footprint}
   \lean{TemporalGraph.isBipartiteWith_iff_simpleFootprint}
   \leanok
-  A symmetric, loopless temporal graph $G$ is bipartite with witness $(s,
-  t)$ exactly when its simple footprint (the underlying undirected static
-  graph) is bipartite with the same witness. This provides a bridge to
-  Mathlib's \texttt{SimpleGraph.IsBipartiteWith}.
+  A loopless temporal graph $G$ is bipartite with witness $(s, t)$ exactly
+  when its simple footprint (the underlying undirected static graph, obtained
+  with Mathlib's \texttt{SimpleGraph.fromRel}) is bipartite with the same
+  witness. No symmetry is needed. This provides a bridge to Mathlib's
+  \texttt{SimpleGraph.IsBipartiteWith}.
 \end{lemma}
 
 \begin{proof}
   \leanok
-  Both sides say that $s$ and $t$ are disjoint and that every adjacent pair goes from one part to the other. Adjacency in the simple footprint is $\exists n,\ \mathrm{Adj}_G(x,y,n)$, so the two conditions unfold to the same statement.
+  Both sides say that $s$ and $t$ are disjoint and that every adjacent pair goes from one part to
+  the other. In the simple footprint, $x$ and $y$ are adjacent when $x \ne y$ and an arc joins them
+  in either direction at some time. Forward, both orientations of an arc of $G$ cross the
+  bipartition. Backward, looplessness gives $x \ne y$ for every arc of $G$, which is therefore an
+  edge of the footprint.
 \end{proof}
 
 \begin{lemma}[A bi-clique part reaches the other]

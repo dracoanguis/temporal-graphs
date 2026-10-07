@@ -138,8 +138,6 @@ theorem biSquare_isHappy : biSquare.IsHappy :=
 
 /-- The bridge in use: Mathlib's `SimpleGraph.IsBipartite` (2-colourability) for the footprint of
 `biSquare`, obtained from the temporal bipartition. -/
-theorem biSquare_simpleFootprint_isBipartite :
-    (biSquare.simpleFootprint
-      (completeBipartite_isSymm _) (completeBipartite_isLoopless _)).IsBipartite :=
-  (isBipartite_iff_simpleFootprint _ _).mp
-    ⟨_, _, (completeBipartite_isBicliqueWith _).isBipartiteWith⟩
+theorem biSquare_simpleFootprint_isBipartite : biSquare.simpleFootprint.IsBipartite :=
+  haveI : biSquare.IsLoopless := completeBipartite_isLoopless _
+  isBipartite_iff_simpleFootprint.mp ⟨_, _, (completeBipartite_isBicliqueWith _).isBipartiteWith⟩

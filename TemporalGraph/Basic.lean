@@ -34,8 +34,8 @@ and its clean characterization `mem_edgeSet` needs `[G.IsSymm]` (the uncondition
 * `TemporalGraph.IsSymm`, `TemporalGraph.IsLoopless` : symmetry and looplessness, as classes.
 * `TemporalGraph.adjAt` : the time slice `fun x y ↦ G.Adj x y n` of the adjacency at time `n`.
 * `TemporalGraph.footprint`, `TemporalGraph.simpleFootprint` : the static footprint, as a
-  `Digraph` resp. a `SimpleGraph` (the latter needs `IsSymm` and `IsLoopless` as explicit
-  hypotheses).
+  `Digraph` resp. a `SimpleGraph` (the latter through `SimpleGraph.fromRel`, which symmetrizes
+  and drops loops, so it needs no hypothesis).
 * `TemporalGraph.IsClique`, `TemporalGraph.IsSimple`, `TemporalGraph.IsProper`,
   `TemporalGraph.IsHappy` : the graph predicates used by Casteigts–Peters–Schoeters and by
   Carnevale–Casteigts–Corsini (see References).
@@ -185,16 +185,12 @@ directed edges unlabelled by time. -/
 def footprint (G : TemporalGraph V) : Digraph V :=
   { Adj := fun x y => ∃ n, G.Adj x y n }
 
-/-- The footprint of `G` as a genuine `SimpleGraph`: same underlying adjacency as `footprint`
-(an edge regardless of time), but packaged with the symmetry and irreflexivity proofs that
-`SimpleGraph` bundles as fields. Unlike most of this file, `hs`/`hl` are taken as explicit
-arguments rather than `[G.IsSymm]`/`[G.IsLoopless]` instances. -/
-def simpleFootprint (G : TemporalGraph V) (hs : G.IsSymm) (hl : G.IsLoopless) : SimpleGraph V :=
-  {
-    Adj := fun x y => ∃ n, G.Adj x y n
-    loopless := ⟨by simp⟩
-    symm := ⟨fun _ _ ⟨n, h⟩ => ⟨n, (hs.symm n).symm _ _ h⟩⟩
-  }
+/-- The footprint of `G` as a genuine `SimpleGraph`: distinct vertices `x` and `y` are adjacent
+when an arc joins them, in either direction, at some time. This is Mathlib's
+`SimpleGraph.fromRel`, which symmetrizes the relation and removes its diagonal, so no symmetry or
+looplessness of `G` is needed. -/
+def simpleFootprint (G : TemporalGraph V) : SimpleGraph V :=
+  SimpleGraph.fromRel fun x y ↦ ∃ n, G.Adj x y n
 
 /-- `G` is simple: any two vertices are joined by an arc at no more than one time. -/
 @[grind =]

@@ -146,20 +146,24 @@ section SimpleFootprintBridge
 variable {G : TemporalGraph V} {s t : Set V}
 
 /-- The bridge to Mathlib's static bipartite graphs: `G.IsBipartiteWith s t` is exactly
-`(G.simpleFootprint hs hl).IsBipartiteWith s t`, since both discard the time labels and keep only
-the underlying adjacency. -/
-theorem isBipartiteWith_iff_simpleFootprint (hs : G.IsSymm) (hl : G.IsLoopless) :
-    G.IsBipartiteWith s t ↔ (G.simpleFootprint hs hl).IsBipartiteWith s t :=
-  ⟨fun h ↦ ⟨h.disjoint, fun _ _ ⟨_, hadj⟩ ↦ h.mem_of_adj hadj⟩,
-    fun h ↦ ⟨h.disjoint, fun _ _ n hadj ↦ h.mem_of_adj ⟨n, hadj⟩⟩⟩
+`G.simpleFootprint.IsBipartiteWith s t`, since both discard the time labels and keep only the
+underlying adjacency. Looplessness is needed only for the backward direction: a loop of `G` is
+not an edge of the footprint, but would put its vertex in both parts. -/
+theorem isBipartiteWith_iff_simpleFootprint [G.IsLoopless] :
+    G.IsBipartiteWith s t ↔ G.simpleFootprint.IsBipartiteWith s t := by
+  refine ⟨fun h ↦ ⟨h.disjoint, ?_⟩,
+    fun h ↦ ⟨h.disjoint, fun _ _ n hadj ↦ h.mem_of_adj ⟨hadj.ne, .inl ⟨n, hadj⟩⟩⟩⟩
+  rintro v w ⟨-, ⟨n, hadj⟩ | ⟨n, hadj⟩⟩
+  · exact h.mem_of_adj hadj
+  · exact (h.mem_of_adj hadj).symm.imp And.symm And.symm
 
 /-- The bridge to Mathlib's `IsBipartite = Colorable 2`, through
 `isBipartiteWith_iff_simpleFootprint` and Mathlib's
 `SimpleGraph.isBipartite_iff_exists_isBipartiteWith`. -/
-theorem isBipartite_iff_simpleFootprint (hs : G.IsSymm) (hl : G.IsLoopless) :
-    G.IsBipartite ↔ (G.simpleFootprint hs hl).IsBipartite := by
+theorem isBipartite_iff_simpleFootprint [G.IsLoopless] :
+    G.IsBipartite ↔ G.simpleFootprint.IsBipartite := by
   rw [IsBipartite, SimpleGraph.isBipartite_iff_exists_isBipartiteWith]
-  exact exists_congr fun s ↦ exists_congr fun t ↦ isBipartiteWith_iff_simpleFootprint hs hl
+  exact exists_congr fun s ↦ exists_congr fun t ↦ isBipartiteWith_iff_simpleFootprint
 
 end SimpleFootprintBridge
 

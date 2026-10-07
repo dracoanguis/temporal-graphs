@@ -9,3 +9,6 @@
 __pycache__/
 
 *.DS_Store
+
+# local build logs
+/build_out.txt

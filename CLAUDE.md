@@ -104,6 +104,7 @@ besoin de le répéter ici.
 | `TemporalGraph/Dismountability/Basic.lean` | `Dismountable`, `TwoHopDismountable`, partition `vminus`/`vplus`/`vzero`, bijections earliest/latest-neighbor — correspond aux Lemmes 3.1, 3.2, 3.4 et au Corollaire 3.3 de SAND 2025 | — |
 | `TemporalGraph/Dismountability/Operations.lean` | Opérations `dismount`/`mount`/`twoHopMount` et leurs théorèmes de correction (`dismountability`, `twoHopDismountability`) | — |
 | `TemporalGraph/Dismountability/OneSided.lean` | Dismountability *one-sided* (SAND 2025, §4.1) : spanner unilatéral `IsSpannerFromTo` (de `s` vers `t`), `OneSidedDismountable`, `oneSidedMount` (+ API, `oneSidedMount_size`), découpage `IsSpannerFromTo.sup` / `isSpannerFromTo_sup_of_induce`, étape `oneSidedDismountability`, pigeonnier `exists_oneSidedDismountable_of_ncard_lt`, assemblage `temporallyConnected_of_isSpannerFromTo` | — |
+| `TemporalGraph/Dismountability/OneSidedBound.lean` | Borne `O(n log n)` (SAND 2025, §4.1) : récurrence `spannerBound` et `spannerBound_isBigO`, `IsOneSidedSpannerBound` / `exists_isBigO_isOneSidedSpannerBound` (bi-cliques), puis `exists_isSpannerOf_ncard_le` (borne explicite `2n⌈log₂ n⌉ + 4n`) et `exists_isBigO_isSpannerOf` (cliques) | — |
 | `TemporalGraph/Examples.lean` | Graphe de démo `square` (carré à 4 sommets), avec ses propriétés portées comme instances (`square_isSymm`, `square_isLoopless`, …) | — |
 | `TemporalGraph.lean` (racine) | Pur agrégateur d'imports, aucun code | — |
 
@@ -303,6 +304,11 @@ bi-clique entre `V⁻` et `V⁺` est une remarque en prose juste après le Corol
 | `vzero_empty_of_not_twoHopDismountable` | Lemme 3.4 |
 | `dismountability` (`Dismountability/Operations.lean`) | Théorème 2.1 |
 | `twoHopDismountability` (`Dismountability/Operations.lean`) | §2.1, cas 2-hop (non numéroté) |
+| `earliestEdge_reciprocity`, `latestEdge_reciprocity` | Lemme 3.5 (Reciprocity), énoncés (1) et (2) |
+| `biclique_of_not_twoHopDismountable` | Corollaire 4.1 (bi-clique entre `V⁻` et `V⁺`) |
+| `between_TC_of_not_twoHopDismountable` | remarque en prose après le Corollaire 4.1 |
+| `oneSidedDismountability`, `exists_oneSidedDismountable_of_ncard_lt` (`Dismountability/OneSided.lean`) | §4.1, dismountability *one-sided* d'Angrick et al. (non numéroté) |
+| `exists_isBigO_isOneSidedSpannerBound`, `exists_isBigO_isSpannerOf` (`Dismountability/OneSidedBound.lean`) | §4.1, spanners `O(n log n)` des bi-cliques puis des cliques (non numéroté) |
 
 Toute nouvelle preuve visant un résultat du papier (ou d'un résultat récent connexe) cite le
 numéro exact dans une **docstring Mathlib** qui commence par la référence complète, puis énonce le

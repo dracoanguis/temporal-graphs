@@ -16,8 +16,9 @@ JCSS 2021). Angrick et al. (ESA 2024) simplified the second half of that proof w
 variant of dismountability, and Carnevale, Casteigts & Corsini (*Dismountability in Temporal
 Cliques Revisited*, SAND 2025) showed that the whole result follows from dismountability alone:
 excluding 1- and 2-hop dismountability reduces temporal cliques to bi-cliques, where the
-one-sided argument concludes. This library follows the SAND 2025 proof, its main reference; the
-clique-side structure (SAND §§2–3) is formalized so far.
+one-sided argument concludes. This library follows the SAND 2025 proof, its main reference, and
+formalizes it in full: the clique-side reduction (SAND §§2–3) and the one-sided conclusion
+(SAND §4.1), up to the `O(n log n)` spanner bound.
 
 Since Mathlib does not (yet) support temporal graphs, this library builds the required theory
 from scratch, following Mathlib's `SimpleGraph` conventions so that it can, in principle, later
@@ -37,23 +38,32 @@ they don't need the same cross-cutting instance resolution.
 | File | Contents |
 |---|---|
 | `TemporalGraph/Init.lean` | The `TemporalGraph` aesop rule-set used by the `aesop_temporal_graph` macro |
-| `TemporalGraph/Basic.lean` | `TemporalGraph V`; the `IsSymm`/`IsLoopless` classes; `IsSimple`/`IsProper`/`IsHappy`; `IsClique` (takes a vertex set `S : Set V`, Mathlib-style) and its shorthand `IsCliqueGraph` (`IsClique Set.univ`); `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, given proofs of `IsSymm`/`IsLoopless`); earliest/latest edges and neighbors; `IsSubgraphOf`/`IsSpanningSubgraph`; `neighborSet`; `incidenceSet`; `arcSet`/`arcSize` (oriented world); `edgeSet`/`size` (symmetric world; `mem_edgeSet` needs only `[IsSymm]`) |
-| `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Non-strict, time-non-decreasing temporal walks (journeys), split into nonempty/empty variants |
+| `TemporalGraph/Basic.lean` | `TemporalGraph V`; the `IsSymm`/`IsLoopless` classes; `IsSimple`/`IsProper`/`IsHappy`; `adjAt`, `symmetrize`, `fromEdgeSet`; `IsClique` (takes a vertex set `S : Set V`, Mathlib-style) and its shorthand `IsCliqueGraph` (`IsClique Set.univ`); `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, given proofs of `IsSymm`/`IsLoopless`); earliest/latest edges and neighbors; `IsSubgraphOf`/`IsSpanningSubgraph`; `neighborSet`; `incidenceSet`; `arcSet`/`arcSize` (oriented world); `edgeSet`/`size` (symmetric world; `mem_edgeSet` needs only `[IsSymm]`) |
+| `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Non-strict, time-non-decreasing temporal walks (journeys), split into nonempty/empty variants; the `IsStrict` predicate (strictly increasing times) with the shortening `exists_isStrict`; walk mappers `NonemptyTemporalWalk.mapLe`/`TemporalWalk.mapLe` |
 | `TemporalGraph/Subgraph.lean` | The `Subgraph` type, which extends `TemporalGraph V`, adding a field `verts`/proofs `adj_sub`/`edge_vert`/`edge_vert'`; its coercion `coe` to `TemporalGraph H.verts`; inherited predicates `IsSymm`/`IsSimple`/`IsProper`/`IsHappy` and earliest/latest edge/neighbor definitions; inherited `edgeSet`, `neighborSet`, `size`, and `incidenceSet` (not redefined); `IsCliqueSubgraph` (the shorthand for `IsClique H.verts`); monotonicity lemmas `toTemporalGraph_le`/`toTemporalGraph_le_self`; and the `induce`/`deleteVerts`/`addVerts`/`addArc`/`addEdge`/`toSubgraph`/`fromEdgeSet` constructions (`addArc` adds a single oriented edge with no hypothesis, `addEdge` adds both orientations and needs `[G.IsSymm]`) |
 | `TemporalGraph/Bipartite.lean` | Bipartite temporal graphs: `IsBipartiteWith` and `IsBipartite` (mirroring Mathlib's `SimpleGraph.IsBipartiteWith`), with a bridge `isBipartiteWith_iff_simpleFootprint` to Mathlib's bipartiteness via simple footprint; the `between` construction restricting edges to a cut; temporal bi-cliques `IsBicliqueWith`/`IsBiclique` (SAND 2025 §1.1, taking a vertex set `S : Set V`) and the `completeBipartite` constructor; analogous predicates and operations at the subgraph level (`Subgraph.between`) |
-| `TemporalGraph/Connectivity/Basic.lean`, `TemporalGraph/Connectivity/Subgraph.lean` | `Reachable` and its monotonicity `Reachable.mono`; `TemporallyConnected` (takes a vertex set `S : Set V`), with shorthands `TemporallyConnectedGraph` (= `Set.univ`) and `Subgraph.TemporallyConnectedSubgraph` (= `H.verts`); walk mappers `NonemptyTemporalWalk.mapLe`/`TemporalWalk.mapLe`; the spanner notions `Subgraph.IsSpanner`, `Subgraph.IsSpannerOf`, `Subgraph.IsTCSpanner` |
-| `TemporalGraph/Dismountability/Basic.lean` | The `Dismountable` property (SAND §2, the hypothesis of Theorem 2.1) and `TwoHopDismountable` (SAND §2.1, unnumbered) and the vertex sets `vminus`/`vplus`/`vzero` (SAND §3.1, unnumbered), characterized by `partition_of_not_dismountable` (SAND Lemma 3.1), `vplus_ne_neighbor_of_not_twoHopDismountable`/`vminus_ne_neighbor_of_not_twoHopDismountable` (SAND Lemma 3.2), the `earliestNeighborFn`/`latestNeighborFn` bijections together with `existsUnique_vplus_earliestEdge`/`existsUnique_vminus_latestEdge`/`vminus_card_eq_vplus_card` (SAND Corollary 3.3), and `vzero_empty_of_not_twoHopDismountable` (SAND Lemma 3.4) |
-| `TemporalGraph/Dismountability/Operations.lean` | The `dismount`/`mount`/`twoHopMount` operations and their correctness theorems: `dismountability` (SAND Theorem 2.1, 1-hop dismountability) and `twoHopDismountability` (its 2-hop analogue) |
+| `TemporalGraph/Connectivity/Basic.lean`, `TemporalGraph/Connectivity/Subgraph.lean` | `Reachable` and its monotonicity `Reachable.mono`; `StrictReachable` and the equivalence `reachable_iff_strictReachable` (needs `IsSymm` and `IsProper`); `TemporallyConnected` (takes a vertex set `S : Set V`), with shorthands `TemporallyConnectedGraph` (= `Set.univ`) and `Subgraph.TemporallyConnectedSubgraph` (= `H.verts`); the spanner notions `Subgraph.IsSpanner`, `Subgraph.IsSpannerOf`, `Subgraph.IsTCSpanner` |
+| `TemporalGraph/Dismountability/Basic.lean` | The `Dismountable` property (SAND §2, the hypothesis of Theorem 2.1) and `TwoHopDismountable` (SAND §2.1, unnumbered) and the vertex sets `vminus`/`vplus`/`vzero` (SAND §3.1, unnumbered), characterized by `partition_of_not_dismountable` (SAND Lemma 3.1), `vplus_ne_neighbor_of_not_twoHopDismountable`/`vminus_ne_neighbor_of_not_twoHopDismountable` (SAND Lemma 3.2), the `earliestNeighborFn`/`latestNeighborFn` bijections together with `existsUnique_vplus_earliestEdge`/`existsUnique_vminus_latestEdge`/`vminus_card_eq_vplus_card` (SAND Corollary 3.3), and `vzero_empty_of_not_twoHopDismountable` (SAND Lemma 3.4), the reciprocity lemmas `earliestEdge_reciprocity`/`latestEdge_reciprocity` (SAND Lemma 3.5), `biclique_of_not_twoHopDismountable` (SAND Corollary 4.1), `between_TC_of_not_twoHopDismountable` (the remark after it) and `temporallyConnected_of_reachable_of_matchings` (SAND §4.1) |
+| `TemporalGraph/Dismountability/Operations.lean` | The `dismount`/`mount`/`twoHopMount` operations and their correctness theorems: `dismountability` (SAND Theorem 2.1, 1-hop dismountability) and `twoHopDismountability` (its 2-hop analogue); the temporal-connectivity lemmas `mount_tc`/`twoHopMount_TC`; and `exists_isSpannerOf_of_twoHopDismountable` (SAND Theorem 2.1 and §2.1: a spanner of the dismounted graph extends to one of `H` with at most 4 more edges) |
+| `TemporalGraph/Dismountability/OneSided.lean` | One-sided dismountability (SAND §4.1): the one-sided spanner `IsSpannerFromTo` (from `s` to `t`), `OneSidedDismountable`, `oneSidedMount`, the splitting lemmas `IsSpannerFromTo.sup`/`isSpannerFromTo_sup_of_induce`, the step `oneSidedDismountability`, the pigeonhole `exists_oneSidedDismountable_of_ncard_lt` and the assembly `temporallyConnected_of_isSpannerFromTo` |
+| `TemporalGraph/Dismountability/OneSidedBound.lean` | The `O(n log n)` bound (SAND §4.1): the recurrence `spannerBound` (`spannerBound_isBigO`), `IsOneSidedSpannerBound`/`exists_isBigO_isOneSidedSpannerBound` (bi-cliques), `exists_isSpannerFromTo_ncard_le`, `exists_isSpannerOf_of_not_twoHopDismountable`, then `exists_isSpannerOf_ncard_le` (explicit bound `2n⌈log₂ n⌉ + 4n`) and `exists_isBigO_isSpannerOf` (cliques) |
 | `TemporalGraph.lean` (root) | Import aggregator for the whole library — no longer carries demo content |
 | `TemporalGraph/Examples.lean` | Worked example: the `square` temporal clique (four vertices, edges at times 1–4) |
 
-## Main formalized result
+## Main formalized results
 
-In a non-2-hop-dismountable (happy) temporal clique, every vertex is either the earliest or the
-latest neighbor of some other vertex — i.e. `vzero = ∅` (SAND Lemma 3.4). Together with the
-earliest/latest-neighbor bijections between `vminus` and `vplus` (SAND Corollary 3.3), this gives
-the V⁻/V⁺ perfect-matching structure that is the bridge used by the source papers toward the
-`O(n log n)` spanner bound.
+SAND 2025, §4.1 (following Angrick et al., ESA 2024, for the one-sided part):
+
+- `exists_isSpannerOf_ncard_le`: every finite simple proper temporal clique `H` on `n` vertices
+  (with `H` and the ambient graph `G` symmetric, and `G` loopless) has a symmetric spanner with at
+  most `2n⌈log₂ n⌉ + 4n` edges.
+- `exists_isBigO_isSpannerOf`: the `O(n log n)` form of the same statement, with a single bound
+  function `f` chosen uniformly for all such cliques.
+
+On the clique side, in a non-2-hop-dismountable (happy) temporal clique, every vertex is either
+the earliest or the latest neighbor of some other vertex — i.e. `vzero = ∅` (SAND Lemma 3.4) —
+and the earliest/latest-neighbor bijections between `vminus` and `vplus` (SAND Corollary 3.3)
+give the V⁻/V⁺ perfect-matching structure that reduces cliques to bi-cliques (SAND Corollary 4.1).
 
 ## References
 
@@ -132,6 +142,10 @@ root, which `checkdecls` imports).
 Without it, lake would build only the root module `TemporalGraph.lean` and what it imports, which
 stops at `Subgraph` and silently skips `Connectivity/` and `Dismountability/`.
 
+**Module system.** Every file is a Lean module (`module`, `public import`, and
+`@[expose] public section` so that definitions unfold across files), except
+`TemporalGraph/Examples.lean` and the root `TemporalGraph.lean`, which are plain files.
+
 ## Status
 
 This library is under active development alongside the thesis. `TemporalGraph` and `Subgraph`
@@ -140,8 +154,8 @@ Symmetry and irreflexivity are expressed as type classes (`IsSymm`/`IsLoopless`)
 instance resolution rather than explicit hypotheses — results that need them take `[G.IsSymm]`
 or `[G.IsLoopless]`, and constructions that preserve them declare instances. This departs from
 Mathlib's `SimpleGraph`, which bundles `symm` and `loopless` as structure fields; the motivation
-is to avoid threading hypotheses through 82 declarations only to use them in 13, and to let a
-subgraph be oriented. `Subgraph` now extends `TemporalGraph`, eliminating duplication: `IsSymm`,
+is to avoid threading hypotheses through 82 declarations (at the time of the refactor) only to
+use them in 13, and to let a subgraph be oriented. `Subgraph` now extends `TemporalGraph`, eliminating duplication: `IsSymm`,
 `IsSimple`, `IsProper`, `IsHappy`, `EarliestEdge`, `LatestEdge`, `EarliestNeighbor` and
 `LatestNeighbor` are now inherited through the parent projection `toTemporalGraph`, not
 redefined. The oriented world has its own edge measure: `arcSet` and `arcSize` count ordered

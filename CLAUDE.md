@@ -367,7 +367,18 @@ dismountable, V⁰ = ∅. -/`. Toujours écrire la forme complète `SAND 2025, L
 - `lake env lean TemporalGraph/<Fichier>.lean` : typechecker un fichier isolé (demande que les
   `.olean` de ses dépendances existent déjà).
 - Blueprint : projet uv dans `blueprint/` (`pyproject.toml` + `uv.lock`, pas de
-  `requirements.txt`). Depuis la racine : `uv run --project blueprint leanblueprint web|checkdecls`.
+  `requirements.txt`). Depuis la racine : `uv run --project blueprint leanblueprint web`, puis
+  `lake env lean --run scripts/CheckDecls.lean blueprint/lean_decls` pour vérifier que les
+  déclarations citées existent. **Ne plus utiliser `leanblueprint checkdecls`** : `lake exe
+  checkdecls` importe toutes les bibliothèques du paquet, dont `Challenge`, qui recopie à
+  l'identique des définitions de la bibliothèque (exigence de Comparator) ; l'import commun échoue
+  sur ces doublons. Le script n'importe que `TemporalGraph`.
+- Soumission Palomar (dépôt unique) : `Challenge.lean` (énoncé, imports Mathlib seuls, `sorry`
+  volontaires), `Solution.lean` (mêmes énoncés, prouvés), `comparator.json`, `formalization.yaml`
+  (brouillon : champs `TODO(archimage)` à compléter). Les définitions comparées sont recopiées à
+  l'identique dans `TemporalGraph/Dismountability/CliqueSpanner.lean`, qui fait le pont avec la
+  bibliothèque ; toute modification de l'une doit être reportée dans l'autre. Tout fichier `.lean`
+  du dépôt doit rester un module (`Examples` et la racine compris).
   plasTeX seul, **aucune distribution TeX** : le `kpsewhich` dont plasTeX a besoin est fourni par
   le projet uv (`blueprint/blueprint_tools/`, script installé dans `blueprint/.venv/bin`). Sans
   lui, plasTeX ne trouve pas `macros/common` et plante avec `TypeError: unhashable type:

@@ -1,0 +1,144 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
+# formalization.yaml v0.4
+# DRAFT for the Palomar submission. Fields marked TODO(archimage) must be completed by the
+# author before submitting.
+version: "v0.4"
+
+project:
+  name: "Temporal cliques admit spanners of size O(n log n)"
+  description: >-
+    Lean 4 / Mathlib formalization of the theorem that every temporal clique on n vertices admits
+    a temporal spanner with O(n log n) edges. A temporal clique is the complete graph on a finite
+    vertex set whose edges carry natural-number time labels, locally injective (two edges sharing
+    an endpoint have distinct labels); a temporal spanner is a set of edges in which every vertex
+    reaches every other one by a journey with strictly increasing labels. The result is due to
+    Casteigts, Peters and Schoeters (ICALP 2019, JCSS 2021); the formal proof follows the
+    dismountability-only proof of Carnevale, Casteigts and Corsini (SAND 2025, §§2–4), which
+    reduces cliques to bi-cliques and concludes with the one-sided dismountability of Angrick et
+    al. (ESA 2024). The compared statements give an explicit bound of 2n⌈log₂ n⌉ + 4n edges and
+    the asymptotic O(n log n) form with a bound function chosen uniformly for all cliques.
+  authors:
+    - "Ethan Bargaud-Arm"
+  responsible_maintainers:
+    - "Ethan Bargaud-Arm"
+  license: "Apache-2.0"
+
+classification:
+  arxiv: ["cs.DM", "math.CO"]
+  msc2020: ["05C85", "05C40", "05C38", "68R10"]
+
+sources:
+  - title: "Dismountability in Temporal Cliques Revisited"
+    authors:
+      - "Daniele Carnevale"
+      - "Arnaud Casteigts"
+      - "Timothée Corsini"
+    id: "doi:10.4230/LIPIcs.SAND.2025.6"
+    type: "paper"
+    location: "4th Symposium on Algorithmic Foundations of Dynamic Networks (SAND 2025), LIPIcs 330, article 6; arXiv:2502.01321"
+    relationship: "formalizes"
+    note: >-
+      Main source. The formalization follows its proof: 1- and {1,2}-hop dismountability
+      (Theorem 2.1, §2.1), the structure of non-dismountable cliques (Lemmas 3.1–3.5,
+      Corollary 3.3), the reduction to bi-cliques (Corollary 4.1) and the O(n log n) conclusion
+      (§4.1). Numbering follows the published LIPIcs version.
+    author_endorsement: "not-contacted"
+  - title: "How to Reduce Temporal Cliques to Find Sparse Spanners"
+    authors:
+      - "Sebastian Angrick"
+      - "Ben Bals"
+      - "Tobias Friedrich"
+      - "Hans Gawendowicz"
+      - "Niko Hastrich"
+      - "Nicolas Klodt"
+      - "Pascal Lenzner"
+      - "Jonas Schmidt"
+      - "George Skretas"
+      - "Armin Wells"
+    id: "doi:10.4230/LIPIcs.ESA.2024.11"
+    type: "paper"
+    location: "32nd European Symposium on Algorithms (ESA 2024), LIPIcs 308, article 11"
+    relationship: "formalizes"
+    note: >-
+      One-sided dismountability and the halving recurrence for one-sided spanners of temporal
+      bi-cliques, formalized as recalled in SAND 2025, §4.1.
+    author_endorsement: "not-contacted"
+  - title: "Temporal Cliques Admit Sparse Spanners"
+    authors:
+      - "Arnaud Casteigts"
+      - "Joseph G. Peters"
+      - "Jason Schoeters"
+    id: "doi:10.4230/LIPIcs.ICALP.2019.134"
+    type: "paper"
+    location: "ICALP 2019, LIPIcs 132, article 134; journal version doi:10.1016/j.jcss.2021.04.004 (JCSS 2021); arXiv:1810.00104"
+    relationship: "background"
+    note: >-
+      Original source of the theorem and of the dismountability technique. The formal proof does
+      not follow its argument but the later proof of SAND 2025.
+    author_endorsement: "not-contacted"
+
+related_formalizations:
+  - id: "https://github.com/leanprover/cslib (Cslib/Algorithms/Lean/MergeSort/MergeSort.lean, commit 9a99cbb)"
+    relationship: "other"
+    note: >-
+      The explicit solution of the spanner-size recurrence follows the merge-sort analysis of
+      CSLib (recurrence on the halves, halving lemma for Nat.clog 2, closed form n⌈log₂ n⌉).
+      No previous formalization of temporal spanners is known to the author; no systematic
+      search was made.
+
+status:
+  scope: >-
+    Compared: exists_isTemporalSpanner_card_le (explicit bound 2n⌈log₂ n⌉ + 4n) and
+    exists_isBigO_isTemporalSpanner (O(n log n), one bound function for all cliques). The
+    library (TemporalGraph/) also proves the intermediate results of SAND 2025 (Theorem 2.1,
+    Lemmas 3.1–3.5, Corollaries 3.3 and 4.1), which are not compared.
+  sorry_count: 0
+  sorry_in_definitions: 0
+  axioms: ["propext", "Quot.sound", "Classical.choice"]
+
+automation:
+  methods:
+    - method: "agent"
+      models: ["Claude Opus 5.5", "Claude Sonnet 5.5"]
+      framework: "Claude Code"
+      tool_setup: "lean-lsp MCP server and the lean4-skills plugin; local lake builds"
+      prompting_notes: >-
+        TODO(archimage): describe the role of AI over the whole project (this draft only records
+        the session that prepared the submission: library refactoring, documentation, the
+        Challenge statement and the Solution bridge).
+  notes: >-
+    AI agents wrote and refactored Lean code and documentation under the author's direction; all
+    statements and design decisions were made or approved by the author.
+
+fidelity:
+  divergences: >-
+    Labels are natural numbers (any linearly ordered labels on a finite clique can be replaced by
+    their ranks). Each edge has exactly one label (simple temporal graph) and the labelling is
+    locally injective, as in the sources. The labelling is a function on Sym2 V; its values on
+    the diagonal are ignored. Journeys are strict (strictly increasing labels); a spanner is a
+    Finset of non-diagonal edges. Vertex types live in Type (universe 0). The explicit bound uses
+    Nat.clog 2, the asymptotic form Real.log.
+
+review:
+  status: "TODO(archimage): pending human review"
+  notes: >-
+    TODO(archimage): complete after the author's review. Automated checks made before
+    submission: Challenge and Solution constants compared (types, universe levels, definition
+    values), axioms checked, and agent reviews of the statements against the LIPIcs text.
+
+alignment:
+  namespace: "TemporalCliqueSpanners"
+  statements:
+    - source: "Casteigts–Peters–Schoeters 2019; SAND 2025, §4.1"
+      lean: "TemporalCliqueSpanners.exists_isTemporalSpanner_card_le"
+      module: "Challenge"
+      status: "proved"
+      note: "Explicit bound 2n⌈log₂ n⌉ + 4n."
+    - source: "Casteigts–Peters–Schoeters 2019; SAND 2025, §4.1"
+      lean: "TemporalCliqueSpanners.exists_isBigO_isTemporalSpanner"
+      module: "Challenge"
+      status: "proved"
+      note: "O(n log n), with the bound function chosen uniformly."
+
+acknowledgements: >-
+  Mathlib; CSLib (merge-sort analysis); the Palomar submission template.

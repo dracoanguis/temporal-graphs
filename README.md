@@ -102,8 +102,8 @@ against for the dependency graph. From the repository root:
     uv run --project blueprint leanblueprint serve        # preview the HTML version locally
 
 Do not use `leanblueprint checkdecls`: it imports every library of the package together,
-including the Palomar statement `Challenge`, which repeats library definitions verbatim, and
-fails on the duplicates. `scripts/CheckDecls.lean` checks against the `TemporalGraph` library
+including the Palomar files `Challenge` and `Solution`, which define the same names (as
+Comparator requires), and fails on the duplicates. `scripts/CheckDecls.lean` checks against the `TemporalGraph` library
 alone. If a PDF build
 fails, delete `blueprint/print/` before retrying: latexmk otherwise refuses to rerun after an
 error.

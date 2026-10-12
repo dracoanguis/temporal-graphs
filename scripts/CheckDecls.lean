@@ -11,8 +11,8 @@ public import Lean
 # Blueprint declaration check, restricted to the library
 
 `leanblueprint checkdecls` runs `lake exe checkdecls`, which imports every library of the
-package together. The Palomar statement `Challenge` repeats verbatim definitions of the library
-(as Comparator requires), so that joint import fails on the duplicated names. This script checks
+package together. The Palomar files `Challenge` and `Solution` define the same names (as
+Comparator requires), so that joint import fails on the duplicates. This script checks
 the declarations listed by the blueprint against the `TemporalGraph` library alone.
 
 Usage, from the repository root, after `leanblueprint web`:

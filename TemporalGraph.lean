@@ -17,5 +17,4 @@ public import TemporalGraph.Dismountability.Basic
 public import TemporalGraph.Dismountability.Operations
 public import TemporalGraph.Dismountability.OneSided
 public import TemporalGraph.Dismountability.OneSidedBound
-public import TemporalGraph.Dismountability.CliqueSpanner
 public import TemporalGraph.Bipartite

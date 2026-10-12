@@ -103,19 +103,24 @@ automation:
   methods:
     - method: "manual"
       prompting_notes: >-
-        A first part of the formalization was written by Ethan Bargaud-Arm without any AI
-        assistance, as part of his master's thesis work.
+        First part, written by Ethan Bargaud-Arm without any AI assistance as part of his master's
+        thesis work (September 2025 to July 2026; every commit up to 2f3b153, the point where the
+        branch monde-apres starts): the model of temporal graphs, temporal walks, sub-temporal
+        graphs and connectivity, and SAND 2025 §§2–3, namely Theorem 2.1 (1-hop and 2-hop
+        dismountability), Lemmas 3.1, 3.2 and 3.4 and Corollary 3.3, without any sorry.
     - method: "agent"
       models: ["Claude Opus 5.5", "Claude Sonnet 5.5"]
       framework: "Claude Code"
       tool_setup: "lean-lsp MCP server and the lean4-skills plugin; local lake builds"
       prompting_notes: >-
-        The work was later resumed by Ethan Bargaud-Arm with Claude, which assisted in a refactoring
-        guided by him: restructuring of the library (type classes for symmetry and looplessness,
-        subgraphs, the Lean module system, Mathlib-style names and imports) and its
-        documentation. In the session that prepared this submission, Claude also wrote, under his
-        direction, the strict-walk shortening and the equivalence of strict and non-strict
-        reachability, the Challenge statement and the Solution bridge to the library.
+        Second part, from September 2026 (branch monde-apres): Ethan Bargaud-Arm resumed the work
+        with Claude, which assisted in a refactoring guided by him (type classes for symmetry and
+        looplessness, subgraphs, the Lean module system, Mathlib-style names and imports,
+        documentation and blueprint). The rest of the development dates from this part, carried
+        out with Claude's assistance under his direction: bipartite graphs and bi-cliques, SAND
+        2025 Lemma 3.5 and Corollary 4.1, the one-sided dismountability and the O(n log n) bound of
+        §4.1, strict walks and the equivalence of strict and non-strict reachability, and the
+        Palomar Challenge statement and Solution bridge.
   notes: >-
     Every statement, definition and design decision was made or approved by the author; AI
     contributions were reviewed through the Lean kernel (all proofs are machine-checked) and

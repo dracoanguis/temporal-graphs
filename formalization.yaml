@@ -101,17 +101,25 @@ status:
 
 automation:
   methods:
+    - method: "manual"
+      prompting_notes: >-
+        A first part of the formalization was written by Ethan Bargaud-Arm without any AI
+        assistance, as part of his master's thesis work.
     - method: "agent"
       models: ["Claude Opus 5.5", "Claude Sonnet 5.5"]
       framework: "Claude Code"
       tool_setup: "lean-lsp MCP server and the lean4-skills plugin; local lake builds"
       prompting_notes: >-
-        TODO(archimage): describe the role of AI over the whole project (this draft only records
-        the session that prepared the submission: library refactoring, documentation, the
-        Challenge statement and the Solution bridge).
+        The work was later resumed by Ethan Bargaud-Arm with Claude, which assisted in a refactoring
+        guided by him: restructuring of the library (type classes for symmetry and looplessness,
+        subgraphs, the Lean module system, Mathlib-style names and imports) and its
+        documentation. In the session that prepared this submission, Claude also wrote, under his
+        direction, the strict-walk shortening and the equivalence of strict and non-strict
+        reachability, the Challenge statement and the Solution bridge to the library.
   notes: >-
-    AI agents wrote and refactored Lean code and documentation under the author's direction; all
-    statements and design decisions were made or approved by the author.
+    Every statement, definition and design decision was made or approved by the author; AI
+    contributions were reviewed through the Lean kernel (all proofs are machine-checked) and
+    agent-run audits of the statements against the published sources.
 
 fidelity:
   divergences: >-

@@ -16,7 +16,8 @@ project:
     dismountability-only proof of Carnevale, Casteigts and Corsini (SAND 2025, §§2–4), which
     reduces cliques to bi-cliques and concludes with the one-sided dismountability of Angrick et
     al. (ESA 2024). The compared statements give an explicit bound of 2n⌈log₂ n⌉ + 4n edges and
-    the asymptotic O(n log n) form with a bound function chosen uniformly for all cliques.
+    the asymptotic O(n log n) form with a bound function chosen uniformly for all cliques. The
+    work is supervised by Arnaud Casteigts and Karine Altisen.
   authors:
     - "Ethan Bargaud-Arm"
   responsible_maintainers:
@@ -41,8 +42,9 @@ sources:
       Main source. The formalization follows its proof: 1- and {1,2}-hop dismountability
       (Theorem 2.1, §2.1), the structure of non-dismountable cliques (Lemmas 3.1–3.5,
       Corollary 3.3), the reduction to bi-cliques (Corollary 4.1) and the O(n log n) conclusion
-      (§4.1). Numbering follows the published LIPIcs version.
-    author_endorsement: "not-contacted"
+      (§4.1). Numbering follows the published LIPIcs version. Its co-author Arnaud Casteigts
+      supervises this formalization.
+    author_endorsement: "participated"
   - title: "How to Reduce Temporal Cliques to Find Sparse Spanners"
     authors:
       - "Sebastian Angrick"
@@ -74,8 +76,9 @@ sources:
     relationship: "background"
     note: >-
       Original source of the theorem and of the dismountability technique. The formal proof does
-      not follow its argument but the later proof of SAND 2025.
-    author_endorsement: "not-contacted"
+      not follow its argument but the later proof of SAND 2025. Its co-author Arnaud Casteigts
+      supervises this formalization.
+    author_endorsement: "participated"
 
 related_formalizations:
   - id: "https://github.com/leanprover/cslib (Cslib/Algorithms/Lean/MergeSort/MergeSort.lean, commit 9a99cbb)"
@@ -141,4 +144,5 @@ alignment:
       note: "O(n log n), with the bound function chosen uniformly."
 
 acknowledgements: >-
-  Mathlib; CSLib (merge-sort analysis); the Palomar submission template.
+  Supervised by Arnaud Casteigts and Karine Altisen. Mathlib; CSLib (merge-sort analysis); the
+  Palomar submission template.

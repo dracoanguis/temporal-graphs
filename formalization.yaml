@@ -11,7 +11,7 @@ project:
     a temporal spanner with O(n log n) edges. A temporal clique is the complete graph on a finite
     vertex set whose edges carry natural-number time labels, locally injective (two edges sharing
     an endpoint have distinct labels); a temporal spanner is a set of edges in which every vertex
-    reaches every other one by a journey with strictly increasing labels. The result is due to
+    reaches every other one by a journey with non-decreasing labels. The result is due to
     Casteigts, Peters and Schoeters (ICALP 2019, JCSS 2021); the formal proof follows the
     dismountability-only proof of Carnevale, Casteigts and Corsini (SAND 2025, §§2–4), which
     reduces cliques to bi-cliques and concludes with the one-sided dismountability of Angrick et
@@ -129,7 +129,9 @@ fidelity:
     Labels are natural numbers (any linearly ordered labels on a finite clique can be replaced by
     their ranks). Each edge has exactly one label (simple temporal graph) and the labelling is
     locally injective, as in the sources. The labelling is a function on Sym2 V; its values on
-    the diagonal are ignored. Journeys are strict (strictly increasing labels); a spanner is a
+    the diagonal are ignored. Journeys are non-strict (non-decreasing labels), like the walks of
+    the library; on these simple, locally injective cliques this gives the same reachability as
+    strict journeys, since two consecutive distinct edges have distinct labels. A spanner is a
     Finset of non-diagonal edges. Vertex types live in Type (universe 0). The explicit bound uses
     Nat.clog 2, the asymptotic form Real.log.
 

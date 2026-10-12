@@ -19,7 +19,7 @@ A *temporal clique* on a finite vertex set `V` is the complete graph on `V` in w
 edge has exactly one label (the temporal graph is *simple*), and the labelling is *locally
 injective* (*proper*): two distinct edges with a common endpoint carry distinct labels.
 
-A *journey* is a walk whose successive edges have strictly increasing labels. A set `S` of edges
+A *journey* is a walk whose successive edges have non-decreasing labels. A set `S` of edges
 is a *temporal spanner* when every vertex can reach every other one by a journey that only uses
 edges of `S`.
 
@@ -36,10 +36,12 @@ in asymptotic form.
   replaced by its ranks in `ℕ` without changing which walks are journeys.
 * `lab` is defined on all of `Sym2 V`; its values on the diagonal `s(v, v)` are never used,
   since a spanner contains no such pair.
-* Journeys are *strict*: the labels increase strictly along the walk, as in the source papers.
-  Non-strict journeys (non-decreasing labels) are a different notion even for a locally
-  injective labelling: crossing an edge and immediately crossing it back, `u → w → u`, is a
-  non-strict journey but not a strict one.
+* Journeys are *non-strict*: the labels are only required to be non-decreasing along the walk.
+  For the cliques considered here the distinction with strict journeys (strictly increasing
+  labels) disappears: each edge has one label and the labelling is locally injective, so two
+  consecutive distinct edges, which share an endpoint, have distinct labels. A non-strict
+  journey that is not strict must therefore cross an edge and immediately cross it back at the
+  same time, a detour that can be deleted; both notions give the same reachability.
 -/
 
 @[expose] public section
@@ -54,13 +56,13 @@ def IsLocallyInjective (lab : Sym2 V → ℕ) : Prop :=
   ∀ u v w : V, u ≠ v → u ≠ w → v ≠ w → lab s(u, v) ≠ lab s(u, w)
 
 /-- `Journey S lab t u v`: there is a journey from `u` to `v` using only edges of `S`, whose
-labels are strictly increasing and all at least `t`. The empty journey goes from `u` to `u`;
+labels are non-decreasing and all at least `t`. The empty journey goes from `u` to `u`;
 otherwise the journey crosses an edge `s(u, w) ∈ S` at a time `lab s(u, w) ≥ t`, then continues
-from `w` strictly after that time. -/
+from `w` no earlier than that time. -/
 inductive Journey (S : Finset (Sym2 V)) (lab : Sym2 V → ℕ) : ℕ → V → V → Prop
   | nil (t : ℕ) (u : V) : Journey S lab t u u
   | cons {t : ℕ} {u w v : V} (h₀ : s(u, w) ∈ S) (h₁ : t ≤ lab s(u, w))
-      (h₂ : Journey S lab (lab s(u, w) + 1) w v) : Journey S lab t u v
+      (h₂ : Journey S lab (lab s(u, w)) w v) : Journey S lab t u v
 
 /-- `S` is a *temporal spanner* of the temporal clique labelled by `lab`: `S` consists of edges of
 the complete graph (no diagonal pair `s(v, v)`), and every vertex `u` reaches every vertex `v`

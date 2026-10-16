@@ -375,7 +375,8 @@ dismountable, V⁰ = ∅. -/`. Toujours écrire la forme complète `SAND 2025, L
   Le script n'importe que `TemporalGraph`.
 - Soumission Palomar (dépôt unique) : `Challenge.lean` (énoncé, imports Mathlib seuls, `sorry`
   volontaires), `Solution.lean` (mêmes énoncés, prouvés), `comparator.json`, `formalization.yaml`
-  (brouillon : champs `TODO(archimage)` à compléter). `Solution.lean` recopie à l'identique les
+  (complet : relecture humaine de l'auteur faite, `review.status: self-assessed`). La licence est
+  `LICENSE` (texte brut officiel d'Apache 2.0). `Solution.lean` recopie à l'identique les
   définitions de `Challenge.lean` et contient tout le pont avec la bibliothèque (aucun fichier
   propre à la soumission dans `TemporalGraph/`) ; toute modification d'une définition doit être
   reportée dans les deux fichiers. Tout fichier `.lean` du dépôt doit rester un module

@@ -1,7 +1,5 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/formalization.schema.json
 # formalization.yaml v0.4
-# DRAFT for the Palomar submission. Fields marked TODO(archimage) must be completed by the
-# author before submitting.
 version: "v0.4"
 
 project:
@@ -136,11 +134,12 @@ fidelity:
     Nat.clog 2, the asymptotic form Real.log.
 
 review:
-  status: "TODO(archimage): pending human review"
+  status: "self-assessed"
   notes: >-
-    TODO(archimage): complete after the author's review. Automated checks made before
-    submission: Challenge and Solution constants compared (types, universe levels, definition
-    values), axioms checked, and agent reviews of the statements against the LIPIcs text.
+    The statements and the formalization were reviewed and approved by the author. Automated
+    checks made before submission: lake comparator --paranoid accepts the Solution (Lean's
+    kernel and the bundled lean4lean, nanoda, con-leche and con-ron checkers), and agent-run
+    audits compared the statements with the published LIPIcs text.
 
 alignment:
   namespace: "TemporalCliqueSpanners"

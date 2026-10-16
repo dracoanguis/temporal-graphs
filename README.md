@@ -2,9 +2,10 @@
 
 A Lean 4 + [Mathlib](https://github.com/leanprover-community/mathlib4) library on **temporal
 graphs** — graphs whose edges are labelled by the (natural-number) times at which they are
-available. It is developed as part of the master's thesis *Temporal Graphs in Lean: A
+available. It was started as part of the master's thesis *Temporal Graphs in Lean: A
 beginner's journey to assisted formal proof* (Ethan Bargaud-Arm, Université de Genève,
-supervised by Pr. Karine Altisen and Pr. Arnaud Casteigts).
+supervised by Pr. Karine Altisen and Pr. Arnaud Casteigts), and later extended to the full
+`O(n log n)` result.
 
 Unlike in static graphs, reachability in a temporal graph is defined by the existence of a
 *walk* whose edge times are non-decreasing, which makes classical connectivity results fail to
@@ -47,8 +48,8 @@ they don't need the same cross-cutting instance resolution.
 | `TemporalGraph/Dismountability/Operations.lean` | The `dismount`/`mount`/`twoHopMount` operations and their correctness theorems: `dismountability` (SAND Theorem 2.1, 1-hop dismountability) and `twoHopDismountability` (its 2-hop analogue); the temporal-connectivity lemmas `mount_temporallyConnected`/`twoHopMount_temporallyConnected`; and `exists_isSpannerOf_of_twoHopDismountable` (SAND Theorem 2.1 and §2.1: a spanner of the dismounted graph extends to one of `H` with at most 4 more edges) |
 | `TemporalGraph/Dismountability/OneSided.lean` | One-sided dismountability (SAND §4.1): the one-sided spanner `IsSpannerFromTo` (from `s` to `t`), `OneSidedDismountable`, `oneSidedMount`, the splitting lemmas `IsSpannerFromTo.sup`/`isSpannerFromTo_sup_of_induce`, the step `oneSidedDismountability`, the pigeonhole `exists_oneSidedDismountable_of_ncard_lt` and the assembly `temporallyConnected_of_isSpannerFromTo` |
 | `TemporalGraph/Dismountability/OneSidedBound.lean` | The `O(n log n)` bound (SAND §4.1): the recurrence `spannerBound` (`spannerBound_isBigO`), `IsOneSidedSpannerBound`/`exists_isBigO_isOneSidedSpannerBound` (bi-cliques), `exists_isSpannerFromTo_ncard_le`, `exists_isSpannerOf_of_not_twoHopDismountable`, then `exists_isSpannerOf_ncard_le` (explicit bound `2n⌈log₂ n⌉ + 4n`) and `exists_isBigO_isSpannerOf` (cliques) |
-| `TemporalGraph.lean` (root) | Import aggregator for the whole library — no longer carries demo content |
-| `TemporalGraph/Examples.lean` | Worked example: the `square` temporal clique (four vertices, edges at times 1–4) |
+| `TemporalGraph.lean` (root) | Import aggregator for the library (every module except `Examples`) |
+| `TemporalGraph/Examples.lean` | Worked examples: the `square` temporal clique (four vertices, edges at times 1–4) and the bi-clique `biSquare`; built by `lake build` but not imported by the root |
 
 ## Main formalized results
 
@@ -65,6 +66,35 @@ the earliest or the latest neighbor of some other vertex — i.e. `vzero = ∅` 
 and the earliest/latest-neighbor bijections between `vminus` and `vplus` (SAND Corollary 3.3)
 give the V⁻/V⁺ perfect-matching structure that reduces cliques to bi-cliques (SAND Corollary 4.1).
 
+## Palomar submission
+
+The result is prepared for the [Palomar](https://palomar-registry.org) registry of Lean-verified
+mathematics. The statement of record, [`Challenge.lean`](Challenge.lean), imports Mathlib only and
+describes a temporal clique in the usual way: a labelling `lab : Sym2 V → ℕ` of the edges of the
+complete graph on a finite type `V`, locally injective (two edges sharing an endpoint have
+distinct labels), with journeys of non-decreasing labels and spanners given as finite sets of
+edges. On these simple, locally injective cliques, non-strict and strict journeys give the same
+reachability. It states two theorems, with deliberate `sorry` holes:
+
+- `TemporalCliqueSpanners.exists_isTemporalSpanner_card_le`: every temporal clique on `n`
+  vertices admits a temporal spanner with at most `2n⌈log₂ n⌉ + 4n` edges;
+- `TemporalCliqueSpanners.exists_isBigO_isTemporalSpanner`: the `O(n log n)` form, with one bound
+  function for all temporal cliques.
+
+[`Solution.lean`](Solution.lean) repeats the definitions of the Challenge verbatim and proves both
+theorems from the library (`exists_isSpannerOf_ncard_le`, `exists_isBigO_isSpannerOf`): the
+labelling defines a temporal graph whose clique has a spanner, whose edges form the required set
+and whose walks are journeys. [`comparator.json`](comparator.json) names the compared theorems and
+the permitted axioms (`propext`, `Quot.sound`, `Classical.choice`), and
+[`formalization.yaml`](formalization.yaml) records the sources, provenance, use of AI and review.
+The comparison is run with
+
+    lake comparator --paranoid
+
+which checks that each Solution theorem proves the Challenge statement with the permitted axioms
+only, through Lean's kernel and the external checkers bundled with Lean (`lean4lean`, `nanoda`,
+`con-leche`, `con-ron`). It needs `bwrap` (Linux).
+
 ## References
 
 1. Daniele Carnevale, Arnaud Casteigts & Timothée Corsini, *Dismountability in Temporal Cliques
@@ -73,8 +103,10 @@ give the V⁻/V⁺ perfect-matching structure that reduces cliques to bi-cliques
 2. Arnaud Casteigts, Joseph G. Peters & Jason Schoeters, *Temporal Cliques Admit Sparse
    Spanners*, ICALP 2019 / JCSS 2021. Original source of the dismountability technique and the
    `O(n log n)` spanner bound.
-3. Angrick et al., ESA 2024 — cited above (introduction) for the observation the SAND 2025 proof
-   builds on.
+3. Sebastian Angrick, Ben Bals, Tobias Friedrich, Hans Gawendowicz, Niko Hastrich, Nicolas Klodt,
+   Pascal Lenzner, Jonas Schmidt, George Skretas & Armin Wells, *How to Reduce Temporal Cliques to
+   Find Sparse Spanners*, ESA 2024, LIPIcs 308, 11. doi:10.4230/LIPIcs.ESA.2024.11. Source of the
+   one-sided dismountability that concludes the SAND 2025 proof.
 
 ## Blueprint
 
@@ -103,10 +135,9 @@ against for the dependency graph. From the repository root:
 
 Do not use `leanblueprint checkdecls`: it imports every library of the package together,
 including the Palomar files `Challenge` and `Solution`, which define the same names (as
-Comparator requires), and fails on the duplicates. `scripts/CheckDecls.lean` checks against the `TemporalGraph` library
-alone. If a PDF build
-fails, delete `blueprint/print/` before retrying: latexmk otherwise refuses to rerun after an
-error.
+Comparator requires), and fails on the duplicates. `scripts/CheckDecls.lean` checks against the
+`TemporalGraph` library alone. If a PDF build fails, delete `blueprint/print/` before retrying:
+latexmk otherwise refuses to rerun after an error.
 
 ## API documentation
 
@@ -134,7 +165,7 @@ The toolchain (`lean`, `lake`, `elan`) is pinned by [`lean-toolchain`](lean-tool
 it with [elan](https://github.com/leanprover/elan) if needed.
 
 ```sh
-lake build                                  # every module of the library
+lake build                                  # the library, Challenge and Solution
 lake build TemporalGraph.Dismountability.Operations   # one module, with its dependencies
 lake env lean TemporalGraph/<File>.lean     # typecheck a single file in isolation
 ```
@@ -145,13 +176,13 @@ root, which `checkdecls` imports).
 Without it, lake would build only the root module `TemporalGraph.lean` and what it imports, which
 stops at `Subgraph` and silently skips `Connectivity/` and `Dismountability/`.
 
-**Module system.** Every file is a Lean module (`module`, `public import`, and
-`@[expose] public section` so that definitions unfold across files), except
-`TemporalGraph/Examples.lean` and the root `TemporalGraph.lean`, which are plain files.
+**Module system.** Every Lean file of the repository is a module (`module`, `public import`, and
+`@[expose] public section` so that definitions unfold across files), as Palomar requires. Each
+file imports only the Mathlib modules it uses.
 
 ## Status
 
-This library is under active development alongside the thesis. `TemporalGraph` and `Subgraph`
+This library is under active development. `TemporalGraph` and `Subgraph`
 follow an unbundled design: both types carry only data (`Adj`, and `verts` for a subgraph).
 Symmetry and irreflexivity are expressed as type classes (`IsSymm`/`IsLoopless`), passed via
 instance resolution rather than explicit hypotheses — results that need them take `[G.IsSymm]`
@@ -165,8 +196,9 @@ redefined. The oriented world has its own edge measure: `arcSet` and `arcSize` c
 pairs (no hypothesis), while `edgeSet` and `size` count unordered edges (`mem_edgeSet` requires
 only `[IsSymm]`).
 
-Every module typechecks and the library contains no `sorry`.
+Every module typechecks. The library and `Solution.lean` contain no `sorry`; the only `sorry`
+are the deliberate holes of the statement of record `Challenge.lean`.
 
 ## License
 
-Apache License 2.0 — see [`LICENSE.md`](LICENSE.md).
+Apache License 2.0 — see [`LICENSE`](LICENSE).

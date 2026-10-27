@@ -18,6 +18,9 @@ proper symmetric graph.
 
 ## Main definitions
 * `Reachable` : Existence of a temporal walk between two vertices
+* `ReachableWithin` : `x` reaches `y` by a walk (possibly empty) leaving at a time `≥ a` and
+  arriving at a time `≤ b`; `ReachableBefore` (window `[0, b]`) and `ReachableAfter` (only the
+  departure bounded) are its one-sided variants
 * `StrictReachable` : Existence of a strict temporal walk between two vertices
 * `TemporallyConnected` : every pair of vertices of a given set `S` is mutually reachable (takes
   `S` as an explicit argument, mirroring `IsClique`)
@@ -30,6 +33,10 @@ defined at the `Subgraph` level, in `Connectivity/Subgraph.lean`.
 
 ## Main results
 * `Reachable.refl`, `StrictReachable.refl` : Every vertex reaches itself
+* `ReachableWithin.refl`, `ReachableWithin.step`, `ReachableWithin.cons` : empty walk, extension
+  by one arc at the end, and at the start
+* `ReachableWithin.mono`, `ReachableWithin.mono_window` : monotone along `≤` and in the window
+* `ReachableWithin.reachable`, `reachable_iff_exists_reachableWithin` : link with `Reachable`
 * `StrictReachable.reachable` : Strict reachability implies reachability
 * `Reachable.mono`, `StrictReachable.mono` : Reachability is monotone along `≤`
 * `reachable_iff_strictReachable` : in a proper symmetric graph, strict and non-strict
@@ -78,6 +85,68 @@ theorem Reachable.mono {G G' : TemporalGraph V} (h : G ≤ G') {x y : V} :
     G.Reachable x y → G'.Reachable x y := by
   rintro ⟨n, m, ⟨w⟩⟩
   exact ⟨n, m, ⟨w.mapLe h⟩⟩
+
+section ReachableWithin
+
+variable {G G' : TemporalGraph V} {x y z : V} {a a' b b' k : ℕ}
+
+/-- `x` reaches `y` within the time window `[a, b]`: some temporal walk, possibly empty, leaves `x`
+at a time `≥ a` and arrives at `y` at a time `≤ b`. -/
+def ReachableWithin (G : TemporalGraph V) (x y : V) (a b : ℕ) : Prop :=
+  ∃ n m : ℕ, a ≤ n ∧ m ≤ b ∧ Nonempty (G.TemporalWalk x n y m)
+
+/-- `x` reaches `y` by time `b`: the window `[0, b]`, only the arrival is bounded. -/
+abbrev ReachableBefore (G : TemporalGraph V) (x y : V) (b : ℕ) : Prop :=
+  G.ReachableWithin x y 0 b
+
+/-- `x` reaches `y` from time `a` on: only the departure is bounded. -/
+abbrev ReachableAfter (G : TemporalGraph V) (x y : V) (a : ℕ) : Prop :=
+  ∃ b, G.ReachableWithin x y a b
+
+/-- Every vertex reaches itself within any nonempty window, via the empty walk at time `a`. -/
+theorem ReachableWithin.refl (x : V) (h₀ : a ≤ b) : G.ReachableWithin x x a b :=
+  ⟨a, a, le_rfl, h₀, ⟨.nil⟩⟩
+
+/-- Extend a window-bounded walk by one arc at the end, at a time `k ≥ b`. -/
+theorem ReachableWithin.step (h₀ : G.ReachableWithin x y a b) (h₁ : G.Adj y z k) (h₂ : b ≤ k) :
+    G.ReachableWithin x z a k := by
+  obtain ⟨n, m, hn, hm, ⟨p⟩⟩ := h₀
+  cases p with
+  | nil => exact ⟨k, k, by omega, le_rfl, ⟨.ofNonempty (.single h₁)⟩⟩
+  | ofNonempty p => exact ⟨n, k, hn, le_rfl, ⟨.ofNonempty (p.step h₁ (by omega))⟩⟩
+
+/-- Prepend one arc, at a time `k ≥ a`, to a walk that leaves `y` at time `≥ k`. -/
+theorem ReachableWithin.cons (h₀ : G.Adj x y k) (h₁ : a ≤ k) (h₂ : G.ReachableWithin y z k b) :
+    G.ReachableWithin x z a b := by
+  obtain ⟨n, m, hn, hm, ⟨p⟩⟩ := h₂
+  cases p with
+  | nil => exact ⟨k, k, h₁, by omega, ⟨.ofNonempty (.single h₀)⟩⟩
+  | ofNonempty p => exact ⟨k, m, h₁, hm, ⟨.ofNonempty (p.prepend h₀ hn)⟩⟩
+
+/-- Window reachability is monotone along `≤`. -/
+theorem ReachableWithin.mono (h₀ : G ≤ G') (h₁ : G.ReachableWithin x y a b) :
+    G'.ReachableWithin x y a b := by
+  obtain ⟨n, m, hn, hm, ⟨p⟩⟩ := h₁
+  exact ⟨n, m, hn, hm, ⟨p.mapLe h₀⟩⟩
+
+/-- A larger window keeps the reachability. -/
+theorem ReachableWithin.mono_window (h₀ : G.ReachableWithin x y a b) (h₁ : a' ≤ a) (h₂ : b ≤ b') :
+    G.ReachableWithin x y a' b' := by
+  obtain ⟨n, m, hn, hm, hp⟩ := h₀
+  exact ⟨n, m, h₁.trans hn, hm.trans h₂, hp⟩
+
+/-- Reachability within a window implies reachability: forget the window. -/
+@[grind →]
+theorem ReachableWithin.reachable (h₀ : G.ReachableWithin x y a b) : G.Reachable x y :=
+  let ⟨n, m, _, _, hp⟩ := h₀
+  ⟨n, m, hp⟩
+
+/-- Reachability is reachability within some window. -/
+theorem reachable_iff_exists_reachableWithin :
+    G.Reachable x y ↔ ∃ a b, G.ReachableWithin x y a b :=
+  ⟨fun ⟨n, m, hp⟩ ↦ ⟨n, m, n, m, le_rfl, le_rfl, hp⟩, fun ⟨_, _, h⟩ ↦ h.reachable⟩
+
+end ReachableWithin
 
 /-- `y` is *strictly reachable* from `x`: some strict temporal walk, whose times increase strictly
 from each arc to the next, goes from `x` to `y`. -/

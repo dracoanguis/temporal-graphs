@@ -23,12 +23,14 @@ to contain at least one edge. Times must be non-decreasing along the walk (*non-
 * `prepend` : Add an edge at the start of a walk
 * `mapLe` : Transport a walk along a spanning-subgraph inclusion `G ≤ G'`
 * `IsStrict` : the walk's times increase strictly from each arc to the next
+* `transfer` : The same walk, seen in another graph containing all of its arcs
 
 ## Main results
 * `nondecreasing_time` : Times are non-decreasing along a walk
 * `exists_adj_fst` : The first vertex of a walk has an outgoing arc
 * `exists_adj_snd` : The last vertex of a walk has an incoming arc
 * `length_append`, `arcs_append` : Concatenation lemmas for walk length and arcs
+* `length_arcs` : The list of arcs has as many entries as the walk's length
 * `length_mapLe`, `support_mapLe`, `arcs_mapLe` : Mapping preserves length, support and arcs
 * `mapLe_append`, `mapLe_mapLe` : Composition lemmas for `mapLe`
 * `isStrict_mapLe`, `isStrict_append` : Strictness under mapping and concatenation
@@ -110,6 +112,15 @@ protected def mapLe {G' : TemporalGraph V} (h : G ≤ G') {x y : V} {n m : ℕ} 
   | single h' => single (h h')
   | step p h' h'' => step (p.mapLe h) (h h') h''
 
+/-- The same walk, seen in another graph `G'` that contains all of its arcs. -/
+protected def transfer {x y : V} {n m : ℕ} (p : G.NonemptyTemporalWalk x n y m)
+    (G' : TemporalGraph V) (h₀ : ∀ a ∈ p.arcs, G'.Adj a.1 a.2.1 a.2.2) :
+    G'.NonemptyTemporalWalk x n y m :=
+  match p with
+  | single _ => single (h₀ (_, _, _) (by simp [arcs]))
+  | step p _ h' =>
+    step (p.transfer G' fun a ha ↦ h₀ a (by simp [arcs, ha])) (h₀ (_, _, _) (by simp [arcs])) h'
+
 /-- Times are non-decreasing along a walk: `n ≤ m`. -/
 lemma nondecreasing_time {x y : V} {n m : ℕ} (tw : G.NonemptyTemporalWalk x n y m) : n ≤ m := by
   induction tw with
@@ -165,6 +176,11 @@ theorem length_append (p : G.NonemptyTemporalWalk x n y m) (q : G.NonemptyTempor
 theorem arcs_append (p : G.NonemptyTemporalWalk x n y m) (q : G.NonemptyTemporalWalk y k z l)
     (h₀ : m ≤ k) : (p.append q h₀).arcs = q.arcs ++ p.arcs := by
   induction q <;> grind
+
+/-- The list of arcs of a walk has as many entries as the walk's length. -/
+@[simp, grind =]
+theorem length_arcs (p : G.NonemptyTemporalWalk x n y m) : p.arcs.length = p.length := by
+  induction p <;> grind
 
 /-- Mapping a walk along `G ≤ G'` preserves its length. -/
 @[simp, grind =]

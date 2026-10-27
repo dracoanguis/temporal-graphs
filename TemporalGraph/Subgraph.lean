@@ -60,6 +60,8 @@ the subgraph counterparts of the vertex- and edge-indexed notions of `TemporalGr
   adjacency implication.
 * `TemporalGraph.Subgraph.le_iff_edgeSet_and_verts` : a symmetric subgraph is below another
   exactly when its vertices and its edges are.
+* `TemporalGraph.Subgraph.induce_le_of_subset`, `TemporalGraph.Subgraph.edgeSet_subset` : an
+  induced subgraph on part of `H.verts` is below `H`; a subgraph's edges are edges of `G`.
 * `TemporalGraph.Subgraph.earliestEdge_exists_of_nonempty_finite_incidenceSet` and its `latest`
   counterpart : a vertex with a nonempty finite incidence set has an earliest, resp. latest, edge.
 * `TemporalGraph.Subgraph.edgeSetToFootprintEdgeSet_bijective` : for a symmetric, simple subgraph,
@@ -606,6 +608,10 @@ lemma finite_induce_verts (H : Subgraph G) [Finite H.verts] {s : Set V} (h₀ : 
     Finite (H.induce s).verts :=
   Finite.Set.subset H.verts h₀
 
+/-- Inducing `H` on a subset of its vertices gives a subgraph of `H`. -/
+lemma induce_le_of_subset {H : Subgraph G} {s : Set V} (h₀ : s ⊆ H.verts) : H.induce s ≤ H :=
+  ⟨fun _ hv ↦ h₀ hv, fun h ↦ h.2.2⟩
+
 end Induce
 
 section DeleteVerts
@@ -960,6 +966,11 @@ lemma edgeSet_mono {H : Subgraph G} {H' : Subgraph G} (h₀ : H ≤ H') :
     H.edgeSet ⊆ H'.edgeSet := by
   intro _ ⟨x, y, hp, h⟩
   exact ⟨x, y, hp, h₀.right h⟩
+
+/-- The edges of a subgraph of `G` are edges of `G` (as Mathlib's
+`SimpleGraph.Subgraph.edgeSet_subset`). -/
+lemma edgeSet_subset (H : Subgraph G) : H.edgeSet ⊆ G.edgeSet :=
+  fun _ ⟨x, y, hp, h⟩ ↦ ⟨x, y, hp, H.adj_sub h⟩
 
 /-- The edges of a union of subgraphs are the union of their edges. -/
 @[simp]

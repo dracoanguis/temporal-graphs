@@ -37,6 +37,12 @@ tracked (`IsSpannerFromTo`); the matchings `M⁻`, `M⁺` then upgrade it to tem
 * `TemporalGraph.Subgraph.temporallyConnected_of_isSpannerFromTo` : a one-sided spanner from `V⁺`
   to `V⁻` containing the matchings `M⁻` and `M⁺` is temporally connected.
 * `TemporalGraph.Subgraph.exists_ncard_halves` : splitting a set into two halves.
+* `TemporalGraph.Subgraph.isSpannerFromTo_iff_of_isBicliqueWith` : in a bi-clique, a one-sided
+  spanner is a subgraph in which the sources still reach the targets (either direction, through
+  `IsBicliqueWith.symm`).
+* `TemporalGraph.Subgraph.exists_earliestEdge_of_isBicliqueWith`,
+  `exists_latestEdge_of_isBicliqueWith` : in a finite simple bi-clique, the earliest and latest
+  edges of a vertex go to the other part.
 
 ## References
 
@@ -257,6 +263,19 @@ lemma exists_latestEdge_of_isBicliqueWith {H : Subgraph G} [Finite H.verts] [H.I
   obtain ⟨y, n, hlat⟩ := latestEdge_exists_of_nonempty_finite_incidenceSet hne hfin
   exact ⟨y, h₁.isBipartiteWith.mem_of_mem_adj' h₃ hlat.1, n, hlat⟩
 
+/-- In a finite simple bi-clique on `s` and `t` with `s` nonempty, every vertex of `t` has an
+earliest edge, and it goes to `s` (for a vertex of `s`, apply it to `h₁.symm`). -/
+lemma exists_earliestEdge_of_isBicliqueWith {H : Subgraph G} [Finite H.verts] [H.IsSymm]
+    {s t : Set V} {x : V}
+    (h₀ : H.IsSimple) (h₁ : H.IsBicliqueWith s t) (h₂ : s.Nonempty) (h₃ : x ∈ t) :
+    ∃ y ∈ s, ∃ n, H.EarliestEdge x y n := by
+  obtain ⟨z, hz⟩ := h₂
+  obtain ⟨k, hadj⟩ := h₁.adj_of_mem hz h₃
+  have hne : (H.incidenceSet x).Nonempty := ⟨(z, k), hadj.symm⟩
+  have hfin : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ x
+  obtain ⟨y, n, hear⟩ := earliestEdge_exists_of_nonempty_finite_incidenceSet hne hfin
+  exact ⟨y, h₁.isBipartiteWith.mem_of_mem_adj' h₃ hear.1, n, hear⟩
+
 /-- SAND 2025, §4.1 (pigeonhole): in a finite simple bi-clique on `s` and `t` with `s` nonempty and
 `|s| < |t|`, two vertices of `t` share their latest neighbor in `s`, so some vertex of `t` is
 one-sided dismountable. -/
@@ -288,6 +307,15 @@ lemma IsSpannerFromTo.of_le {H K H' : Subgraph G} {s t : Set V}
     H'.IsSpannerFromTo H s t :=
   ⟨h₀.1.trans h₁, fun x hx y hy _ ↦ h₀.2 x hx y hy (h₂ x hx y hy)⟩
 
+/-- In a bi-clique on `s` and `t`, every vertex of `s` reaches every vertex of `t` by a single
+edge, so a one-sided spanner from `s` to `t` is just a subgraph in which `s` still reaches `t`.
+With `h₀.symm`, the same statement covers the direction from `t` to `s`. -/
+lemma isSpannerFromTo_iff_of_isBicliqueWith {H K : Subgraph G} {s t : Set V}
+    (h₀ : H.IsBicliqueWith s t) :
+    K.IsSpannerFromTo H s t ↔ K ≤ H ∧ ∀ x ∈ s, ∀ y ∈ t, K.Reachable x y :=
+  ⟨fun h ↦ ⟨h.1, fun x hx y hy ↦ h.2 x hx y hy (reachable_of_isBicliqueWith h₀ hx hy)⟩,
+    fun h ↦ ⟨h.1, fun x hx y hy _ ↦ h.2 x hx y hy⟩⟩
+
 /-- SAND 2025, §4.1 (split, full step): in a bi-clique on `s` and `t`, one-sided spanners of the
 two subproblems on `s₁ ∪ t` and `s₂ ∪ t` combine, by union, into a one-sided spanner of `H` from
 `s₁ ∪ s₂` to `t`. -/
@@ -297,10 +325,10 @@ lemma isSpannerFromTo_sup_of_induce {H H₁ H₂ : Subgraph G} {s t s₁ s₂ : 
     (h₅ : H₂.IsSpannerFromTo (H.induce (s₂ ∪ t)) s₂ t) :
     (H₁ ⊔ H₂).IsSpannerFromTo H (s₁ ∪ s₂) t := by
   have hle : ∀ s' ⊆ s, H.induce (s' ∪ t) ≤ H := fun s' hs' ↦
-    ⟨fun _ hv ↦ h₁ (Set.union_subset_union_left t hs' hv), fun h ↦ h.2.2⟩
+    induce_le_of_subset ((Set.union_subset_union_left t hs').trans h₁)
   refine (h₄.of_le (hle s₁ h₂) fun x hx y hy ↦ ?_).sup (h₅.of_le (hle s₂ h₃) fun x hx y hy ↦ ?_)
-  · exact reachable_of_isBicliqueWith (isBicliqueWith_induce h₀ h₂) hx hy
-  · exact reachable_of_isBicliqueWith (isBicliqueWith_induce h₀ h₃) hx hy
+  · exact reachable_of_isBicliqueWith (isBicliqueWith_induce h₀ h₂ subset_rfl) hx hy
+  · exact reachable_of_isBicliqueWith (isBicliqueWith_induce h₀ h₃ subset_rfl) hx hy
 
 /-- Split a set into two halves of complementary size, `⌈|s| / 2⌉` and `⌊|s| / 2⌋`: used to divide
 a bi-clique's source part in two before recursing (SAND 2025, §4.1, split step). Holds

@@ -187,8 +187,8 @@ lemma induce_subproblem {H : Subgraph G} [Finite H.verts] {s t s' : Set V} (h₀
     Finite (H.induce (s' ∪ t)).verts ∧ (H.induce (s' ∪ t)).IsSimple ∧
       (H.induce (s' ∪ t)).IsBicliqueWith s' t := by
   have hsub : s' ∪ t ⊆ H.verts := (Set.union_subset_union_left t h₃).trans h₂
-  have hle : H.induce (s' ∪ t) ≤ H := ⟨fun _ hv ↦ hsub hv, fun h ↦ h.2.2⟩
-  exact ⟨finite_induce_verts H hsub, h₀.mono (toTemporalGraph_le hle), isBicliqueWith_induce h₁ h₃⟩
+  exact ⟨finite_induce_verts H hsub, h₀.mono (toTemporalGraph_le (induce_le_of_subset hsub)),
+    isBicliqueWith_induce h₁ h₃ subset_rfl⟩
 
 /-- Removing a target vertex `x` (not in the source) from a bi-clique on `s`/`t` leaves a bi-clique
 on `s`/`t \ {x}`. -/

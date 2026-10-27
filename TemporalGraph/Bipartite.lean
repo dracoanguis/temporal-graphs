@@ -56,7 +56,7 @@ does.
 * `TemporalGraph.Subgraph.isBicliqueWith_subset_verts` : with both parts nonempty, `s ∪ t` is
   among `H`'s vertices.
 * `TemporalGraph.Subgraph.isBicliqueWith_induce`,
-  `TemporalGraph.Subgraph.isBicliqueWith_deleteVerts` : restricting a bi-clique to `s' ∪ t` (for
+  `TemporalGraph.Subgraph.isBicliqueWith_deleteVerts` : restricting a bi-clique to `s' ∪ t'` (for
   `s' ⊆ s`), resp. deleting vertices from it, keeps a bi-clique on the corresponding parts
   (SAND 2025, §4.1, feeding into one-sided dismountability).
 
@@ -428,21 +428,25 @@ lemma Subgraph.isBicliqueWith_subset_verts {s t : Set V}
     obtain ⟨n, hadj⟩ := h₀.adj_of_mem hw hv
     exact H.edge_vert' hadj
 
-/-- Restricting a bi-clique on `s` and `t` to `s' ∪ t`, for `s' ⊆ s`, gives a bi-clique on `s'` and
-`t`: the subproblem arising in the one-sided dismountability of SAND 2025, §4.1. -/
-lemma Subgraph.isBicliqueWith_induce {s t s' : Set V}
-    (h₀ : H.IsBicliqueWith s t) (h₁ : s' ⊆ s) :
-    (H.induce (s' ∪ t)).IsBicliqueWith s' t where
+/-- Restricting a bi-clique on `s` and `t` to `s' ∪ t'`, for `s' ⊆ s` and `t' ⊆ t`, gives a
+bi-clique on `s'` and `t'`: the subproblems of the one-sided dismountability of SAND 2025, §4.1
+(`t' = t`), and of the reduction to extremally matched bi-cliques (Baligács 2026, Lemma 5). -/
+lemma Subgraph.isBicliqueWith_induce {s t s' t' : Set V}
+    (h₀ : H.IsBicliqueWith s t) (h₁ : s' ⊆ s) (h₂ : t' ⊆ t) :
+    (H.induce (s' ∪ t')).IsBicliqueWith s' t' where
   isBipartiteWith :=
-    { disjoint := h₀.isBipartiteWith.disjoint.mono_left h₁
+    { disjoint := h₀.isBipartiteWith.disjoint.mono h₁ h₂
       mem_of_adj := by
         rintro v w n ⟨hv, hw, hadj⟩
         have hdis := h₀.isBipartiteWith.disjoint
+        -- `s` and `t` are disjoint, so a vertex of `s' ∪ t'` lying in `s` is in `s'`
         rcases h₀.isBipartiteWith.mem_of_adj hadj with ⟨hvs, hwt⟩ | ⟨hvt, hws⟩
-        · exact Or.inl ⟨hv.resolve_right (Set.disjoint_left.mp hdis hvs), hwt⟩
-        · exact Or.inr ⟨hvt, hw.resolve_right (Set.disjoint_left.mp hdis hws)⟩ }
+        · exact Or.inl ⟨hv.resolve_right fun h ↦ Set.disjoint_left.mp hdis hvs (h₂ h),
+            hw.resolve_left fun h ↦ Set.disjoint_left.mp hdis (h₁ h) hwt⟩
+        · exact Or.inr ⟨hv.resolve_left fun h ↦ Set.disjoint_left.mp hdis (h₁ h) hvt,
+            hw.resolve_right fun h ↦ Set.disjoint_left.mp hdis hws (h₂ h)⟩ }
   adj_of_mem v w hv hw := by
-    obtain ⟨n, hn⟩ := h₀.adj_of_mem (h₁ hv) hw
+    obtain ⟨n, hn⟩ := h₀.adj_of_mem (h₁ hv) (h₂ hw)
     exact ⟨n, Or.inl hv, Or.inr hw, hn⟩
 
 /-- Deleting vertices from a temporal bi-clique keeps a bi-clique, on the two parts with those

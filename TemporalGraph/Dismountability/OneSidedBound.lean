@@ -491,55 +491,32 @@ theorem exists_isSpannerOf_ncard_le {H : Subgraph G} [Finite H.verts]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
     ∃ K : Subgraph G, K.IsSymm ∧ K.IsSpannerOf H ∧
       K.edgeSet.ncard ≤ 2 * H.verts.ncard * Nat.clog 2 H.verts.ncard + 4 * H.verts.ncard := by
-  induction hn : H.verts.ncard using Nat.strong_induction_on generalizing H with
-  | _ n ih =>
-    rcases (by omega : n ≤ 1 ∨ 2 ≤ n) with hle | htwo
-    · -- at most one vertex: `H` has no edge, and is its own spanner
-      refine ⟨H, inferInstance, ⟨le_rfl, rfl, fun _ _ _ _ h ↦ h⟩, ?_⟩
-      suffices H.edgeSet = ∅ by simp [this]
-      refine Set.eq_empty_of_forall_notMem fun ⟨e, m⟩ he ↦ ?_
-      induction e using Sym2.ind with
-      | _ a b =>
-        have hadj := H.mem_edgeSet.mp he
-        have h2 : ({a, b} : Set V).ncard = 2 := Set.ncard_pair hadj.ne
-        have : ({a, b} : Set V).ncard ≤ H.verts.ncard :=
-          Set.ncard_le_ncard (Set.pair_subset (H.edge_vert hadj) (H.edge_vert' hadj))
-        omega
-    have : Nontrivial H.verts :=
-      Set.nontrivial_coe_sort.mpr ((Set.one_lt_ncard_iff_nontrivial).mp (by omega))
-    by_cases hd : H.TwoHopDismountable
-    · -- SAND 2025, Theorem 2.1 and §2.1: dismount `x`, recurse, mount `x` back (≤ 4 edges)
-      obtain ⟨x, hx, hext⟩ := exists_isSpannerOf_of_twoHopDismountable hd
-      have hD : (H.dismount x).verts.ncard = n - 1 := by
-        rw [dismount_verts, Set.ncard_sdiff_singleton_of_mem hx, hn]
-      have hDle : (H.dismount x).toTemporalGraph ≤ H.toTemporalGraph :=
-        toTemporalGraph_le dismount_le
-      obtain ⟨H', hH'symm, hH'span, hH'card⟩ := ih (n - 1) (by omega) (h₀.mono hDle)
-        (dismount_clique H x h₁) (h₂.mono hDle) hD
-      obtain ⟨K, hKsymm, hKspan, hKcard⟩ := hext H' hH'symm hH'span
-      refine ⟨K, hKsymm, hKspan, ?_⟩
-      obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-      have hc : Nat.clog 2 m ≤ Nat.clog 2 (m + 1) := Nat.clog_mono_right 2 (by omega)
-      simp only [Nat.add_sub_cancel] at hH'card
-      nlinarith [Nat.mul_le_mul_left m hc]
-    · -- SAND 2025, §4.1: `n = 2 k`, a one-sided spanner of the bi-clique plus the matchings
-      obtain ⟨K, hKsymm, hKspan, hKcard⟩ :=
-        exists_isSpannerOf_of_not_twoHopDismountable h₀ h₁ h₂ hd
-      refine ⟨K, hKsymm, hKspan, ?_⟩
-      have hcard := vminus_card_eq_vplus_card h₀ h₁ hd
-      have hverts : H.verts = H.vminus ∪ H.vplus := by
-        rw [← vunion_eq_univ, vzero_empty_of_not_twoHopDismountable h₀ h₁ h₂ hd,
-          Set.union_empty]
-      have hdisj := (biclique_of_not_twoHopDismountable h₁ hd).isBipartiteWith.disjoint
-      have h2k : n = 2 * H.vplus.ncard := by
-        rw [← hn, hverts, Set.ncard_union_eq hdisj
-          ((Set.toFinite H.verts).subset vminus_sub_verts)
-          ((Set.toFinite H.verts).subset vplus_sub_verts)]
-        omega
-      set k := H.vplus.ncard
-      have hb := spannerBound_le (n := k) (by omega)
-      have hc : Nat.clog 2 k ≤ Nat.clog 2 n := Nat.clog_mono_right 2 (by omega)
-      nlinarith [Nat.mul_le_mul_left k hc]
+  refine exists_isSpannerOf_ncard_le_of_not_twoHopDismountable
+    (fun n ↦ 2 * n * Nat.clog 2 n + 4 * n) (fun n ↦ ?_) (fun h₀ h₁ h₂ hd ↦ ?_) h₀ h₁ h₂
+  · -- `⌈log₂ n⌉` is monotone
+    have hc : Nat.clog 2 n ≤ Nat.clog 2 (n + 1) := Nat.clog_mono_right 2 (by omega)
+    nlinarith [Nat.mul_le_mul_left n hc]
+  · -- SAND 2025, §4.1: `n = 2 k`, a one-sided spanner of the bi-clique plus the matchings
+    rename_i H' _ _ _
+    obtain ⟨K, hKsymm, hKspan, hKcard⟩ :=
+      exists_isSpannerOf_of_not_twoHopDismountable h₀ h₁ h₂ hd
+    refine ⟨K, hKsymm, hKspan, ?_⟩
+    have hcard := vminus_card_eq_vplus_card h₀ h₁ hd
+    have hverts : H'.verts = H'.vminus ∪ H'.vplus := by
+      rw [← vunion_eq_univ, vzero_empty_of_not_twoHopDismountable h₀ h₁ h₂ hd,
+        Set.union_empty]
+    have hdisj := (biclique_of_not_twoHopDismountable h₁ hd).isBipartiteWith.disjoint
+    have h2k : H'.verts.ncard = 2 * H'.vplus.ncard := by
+      rw [hverts, Set.ncard_union_eq hdisj
+        ((Set.toFinite H'.verts).subset vminus_sub_verts)
+        ((Set.toFinite H'.verts).subset vplus_sub_verts)]
+      omega
+    have htwo : 1 < H'.verts.ncard :=
+      Set.one_lt_ncard_iff_nontrivial.mpr (Set.nontrivial_coe_sort.mp inferInstance)
+    set k := H'.vplus.ncard
+    have hb := spannerBound_le (n := k) (by omega)
+    have hc : Nat.clog 2 k ≤ Nat.clog 2 H'.verts.ncard := Nat.clog_mono_right 2 (by omega)
+    nlinarith [Nat.mul_le_mul_left k hc]
 
 open Asymptotics Filter in
 /-- SAND 2025, §4.1: temporal cliques admit spanners of size `O(n log n)`. Precisely, there is

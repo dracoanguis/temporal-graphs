@@ -505,6 +505,53 @@ theorem exists_isSpannerOf_of_twoHopDismountable {H : Subgraph G}
     have h₂ := Set.ncard_union_le Eₒ Eᵢ
     omega
 
+/-- SAND 2025, Theorem 2.1 and §2.1: generic induction on a clique. If every finite simple
+proper clique subgraph that is not `{1,2}`-hop dismountable has a symmetric spanner with at most
+`f n` edges (`n` its number of vertices), and `f n + 4 ≤ f (n + 1)`, then every finite simple
+proper clique subgraph has a symmetric spanner with at most `f n` edges: a `{1,2}`-hop
+dismountable clique is reduced to one vertex fewer at the cost of 4 edges. -/
+theorem exists_isSpannerOf_ncard_le_of_not_twoHopDismountable {H : Subgraph G} [Finite H.verts]
+    [G.IsSymm] [G.IsLoopless] [H.IsSymm] (f : ℕ → ℕ) (h₀ : ∀ n, f n + 4 ≤ f (n + 1))
+    (h₁ : ∀ {H' : Subgraph G} [Finite H'.verts] [Nontrivial H'.verts] [H'.IsSymm],
+      H'.IsSimple → H'.IsCliqueSubgraph → H'.IsProper → ¬H'.TwoHopDismountable →
+      ∃ K : Subgraph G, K.IsSymm ∧ K.IsSpannerOf H' ∧ K.edgeSet.ncard ≤ f H'.verts.ncard)
+    (h₂ : H.IsSimple) (h₃ : H.IsCliqueSubgraph) (h₄ : H.IsProper) :
+    ∃ K : Subgraph G, K.IsSymm ∧ K.IsSpannerOf H ∧ K.edgeSet.ncard ≤ f H.verts.ncard := by
+  induction hn : H.verts.ncard using Nat.strong_induction_on generalizing H with
+  | _ n ih =>
+    rcases (by omega : n ≤ 1 ∨ 2 ≤ n) with hle | htwo
+    · -- at most one vertex: `H` has no edge, and is its own spanner
+      refine ⟨H, inferInstance, ⟨le_rfl, rfl, fun _ _ _ _ h ↦ h⟩, ?_⟩
+      suffices H.edgeSet = ∅ by simp [this]
+      refine Set.eq_empty_of_forall_notMem fun ⟨e, m⟩ he ↦ ?_
+      induction e using Sym2.ind with
+      | _ a b =>
+        have hadj := H.mem_edgeSet.mp he
+        have h2 : ({a, b} : Set V).ncard = 2 := Set.ncard_pair hadj.ne
+        have : ({a, b} : Set V).ncard ≤ H.verts.ncard :=
+          Set.ncard_le_ncard (Set.pair_subset (H.edge_vert hadj) (H.edge_vert' hadj))
+        omega
+    have : Nontrivial H.verts :=
+      Set.nontrivial_coe_sort.mpr ((Set.one_lt_ncard_iff_nontrivial).mp (by omega))
+    by_cases hd : H.TwoHopDismountable
+    · -- dismount `x`, recurse, mount `x` back (at most 4 more edges)
+      obtain ⟨x, hx, hext⟩ := exists_isSpannerOf_of_twoHopDismountable hd
+      have hD : (H.dismount x).verts.ncard = n - 1 := by
+        rw [dismount_verts, Set.ncard_sdiff_singleton_of_mem hx, hn]
+      have hDle : (H.dismount x).toTemporalGraph ≤ H.toTemporalGraph :=
+        toTemporalGraph_le dismount_le
+      obtain ⟨H', hH'symm, hH'span, hH'card⟩ := ih (n - 1) (by omega) (h₂.mono hDle)
+        (dismount_clique H x h₃) (h₄.mono hDle) hD
+      obtain ⟨K, hKsymm, hKspan, hKcard⟩ := hext H' hH'symm hH'span
+      refine ⟨K, hKsymm, hKspan, ?_⟩
+      obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+      simp only [Nat.add_sub_cancel] at hH'card
+      have := h₀ m
+      omega
+    · -- not dismountable: the hypothesis gives the spanner directly
+      have := h₁ h₂ h₃ h₄ hd
+      rwa [hn] at this
+
 end TwoHopDismountability
 
 end Subgraph

@@ -196,14 +196,14 @@ SAND below — do not introduce a different numbering here.
 \begin{definition}[Earliest/latest neighbor functions]
   \label{def:neighbor-functions}
   \uses{lem:earliestEdge-unique-proper-clique}
-  \lean{TemporalGraph.Subgraph.earliestNeighborFn}
-  \lean{TemporalGraph.Subgraph.latestNeighborFn}
+  \lean{TemporalGraph.earliestNeighborFn}
+  \lean{TemporalGraph.latestNeighborFn}
   \leanok
-  Given a finite, nontrivial, simple, proper clique $H$, define
-  $\mathrm{f_{ee}}$ and $\mathrm{f_{le}}$ as the functions on $V$ that map each
-  vertex of $\mathrm{Verts}(H)$ to its unique earliest (resp.\ latest) neighbor
-  (and are the identity elsewhere). They map $V^+(H)$ into $V^-(H)$, resp.\
-  $V^-(H)$ into $V^+(H)$.
+  For any temporal graph $G$, define $\mathrm{f_{ee}}$ and $\mathrm{f_{le}}$ as
+  the functions on $V$ that map each vertex to one of its earliest (resp.\
+  latest) neighbors, and each vertex without one to itself. In a proper graph
+  that neighbor is unique. On a finite, nontrivial, simple, proper clique $H$,
+  they map $V^+(H)$ into $V^-(H)$, resp.\ $V^-(H)$ into $V^+(H)$.
 \end{definition}
 
 \begin{lemma}[Neighbor functions characterize membership]

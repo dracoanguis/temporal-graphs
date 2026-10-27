@@ -199,28 +199,28 @@ SAND below — do not introduce a different numbering here.
   \lean{TemporalGraph.earliestNeighborFn}
   \lean{TemporalGraph.latestNeighborFn}
   \leanok
-  For any temporal graph $G$, define $\mathrm{f_{ee}}$ and $\mathrm{f_{le}}$ as
-  the functions on $V$ that map each vertex to one of its earliest (resp.\
-  latest) neighbors, and each vertex without one to itself. In a proper graph
-  that neighbor is unique. On a finite, nontrivial, simple, proper clique $H$,
-  they map $V^+(H)$ into $V^-(H)$, resp.\ $V^-(H)$ into $V^+(H)$.
+  For any temporal graph $G$, define $\mathrm{f_{ee}}, \mathrm{f_{le}} : V \to
+  V \cup \{\bot\}$ (Lean's \texttt{Option V}): $\mathrm{f_{ee}}(x)$ is one of the
+  earliest (resp.\ latest) neighbors of $x$, and $\bot$ (\texttt{none}) when
+  $x$ has none. On a finite, nontrivial, simple clique $H$, they map $V^+(H)$
+  into $V^-(H)$, resp.\ $V^-(H)$ into $V^+(H)$.
 \end{definition}
 
 \begin{lemma}[Neighbor functions characterize membership]
   \label{lem:neighbor-fn-eq}
   \uses{def:neighbor-functions,def:earliest-latest-neighbor}
-  \lean{TemporalGraph.Subgraph.earliestNeighborFn_eq}
-  \lean{TemporalGraph.Subgraph.latestNeighborFn_eq}
+  \lean{TemporalGraph.earliestNeighborFn_eq_some_iff}
+  \lean{TemporalGraph.latestNeighborFn_eq_some_iff}
   \leanok
-  Let $H$ be a finite, nontrivial, simple, proper clique and $x \in \mathrm{Verts}(H)$.
-  Then $\mathrm{f_{ee}}(x) = y$ if and only if $H.\mathrm{EarliestNeighbor}(x, y)$,
-  and similarly for $\mathrm{f_{le}}$ and $H.\mathrm{LatestNeighbor}(x,y)$.
+  Let $G$ be a proper temporal graph. Then $\mathrm{f_{ee}}(x) = y$ if and only if
+  $G.\mathrm{EarliestNeighbor}(x, y)$, and similarly for $\mathrm{f_{le}}$ and
+  $G.\mathrm{LatestNeighbor}(x,y)$.
 \end{lemma}
 
 \begin{proof}
   \leanok
   \uses{lem:earliestEdge-unique-proper-clique}
-  $\mathrm{f_{ee}}(x)$ is by definition the (unique) earliest neighbor of $x$ (Lemma~\ref{lem:earliestEdge-unique-proper-clique}), so the equality is the uniqueness of the earliest neighbor.
+  $\mathrm{f_{ee}}(x)$ is by definition an earliest neighbor of $x$. Two earliest edges at $x$ have the same time, so properness makes the earliest neighbor unique.
 \end{proof}
 
 \begin{lemma}[Neighbor functions are injective outside two-hop dismountability]
@@ -229,7 +229,7 @@ SAND below — do not introduce a different numbering here.
   \lean{TemporalGraph.Subgraph.earliestNeighborFn_injOn}
   \lean{TemporalGraph.Subgraph.latestNeighborFn_injOn}
   \leanok
-  Let $H$ be a finite, nontrivial, simple, proper, symmetric clique that is not
+  Let $H$ be a finite, nontrivial, simple, symmetric clique that is not
   two-hop dismountable. Then $\mathrm{f_{ee}}$ is injective on $V^+(H)$ and
   $\mathrm{f_{le}}$ is injective on $V^-(H)$.
 \end{lemma}
@@ -246,7 +246,7 @@ SAND below — do not introduce a different numbering here.
   \lean{TemporalGraph.Subgraph.vminus_card_le_vplus_card}
   \lean{TemporalGraph.Subgraph.vminus_card_eq_vplus_card}
   \leanok
-  For a finite, nontrivial, simple, proper, symmetric clique $H$ that is not
+  For a finite, nontrivial, simple, symmetric clique $H$ that is not
   two-hop dismountable:
   $$|V^+(H)| \le |V^-(H)| \quad \text{and} \quad |V^-(H)| \le |V^+(H)|$$
   so the cardinalities are equal: $|V^-(H)| = |V^+(H)|$.
@@ -265,7 +265,7 @@ SAND below — do not introduce a different numbering here.
   \lean{TemporalGraph.Subgraph.earliestNeighborFn_bijOn}
   \lean{TemporalGraph.Subgraph.latestNeighborFn_bijOn}
   \leanok
-  When $H$ is a finite, nontrivial, simple, proper, symmetric clique that is not
+  When $H$ is a finite, nontrivial, simple, symmetric clique that is not
   two-hop dismountable, both $\mathrm{f_{ee}}$ and $\mathrm{f_{le}}$ are bijections between the
   sets $V^+(H)$ and $V^-(H)$ (\texttt{Set.BijOn}): $\mathrm{f_{ee}}$ maps $V^+(H)$ into
   $V^-(H)$ and $\mathrm{f_{le}}$ maps $V^-(H)$ into $V^+(H)$

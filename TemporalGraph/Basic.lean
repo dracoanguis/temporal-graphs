@@ -41,8 +41,8 @@ and its clean characterization `mem_edgeSet` needs `[G.IsSymm]` (the uncondition
   Carnevale–Casteigts–Corsini (see References).
 * `TemporalGraph.EarliestEdge`, `TemporalGraph.LatestEdge`, `TemporalGraph.EarliestNeighbor`,
   `TemporalGraph.LatestNeighbor` : the earliest/latest edge and neighbor of a vertex.
-* `TemporalGraph.arcTime` : the time of an arc, chosen when several exist (unique in a simple
-  graph, `arcTime_eq`), `0` when there is none.
+* `TemporalGraph.arcTime` : the time of an arc, as an `Option ℕ`: `some n` for a chosen time `n`
+  (unique in a simple graph, `arcTime_eq_some`), `none` when there is no arc.
 * `TemporalGraph.arcSet`, `TemporalGraph.edgeSet` : the oriented and symmetric edge sets.
 * `TemporalGraph.arcSize`, `TemporalGraph.size` : their `Fintype.card` counts, computable under a
   `Fintype` instance, with `Set.ncard`/`Finset.card` bridge lemmas (`arcSize_eq_ncard`,
@@ -56,8 +56,9 @@ and its clean characterization `mem_edgeSet` needs `[G.IsSymm]` (the uncondition
 
 * `TemporalGraph.IsSimple.mono`, `IsProper.mono`, `IsHappy.mono` : these predicates pass to
   spanning subgraphs (`G ≤ H`).
-* `TemporalGraph.arcTime_eq`, `TemporalGraph.arcTime_comm` : in a simple graph, `arcTime` is the
-  time of the arc, and it does not depend on the orientation when the graph is symmetric.
+* `TemporalGraph.arcTime_eq_some_iff`, `TemporalGraph.arcTime_comm` : in a simple graph,
+  `arcTime u v = some n` exactly when `G.Adj u v n`, and `arcTime` does not depend on the
+  orientation when the graph is symmetric; `arcTime_eq_none_iff` : `none` means no arc.
 * `TemporalGraph.mem_edgeSet_iff_or` : unconditional characterization of `edgeSet` membership, as
   a disjunction of the two orientations.
 * `TemporalGraph.mem_edgeSet` : under `[G.IsSymm]`, `(s(x, y), n) ∈ G.edgeSet ↔ G.Adj x y n`.
@@ -312,59 +313,70 @@ end Monotonicity
 
 section ArcTime
 
-/-- The time of the arc from `u` to `v`: some `n` with `G.Adj u v n`, unique in a simple graph
-(`arcTime_eq`); by convention it is `0` when there is no such arc. In a symmetric simple graph it
-does not depend on the orientation (`arcTime_comm`): it is then the label `λ({u, v})` of the edge.
--/
-noncomputable def arcTime (G : TemporalGraph V) (u v : V) : ℕ := by
+/-- The time of the arc from `u` to `v`: `some n` for a time `n` with `G.Adj u v n` (unique in a
+simple graph: `arcTime_eq_some`), and `none` when there is no such arc. In a symmetric simple graph
+it does not depend on the orientation (`arcTime_comm`): it is then the label `λ({u, v})` of the
+edge. -/
+noncomputable def arcTime (G : TemporalGraph V) (u v : V) : Option ℕ := by
   classical
-  exact if h : ∃ n, G.Adj u v n then h.choose else 0
+  exact if h : ∃ n, G.Adj u v n then some h.choose else none
 
-variable {G : TemporalGraph V} {u v w w' : V} {n : ℕ}
+variable {G : TemporalGraph V} {u v w w' : V} {n m : ℕ}
 
-/-- Adjacent vertices are adjacent at their `arcTime`. -/
-theorem adj_arcTime (h₀ : ∃ n, G.Adj u v n) : G.Adj u v (G.arcTime u v) := by
-  rw [arcTime, dite_eq_left h₀]
-  exact h₀.choose_spec
+/-- An arc exists exactly when its time is defined. -/
+theorem arcTime_isSome_iff : (G.arcTime u v).isSome ↔ ∃ n, G.Adj u v n := by
+  unfold arcTime
+  split_ifs with h <;> simp [h]
+
+/-- The time of an arc is `none` exactly when there is no arc. -/
+theorem arcTime_eq_none_iff : G.arcTime u v = none ↔ ∀ n, ¬G.Adj u v n := by
+  rw [← Option.not_isSome_iff_eq_none, arcTime_isSome_iff, not_exists]
+
+/-- The arc exists at the time given by `arcTime`. -/
+theorem adj_of_arcTime_eq_some (h₀ : G.arcTime u v = some n) : G.Adj u v n := by
+  unfold arcTime at h₀
+  split_ifs at h₀ with h₁
+  exact Option.some_injective _ h₀ ▸ h₁.choose_spec
 
 /-- In a simple graph, `arcTime u v` is the time of any arc from `u` to `v`. -/
 @[grind →]
-theorem arcTime_eq (h₀ : G.IsSimple) (h₁ : G.Adj u v n) : G.arcTime u v = n :=
-  -- the chosen time and `n` are two times of the same arc
-  h₀ (adj_arcTime ⟨n, h₁⟩) h₁
+theorem arcTime_eq_some (h₀ : G.IsSimple) (h₁ : G.Adj u v n) : G.arcTime u v = some n := by
+  obtain ⟨m, h₂⟩ := Option.isSome_iff_exists.1 (arcTime_isSome_iff.2 ⟨n, h₁⟩)
+  -- the chosen time `m` and `n` are two times of the same arc
+  rw [h₂, h₀ (adj_of_arcTime_eq_some h₂) h₁]
+
+/-- In a simple graph, `arcTime` characterizes the arcs. -/
+theorem arcTime_eq_some_iff (h₀ : G.IsSimple) : G.arcTime u v = some n ↔ G.Adj u v n :=
+  ⟨adj_of_arcTime_eq_some, arcTime_eq_some h₀⟩
 
 /-- In a symmetric simple graph, `arcTime` does not depend on the orientation. -/
 theorem arcTime_comm [G.IsSymm] (h₀ : G.IsSimple) (u v : V) : G.arcTime u v = G.arcTime v u := by
-  by_cases h₁ : ∃ n, G.Adj u v n
-  · -- both orientations carry the same arc, at its unique time
-    obtain ⟨n, h₂⟩ := h₁
-    rw [arcTime_eq h₀ h₂, arcTime_eq h₀ h₂.symm]
-  · -- neither orientation is an arc: both times are `0`
-    have h₂ : ¬∃ n, G.Adj v u n := fun ⟨n, h⟩ ↦ h₁ ⟨n, h.symm⟩
-    rw [arcTime, arcTime, dite_eq_right h₁, dite_eq_right h₂]
+  cases h₁ : G.arcTime u v with
+  | none =>
+    -- no arc in either orientation
+    exact (arcTime_eq_none_iff.2 fun n h ↦ arcTime_eq_none_iff.1 h₁ n h.symm).symm
+  | some n => exact (arcTime_eq_some h₀ (adj_of_arcTime_eq_some h₁).symm).symm
 
-/-- In a proper graph, two neighbors of `v` with the same arc time are equal: the times of the
-arcs leaving `v` are pairwise distinct, so `arcTime v` is injective on the neighbors of `v`. -/
-theorem eq_of_arcTime_eq (h₀ : G.IsProper) (h₁ : ∃ n, G.Adj v w n) (h₂ : ∃ n, G.Adj v w' n)
-    (h₃ : G.arcTime v w = G.arcTime v w') : w = w' :=
-  -- both arcs leave `v` at the same time
-  h₀ (adj_arcTime h₁) (h₃ ▸ adj_arcTime h₂)
+/-- In a proper graph, two arcs leaving `v` at the same time have the same endpoint: the times of
+the arcs leaving `v` are pairwise distinct. -/
+theorem eq_of_arcTime_eq_some (h₀ : G.IsProper) (h₁ : G.arcTime v w = some n)
+    (h₂ : G.arcTime v w' = some n) : w = w' :=
+  h₀ (adj_of_arcTime_eq_some h₁) (adj_of_arcTime_eq_some h₂)
 
-/-- Passing to a spanning subgraph keeps the time of an arc, in a simple graph. -/
-theorem arcTime_of_le {G' : TemporalGraph V} (h₀ : G ≤ G') (h₁ : G'.IsSimple)
-    (h₂ : ∃ n, G.Adj u v n) : G.arcTime u v = G'.arcTime u v := by
-  obtain ⟨n, h₃⟩ := h₂
-  rw [arcTime_eq (h₁.mono h₀) h₃, arcTime_eq h₁ (h₀ h₃)]
+/-- Passing to a supergraph keeps the time of an arc, when the supergraph is simple. -/
+theorem arcTime_eq_some_of_le {G' : TemporalGraph V} (h₀ : G ≤ G') (h₁ : G'.IsSimple)
+    (h₂ : G.arcTime u v = some n) : G'.arcTime u v = some n :=
+  arcTime_eq_some h₁ (h₀ (adj_of_arcTime_eq_some h₂))
 
 /-- In a simple graph, an earliest edge happens at the `arcTime` of its arc. -/
-theorem EarliestEdge.arcTime_eq (h₀ : G.IsSimple) (h₁ : G.EarliestEdge u v n) :
-    G.arcTime u v = n :=
-  TemporalGraph.arcTime_eq h₀ h₁.1
+theorem EarliestEdge.arcTime_eq_some (h₀ : G.IsSimple) (h₁ : G.EarliestEdge u v n) :
+    G.arcTime u v = some n :=
+  TemporalGraph.arcTime_eq_some h₀ h₁.1
 
 /-- In a simple graph, a latest edge happens at the `arcTime` of its arc. -/
-theorem LatestEdge.arcTime_eq (h₀ : G.IsSimple) (h₁ : G.LatestEdge u v n) :
-    G.arcTime u v = n :=
-  TemporalGraph.arcTime_eq h₀ h₁.1
+theorem LatestEdge.arcTime_eq_some (h₀ : G.IsSimple) (h₁ : G.LatestEdge u v n) :
+    G.arcTime u v = some n :=
+  TemporalGraph.arcTime_eq_some h₀ h₁.1
 
 end ArcTime
 

@@ -20,7 +20,9 @@ is the bi-clique between `V⁺` and `V⁻` of a clique that is not `{1,2}`-hop d
 The predicate is defined once, on `TemporalGraph`, and subgraphs inherit it. The standing
 assumptions of the paper (one label per edge, distinct labels at each vertex, finiteness) are not
 part of it: `IsSimple`, `IsProper` and `Finite` remain separate hypotheses of the lemmas that use
-them. The paper's `N_min`/`N_max` are the library's `earliestNeighborFn`/`latestNeighborFn`.
+them. The paper's `N_min`/`N_max` are the library's `earliestNeighborFn`/`latestNeighborFn`,
+whose values are `Option`s (`none` for a vertex without edges); on the bi-clique they are always
+`some`.
 
 ## Main definitions
 
@@ -28,8 +30,8 @@ them. The paper's `N_min`/`N_max` are the library's `earliestNeighborFn`/`latest
 
 ## Main results
 
-* `TemporalGraph.IsExtremallyMatched.earliestNeighborFn_earliestNeighborFn`, `…latest…` :
-  `N_min ∘ N_min = id` and `N_max ∘ N_max = id` on the bi-clique, in a proper graph.
+* `TemporalGraph.IsExtremallyMatched.earliestNeighborFn_eq_some_symm`, `…latest…` : `E_min` and
+  `E_max` are matchings: `N_min v = some w → N_min w = some v`, in a proper graph.
 * `TemporalGraph.IsExtremallyMatched.ncard_eq` : an extremally matched proper bi-clique has
   `|s| = |t|`.
 * `TemporalGraph.IsExtremallyMatched.temporallyConnected` : a subgraph that contains the
@@ -62,7 +64,7 @@ structure IsExtremallyMatched (G : TemporalGraph V) (s t : Set V) : Prop where
 
 namespace IsExtremallyMatched
 
-variable {v : V}
+variable {v w : V}
 
 /-- Extremal matching does not depend on which part is called the sources. -/
 theorem symm [G.IsSymm] (h : G.IsExtremallyMatched s t) : G.IsExtremallyMatched t s where
@@ -70,109 +72,110 @@ theorem symm [G.IsSymm] (h : G.IsExtremallyMatched s t) : G.IsExtremallyMatched 
   earliest v hv := h.earliest v hv.symm
   latest v hv := h.latest v hv.symm
 
-/-- `N_min v` is an earliest neighbor of every vertex `v` of the bi-clique. -/
-theorem earliestNeighbor_earliestNeighborFn (h : G.IsExtremallyMatched s t) (h₀ : v ∈ s ∪ t) :
-    G.EarliestNeighbor v (G.earliestNeighborFn v) :=
+/-- `N_min` is defined on every vertex of the bi-clique. -/
+theorem exists_earliestNeighborFn_eq_some (h : G.IsExtremallyMatched s t) (h₀ : v ∈ s ∪ t) :
+    ∃ w, G.earliestNeighborFn v = some w :=
   let ⟨w, n, h₁, _⟩ := h.earliest v h₀
-  TemporalGraph.earliestNeighbor_earliestNeighborFn ⟨w, n, h₁⟩
+  Option.isSome_iff_exists.1 (earliestNeighborFn_isSome_iff.2 ⟨w, n, h₁⟩)
 
-/-- `N_max v` is a latest neighbor of every vertex `v` of the bi-clique. -/
-theorem latestNeighbor_latestNeighborFn (h : G.IsExtremallyMatched s t) (h₀ : v ∈ s ∪ t) :
-    G.LatestNeighbor v (G.latestNeighborFn v) :=
+/-- `N_max` is defined on every vertex of the bi-clique. -/
+theorem exists_latestNeighborFn_eq_some (h : G.IsExtremallyMatched s t) (h₀ : v ∈ s ∪ t) :
+    ∃ w, G.latestNeighborFn v = some w :=
   let ⟨w, n, h₁, _⟩ := h.latest v h₀
-  TemporalGraph.latestNeighbor_latestNeighborFn ⟨w, n, h₁⟩
+  Option.isSome_iff_exists.1 (latestNeighborFn_isSome_iff.2 ⟨w, n, h₁⟩)
 
-/-- In a simple graph, the earliest edge at a vertex `v` of the bi-clique goes to `N_min v`, at
-the `arcTime` of that arc. -/
-theorem earliestEdge_earliestNeighborFn (h : G.IsExtremallyMatched s t) (h₀ : G.IsSimple)
-    (h₁ : v ∈ s ∪ t) :
-    G.EarliestEdge v (G.earliestNeighborFn v) (G.arcTime v (G.earliestNeighborFn v)) :=
-  let ⟨w, n, h₂, _⟩ := h.earliest v h₁
-  TemporalGraph.earliestEdge_earliestNeighborFn h₀ ⟨w, n, h₂⟩
+/-- `E_min` is a matching: in a proper graph, if `N_min v = w` then `N_min w = v`. -/
+theorem earliestNeighborFn_eq_some_symm (h : G.IsExtremallyMatched s t) (h₀ : G.IsProper)
+    (h₁ : v ∈ s ∪ t) (h₂ : G.earliestNeighborFn v = some w) : G.earliestNeighborFn w = some v := by
+  -- the earliest edge `v w'` is also the earliest edge at `w'`, and `w' = w`
+  obtain ⟨w', n, h₃, h₄⟩ := h.earliest v h₁
+  rw [earliestNeighborFn_eq_some h₀ ⟨n, h₃⟩, Option.some_inj] at h₂
+  exact h₂ ▸ earliestNeighborFn_eq_some h₀ ⟨n, h₄⟩
 
-/-- In a simple graph, the latest edge at a vertex `v` of the bi-clique goes to `N_max v`, at the
-`arcTime` of that arc. -/
-theorem latestEdge_latestNeighborFn (h : G.IsExtremallyMatched s t) (h₀ : G.IsSimple)
-    (h₁ : v ∈ s ∪ t) :
-    G.LatestEdge v (G.latestNeighborFn v) (G.arcTime v (G.latestNeighborFn v)) :=
-  let ⟨w, n, h₂, _⟩ := h.latest v h₁
-  TemporalGraph.latestEdge_latestNeighborFn h₀ ⟨w, n, h₂⟩
-
-/-- `E_min` is a matching: `N_min (N_min v) = v`, in a proper graph. -/
-theorem earliestNeighborFn_earliestNeighborFn (h : G.IsExtremallyMatched s t) (h₀ : G.IsProper)
-    (h₁ : v ∈ s ∪ t) : G.earliestNeighborFn (G.earliestNeighborFn v) = v := by
-  -- the earliest edge `v w` is also the earliest edge at `w`
-  obtain ⟨w, n, h₂, h₃⟩ := h.earliest v h₁
-  rw [earliestNeighborFn_eq_of_isProper h₀ ⟨n, h₂⟩, earliestNeighborFn_eq_of_isProper h₀ ⟨n, h₃⟩]
-
-/-- `E_max` is a matching: `N_max (N_max v) = v`, in a proper graph. -/
-theorem latestNeighborFn_latestNeighborFn (h : G.IsExtremallyMatched s t) (h₀ : G.IsProper)
-    (h₁ : v ∈ s ∪ t) : G.latestNeighborFn (G.latestNeighborFn v) = v := by
-  -- the latest edge `v w` is also the latest edge at `w`
-  obtain ⟨w, n, h₂, h₃⟩ := h.latest v h₁
-  rw [latestNeighborFn_eq_of_isProper h₀ ⟨n, h₂⟩, latestNeighborFn_eq_of_isProper h₀ ⟨n, h₃⟩]
+/-- `E_max` is a matching: in a proper graph, if `N_max v = w` then `N_max w = v`. -/
+theorem latestNeighborFn_eq_some_symm (h : G.IsExtremallyMatched s t) (h₀ : G.IsProper)
+    (h₁ : v ∈ s ∪ t) (h₂ : G.latestNeighborFn v = some w) : G.latestNeighborFn w = some v := by
+  -- the latest edge `v w'` is also the latest edge at `w'`, and `w' = w`
+  obtain ⟨w', n, h₃, h₄⟩ := h.latest v h₁
+  rw [latestNeighborFn_eq_some h₀ ⟨n, h₃⟩, Option.some_inj] at h₂
+  exact h₂ ▸ latestNeighborFn_eq_some h₀ ⟨n, h₄⟩
 
 /-- `N_min` sends a source to a target. -/
-theorem earliestNeighborFn_mem_right (h : G.IsExtremallyMatched s t) (h₀ : v ∈ s) :
-    G.earliestNeighborFn v ∈ t :=
-  let ⟨_, h₁⟩ := h.earliestNeighbor_earliestNeighborFn (Or.inl h₀)
-  h.isBicliqueWith.isBipartiteWith.mem_of_mem_adj h₀ h₁.1
+theorem mem_right_of_earliestNeighborFn_eq_some (h : G.IsExtremallyMatched s t) (h₀ : v ∈ s)
+    (h₁ : G.earliestNeighborFn v = some w) : w ∈ t :=
+  let ⟨_, h₂⟩ := earliestNeighbor_of_earliestNeighborFn_eq_some h₁
+  h.isBicliqueWith.isBipartiteWith.mem_of_mem_adj h₀ h₂.1
 
 /-- `N_min` sends a target to a source. -/
-theorem earliestNeighborFn_mem_left (h : G.IsExtremallyMatched s t) (h₀ : v ∈ t) :
-    G.earliestNeighborFn v ∈ s :=
-  let ⟨_, h₁⟩ := h.earliestNeighbor_earliestNeighborFn (Or.inr h₀)
-  h.isBicliqueWith.isBipartiteWith.mem_of_mem_adj' h₀ h₁.1
+theorem mem_left_of_earliestNeighborFn_eq_some (h : G.IsExtremallyMatched s t) (h₀ : v ∈ t)
+    (h₁ : G.earliestNeighborFn v = some w) : w ∈ s :=
+  let ⟨_, h₂⟩ := earliestNeighbor_of_earliestNeighborFn_eq_some h₁
+  h.isBicliqueWith.isBipartiteWith.mem_of_mem_adj' h₀ h₂.1
 
 /-- `N_max` sends a source to a target. -/
-theorem latestNeighborFn_mem_right (h : G.IsExtremallyMatched s t) (h₀ : v ∈ s) :
-    G.latestNeighborFn v ∈ t :=
-  let ⟨_, h₁⟩ := h.latestNeighbor_latestNeighborFn (Or.inl h₀)
-  h.isBicliqueWith.isBipartiteWith.mem_of_mem_adj h₀ h₁.1
+theorem mem_right_of_latestNeighborFn_eq_some (h : G.IsExtremallyMatched s t) (h₀ : v ∈ s)
+    (h₁ : G.latestNeighborFn v = some w) : w ∈ t :=
+  let ⟨_, h₂⟩ := latestNeighbor_of_latestNeighborFn_eq_some h₁
+  h.isBicliqueWith.isBipartiteWith.mem_of_mem_adj h₀ h₂.1
 
 /-- `N_max` sends a target to a source. -/
-theorem latestNeighborFn_mem_left (h : G.IsExtremallyMatched s t) (h₀ : v ∈ t) :
-    G.latestNeighborFn v ∈ s :=
-  let ⟨_, h₁⟩ := h.latestNeighbor_latestNeighborFn (Or.inr h₀)
-  h.isBicliqueWith.isBipartiteWith.mem_of_mem_adj' h₀ h₁.1
+theorem mem_left_of_latestNeighborFn_eq_some (h : G.IsExtremallyMatched s t) (h₀ : v ∈ t)
+    (h₁ : G.latestNeighborFn v = some w) : w ∈ s :=
+  let ⟨_, h₂⟩ := latestNeighbor_of_latestNeighborFn_eq_some h₁
+  h.isBicliqueWith.isBipartiteWith.mem_of_mem_adj' h₀ h₂.1
 
-/-- In a proper graph, `N_min` is injective on the bi-clique, being its own inverse there. -/
+/-- In a proper graph, `N_min` is injective on the bi-clique: it is an involution there. -/
 theorem injOn_earliestNeighborFn (h : G.IsExtremallyMatched s t) (h₀ : G.IsProper) :
     (s ∪ t).InjOn G.earliestNeighborFn := by
-  intro v h₁ w h₂ h₃
-  rw [← h.earliestNeighborFn_earliestNeighborFn h₀ h₁, h₃,
-    h.earliestNeighborFn_earliestNeighborFn h₀ h₂]
+  intro v h₁ v' h₂ h₃
+  obtain ⟨w, h₄⟩ := h.exists_earliestNeighborFn_eq_some h₁
+  -- `v` and `v'` are both the earliest neighbor of `w`
+  exact Option.some_injective _ ((h.earliestNeighborFn_eq_some_symm h₀ h₁ h₄).symm.trans
+    (h.earliestNeighborFn_eq_some_symm h₀ h₂ (h₃ ▸ h₄)))
 
 /-- In a proper graph, `N_min` maps the sources onto the targets. -/
 theorem image_earliestNeighborFn (h : G.IsExtremallyMatched s t) (h₀ : G.IsProper) :
-    G.earliestNeighborFn '' s = t := by
-  refine (Set.image_subset_iff.2 fun v h₁ ↦ h.earliestNeighborFn_mem_right h₁).antisymm
-    fun u h₁ ↦ ?_
-  -- a target `u` is `N_min` of the source `N_min u`
-  exact ⟨G.earliestNeighborFn u, h.earliestNeighborFn_mem_left h₁,
-    h.earliestNeighborFn_earliestNeighborFn h₀ (Or.inr h₁)⟩
+    G.earliestNeighborFn '' s = some '' t := by
+  ext o
+  constructor
+  · rintro ⟨v, h₁, rfl⟩
+    obtain ⟨w, h₂⟩ := h.exists_earliestNeighborFn_eq_some (Or.inl h₁)
+    exact ⟨w, h.mem_right_of_earliestNeighborFn_eq_some h₁ h₂, h₂.symm⟩
+  · rintro ⟨u, h₁, rfl⟩
+    -- a target `u` is `N_min` of the source `N_min u`
+    obtain ⟨v, h₂⟩ := h.exists_earliestNeighborFn_eq_some (Or.inr h₁)
+    exact ⟨v, h.mem_left_of_earliestNeighborFn_eq_some h₁ h₂,
+      h.earliestNeighborFn_eq_some_symm h₀ (Or.inr h₁) h₂⟩
 
 /-- Baligács 2026, §2.3: a proper extremally matched bi-clique has as many sources as targets,
 since `N_min` is a bijection between them. -/
 theorem ncard_eq (h : G.IsExtremallyMatched s t) (h₀ : G.IsProper) : s.ncard = t.ncard := by
-  rw [← h.image_earliestNeighborFn h₀,
+  rw [← Set.ncard_image_of_injective t (Option.some_injective V), ← h.image_earliestNeighborFn h₀,
     ((h.injOn_earliestNeighborFn h₀).mono Set.subset_union_left).ncard_image]
 
 /-- `N_min` transports the sources to the targets: for any property `P` of targets, the sources
 whose `N_min` satisfies `P` are as many as the targets satisfying `P`. -/
 theorem ncard_setOf_earliestNeighborFn (h : G.IsExtremallyMatched s t) (h₀ : G.IsProper)
-    (P : V → Prop) : {v ∈ s | P (G.earliestNeighborFn v)}.ncard = {u ∈ t | P u}.ncard := by
-  have h₁ : G.earliestNeighborFn '' {v ∈ s | P (G.earliestNeighborFn v)} = {u ∈ t | P u} := by
-    ext u
+    (P : V → Prop) :
+    {v ∈ s | ∃ w ∈ G.earliestNeighborFn v, P w}.ncard = {u ∈ t | P u}.ncard := by
+  have h₁ : G.earliestNeighborFn '' {v ∈ s | ∃ w ∈ G.earliestNeighborFn v, P w} =
+      some '' {u ∈ t | P u} := by
+    ext o
     constructor
-    · rintro ⟨v, ⟨h₂, h₃⟩, rfl⟩
-      exact ⟨h.earliestNeighborFn_mem_right h₂, h₃⟩
-    · rintro ⟨h₂, h₃⟩
+    · rintro ⟨v, ⟨h₂, w, h₃, h₄⟩, rfl⟩
+      rw [Option.mem_def] at h₃
+      exact ⟨w, ⟨h.mem_right_of_earliestNeighborFn_eq_some h₂ h₃, h₄⟩, h₃.symm⟩
+    · rintro ⟨u, ⟨h₂, h₃⟩, rfl⟩
       -- a target `u` is `N_min` of the source `N_min u`
-      have h₄ := h.earliestNeighborFn_earliestNeighborFn h₀ (Or.inr h₂)
-      exact ⟨G.earliestNeighborFn u, ⟨h.earliestNeighborFn_mem_left h₂, by rwa [h₄]⟩, h₄⟩
-  rw [← h₁, ((h.injOn_earliestNeighborFn h₀).mono
-    ((Set.sep_subset s _).trans Set.subset_union_left)).ncard_image]
+      obtain ⟨v, h₄⟩ := h.exists_earliestNeighborFn_eq_some (Or.inr h₂)
+      have h₅ := h.earliestNeighborFn_eq_some_symm h₀ (Or.inr h₂) h₄
+      exact ⟨v, ⟨h.mem_left_of_earliestNeighborFn_eq_some h₂ h₄, u, h₅, h₃⟩, h₅⟩
+  calc {v ∈ s | ∃ w ∈ G.earliestNeighborFn v, P w}.ncard
+      = (G.earliestNeighborFn '' {v ∈ s | ∃ w ∈ G.earliestNeighborFn v, P w}).ncard :=
+        ((h.injOn_earliestNeighborFn h₀).mono
+          ((Set.sep_subset s _).trans Set.subset_union_left)).ncard_image.symm
+    _ = {u ∈ t | P u}.ncard := by
+        rw [h₁, Set.ncard_image_of_injective _ (Option.some_injective V)]
 
 /-- Every vertex of an extremally matched bi-clique carries an edge, so lies in `H.verts`. -/
 theorem subset_verts {H : Subgraph G} (h : H.IsExtremallyMatched s t) : s ∪ t ⊆ H.verts :=

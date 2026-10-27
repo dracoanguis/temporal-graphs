@@ -414,7 +414,7 @@ theorem exists_isSpannerOf_of_not_twoHopDismountable {H : Subgraph G}
     ∃ K : Subgraph G, K.IsSymm ∧ K.IsSpannerOf H ∧
       K.edgeSet.ncard ≤ spannerBound H.vplus.ncard + H.vplus.ncard + H.vminus.ncard := by
   set B := H.between H.vminus H.vplus
-  have hcard := vminus_card_eq_vplus_card h₀ h₁ h₂ h₃
+  have hcard := vminus_card_eq_vplus_card h₀ h₁ h₃
   have hbc : B.IsBicliqueWith H.vplus H.vminus := (biclique_of_not_twoHopDismountable h₁ h₃).symm
   have hBsimple : B.IsSimple := h₀.mono (toTemporalGraph_le between_le)
   -- `V⁰ = ∅`, so `H.verts = V⁻ ∪ V⁺`
@@ -526,7 +526,7 @@ theorem exists_isSpannerOf_ncard_le {H : Subgraph G} [Finite H.verts]
       obtain ⟨K, hKsymm, hKspan, hKcard⟩ :=
         exists_isSpannerOf_of_not_twoHopDismountable h₀ h₁ h₂ hd
       refine ⟨K, hKsymm, hKspan, ?_⟩
-      have hcard := vminus_card_eq_vplus_card h₀ h₁ h₂ hd
+      have hcard := vminus_card_eq_vplus_card h₀ h₁ hd
       have hverts : H.verts = H.vminus ∪ H.vplus := by
         rw [← vunion_eq_univ, vzero_empty_of_not_twoHopDismountable h₀ h₁ h₂ hd,
           Set.union_empty]

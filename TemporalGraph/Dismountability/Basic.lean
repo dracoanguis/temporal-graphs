@@ -95,66 +95,78 @@ section NeighborFunctions
 
 variable {G : TemporalGraph V} {x y : V}
 
-/-- The earliest-neighbor function: `x` is sent to one of its earliest neighbors (the other end of
-an earliest edge at `x`, unique in a proper graph: `earliestNeighborFn_eq_of_isProper`), and left
-at `x` when it has none. On a subgraph `H`, `H.earliestNeighborFn` restricted to `vplus` lands in
-`vminus` (`Subgraph.earliestNeighborFn_mapsTo`). -/
-noncomputable def earliestNeighborFn (G : TemporalGraph V) (x : V) : V := by
+/-- The earliest-neighbor function: `some y` for an earliest neighbor `y` of `x` (the other end of
+an earliest edge at `x`, unique in a proper graph: `earliestNeighborFn_eq_some`), and `none` when
+`x` has no edge. On a subgraph `H`, `H.earliestNeighborFn` sends `vplus` into `some '' vminus`
+(`Subgraph.earliestNeighborFn_mapsTo`). -/
+noncomputable def earliestNeighborFn (G : TemporalGraph V) (x : V) : Option V := by
   classical
-  exact if h : ∃ y, G.EarliestNeighbor x y then h.choose else x
+  exact if h : ∃ y, G.EarliestNeighbor x y then some h.choose else none
 
-/-- The latest-neighbor function: `x` is sent to one of its latest neighbors (unique in a proper
-graph: `latestNeighborFn_eq_of_isProper`), and left at `x` when it has none. -/
-noncomputable def latestNeighborFn (G : TemporalGraph V) (x : V) : V := by
+/-- The latest-neighbor function: `some y` for a latest neighbor `y` of `x` (unique in a proper
+graph: `latestNeighborFn_eq_some`), and `none` when `x` has no edge. -/
+noncomputable def latestNeighborFn (G : TemporalGraph V) (x : V) : Option V := by
   classical
-  exact if h : ∃ y, G.LatestNeighbor x y then h.choose else x
+  exact if h : ∃ y, G.LatestNeighbor x y then some h.choose else none
 
-/-- `earliestNeighborFn x` is an earliest neighbor of `x`, when `x` has one. -/
-theorem earliestNeighbor_earliestNeighborFn (h₀ : ∃ y, G.EarliestNeighbor x y) :
-    G.EarliestNeighbor x (G.earliestNeighborFn x) := by
-  rw [earliestNeighborFn, dite_eq_left h₀]
-  exact h₀.choose_spec
+/-- `earliestNeighborFn x` is defined exactly when `x` has an earliest neighbor. -/
+theorem earliestNeighborFn_isSome_iff :
+    (G.earliestNeighborFn x).isSome ↔ ∃ y, G.EarliestNeighbor x y := by
+  unfold earliestNeighborFn
+  split_ifs with h <;> simp [h]
 
-/-- `latestNeighborFn x` is a latest neighbor of `x`, when `x` has one. -/
-theorem latestNeighbor_latestNeighborFn (h₀ : ∃ y, G.LatestNeighbor x y) :
-    G.LatestNeighbor x (G.latestNeighborFn x) := by
-  rw [latestNeighborFn, dite_eq_left h₀]
-  exact h₀.choose_spec
+/-- `latestNeighborFn x` is defined exactly when `x` has a latest neighbor. -/
+theorem latestNeighborFn_isSome_iff :
+    (G.latestNeighborFn x).isSome ↔ ∃ y, G.LatestNeighbor x y := by
+  unfold latestNeighborFn
+  split_ifs with h <;> simp [h]
 
-/-- In a proper graph, the earliest neighbor is unique: it is `earliestNeighborFn x`. Two earliest
-edges at `x` have the same time, and properness then forces the same endpoint. -/
+/-- The value of `earliestNeighborFn x` is an earliest neighbor of `x`. -/
+theorem earliestNeighbor_of_earliestNeighborFn_eq_some (h₀ : G.earliestNeighborFn x = some y) :
+    G.EarliestNeighbor x y := by
+  unfold earliestNeighborFn at h₀
+  split_ifs at h₀ with h₁
+  exact Option.some_injective _ h₀ ▸ h₁.choose_spec
+
+/-- The value of `latestNeighborFn x` is a latest neighbor of `x`. -/
+theorem latestNeighbor_of_latestNeighborFn_eq_some (h₀ : G.latestNeighborFn x = some y) :
+    G.LatestNeighbor x y := by
+  unfold latestNeighborFn at h₀
+  split_ifs at h₀ with h₁
+  exact Option.some_injective _ h₀ ▸ h₁.choose_spec
+
+/-- In a proper graph, the earliest neighbor is unique: it is the value of `earliestNeighborFn x`.
+Two earliest edges at `x` have the same time, and properness then forces the same endpoint. -/
 @[grind →]
-theorem earliestNeighborFn_eq_of_isProper (h₀ : G.IsProper) (h₁ : G.EarliestNeighbor x y) :
-    G.earliestNeighborFn x = y := by
-  obtain ⟨n, h₂, h₃⟩ := earliestNeighbor_earliestNeighborFn ⟨y, h₁⟩
-  obtain ⟨m, h₄, h₅⟩ := h₁
+theorem earliestNeighborFn_eq_some (h₀ : G.IsProper) (h₁ : G.EarliestNeighbor x y) :
+    G.earliestNeighborFn x = some y := by
+  obtain ⟨z, h₂⟩ := Option.isSome_iff_exists.1 (earliestNeighborFn_isSome_iff.2 ⟨y, h₁⟩)
+  obtain ⟨n, h₃, h₄⟩ := earliestNeighbor_of_earliestNeighborFn_eq_some h₂
+  obtain ⟨m, h₅, h₆⟩ := h₁
   -- two earliest edges at `x` have the same time
-  obtain rfl : n = m := le_antisymm (h₃ _ _ h₄) (h₅ _ _ h₂)
-  exact h₀ h₂ h₄
+  obtain rfl : n = m := le_antisymm (h₄ _ _ h₅) (h₆ _ _ h₃)
+  rw [h₂, h₀ h₃ h₅]
 
-/-- In a proper graph, the latest neighbor is unique: it is `latestNeighborFn x`. -/
+/-- In a proper graph, the latest neighbor is unique: it is the value of `latestNeighborFn x`. -/
 @[grind →]
-theorem latestNeighborFn_eq_of_isProper (h₀ : G.IsProper) (h₁ : G.LatestNeighbor x y) :
-    G.latestNeighborFn x = y := by
-  obtain ⟨n, h₂, h₃⟩ := latestNeighbor_latestNeighborFn ⟨y, h₁⟩
-  obtain ⟨m, h₄, h₅⟩ := h₁
+theorem latestNeighborFn_eq_some (h₀ : G.IsProper) (h₁ : G.LatestNeighbor x y) :
+    G.latestNeighborFn x = some y := by
+  obtain ⟨z, h₂⟩ := Option.isSome_iff_exists.1 (latestNeighborFn_isSome_iff.2 ⟨y, h₁⟩)
+  obtain ⟨n, h₃, h₄⟩ := latestNeighbor_of_latestNeighborFn_eq_some h₂
+  obtain ⟨m, h₅, h₆⟩ := h₁
   -- two latest edges at `x` have the same time
-  obtain rfl : n = m := le_antisymm (h₅ _ _ h₂) (h₃ _ _ h₄)
-  exact h₀ h₂ h₄
+  obtain rfl : n = m := le_antisymm (h₆ _ _ h₃) (h₄ _ _ h₅)
+  rw [h₂, h₀ h₃ h₅]
 
-/-- In a simple graph, the earliest edge at `x` goes to `earliestNeighborFn x`, at the `arcTime`
-of that arc. -/
-theorem earliestEdge_earliestNeighborFn (h₀ : G.IsSimple) (h₁ : ∃ y, G.EarliestNeighbor x y) :
-    G.EarliestEdge x (G.earliestNeighborFn x) (G.arcTime x (G.earliestNeighborFn x)) := by
-  obtain ⟨n, h₂⟩ := earliestNeighbor_earliestNeighborFn h₁
-  rwa [h₂.arcTime_eq h₀]
+/-- In a proper graph, `earliestNeighborFn` characterizes the earliest neighbors. -/
+theorem earliestNeighborFn_eq_some_iff (h₀ : G.IsProper) :
+    G.earliestNeighborFn x = some y ↔ G.EarliestNeighbor x y :=
+  ⟨earliestNeighbor_of_earliestNeighborFn_eq_some, earliestNeighborFn_eq_some h₀⟩
 
-/-- In a simple graph, the latest edge at `x` goes to `latestNeighborFn x`, at the `arcTime` of
-that arc. -/
-theorem latestEdge_latestNeighborFn (h₀ : G.IsSimple) (h₁ : ∃ y, G.LatestNeighbor x y) :
-    G.LatestEdge x (G.latestNeighborFn x) (G.arcTime x (G.latestNeighborFn x)) := by
-  obtain ⟨n, h₂⟩ := latestNeighbor_latestNeighborFn h₁
-  rwa [h₂.arcTime_eq h₀]
+/-- In a proper graph, `latestNeighborFn` characterizes the latest neighbors. -/
+theorem latestNeighborFn_eq_some_iff (h₀ : G.IsProper) :
+    G.latestNeighborFn x = some y ↔ G.LatestNeighbor x y :=
+  ⟨latestNeighbor_of_latestNeighborFn_eq_some, latestNeighborFn_eq_some h₀⟩
 
 end NeighborFunctions
 
@@ -521,130 +533,119 @@ lemma latestNeighbor_mem_vplus {H : Subgraph G} {x y : V} (h : H.LatestNeighbor 
     y ∈ H.vplus :=
   ⟨x, h⟩
 
-/-- In a finite, nontrivial, simple, proper clique subgraph, `earliestNeighborFn` sends a vertex of
-`H.verts` to its unique earliest neighbor (`existsUnique_earliestNeighbor`). -/
-lemma earliestNeighborFn_eq {H : Subgraph G}
-    [Finite H.verts] [Nontrivial H.verts] {x y : V}
-    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) (h₃ : x ∈ H.verts) :
-    H.earliestNeighborFn x = y ↔ H.EarliestNeighbor x y := by
-  -- `x` has a unique earliest neighbor; `earliestNeighborFn` picks one, hence that one
-  obtain ⟨z, h₄, -⟩ := existsUnique_earliestNeighbor h₀ h₁ h₂ x h₃
-  exact ⟨fun h ↦ h ▸ earliestNeighbor_earliestNeighborFn ⟨z, h₄⟩,
-    earliestNeighborFn_eq_of_isProper h₂⟩
+/-- In a finite nontrivial simple clique subgraph, every vertex of `H.verts` has an earliest
+neighbor, so `earliestNeighborFn` is defined on it. -/
+lemma exists_earliestNeighborFn_eq_some {H : Subgraph G} [Finite H.verts] [Nontrivial H.verts]
+    {x : V} (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : x ∈ H.verts) :
+    ∃ y, H.earliestNeighborFn x = some y := by
+  obtain ⟨y, n, h₃⟩ := earliestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x h₂
+  exact Option.isSome_iff_exists.1 (earliestNeighborFn_isSome_iff.2 ⟨y, n, h₃⟩)
 
 /-- `earliestNeighborFn` sends `vplus` into `vminus`. -/
-lemma earliestNeighborFn_mapsTo {H : Subgraph G}
-    [Finite H.verts] [Nontrivial H.verts]
-    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
-    Set.MapsTo H.earliestNeighborFn H.vplus H.vminus := by
+lemma earliestNeighborFn_mapsTo {H : Subgraph G} [Finite H.verts] [Nontrivial H.verts]
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) :
+    Set.MapsTo H.earliestNeighborFn H.vplus (some '' H.vminus) := by
   intro x hx
-  exact earliestNeighbor_mem_vminus
-    ((earliestNeighborFn_eq h₀ h₁ h₂ (vplus_sub_verts hx)).mp rfl)
+  obtain ⟨y, h₂⟩ := exists_earliestNeighborFn_eq_some h₀ h₁ (vplus_sub_verts hx)
+  exact ⟨y, earliestNeighbor_mem_vminus (earliestNeighbor_of_earliestNeighborFn_eq_some h₂),
+    h₂.symm⟩
 
-/-- `earliestNeighborFn` is injective on `vplus` when `H` is a finite, nontrivial, simple, proper
-clique that is not `{1,2}`-hop dismountable (used to build the `vminus`/`vplus` bijection). -/
+/-- `earliestNeighborFn` is injective on `vplus` when `H` is a finite, nontrivial, simple clique
+that is not `{1,2}`-hop dismountable (used to build the `vminus`/`vplus` bijection). -/
 lemma earliestNeighborFn_injOn {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
-    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
-    (h₃ : ¬H.TwoHopDismountable) :
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : ¬H.TwoHopDismountable) :
     Set.InjOn H.earliestNeighborFn H.vplus := by
   intro x hx y hy hfeq
   by_contra hne
-  have hz : H.EarliestNeighbor x (H.earliestNeighborFn y) := by
-    rw [← hfeq]
-    exact (earliestNeighborFn_eq h₀ h₁ h₂ (vplus_sub_verts hx)).mp rfl
-  have hz' : H.EarliestNeighbor y (H.earliestNeighborFn y) :=
-    (earliestNeighborFn_eq h₀ h₁ h₂ (vplus_sub_verts hy)).mp rfl
-  exact (vplus_ne_neighbor_of_not_twoHopDismountable hx hy h₃ h₁ hne _ _ ⟨hz, hz'⟩) rfl
+  -- `x` and `y` would share their earliest neighbor `z` (SAND 2025, Lemma 3.2)
+  obtain ⟨z, hz⟩ := exists_earliestNeighborFn_eq_some h₀ h₁ (vplus_sub_verts hy)
+  exact (vplus_ne_neighbor_of_not_twoHopDismountable hx hy h₂ h₁ hne _ _
+    ⟨earliestNeighbor_of_earliestNeighborFn_eq_some (hfeq.trans hz),
+      earliestNeighbor_of_earliestNeighborFn_eq_some hz⟩) rfl
 
 /-- `vplus` has at most as many elements as `vminus`, via injectivity of `earliestNeighborFn`. -/
 lemma vplus_card_le_vminus_card {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
-    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
-    (h₃ : ¬H.TwoHopDismountable) :
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : ¬H.TwoHopDismountable) :
     H.vplus.ncard ≤ H.vminus.ncard :=
-  Set.ncard_le_ncard_of_injOn H.earliestNeighborFn
-    (earliestNeighborFn_mapsTo h₀ h₁ h₂) (earliestNeighborFn_injOn h₀ h₁ h₂ h₃)
+  calc H.vplus.ncard ≤ (some '' H.vminus).ncard :=
+        Set.ncard_le_ncard_of_injOn _ (earliestNeighborFn_mapsTo h₀ h₁)
+          (earliestNeighborFn_injOn h₀ h₁ h₂)
+    _ = H.vminus.ncard := Set.ncard_image_of_injective _ (Option.some_injective V)
 
-/-- In a finite, nontrivial, simple, proper clique subgraph, `latestNeighborFn` sends a vertex of
-`H.verts` to its unique latest neighbor (`existsUnique_latestNeighbor`). -/
-lemma latestNeighborFn_eq {H : Subgraph G}
-    [Finite H.verts] [Nontrivial H.verts] {x y : V}
-    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) (h₃ : x ∈ H.verts) :
-    H.latestNeighborFn x = y ↔ H.LatestNeighbor x y := by
-  -- `x` has a unique latest neighbor; `latestNeighborFn` picks one, hence that one
-  obtain ⟨z, h₄, -⟩ := existsUnique_latestNeighbor h₀ h₁ h₂ x h₃
-  exact ⟨fun h ↦ h ▸ latestNeighbor_latestNeighborFn ⟨z, h₄⟩,
-    latestNeighborFn_eq_of_isProper h₂⟩
+/-- In a finite nontrivial simple clique subgraph, every vertex of `H.verts` has an latest
+neighbor, so `latestNeighborFn` is defined on it. -/
+lemma exists_latestNeighborFn_eq_some {H : Subgraph G} [Finite H.verts] [Nontrivial H.verts]
+    {x : V} (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : x ∈ H.verts) :
+    ∃ y, H.latestNeighborFn x = some y := by
+  obtain ⟨y, n, h₃⟩ := latestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x h₂
+  exact Option.isSome_iff_exists.1 (latestNeighborFn_isSome_iff.2 ⟨y, n, h₃⟩)
 
 /-- `latestNeighborFn` sends `vminus` into `vplus`. -/
-lemma latestNeighborFn_mapsTo {H : Subgraph G}
-    [Finite H.verts] [Nontrivial H.verts]
-    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
-    Set.MapsTo H.latestNeighborFn H.vminus H.vplus := by
+lemma latestNeighborFn_mapsTo {H : Subgraph G} [Finite H.verts] [Nontrivial H.verts]
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) :
+    Set.MapsTo H.latestNeighborFn H.vminus (some '' H.vplus) := by
   intro x hx
-  exact latestNeighbor_mem_vplus
-    ((latestNeighborFn_eq h₀ h₁ h₂ (vminus_sub_verts hx)).mp rfl)
+  obtain ⟨y, h₂⟩ := exists_latestNeighborFn_eq_some h₀ h₁ (vminus_sub_verts hx)
+  exact ⟨y, latestNeighbor_mem_vplus (latestNeighbor_of_latestNeighborFn_eq_some h₂),
+    h₂.symm⟩
 
-/-- `latestNeighborFn` is injective on `vminus` when `H` is a finite, nontrivial, simple, proper
-clique that is not `{1,2}`-hop dismountable (used to build the `vminus`/`vplus` bijection). -/
+/-- `latestNeighborFn` is injective on `vminus` when `H` is a finite, nontrivial, simple clique
+that is not `{1,2}`-hop dismountable (used to build the `vplus`/`vminus` bijection). -/
 lemma latestNeighborFn_injOn {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
-    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
-    (h₃ : ¬H.TwoHopDismountable) :
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : ¬H.TwoHopDismountable) :
     Set.InjOn H.latestNeighborFn H.vminus := by
   intro x hx y hy hfeq
   by_contra hne
-  have hz : H.LatestNeighbor x (H.latestNeighborFn y) := by
-    rw [← hfeq]
-    exact (latestNeighborFn_eq h₀ h₁ h₂ (vminus_sub_verts hx)).mp rfl
-  have hz' : H.LatestNeighbor y (H.latestNeighborFn y) :=
-    (latestNeighborFn_eq h₀ h₁ h₂ (vminus_sub_verts hy)).mp rfl
-  exact (vminus_ne_neighbor_of_not_twoHopDismountable hx hy h₃ h₁ hne _ _ ⟨hz, hz'⟩) rfl
+  -- `x` and `y` would share their latest neighbor `z` (SAND 2025, Lemma 3.2)
+  obtain ⟨z, hz⟩ := exists_latestNeighborFn_eq_some h₀ h₁ (vminus_sub_verts hy)
+  exact (vminus_ne_neighbor_of_not_twoHopDismountable hx hy h₂ h₁ hne _ _
+    ⟨latestNeighbor_of_latestNeighborFn_eq_some (hfeq.trans hz),
+      latestNeighbor_of_latestNeighborFn_eq_some hz⟩) rfl
 
 /-- `vminus` has at most as many elements as `vplus`, via injectivity of `latestNeighborFn`. -/
 lemma vminus_card_le_vplus_card {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
-    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
-    (h₃ : ¬H.TwoHopDismountable) :
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : ¬H.TwoHopDismountable) :
     H.vminus.ncard ≤ H.vplus.ncard :=
-  Set.ncard_le_ncard_of_injOn H.latestNeighborFn
-    (latestNeighborFn_mapsTo h₀ h₁ h₂) (latestNeighborFn_injOn h₀ h₁ h₂ h₃)
+  calc H.vminus.ncard ≤ (some '' H.vplus).ncard :=
+        Set.ncard_le_ncard_of_injOn _ (latestNeighborFn_mapsTo h₀ h₁)
+          (latestNeighborFn_injOn h₀ h₁ h₂)
+    _ = H.vplus.ncard := Set.ncard_image_of_injective _ (Option.some_injective V)
 
 /-- SAND 2025, Corollary 3.3 (3): `vminus` and `vplus` have the same cardinality. -/
 lemma vminus_card_eq_vplus_card {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
-    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
-    (h₃ : ¬H.TwoHopDismountable) :
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : ¬H.TwoHopDismountable) :
     H.vminus.ncard = H.vplus.ncard :=
-  le_antisymm (vminus_card_le_vplus_card h₀ h₁ h₂ h₃) (vplus_card_le_vminus_card h₀ h₁ h₂ h₃)
+  le_antisymm (vminus_card_le_vplus_card h₀ h₁ h₂) (vplus_card_le_vminus_card h₀ h₁ h₂)
 
 /-- SAND 2025, Corollary 3.3 (via Lemma 3.2): `earliestNeighborFn` gives a bijection between the
 sets `vplus` and `vminus`. -/
 lemma earliestNeighborFn_bijOn {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
-    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
-    (h₃ : ¬H.TwoHopDismountable) :
-    Set.BijOn H.earliestNeighborFn H.vplus H.vminus := by
-  have hinj := earliestNeighborFn_injOn h₀ h₁ h₂ h₃
-  have himg : H.earliestNeighborFn '' H.vplus = H.vminus := by
-    apply Set.eq_of_subset_of_ncard_le (earliestNeighborFn_mapsTo h₀ h₁ h₂).image_subset
-    rw [hinj.ncard_image]
-    exact (vminus_card_eq_vplus_card h₀ h₁ h₂ h₃).le
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : ¬H.TwoHopDismountable) :
+    Set.BijOn H.earliestNeighborFn H.vplus (some '' H.vminus) := by
+  have hinj := earliestNeighborFn_injOn h₀ h₁ h₂
+  have himg : H.earliestNeighborFn '' H.vplus = some '' H.vminus := by
+    apply Set.eq_of_subset_of_ncard_le (earliestNeighborFn_mapsTo h₀ h₁).image_subset
+    rw [hinj.ncard_image, Set.ncard_image_of_injective _ (Option.some_injective V)]
+    exact (vminus_card_eq_vplus_card h₀ h₁ h₂).le
   exact himg ▸ hinj.bijOn_image
 
 /-- SAND 2025, Corollary 3.3 (via Lemma 3.2): `latestNeighborFn` gives a bijection between the
 sets `vminus` and `vplus`. -/
 lemma latestNeighborFn_bijOn {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
-    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
-    (h₃ : ¬H.TwoHopDismountable) :
-    Set.BijOn H.latestNeighborFn H.vminus H.vplus := by
-  have hinj := latestNeighborFn_injOn h₀ h₁ h₂ h₃
-  have himg : H.latestNeighborFn '' H.vminus = H.vplus := by
-    apply Set.eq_of_subset_of_ncard_le (latestNeighborFn_mapsTo h₀ h₁ h₂).image_subset
-    rw [hinj.ncard_image]
-    exact (vminus_card_eq_vplus_card h₀ h₁ h₂ h₃).ge
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : ¬H.TwoHopDismountable) :
+    Set.BijOn H.latestNeighborFn H.vminus (some '' H.vplus) := by
+  have hinj := latestNeighborFn_injOn h₀ h₁ h₂
+  have himg : H.latestNeighborFn '' H.vminus = some '' H.vplus := by
+    apply Set.eq_of_subset_of_ncard_le (latestNeighborFn_mapsTo h₀ h₁).image_subset
+    rw [hinj.ncard_image, Set.ncard_image_of_injective _ (Option.some_injective V)]
+    exact (vminus_card_eq_vplus_card h₀ h₁ h₂).ge
   exact himg ▸ hinj.bijOn_image
 
 /-- SAND 2025, Corollary 3.3 (1): `{e⁻(v) : v ∈ V⁺}` is a perfect matching, i.e. every vertex of
@@ -655,13 +656,12 @@ lemma existsUnique_vplus_earliestEdge {H : Subgraph G}
     (h₃ : ¬H.TwoHopDismountable) :
     ∀ x ∈ H.vminus, ∃! q : V × ℕ, q.1 ∈ H.vplus ∧ H.EarliestEdge q.1 x q.2 := by
   intro x hx
-  have hbij := earliestNeighborFn_bijOn h₀ h₁ h₂ h₃
-  obtain ⟨y, hy, hfy⟩ := hbij.surjOn hx
-  obtain ⟨n, hee⟩ := (earliestNeighborFn_eq h₀ h₁ h₂ (vplus_sub_verts hy)).mp hfy
+  have hbij := earliestNeighborFn_bijOn h₀ h₁ h₃
+  obtain ⟨y, hy, hfy⟩ := hbij.surjOn ⟨x, hx, rfl⟩
+  obtain ⟨n, hee⟩ := earliestNeighbor_of_earliestNeighborFn_eq_some hfy
   refine ⟨⟨y, n⟩, ⟨hy, hee⟩, ?_⟩
   rintro ⟨z, m⟩ ⟨hz, hee'⟩
-  have hfz : H.earliestNeighborFn z = x :=
-    (earliestNeighborFn_eq h₀ h₁ h₂ (vplus_sub_verts hz)).mpr ⟨m, hee'⟩
+  have hfz : H.earliestNeighborFn z = some x := earliestNeighborFn_eq_some h₂ ⟨m, hee'⟩
   have heqv : z = y := hbij.injOn hz hy (hfz.trans hfy.symm)
   -- `z = y`, so simplicity forces the two times to agree
   grind only [= IsSimple.eq_1, = EarliestEdge.eq_1]
@@ -674,13 +674,12 @@ lemma existsUnique_vminus_latestEdge {H : Subgraph G}
     (h₃ : ¬H.TwoHopDismountable) :
     ∀ x ∈ H.vplus, ∃! q : V × ℕ, q.1 ∈ H.vminus ∧ H.LatestEdge q.1 x q.2 := by
   intro x hx
-  have hbij := latestNeighborFn_bijOn h₀ h₁ h₂ h₃
-  obtain ⟨y, hy, hfy⟩ := hbij.surjOn hx
-  obtain ⟨n, hle⟩ := (latestNeighborFn_eq h₀ h₁ h₂ (vminus_sub_verts hy)).mp hfy
+  have hbij := latestNeighborFn_bijOn h₀ h₁ h₃
+  obtain ⟨y, hy, hfy⟩ := hbij.surjOn ⟨x, hx, rfl⟩
+  obtain ⟨n, hle⟩ := latestNeighbor_of_latestNeighborFn_eq_some hfy
   refine ⟨⟨y, n⟩, ⟨hy, hle⟩, ?_⟩
   rintro ⟨z, m⟩ ⟨hz, hle'⟩
-  have hfz : H.latestNeighborFn z = x :=
-    (latestNeighborFn_eq h₀ h₁ h₂ (vminus_sub_verts hz)).mpr ⟨m, hle'⟩
+  have hfz : H.latestNeighborFn z = some x := latestNeighborFn_eq_some h₂ ⟨m, hle'⟩
   have heqv : z = y := hbij.injOn hz hy (hfz.trans hfy.symm)
   -- `z = y`, so simplicity forces the two times to agree
   grind only [= IsSimple.eq_1, = LatestEdge.eq_1]

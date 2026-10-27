@@ -316,7 +316,11 @@ section ArcTime
 /-- The time of the arc from `u` to `v`: `some n` for a time `n` with `G.Adj u v n` (unique in a
 simple graph: `arcTime_eq_some`), and `none` when there is no such arc. In a symmetric simple graph
 it does not depend on the orientation (`arcTime_comm`): it is then the label `λ({u, v})` of the
-edge. -/
+edge.
+
+Do not compare these values with the order of `Option`, in which `none` is the least element (so
+`none ≤ some τ` holds): state a comparison through the value, `∃ n ∈ G.arcTime u v, n ≤ τ`, which
+is false on `none`, or unwrap with `Option.get` and an existence proof. -/
 noncomputable def arcTime (G : TemporalGraph V) (u v : V) : Option ℕ := by
   classical
   exact if h : ∃ n, G.Adj u v n then some h.choose else none

@@ -106,16 +106,20 @@ an earliest edge at `x`, unique in a proper graph: `earliestNeighborFn_eq_some`)
 On a subgraph `H`, `H.earliestNeighborFn` sends `vplus` into `some '' vminus`
 (`Subgraph.earliestNeighborFn_mapsTo`).
 
-As for `arcTime`, the `none` value is an absence, not a vertex: use the value through
-`earliestNeighborFn x = some y` (or `y ∈ G.earliestNeighborFn x`), never a default. -/
+As for `arcTime`, `none` is an absence, not a vertex. To use the neighbor, first prove that it
+exists, then unwrap: `(G.earliestNeighborFn x).get (earliestNeighborFn_isSome_iff.2 h)` with
+`h : ∃ y, G.EarliestNeighbor x y` (`exists_earliestNeighbor_iff`: some arc leaves `x`), or work
+with `G.earliestNeighborFn x = some y`. Never `Option.get!`/`Option.getD`, whose default is a
+valid vertex. -/
 noncomputable def earliestNeighborFn (G : TemporalGraph V) (x : V) : Option V := by
   classical
   exact if h : ∃ y, G.EarliestNeighbor x y then some h.choose else none
 
 /-- The latest-neighbor function: `some y` for a latest neighbor `y` of `x` (unique in a proper
 graph: `latestNeighborFn_eq_some`), and `none` when `x` has no latest neighbor: when no arc leaves
-`x`, or when the times of the arcs leaving `x` are unbounded. Use the value through
-`latestNeighborFn x = some y`, never a default. -/
+`x`, or when the times of the arcs leaving `x` are unbounded. As for `earliestNeighborFn`, prove
+existence before unwrapping, `(G.latestNeighborFn x).get (latestNeighborFn_isSome_iff.2 h)`, or
+work with `G.latestNeighborFn x = some y`; never a default. -/
 noncomputable def latestNeighborFn (G : TemporalGraph V) (x : V) : Option V := by
   classical
   exact if h : ∃ y, G.LatestNeighbor x y then some h.choose else none

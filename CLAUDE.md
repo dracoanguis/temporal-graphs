@@ -164,8 +164,12 @@ utilisaient vraiment).
   dans `Option V`, `none` signalant l'absence de voisin (une valeur par défaut dans `V` serait une
   réponse valide, donc indiscernable). `earliestNeighborFn_bijOn`/`latestNeighborFn_bijOn`
   énoncent `Set.BijOn` de `H.vplus` sur `some '' H.vminus` (et réciproquement), sans passer par le
-  sous-type. Même choix pour `arcTime : Option ℕ`. Ne jamais comparer ces valeurs avec l'ordre
-  d'`Option` (où `none` est minimal) : passer par des témoins `arcTime u v = some n`.
+  sous-type. Même choix pour `arcTime : Option ℕ`. **Pas de décharge automatique de l'existence** (choix
+  validé) : on prouve d'abord l'existence, puis on déballe avec `Option.get`
+  (`(G.arcTime u v).get (arcTime_isSome_iff.2 h)`), ou l'on travaille avec `… = some n`. Jamais
+  `Option.get!`/`Option.getD` (valeur par défaut = valeur valide). Ne jamais comparer avec l'ordre
+  d'`Option` (`none` minimal, `none ≤ some τ`) : écrire `∃ n ∈ G.arcTime u v, n ≤ τ` (faux sur
+  `none`).
 - **Renommage ultérieur (commit `acb993a`)** : le constructeur à une seule orientation, sans
   aucune hypothèse de symétrie, s'appelle maintenant `addArc` (l'ancien `addEdge` générique), et
   le constructeur à deux orientations qui demande `[G.IsSymm]` s'appelle maintenant `addEdge`

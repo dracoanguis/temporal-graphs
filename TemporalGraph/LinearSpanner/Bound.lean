@@ -1,0 +1,340 @@
+/-
+Copyright (c) 2026 Ethan Bargaud-Arm. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Ethan Bargaud-Arm
+-/
+module
+
+public import TemporalGraph.LinearSpanner.ExtendedStar
+public import TemporalGraph.LinearSpanner.Reduction
+public import TemporalGraph.LinearSpanner.SimpleStar
+
+/-!
+# Linear spanners of temporal bi-cliques
+
+Baligács 2026, §4 and Theorem 3. This module concludes the proof that a temporal bi-clique has a
+spanner with a linear number of edges, in the library's subgraph-level, one-sided formulation
+(`Subgraph.IsSpannerFromTo`).
+
+* Lemma 17 cuts the labeling of an extremally matched bi-clique, ordered by the times at a source
+  `c`, at a threshold `τ`. At most `6n` edges then make every source reach the targets at or after
+  `τ`, or the sources whose `N_min` comes at or before `τ` reach every target. Either every upper
+  source is a 3-hop crossing (Observation 9, plus `E_max`), or a non-crossing one, `v`, makes
+  `Ext(c) ∪ Ext(N_min v)` work (Lemma 16).
+* Theorem 18 (with Theorem 6) recurses on what is left uncovered, at the median threshold. The
+  uncovered part is a bi-clique with one side of size at most `n / 2`, which Lemma 5 reduces again
+  to an extremally matched one. The recurrence `f(n) ≤ 9n - 4x + f(x)`, `x ≤ n / 2`, gives
+  `f(n) ≤ 14n`. The spanner obtained contains `E_min ∪ E_max`, so it is temporally connected.
+* Theorem 3 combines Lemma 5 and Theorem 18 for an arbitrary finite simple proper bi-clique.
+
+Compare with `Subgraph.exists_isSpannerFromTo_ncard_le`, the `O(n log n)` bound of SAND 2025,
+§4.1.
+
+## Main results
+
+* `TemporalGraph.IsExtremallyMatched.exists_reachable_half` : Baligács 2026, Lemma 17.
+* `TemporalGraph.IsExtremallyMatched.exists_isSpannerFromTo` : Baligács 2026, Theorem 18 (with
+  Theorem 6), a temporally connected one-sided spanner with at most `14 |s|` edges.
+* `TemporalGraph.Subgraph.exists_isSpannerFromTo_ncard_le_linear` : Baligács 2026, Theorem 3.
+
+## References
+
+* Júlia Baligács, *Temporal Cliques Admit Linear Spanners*, arXiv:2606.05156v1 (2026), §4 and
+  Theorem 3.
+-/
+
+@[expose] public section
+
+universe u
+
+namespace TemporalGraph
+
+variable {V : Type u} {G : TemporalGraph V} {s t : Set V}
+
+section Auxiliary
+
+/-- A median threshold: for a finite set `A` and any `f`, some `τ` leaves at most `|A| / 2`
+elements strictly below it and at most `|A| / 2` strictly above it: the first `τ` that leaves
+more than `|A| / 2` elements at or below it. Baligács 2026 cuts the labeling ordered by the times
+at a source `c` at `k = ⌊n / 2⌋` (Theorem 18), which is this threshold for `f`, the times of the
+edges at `c`. -/
+theorem exists_threshold {α : Type*} {A : Set α} (f : α → ℕ) (h₀ : A.Finite) :
+    ∃ τ, {v ∈ A | f v < τ}.ncard ≤ A.ncard / 2 ∧ {v ∈ A | τ < f v}.ncard ≤ A.ncard / 2 := by
+  classical
+  rcases Nat.eq_zero_or_pos A.ncard with h₂ | h₂
+  · -- `A` is empty: any threshold works
+    refine ⟨0, ?_, ?_⟩ <;> exact (Set.ncard_le_ncard (Set.sep_subset _ _) h₀).trans (by omega)
+  -- some threshold leaves more than `|A| / 2` elements at or below it: a bound of `f` on `A`
+  have h₃ : ∃ τ, A.ncard / 2 < {v ∈ A | f v ≤ τ}.ncard := by
+    obtain ⟨M, h₄⟩ := (h₀.image f).bddAbove
+    have h₅ : {v ∈ A | f v ≤ M} = A := Set.sep_eq_self_iff_mem_true.2 fun v h ↦ h₄ ⟨v, h, rfl⟩
+    exact ⟨M, by rw [h₅]; omega⟩
+  -- `τ` is the first such threshold
+  refine ⟨Nat.find h₃, ?_, ?_⟩
+  · -- strictly below `τ` is at or below `τ - 1`, which leaves too few elements by minimality
+    rcases h₄ : Nat.find h₃ with _ | τ
+    · simp
+    · have h₅ := Nat.find_min h₃ (h₄ ▸ Nat.lt_succ_self τ : τ < Nat.find h₃)
+      simp only [Nat.lt_succ_iff]
+      omega
+  · -- strictly above `τ` is the complement of at or below `τ`, which has more than `|A| / 2`
+    have h₄ := Nat.find_spec h₃
+    have h₅ : {v ∈ A | Nat.find h₃ < f v} = A \ {v ∈ A | f v ≤ Nat.find h₃} := by
+      ext v
+      simp only [Set.mem_ofPred_eq, Set.mem_sdiff, not_and, not_le]
+      tauto
+    rw [h₅, Set.ncard_sdiff (Set.sep_subset _ _) (h₀.subset (Set.sep_subset _ _))]
+    omega
+
+end Auxiliary
+
+namespace IsExtremallyMatched
+
+variable {H : Subgraph G} [Finite H.verts] [H.IsSymm] {c : V}
+
+section Cut
+
+/-- Baligács 2026, Lemma 17: cut the labeling of an extremally matched bi-clique `H`, ordered by
+the times at a source `c`, at a threshold time `τ`. Some set `E` of at most `6 |s|` edges of `H`,
+containing `E_min ∪ E_max`, makes either every source reach every target `u` with `τ ≤ λ(c, u)`,
+or every source whose `N_min` is reached by `c` at time `τ` or before reach every target. (The
+cut `τ` is arbitrary here; the paper's `k = ⌊n / 2⌋` is chosen in Theorem 18.) If every upper
+source is a 3-hop crossing, Observation 9 with `m = 3`, plus `E_max`, gives the first case;
+otherwise a non-crossing upper source `v` gives the second, by Lemma 16, with
+`Ext(c) ∪ Ext(N_min v)`. -/
+theorem exists_reachable_half (h : H.IsExtremallyMatched s t) (h₀ : H.IsSimple)
+    (h₁ : H.IsProper) (h₂ : c ∈ s) (τ : ℕ) :
+    ∃ E ⊆ H.edgeSet, E.ncard ≤ 6 * s.ncard ∧ H.eMin s ∪ H.eMax s ⊆ E ∧
+      ((∀ x ∈ s, ∀ y ∈ {u ∈ t | ∃ k ∈ H.arcTime c u, τ ≤ k},
+          (Subgraph.fromEdgeSet G E).Reachable x y) ∨
+        (∀ x ∈ {v ∈ s | ∃ u ∈ H.earliestNeighborFn v, ∃ k ∈ H.arcTime c u, k ≤ τ}, ∀ y ∈ t,
+          (Subgraph.fromEdgeSet G E).Reachable x y)) := by
+  by_cases hcross : ∀ v ∈ s, (∃ u ∈ H.earliestNeighborFn v, ∃ k ∈ H.arcTime c u, τ < k) →
+      H.IsCutCrossing s c τ 3 v
+  · -- (i) every upper source is a 3-hop crossing: Observation 9, then `Star(c)` and `E_max`
+    obtain ⟨E, hEH, hEcard, hEreach⟩ := h.exists_reachable_simpleStar h₀ h₁ c τ 3
+    refine ⟨E ∪ H.simpleStar s t c ∪ H.eMax s, ?_, ?_, ?_, Or.inl ?_⟩
+    · exact Set.union_subset (Set.union_subset hEH simpleStar_subset_edgeSet)
+        eMax_subset_edgeSet
+    · -- `|E| ≤ 3n`, `|Star(c)| ≤ |E_min| + |inc c| ≤ 2n` and `|E_max| ≤ n`
+      have h₃ : E.ncard ≤ 3 * s.ncard :=
+        hEcard.trans (Nat.mul_le_mul_left 3 (Set.ncard_le_ncard (Set.sep_subset _ _) h.finite_left))
+      have h₄ : (H.simpleStar s t c).ncard ≤ s.ncard + t.ncard :=
+        (Set.ncard_union_le _ _).trans
+          (Nat.add_le_add (ncard_eMin_le h.finite_left) (ncard_incidentEdges_le h.finite_right))
+      have h₅ := ncard_eMax_le (G := H.toTemporalGraph) (A := s) h.finite_left
+      have h₆ := h.ncard_eq h₁
+      calc (E ∪ H.simpleStar s t c ∪ H.eMax s).ncard
+          ≤ E.ncard + (H.simpleStar s t c).ncard + (H.eMax s).ncard :=
+            (Set.ncard_union_le _ _).trans (Nat.add_le_add_right (Set.ncard_union_le _ _) _)
+        _ ≤ 6 * s.ncard := by omega
+    · -- `E_min ⊆ Star(c)`
+      exact Set.union_subset_union (Set.subset_union_left.trans Set.subset_union_right)
+        subset_rfl
+    · -- every source is either an early one or a crossing one
+      intro x hx y hy
+      refine Subgraph.reachable_of_le_reachable (Subgraph.fromEdgeSet_mono Set.subset_union_left)
+        (hEreach x ?_ y hy)
+      obtain ⟨w, hw⟩ := h.exists_earliestNeighborFn_eq_some (Or.inl hx)
+      obtain ⟨k, hk⟩ := h.exists_arcTime_eq_some_left h₀ h₂
+        (h.mem_right_of_earliestNeighborFn_eq_some hx hw)
+      by_cases hτ : k ≤ τ
+      · exact Or.inl ⟨hx, w, hw, k, hk, hτ⟩
+      · exact Or.inr ⟨hx, hcross x hx ⟨w, hw, k, hk, Nat.lt_of_not_le hτ⟩⟩
+  · -- (ii) some upper source `v` is not a crossing: Lemma 16 with `Ext(c) ∪ Ext(N_min v)`
+    push Not at hcross
+    obtain ⟨v, hv, ⟨w, hw, hτ⟩, hncross⟩ := hcross
+    have hw' := Option.mem_def.1 hw
+    have hreach := (h.isCutCrossing_or_reachable h₀ h₁ h₂ τ hv hw' hτ).resolve_left hncross
+    refine ⟨_, Set.union_subset extStarSource_subset_edgeSet extStarTarget_subset_edgeSet,
+      h.ncard_extStar_union_le h₁, ?_, Or.inr hreach⟩
+    -- `E_min ∪ E_max ⊆ Ext(c)` by definition
+    exact (Set.subset_union_left.trans Set.subset_union_left).trans Set.subset_union_left
+
+end Cut
+
+section Recursion
+
+variable [G.IsSymm] [G.IsLoopless]
+
+/-- Baligács 2026, Theorem 18 (covering part, with Theorem 6): an extremally matched finite simple
+proper bi-clique `H` with `n = |s| = |t|` has a symmetric one-sided spanner from `s` to `t` with
+at most `14 n` edges, which contains `E_min ∪ E_max`. The proof is by strong induction on `n`:
+Lemma 17 at the median threshold, then Lemma 5 and the induction hypothesis on the uncovered
+part, of size at most `n / 2`, for a total of `6n + (3n - 4x) + 14x ≤ 14n` edges. -/
+theorem exists_isSpannerFromTo_aux (h : H.IsExtremallyMatched s t) (h₀ : H.IsSimple)
+    (h₁ : H.IsProper) :
+    ∃ K : Subgraph G, K.IsSymm ∧ K.IsSpannerFromTo H s t ∧ H.eMin s ∪ H.eMax s ⊆ K.edgeSet ∧
+      K.edgeSet.ncard ≤ 14 * s.ncard := by
+  -- strong induction on `n = |s|`, over all extremally matched bi-cliques
+  induction hn : s.ncard using Nat.strong_induction_on generalizing H s t with
+  | _ n ih =>
+  have hst : t.ncard = n := hn ▸ (h.ncard_eq h₁).symm
+  have hsub : s ∪ t ⊆ H.verts := h.subset_verts
+  rcases s.eq_empty_or_nonempty with rfl | ⟨c, hc⟩
+  · -- no source: the empty subgraph is a vacuous spanner
+    refine ⟨Subgraph.fromEdgeSet G ∅, inferInstance,
+      ⟨Subgraph.fromEdgeSet_le (Set.empty_subset _), fun x hx ↦ hx.elim⟩, ?_, ?_⟩
+    · rintro e (⟨v, hv, -⟩ | ⟨v, hv, -⟩) <;> exact absurd hv (Set.notMem_empty _)
+    · rw [Subgraph.fromEdgeSet_eq (Set.empty_subset _), Set.ncard_empty]
+      omega
+  have hpos : 0 < n := hn ▸ (Set.ncard_pos h.finite_left).2 ⟨c, hc⟩
+  -- the times of the edges at `c` exist, for every target
+  choose! f hf using fun u (hu : u ∈ t) ↦ h.exists_arcTime_eq_some_left h₀ hc hu
+  -- cut at a median threshold `τ`, and apply Lemma 17
+  obtain ⟨τ, hlow, hhigh⟩ := exists_threshold f h.finite_right
+  obtain ⟨E, hEH, hEcard, hEM, hcov⟩ := h.exists_reachable_half h₀ h₁ hc τ
+  have hEG : E ⊆ G.edgeSet := hEH.trans H.edgeSet_subset
+  -- the recursion on the part `(s₂, t₂)` left uncovered by `fromEdgeSet E`
+  have step : ∀ s₂ t₂ : Set V, s₂ ⊆ s → t₂ ⊆ t → (2 * s₂.ncard ≤ n ∨ 2 * t₂.ncard ≤ n) →
+      (∀ x ∈ s, ∀ y ∈ t, (Subgraph.fromEdgeSet G E).Reachable x y ∨ (x ∈ s₂ ∧ y ∈ t₂)) →
+      ∃ K : Subgraph G, K.IsSymm ∧ K.IsSpannerFromTo H s t ∧ H.eMin s ∪ H.eMax s ⊆ K.edgeSet ∧
+        K.edgeSet.ncard ≤ 14 * n := by
+    intro s₂ t₂ hs₂ ht₂ hhalf hcovered
+    have hs₂fin : s₂.Finite := h.finite_left.subset hs₂
+    have ht₂fin : t₂.Finite := h.finite_right.subset ht₂
+    have hs₂n : s₂.ncard ≤ n := hn ▸ Set.ncard_le_ncard hs₂ h.finite_left
+    have ht₂n : t₂.ncard ≤ n := hst ▸ Set.ncard_le_ncard ht₂ h.finite_right
+    -- the remaining bi-clique `H.induce (s₂ ∪ t₂)`
+    have hsub₂ : s₂ ∪ t₂ ⊆ H.verts := (Set.union_subset_union hs₂ ht₂).trans hsub
+    have := Subgraph.finite_induce_verts H hsub₂
+    have hle₁ : H.induce (s₂ ∪ t₂) ≤ H := Subgraph.induce_le_of_subset hsub₂
+    have hbc₁ := Subgraph.isBicliqueWith_induce h.isBicliqueWith hs₂ ht₂
+    -- Lemma 5: reduce it to an extremally matched bi-clique on `s' ∪ t'`
+    obtain ⟨s', hs', t', ht', hverts, hem, hext⟩ := Subgraph.exists_isExtremallyMatched_reduction
+      (h₀.mono (Subgraph.toTemporalGraph_le hle₁)) hbc₁
+    have hle₂ : (H.induce (s₂ ∪ t₂)).induce (s' ∪ t') ≤ H :=
+      (Subgraph.induce_le_of_subset hverts).trans hle₁
+    have := Subgraph.finite_induce_verts _ hverts
+    have hsimple := h₀.mono (Subgraph.toTemporalGraph_le hle₂)
+    have hproper := h₁.mono (Subgraph.toTemporalGraph_le hle₂)
+    -- `x = |s'| = |t'|` is at most `min (|s₂|, |t₂|)`, and at most `n / 2`
+    have hxeq := hem.ncard_eq hproper
+    have hxs := Set.ncard_le_ncard hs' hs₂fin
+    have hxt := Set.ncard_le_ncard ht' ht₂fin
+    -- the induction hypothesis on the smaller extremally matched bi-clique
+    obtain ⟨K'', hK'', hK''span, -, hK''card⟩ :=
+      ih s'.ncard (by omega) hem hsimple hproper rfl
+    -- Lemma 5: its spanner extends to the remaining bi-clique
+    obtain ⟨K₂, hK₂, hK₂span, hK₂card⟩ := hext K'' hK'' hK''span
+    -- `K₂.IsSymm` as an instance, for the symmetry of `fromEdgeSet G E ⊔ K₂`
+    have := hK₂
+    refine ⟨Subgraph.fromEdgeSet G E ⊔ K₂, inferInstance,
+      ⟨sup_le (Subgraph.fromEdgeSet_le hEH) (hK₂span.1.trans hle₁), ?_⟩, ?_, ?_⟩
+    · -- a pair not reached by `fromEdgeSet E` is an edge of the remaining bi-clique, reached
+      -- by `K₂`
+      intro x hx y hy _
+      rcases hcovered x hx y hy with hxy | ⟨hx₂, hy₂⟩
+      · exact Subgraph.reachable_of_le_reachable le_sup_left hxy
+      · exact Subgraph.reachable_of_le_reachable le_sup_right
+          (hK₂span.2 x hx₂ y hy₂ (Subgraph.reachable_of_isBicliqueWith hbc₁ hx₂ hy₂))
+    · -- `E_min ∪ E_max ⊆ E`
+      rw [Subgraph.sup_edgeSet, Subgraph.fromEdgeSet_eq hEG]
+      exact hEM.trans Set.subset_union_left
+    · -- `|K₂| ≤ 14 x + 2 (|s₂| + |t₂|) - 4 x`, with `x ≤ n / 2` and `|s₂| + |t₂| ≤ 3 n / 2`
+      rw [Subgraph.sup_edgeSet, Subgraph.fromEdgeSet_eq hEG]
+      have h₂ := Set.ncard_union_le E K₂.edgeSet
+      omega
+  rcases hcov with hcov | hcov
+  · -- (i) `fromEdgeSet E` reaches the targets from `τ` on: recurse on `(s, t₁)`, where
+    -- `t₁ = {u ∈ t | f u < τ}` has at most `n / 2` elements
+    refine step s {u ∈ t | f u < τ} subset_rfl (Set.sep_subset _ _) (Or.inr (by omega)) ?_
+    intro x hx y hy
+    by_cases hτ : τ ≤ f y
+    · exact Or.inl (hcov x hx y ⟨hy, f y, Option.mem_def.2 (hf y hy), hτ⟩)
+    · exact Or.inr ⟨hx, hy, Nat.lt_of_not_le hτ⟩
+  · -- (ii) `fromEdgeSet E` reaches every target from the early sources: recurse on `(s₁, t)`,
+    -- where `s₁` is the set of the upper sources, matched by `N_min` with the targets above `τ`
+    -- the targets above `τ`, read on `f`
+    have ht₁ : {u ∈ t | ∃ k ∈ H.arcTime c u, τ < k} = {u ∈ t | τ < f u} := by
+      ext u
+      constructor
+      · rintro ⟨hu, k, hk, hτ⟩
+        rw [Option.mem_def, hf u hu, Option.some_inj] at hk
+        exact ⟨hu, hk ▸ hτ⟩
+      · rintro ⟨hu, hτ⟩
+        exact ⟨hu, f u, Option.mem_def.2 (hf u hu), hτ⟩
+    have hs₁ : {v ∈ s | ∃ w ∈ H.earliestNeighborFn v, ∃ k ∈ H.arcTime c w, τ < k}.ncard =
+        {u ∈ t | τ < f u}.ncard :=
+      ht₁ ▸ h.ncard_setOf_earliestNeighborFn h₁ (fun u ↦ ∃ k ∈ H.arcTime c u, τ < k)
+    refine step {v ∈ s | ∃ w ∈ H.earliestNeighborFn v, ∃ k ∈ H.arcTime c w, τ < k} t
+      (Set.sep_subset _ _) subset_rfl (Or.inl (by omega)) ?_
+    intro x hx y hy
+    -- a source is early, or upper
+    obtain ⟨w, hw⟩ := h.exists_earliestNeighborFn_eq_some (Or.inl hx)
+    obtain ⟨k, hk⟩ := h.exists_arcTime_eq_some_left h₀ hc
+      (h.mem_right_of_earliestNeighborFn_eq_some hx hw)
+    by_cases hτ : k ≤ τ
+    · exact Or.inl (hcov x ⟨hx, w, hw, k, hk, hτ⟩ y hy)
+    · exact Or.inr ⟨⟨hx, w, hw, k, hk, Nat.lt_of_not_le hτ⟩, hy⟩
+
+/-- Baligács 2026, Theorem 18 (with Theorem 6): an extremally matched finite simple proper
+bi-clique `H` with `n = |s| = |t|` has a symmetric one-sided spanner from `s` to `t` with at most
+`14 n` edges, which is moreover temporally connected on `s ∪ t`. It contains `E_min ∪ E_max`
+(`exists_isSpannerFromTo_aux`), so a target reaches whatever its `N_min` reaches, and a source is
+reached by whatever reaches its `N_max`. -/
+theorem exists_isSpannerFromTo (h : H.IsExtremallyMatched s t) (h₀ : H.IsSimple)
+    (h₁ : H.IsProper) :
+    ∃ K : Subgraph G, K.IsSymm ∧ K.IsSpannerFromTo H s t ∧ K.TemporallyConnected (s ∪ t) ∧
+      K.edgeSet.ncard ≤ 14 * s.ncard := by
+  obtain ⟨K, hK, hspan, hM, hcard⟩ := h.exists_isSpannerFromTo_aux h₀ h₁
+  have := hK
+  refine ⟨K, hK, hspan, h.temporallyConnected hspan.1 (fun v hv w n he ↦ ?_)
+    (fun v hv w n he ↦ ?_) fun x hx y hy ↦
+      hspan.2 x hx y hy (Subgraph.reachable_of_isBicliqueWith h.isBicliqueWith hx hy), hcard⟩
+  · -- the earliest edge at `v` is in `E_min`
+    exact K.mem_edgeSet.1 (hM (Or.inl (h.mem_eMin h₀ h₁ hv (he.earliestNeighborFn_eq_some h₁)
+      (he.arcTime_eq_some h₀))))
+  · -- the latest edge at `v` is in `E_max`
+    exact K.mem_edgeSet.1 (hM (Or.inr (h.mem_eMax h₀ h₁ hv (he.latestNeighborFn_eq_some h₁)
+      (he.arcTime_eq_some h₀))))
+
+end Recursion
+
+end IsExtremallyMatched
+
+namespace Subgraph
+
+variable {H : Subgraph G} [Finite H.verts] [G.IsSymm] [G.IsLoopless] [H.IsSymm]
+
+/-- Baligács 2026, Theorem 3: a finite simple proper temporal bi-clique subgraph `H` on `s` and
+`t` has a symmetric one-sided spanner from `s` to `t` with at most
+`10 min(|s|, |t|) + 2 (|s| + |t|)` edges. Lemma 5 reduces `H` to an extremally matched bi-clique
+with `x = |s'| = |t'| ≤ min(|s|, |t|)`, which Theorem 18 spans with `14 x` edges; Lemma 5 then
+adds back `2 (|s| + |t| - 2 x)` edges. Compare `Subgraph.exists_isSpannerFromTo_ncard_le`, the
+`O(n log n)` bound of SAND 2025, §4.1. -/
+theorem exists_isSpannerFromTo_ncard_le_linear {s t : Set V} (h₀ : H.IsSimple)
+    (h₁ : H.IsProper) (h₂ : H.IsBicliqueWith s t) :
+    ∃ K : Subgraph G, K.IsSymm ∧ K.IsSpannerFromTo H s t ∧
+      K.edgeSet.ncard ≤ 10 * min s.ncard t.ncard + 2 * (s.ncard + t.ncard) := by
+  -- Lemma 5: reduce `H` to an extremally matched bi-clique on `s' ∪ t'`
+  obtain ⟨s', hs', t', ht', hverts, hem, hext⟩ := exists_isExtremallyMatched_reduction h₀ h₂
+  have hle : H.induce (s' ∪ t') ≤ H := induce_le_of_subset hverts
+  have := finite_induce_verts H hverts
+  have hsimple := h₀.mono (toTemporalGraph_le hle)
+  have hproper := h₁.mono (toTemporalGraph_le hle)
+  -- Theorem 18 on the reduced bi-clique, then Lemma 5 extends its spanner to `H`
+  obtain ⟨K'', hK'', hK''span, -, hK''card⟩ := hem.exists_isSpannerFromTo hsimple hproper
+  obtain ⟨K', hK', hK'span, hK'card⟩ := hext K'' hK'' hK''span
+  refine ⟨K', hK', hK'span, ?_⟩
+  have hx := hem.ncard_eq hproper
+  -- `x = |s'| = |t'|` is at most `min(|s|, |t|)`
+  have hxmin : s'.ncard ≤ min s.ncard t.ncard := by
+    rcases Nat.eq_zero_or_pos s'.ncard with h₃ | h₃
+    · omega
+    · -- `x > 0`: `s'` and `t'` are nonempty, so `s ∪ t ⊆ H.verts` is finite
+      have hs'ne : s'.Nonempty := Set.nonempty_of_ncard_ne_zero (by omega)
+      have ht'ne : t'.Nonempty := Set.nonempty_of_ncard_ne_zero (by omega)
+      have hsub : s ∪ t ⊆ H.verts :=
+        isBicliqueWith_subset_verts h₂ (hs'ne.mono hs') (ht'ne.mono ht')
+      have hsle := Set.ncard_le_ncard hs'
+        ((Set.toFinite H.verts).subset (Set.subset_union_left.trans hsub))
+      have htle := Set.ncard_le_ncard ht'
+        ((Set.toFinite H.verts).subset (Set.subset_union_right.trans hsub))
+      omega
+  -- `|K'| + 4 x ≤ 14 x + 2 (|s| + |t|)`, so `|K'| ≤ 10 x + 2 (|s| + |t|)`
+  omega
+
+end Subgraph
+
+end TemporalGraph

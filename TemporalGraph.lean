@@ -18,4 +18,5 @@ import TemporalGraph.Dismountability.OneSidedBound
 import TemporalGraph.Bipartite
 import TemporalGraph.LinearSpanner.ExtremallyMatched
 import TemporalGraph.LinearSpanner.Reduction
+import TemporalGraph.LinearSpanner.Stars
 import TemporalGraph.Examples

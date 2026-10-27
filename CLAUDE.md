@@ -12,7 +12,15 @@ cliques aux bi-cliques (Corollaire 4.1), puis la dismountability *one-sided* d'A
 (ESA 2024, rappelée en §4.1) conclut. Le code formalise aujourd'hui **toute la preuve** (voir
 « Repères papier ↔ code ») : §§2–3 (dismountability, réduction aux bi-cliques, Lemmes 3.1–3.5,
 Corollaires 3.3/4.1) et §4.1 (dismountability *one-sided* et borne `O(n log n)` :
-`exists_isSpannerOf_ncard_le`, borne explicite `2n⌈log₂ n⌉ + 4n`, et `exists_isBigO_isSpannerOf`). La technique est originellement due à
+`exists_isSpannerOf_ncard_le`, borne explicite `2n⌈log₂ n⌉ + 4n`, et `exists_isBigO_isSpannerOf`).
+Une **seconde référence** est formalisée en entier : **Júlia Baligács, *Temporal Cliques Admit
+Linear Spanners*, arXiv:2606.05156v1 (2026)** (preprint, pas de version publiée ; numérotation de
+l'arXiv v1). Elle réutilise la dismountability de SAND pour se ramener aux bi-cliques
+*extremally matched*, puis les borne par des étoiles : toute clique temporelle finie simple et
+propre sur `n` sommets admet un spanner à au plus `7n` arêtes (`exists_isSpannerOf_ncard_le_seven_mul`,
+`exists_isBigO_isSpannerOf_linear`), dans `TemporalGraph/LinearSpanner/` (voir « Repères Baligács
+2026 ↔ code »). La borne `O(n log n)` de SAND n'est plus qu'une instance de la même induction
+générique sur les cliques (`exists_isSpannerOf_ncard_le_of_not_twoHopDismountable`). La technique est originellement due à
 **Casteigts, Peters & Schoeters, *Temporal Cliques Admit Sparse Spanners*, ICALP 2019 / JCSS
 2021**, cité par SAND pour son Théorème 2.1 — cet article reste une référence secondaire. Le scope
 peut s'élargir à d'autres résultats récents au fil du travail.
@@ -98,15 +106,22 @@ besoin de le répéter ici.
 | Fichier | Rôle | Analogue Mathlib |
 |---|---|---|
 | `TemporalGraph/Init.lean` | Rule-set aesop `TemporalGraph`, utilisé par la macro `aesop_temporal_graph` | `SimpleGraph/Init.lean` |
-| `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsCliqueGraph`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, via `SimpleGraph.fromRel`, sans hypothèse), `adjAt`, `symmetrize`, `fromEdgeSet`, `neighborSet`, `incidenceSet`, `arcSet`/`arcSize` (monde orienté), `edgeSet`/`size` (monde symétrique ; `mem_edgeSet` demande seulement `[IsSymm]`) ; `size`/`arcSize` sont des `def` calculables (pattern `SimpleGraph.degree` : `Fintype.card` sous une instance `[Fintype G.edgeSet]`/`[Fintype G.arcSet]`), avec la forme instance-free `Set.ncard` disponible via `size_eq_ncard`/`arcSize_eq_ncard` | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
-| `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Marches temporelles non strictes, à temps croissant ; prédicat `IsStrict` (temps strictement croissants, propagé de `NonemptyTemporalWalk` à `TemporalWalk`) et raccourcissement `NonemptyTemporalWalk.exists_isStrict` ; API `length`/`support`/`arcs`/`append`/`mapLe` (`length_append`, `arcs_append`, `*_mapLe`, `mapLe_append`, `mapLe_mapLe`, `start_mem_support`, `end_mem_support`, `adj_of_mem_arcs`) | `SimpleGraph.Walk` |
-| `TemporalGraph/Subgraph.lean` | Sous-graphe temporel : `TemporalGraph.Subgraph` étend `TemporalGraph V`, ajoutant `verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `IsCliqueSubgraph` ; `edgeSet`, `neighborSet`, `size`, `incidenceSet` sont hérités de `TemporalGraph` ; treillis borné et union `⊔` (`SemilatticeSup`), `induce`/`deleteVerts`/`addVerts`/`addArc`/`addEdge` ; monotonie `toTemporalGraph_le`/`toTemporalGraph_le_self` | `SimpleGraph.Subgraph` |
-| `TemporalGraph/Bipartite.lean` | Bipartition temporelle `IsBipartiteWith`/`IsBipartite` (ensembles explicites, sans hypothèse de symétrie, non classe), pont `isBipartiteWith_iff_simpleFootprint` vers Mathlib, restriction `between` aux arcs entre deux ensembles, bi-cliques temporelles `IsBicliqueWith`/`IsBiclique` (SAND 2025 §1.1 ; prennent un ensemble de sommets), constructeur `completeBipartite` sur `α ⊕ β`, et au niveau `Subgraph` : `Subgraph.between` | `SimpleGraph/Bipartite.lean` |
-| `TemporalGraph/Connectivity/Basic.lean`, `Connectivity/Subgraph.lean` | `Reachable` (avec monotonie `Reachable.mono`), `StrictReachable` et l'équivalence `reachable_iff_strictReachable` (graphe symétrique et propre ; `IsSymm` nécessaire), `TemporallyConnected` (prend un ensemble `S : Set V` ; shorthands `TemporallyConnectedGraph` pour `Set.univ` et `Subgraph.TemporallyConnectedSubgraph` pour `H.verts`) ; spanners au niveau sous-graphe sur `V` (`Subgraph.IsSpanner`, `Subgraph.IsSpannerOf`, `Subgraph.IsTCSpanner`) | `SimpleGraph.Connectivity` |
-| `TemporalGraph/Dismountability/Basic.lean` | `Dismountable`, `TwoHopDismountable`, partition `vminus`/`vplus`/`vzero`, bijections earliest/latest-neighbor — correspond aux Lemmes 3.1, 3.2, 3.4 et au Corollaire 3.3 de SAND 2025 ; réciprocité `earliestEdge_reciprocity`/`latestEdge_reciprocity` (Lemme 3.5), `biclique_of_not_twoHopDismountable` (Corollaire 4.1), `between_TC_of_not_twoHopDismountable` (remarque après le Corollaire 4.1), `temporallyConnected_of_reachable_of_matchings` (§4.1) | — |
-| `TemporalGraph/Dismountability/Operations.lean` | Opérations `dismount`/`mount`/`twoHopMount` et leurs théorèmes de correction (`dismountability`, `twoHopDismountability`), `mount_temporallyConnected`/`twoHopMount_temporallyConnected`, et `exists_isSpannerOf_of_twoHopDismountable` (SAND 2025, Théorème 2.1 et §2.1) | — |
-| `TemporalGraph/Dismountability/OneSided.lean` | Dismountability *one-sided* (SAND 2025, §4.1) : spanner unilatéral `IsSpannerFromTo` (de `s` vers `t`), `OneSidedDismountable`, `oneSidedMount` (+ API, `oneSidedMount_size`), découpage `IsSpannerFromTo.sup` / `isSpannerFromTo_sup_of_induce`, étape `oneSidedDismountability`, pigeonnier `exists_oneSidedDismountable_of_ncard_lt`, assemblage `temporallyConnected_of_isSpannerFromTo` | — |
-| `TemporalGraph/Dismountability/OneSidedBound.lean` | Borne `O(n log n)` (SAND 2025, §4.1) : récurrence `spannerBound` et `spannerBound_isBigO`, `IsOneSidedSpannerBound` / `exists_isBigO_isOneSidedSpannerBound` (bi-cliques), `exists_isSpannerFromTo_ncard_le` et `exists_isSpannerOf_of_not_twoHopDismountable`, puis `exists_isSpannerOf_ncard_le` (borne explicite `2n⌈log₂ n⌉ + 4n`) et `exists_isBigO_isSpannerOf` (cliques) | — |
+| `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsCliqueGraph`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, via `SimpleGraph.fromRel`, sans hypothèse), `adjAt`, `symmetrize`, `fromEdgeSet`, `neighborSet`, `incidenceSet`, `arcTime` (temps d'un arc, `Option ℕ`, `none` si pas d'arc), `arcSet`/`arcSize` (monde orienté), `edgeSet`/`size` (monde symétrique ; `mem_edgeSet` demande seulement `[IsSymm]`) ; `size`/`arcSize` sont des `def` calculables (pattern `SimpleGraph.degree` : `Fintype.card` sous une instance `[Fintype G.edgeSet]`/`[Fintype G.arcSet]`), avec la forme instance-free `Set.ncard` disponible via `size_eq_ncard`/`arcSize_eq_ncard` | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
+| `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Marches temporelles non strictes, à temps croissant ; prédicat `IsStrict` (temps strictement croissants, propagé de `NonemptyTemporalWalk` à `TemporalWalk`) et raccourcissement `NonemptyTemporalWalk.exists_isStrict` ; API `length`/`support`/`arcs`/`append`/`mapLe` (`length_append`, `arcs_append`, `*_mapLe`, `mapLe_append`, `mapLe_mapLe`, `start_mem_support`, `end_mem_support`, `adj_of_mem_arcs`) ; `TemporalWalk.edges` (arêtes traversées, `length_edges`, `ncard_setOf_mem_edges_le`) et `transfer` (déplace une marche vers un graphe contenant ses arcs, `adj_of_edges_subset`) | `SimpleGraph.Walk` |
+| `TemporalGraph/Subgraph.lean` | Sous-graphe temporel : `TemporalGraph.Subgraph` étend `TemporalGraph V`, ajoutant `verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `IsCliqueSubgraph` ; `edgeSet`, `neighborSet`, `size`, `incidenceSet` sont hérités de `TemporalGraph` ; treillis borné et union `⊔` (`SemilatticeSup`), `induce`/`deleteVerts`/`addVerts`/`addArc`/`addEdge`/`fromEdgeSet` ; `induce_le_of_subset`, `edgeSet_subset`, `deleteVerts_induce_of_subset`, `adj_fromEdgeSet` ; monotonie `toTemporalGraph_le`/`toTemporalGraph_le_self` | `SimpleGraph.Subgraph` |
+| `TemporalGraph/Bipartite.lean` | Bipartition temporelle `IsBipartiteWith`/`IsBipartite` (ensembles explicites, sans hypothèse de symétrie, non classe), pont `isBipartiteWith_iff_simpleFootprint` vers Mathlib, restriction `between` aux arcs entre deux ensembles, bi-cliques temporelles `IsBicliqueWith`/`IsBiclique` (SAND 2025 §1.1 ; prennent un ensemble de sommets), constructeur `completeBipartite` sur `α ⊕ β`, `isBicliqueWith_induce` (restreint les deux parties `s' ⊆ s`, `t' ⊆ t`), et au niveau `Subgraph` : `Subgraph.between` | `SimpleGraph/Bipartite.lean` |
+| `TemporalGraph/Connectivity/Basic.lean`, `Connectivity/Subgraph.lean` | `Reachable` (avec monotonie `Reachable.mono`), `ReachableWithin` (marche partant à un temps `≥ a` et arrivant à un temps `≤ b`) et ses abréviations `ReachableBefore`/`ReachableAfter`, `StrictReachable` et l'équivalence `reachable_iff_strictReachable` (graphe symétrique et propre ; `IsSymm` nécessaire), `TemporallyConnected` (prend un ensemble `S : Set V` ; shorthands `TemporallyConnectedGraph` pour `Set.univ` et `Subgraph.TemporallyConnectedSubgraph` pour `H.verts`) ; spanners au niveau sous-graphe sur `V` (`Subgraph.IsSpanner`, `Subgraph.IsSpannerOf`, `Subgraph.IsTCSpanner`, `isSpannerOf_of_le_of_temporallyConnected`, `TemporalWalk.reachableBefore_fromEdgeSet`) | `SimpleGraph.Connectivity` |
+| `TemporalGraph/Dismountability/Basic.lean` | `Dismountable`, `TwoHopDismountable`, partition `vminus`/`vplus`/`vzero`, fonctions `earliestNeighborFn`/`latestNeighborFn` (définies sur `TemporalGraph`, à valeurs dans `Option V`, héritées par les sous-graphes) et leurs bijections — correspond aux Lemmes 3.1, 3.2, 3.4 et au Corollaire 3.3 de SAND 2025 ; réciprocité `earliestEdge_reciprocity`/`latestEdge_reciprocity` (Lemme 3.5), `biclique_of_not_twoHopDismountable` (Corollaire 4.1), `between_TC_of_not_twoHopDismountable` (remarque après le Corollaire 4.1), `temporallyConnected_of_reachable_of_matchings` (§4.1) | — |
+| `TemporalGraph/Dismountability/Operations.lean` | Opérations `dismount`/`mount`/`twoHopMount` et leurs théorèmes de correction (`dismountability`, `twoHopDismountability`), `mount_temporallyConnected`/`twoHopMount_temporallyConnected`, et `exists_isSpannerOf_of_twoHopDismountable` (SAND 2025, Théorème 2.1 et §2.1) ; induction générique sur les cliques `exists_isSpannerOf_ncard_le_of_not_twoHopDismountable` (si toute clique non {1,2}-hop dismountable a un spanner à au plus `f n` arêtes et `f n + 4 ≤ f (n + 1)`, toute clique finie simple propre en a un) | — |
+| `TemporalGraph/Dismountability/OneSided.lean` | Dismountability *one-sided* (SAND 2025, §4.1) : spanner unilatéral `IsSpannerFromTo` (de `s` vers `t`), `OneSidedDismountable` (côté cible, défini sur `TemporalGraph`, hérité par les sous-graphes) et son miroir `SourceDismountable`, `oneSidedMount` (+ API, `oneSidedMount_size`), découpage `IsSpannerFromTo.sup` / `isSpannerFromTo_sup_of_induce`, étapes `oneSidedDismountability`/`sourceDismountability`, `isSpannerFromTo_iff_of_isBicliqueWith` (dans une bi-clique la prémisse d'atteignabilité est automatique), `exists_earliestEdge_of_isBicliqueWith`, pigeonnier `exists_oneSidedDismountable_of_ncard_lt`, assemblage `temporallyConnected_of_isSpannerFromTo` | — |
+| `TemporalGraph/Dismountability/OneSidedBound.lean` | Borne `O(n log n)` (SAND 2025, §4.1) : récurrence `spannerBound` et `spannerBound_isBigO`, `IsOneSidedSpannerBound` / `exists_isBigO_isOneSidedSpannerBound` (bi-cliques), `exists_isSpannerFromTo_ncard_le` et `exists_isSpannerOf_of_not_twoHopDismountable`, puis `exists_isSpannerOf_ncard_le` (borne explicite `2n⌈log₂ n⌉ + 4n`) et `exists_isBigO_isSpannerOf` (cliques ; instance de l'induction générique), `isSpannerFromTo_of_dismount`/`isSpannerFromTo_of_sourceDismount` (une cible/source dismountable coûte au plus deux arêtes) | — |
+| `TemporalGraph/LinearSpanner/ExtremallyMatched.lean` | `IsExtremallyMatched G s t` (Baligács 2026, §2.3 : bi-clique dont les arêtes earliest et latest forment des couplages parfaits), défini sur `TemporalGraph` (les sous-graphes l'héritent) ; API dans le namespace `TemporalGraph.IsExtremallyMatched` (`N_min`/`N_max` = `earliestNeighborFn`/`latestNeighborFn`, involutions, `ncard_eq`, `temporallyConnected`) | — |
+| `TemporalGraph/LinearSpanner/Reduction.lean` | Réduction aux bi-cliques extremally matched : `Subgraph.isExtremallyMatched_of_not_dismountable` (§2.3) et `Subgraph.exists_isExtremallyMatched_reduction` (Lemme 5) ; aides `IsExtremallyMatched.induce`, `isExtremallyMatched_induce_empty` | — |
+| `TemporalGraph/LinearSpanner/Stars.lean` | Définitions des étoiles : `eMin`/`eMax`, `incidentEdges`, `simpleStar`, `IsCutCrossing` (Définition 8), arêtes d'extension et étoiles étendues `extStarSource`/`extStarTarget` (Définition 12), avec API d'appartenance, d'inclusion dans `edgeSet` et de comptage (`finite_and_ncard_le_of_functional`) | — |
+| `TemporalGraph/LinearSpanner/SimpleStar.lean` | Observation 9 : `IsExtremallyMatched.exists_reachable_simpleStar` | — |
+| `TemporalGraph/LinearSpanner/ExtendedStar.lean` | Lemmes 13, 14, 16 et Corollaire 15 sur les étoiles étendues, et le comptage `ncard_extStar_union_le` (au plus `6n` arêtes) | — |
+| `TemporalGraph/LinearSpanner/Bound.lean` | `exists_threshold` (seuil médian), `exists_reachable_half` (Lemme 17, forme à seuil), `IsExtremallyMatched.exists_isSpannerFromTo` (Théorèmes 18 et 6, au plus `14n` arêtes) et `Subgraph.exists_isSpannerFromTo_ncard_le_linear` (Théorème 3, bi-cliques) | — |
+| `TemporalGraph/LinearSpanner/Clique.lean` | `Subgraph.isExtremallyMatched_between_of_not_twoHopDismountable` (Théorème 20), `exists_isSpannerOf_ncard_le_seven_mul_of_not_twoHopDismountable`, `exists_isSpannerOf_ncard_le_seven_mul` (Théorème 2, au plus `7n` arêtes) et `exists_isBigO_isSpannerOf_linear` (forme `O(n)`) | — |
 | `TemporalGraph/Examples.lean` | Graphe de démo `square` (carré à 4 sommets), avec ses propriétés portées comme instances (`square_isSymm`, `square_isLoopless`, …) | — |
 | `TemporalGraph.lean` (racine) | Pur agrégateur d'imports, aucun code | — |
 
@@ -276,7 +291,7 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
   (`import` simple si seules les preuves en ont besoin). Le build est passé de 8977 à 2095 tâches.
 - **Fichiers en modules** : tous sauf `Examples` et la racine `TemporalGraph.lean`, c'est-à-dire
   `Init`, `Basic`, `NonemptyTemporalWalk`, `TemporalWalk`, `Connectivity/*`, `Subgraph`,
-  `Bipartite` et `Dismountability/*`. Un module n'importe que des
+  `Bipartite`, `Dismountability/*` et `LinearSpanner/*`. Un module n'importe que des
   modules, mais un non-module peut importer un module : on porte donc de bas en haut.
 - **Motif (celui de Mathlib)** : copyright, `module`, imports en `public import` (en `import`
   simple s'ils ne servent qu'aux preuves), docstring de module, puis `@[expose] public section`
@@ -313,6 +328,16 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
   `Subgraph.loopless`). C'est le revers de la médaille : le lemme corpus du parent s'applique à
   `H.Adj` gratuitement précisément parce que le type n'en distingue plus l'adjacence du
   sous-graphe de celle d'un graphe.
+- **Résultats Baligács sur `TemporalGraph`** : les notions du papier (`IsExtremallyMatched`,
+  `eMin`, `simpleStar`, …) sont définies sur `TemporalGraph` (les sous-graphes les héritent) ; les
+  résultats sur les bi-cliques extremally matched vivent dans le namespace
+  `TemporalGraph.IsExtremallyMatched` et s'utilisent en `h.foo`.
+- **Spanners construits à partir d'ensembles d'arêtes** : `Subgraph.fromEdgeSet G E`. Dans le
+  namespace `IsExtremallyMatched`, `mem_eMin` se résout en `IsExtremallyMatched.mem_eMin` : écrire
+  `TemporalGraph.mem_eMin` pour le lemme général.
+- **Linter `unusedArguments`** (Batteries) : `#lint only unusedArguments in TemporalGraph` passe sur
+  toute la bibliothèque et doit continuer à passer ; il a trouvé et fait retirer plusieurs
+  hypothèses inutiles (par ex. `[G.IsLoopless]` dans `dismountability`).
 - Automatisation via la macro `aesop_temporal_graph`, qui utilise le rule-set aesop
   `TemporalGraph` déclaré dans `Init.lean`.
 
@@ -364,6 +389,42 @@ dismountable, V⁰ = ∅. -/`. Toujours écrire la forme complète `SAND 2025, L
 - binders courts regroupés sur une ligne (dans la limite de 100 caractères), binder long seul sur
   sa ligne.
 
+## Repères Baligács 2026 ↔ code
+
+Seconde référence : **Júlia Baligács, *Temporal Cliques Admit Linear Spanners*, arXiv:2606.05156v1
+(2026)**. Il n'existe qu'un preprint : la numérotation est **celle de l'arXiv v1** (à revérifier si
+une version publiée paraît).
+
+| Baligács 2026 (arXiv v1) | Code | Fichier |
+|---|---|---|
+| §2.1, étiquettes λ | `arcTime` (`Option ℕ`) | `Basic.lean` |
+| `N_min` / `N_max` | `earliestNeighborFn` / `latestNeighborFn` (`V → Option V`) | `Dismountability/Basic.lean` |
+| §2.3, source / cible dismountable | `SourceDismountable` / `OneSidedDismountable` ; étapes `sourceDismountability`, `oneSidedDismountability` ; `isSpannerFromTo_of_sourceDismount`, `isSpannerFromTo_of_dismount` | `Dismountability/OneSided.lean`, `OneSidedBound.lean` |
+| §2.3, bi-clique extremally matched | `IsExtremallyMatched` | `LinearSpanner/ExtremallyMatched.lean` |
+| §2.3, aucun sommet dismountable ⇒ extremally matched | `Subgraph.isExtremallyMatched_of_not_dismountable` | `LinearSpanner/Reduction.lean` |
+| Lemme 5 | `Subgraph.exists_isExtremallyMatched_reduction` | `LinearSpanner/Reduction.lean` |
+| Définition 8 (i), (ii) | `simpleStar`, `IsCutCrossing` | `LinearSpanner/Stars.lean` |
+| Observation 9 | `IsExtremallyMatched.exists_reachable_simpleStar` | `LinearSpanner/SimpleStar.lean` |
+| Définition 12 | `IsSourceExtendTarget`, `IsTargetExtendSource`, `extStarSource`, `extStarTarget` | `LinearSpanner/Stars.lean` |
+| Lemme 13 (a), (b) | `IsExtremallyMatched.reachable_extStarSource`, `reachable_extStarTarget` | `LinearSpanner/ExtendedStar.lean` |
+| Lemme 14 (a), (b) | `IsExtremallyMatched.arcTime_le_of_not_reachable_extStarSource`, `…Target` | `LinearSpanner/ExtendedStar.lean` |
+| Corollaire 15 | `IsExtremallyMatched.arcTime_chain_of_not_reachable` | `LinearSpanner/ExtendedStar.lean` |
+| Lemme 16 | `IsExtremallyMatched.isCutCrossing_or_reachable` | `LinearSpanner/ExtendedStar.lean` |
+| preuve du Lemme 17, `\|Ext ∪ Ext\| ≤ 6n` | `IsExtremallyMatched.ncard_extStar_union_le` | `LinearSpanner/ExtendedStar.lean` |
+| Lemme 17 (forme à seuil) | `IsExtremallyMatched.exists_reachable_half` | `LinearSpanner/Bound.lean` |
+| Théorème 18 (avec le Théorème 6) | `IsExtremallyMatched.exists_isSpannerFromTo` | `LinearSpanner/Bound.lean` |
+| Théorème 3 | `Subgraph.exists_isSpannerFromTo_ncard_le_linear` | `LinearSpanner/Bound.lean` |
+| Observation 19 | `exists_isSpannerOf_of_twoHopDismountable` de SAND, dans l'induction générique `exists_isSpannerOf_ncard_le_of_not_twoHopDismountable` | `Dismountability/Operations.lean` |
+| Théorème 20 | `Subgraph.isExtremallyMatched_between_of_not_twoHopDismountable` (= SAND 2025 Corollaire 4.1 + Lemme 3.5) | `LinearSpanner/Clique.lean` |
+| Théorème 2 | `Subgraph.exists_isSpannerOf_ncard_le_seven_mul`, `Subgraph.exists_isBigO_isSpannerOf_linear` | `LinearSpanner/Clique.lean` |
+
+Docstrings : même convention que pour SAND, forme complète en tête (`/-- Baligács 2026, Lemma 17:
+… -/`), jamais `Lemma 17` seul (les numéros se confondraient avec ceux de SAND ou de CPS).
+
+**Non formalisés** : Lemme 4, Lemme 10, Proposition 11, l'aspect temps polynomial, et les
+réductions de §2.1 aux graphes simples et propres (gardées comme hypothèses `IsSimple`/`IsProper`,
+comme pour SAND).
+
 ## Commandes utiles
 
 - Le toolchain Lean (`lean`, `lake`, `elan`) est dans `~/.elan/bin`, pas forcément sur le `PATH`
@@ -371,6 +432,9 @@ dismountable, V⁰ = ∅. -/`. Toujours écrire la forme complète `SAND 2025, L
 - `lake build` : build complet, vert, et il couvre bien tous les modules depuis l'ajout des
   `globs` au `lakefile.toml`.
 - `lake build TemporalGraph.Dismountability.Operations` : un module précis, avec ses dépendances.
+- Linter `unusedArguments` : fichier temporaire (scratchpad) contenant `import TemporalGraph`,
+  `import Batteries.Tactic.Lint` et `#lint only unusedArguments in TemporalGraph`, lancé avec
+  `lake env lean <fichier>` ; la sortie doit être vide de tout avertissement.
 - `lake env lean TemporalGraph/<Fichier>.lean` : typechecker un fichier isolé (demande que les
   `.olean` de ses dépendances existent déjà).
 - Blueprint : projet uv dans `blueprint/` (`pyproject.toml` + `uv.lock`, pas de

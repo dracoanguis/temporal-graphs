@@ -1021,7 +1021,7 @@ lemma addVerts_edgeSet {H : Subgraph G} {s : Set V} :
   · rintro ⟨a, b, hp, hadj⟩
     exact ⟨a, b, hp, Or.inl (H.edge_vert hadj), Or.inl (H.edge_vert' hadj), hadj⟩
 
-instance {H : Subgraph G} {s : Set V} [h₀ : Finite H.edgeSet] [Finite s] :
+instance {H : Subgraph G} {s : Set V} [h₀ : Finite H.edgeSet] :
     Finite (H.addVerts s).edgeSet := by
   simp only [addVerts_edgeSet, h₀]
 

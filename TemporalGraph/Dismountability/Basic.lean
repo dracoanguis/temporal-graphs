@@ -367,7 +367,7 @@ lemma vminus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} [H.IsSymm]
 
 /-- Earliest side of two-hop dismountability: one or two edges of `H` such that, in any `K`
 between them and `H`, whatever is reachable from `y` is reachable from `x`. -/
-lemma exists_edgeSet_of_earliest {H : Subgraph G} [G.IsSymm] [G.IsLoopless] [H.IsSymm] {x : V}
+lemma exists_edgeSet_of_earliest {H : Subgraph G} [G.IsLoopless] [H.IsSymm] {x : V}
     (h₀ : (∃ y : V, H.EarliestNeighbor y x)
       ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.EarliestEdge y z n ∧ H.Adj z x m ∧ m ≤ n)) :
     ∃ y ∈ H.verts, y ≠ x ∧ ∃ E : Set (Sym2 V × ℕ), E ⊆ H.edgeSet ∧ E.ncard ≤ 2 ∧
@@ -397,7 +397,7 @@ lemma exists_edgeSet_of_earliest {H : Subgraph G} [G.IsSymm] [G.IsLoopless] [H.I
 
 /-- Latest side of two-hop dismountability: one or two edges of `H` such that, in any `K`
 between them and `H`, whatever reaches `y` reaches `x`. -/
-lemma exists_edgeSet_of_latest {H : Subgraph G} [G.IsSymm] [G.IsLoopless] [H.IsSymm] {x : V}
+lemma exists_edgeSet_of_latest {H : Subgraph G} [G.IsLoopless] [H.IsSymm] {x : V}
     (h₀ : (∃ y : V, H.LatestNeighbor y x)
       ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.LatestEdge y z n ∧ H.Adj z x m ∧ n ≤ m)) :
     ∃ y ∈ H.verts, y ≠ x ∧ ∃ E : Set (Sym2 V × ℕ), E ⊆ H.edgeSet ∧ E.ncard ≤ 2 ∧
@@ -785,7 +785,6 @@ section biclique
 /-- SAND 2025, Corollary 4.1: when `H` is not `{1,2}`-hop dismountable, the bipartite subgraph
 between `vminus` and `vplus` is a bi-clique on those two sets. -/
 lemma biclique_of_not_twoHopDismountable {H : Subgraph G}
-    [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
     (h₀ : H.IsCliqueSubgraph) (h₁ : ¬H.TwoHopDismountable) :
     (H.between H.vminus H.vplus).IsBicliqueWith H.vminus H.vplus := by
   refine IsClique.between_isBicliqueWith h₀ vminus_sub_verts vplus_sub_verts ?_

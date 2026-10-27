@@ -195,7 +195,7 @@ theorem mount_size {H : Subgraph G} [G.IsSymm] {x y z : V} {n m : ℕ}
 
 /-- SAND 2025, Theorem 2.1 (1-hop case): re-mounting `x` via its earliest edge to `y` and latest
 edge to `z` extends a spanner of `H.dismount x` to a spanner of `H`, when `H` is a clique. -/
-theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G.IsLoopless]
+theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm]
     {x y z : V} {n m : ℕ} (hx : x ∈ H.verts) (hy : y ∈ H'.verts) (hz : z ∈ H'.verts)
     (h₀ : H.IsCliqueSubgraph) (h₁ : G.Adj y x n) (h₂ : G.Adj z x m) (h₃ : H.EarliestEdge y x n)
     (h₄ : H.LatestEdge z x m) (h₅ : H'.IsSpannerOf (H.dismount x)) :
@@ -397,7 +397,7 @@ theorem twoHopMount_size {H : Subgraph G} [G.IsSymm]
 
 /-- SAND 2025, §2.1 (2-hop case): re-mounting `x` via two hops on each side extends a spanner of
 `H.dismount x` to a spanner of `H`, when `H` is a clique. -/
-theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm] [G.IsLoopless]
+theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm]
     {x y y' z z' : V} {n n' m m' : ℕ} (hx : x ∈ H.verts) (hy : y ∈ H'.verts)
     (hy' : y' ∈ H'.verts) (hz : z ∈ H'.verts) (hz' : z' ∈ H'.verts) (h₀ : H.IsCliqueSubgraph)
     (h₁ : G.Adj x y' n') (h₂ : G.Adj y' y n) (h₃ : G.Adj x z' m') (h₄ : G.Adj z' z m)

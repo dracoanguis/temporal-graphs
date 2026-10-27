@@ -36,6 +36,8 @@ whose values are `Option`s (`none` for a vertex without edges); on the bi-clique
   `|s| = |t|`.
 * `TemporalGraph.IsExtremallyMatched.induce`, `TemporalGraph.isExtremallyMatched_induce_empty` :
   restricting to the parts keeps the extremal matching; the empty bi-clique is extremally matched.
+* `TemporalGraph.IsExtremallyMatched.arcTime_le_of_earliestNeighborFn_eq_some`, `…latest…` : the
+  matched edges are the earliest (resp. latest) at both of their endpoints, read on `arcTime`.
 * `TemporalGraph.IsExtremallyMatched.temporallyConnected` : a subgraph that contains the
   matchings `E_min`, `E_max` and in which `s` reaches `t` is temporally connected on `s ∪ t`
   (through SAND 2025's `temporallyConnected_of_reachable_of_matchings`).
@@ -221,6 +223,69 @@ theorem induce {H : Subgraph G} (h : H.IsExtremallyMatched s t) :
     have hw := h₁ hv h₂.1
     exact ⟨w, n, Subgraph.latestEdge_of_ge h₀ h₂ ⟨hv, hw, h₂.1⟩,
       Subgraph.latestEdge_of_ge h₀ h₃ ⟨hw, hv, h₃.1⟩⟩
+
+section Times
+
+variable {y : V} {a b : ℕ}
+
+/-- The sources of an extremally matched bi-clique of a finite subgraph are finitely many. -/
+theorem finite_left {H : Subgraph G} [Finite H.verts] (h : H.IsExtremallyMatched s t) :
+    s.Finite :=
+  (Set.toFinite H.verts).subset (Set.subset_union_left.trans h.subset_verts)
+
+/-- The targets of an extremally matched bi-clique of a finite subgraph are finitely many. -/
+theorem finite_right {H : Subgraph G} [Finite H.verts] (h : H.IsExtremallyMatched s t) :
+    t.Finite :=
+  (Set.toFinite H.verts).subset (Set.subset_union_right.trans h.subset_verts)
+
+/-- In a simple graph, a source has an arc, with a defined time, to each target. -/
+theorem exists_arcTime_eq_some_left (h : G.IsExtremallyMatched s t) (h₀ : G.IsSimple)
+    (h₁ : v ∈ s) (h₂ : y ∈ t) : ∃ n, G.arcTime v y = some n :=
+  let ⟨n, h₃⟩ := h.isBicliqueWith.adj_of_mem h₁ h₂
+  ⟨n, arcTime_eq_some h₀ h₃⟩
+
+/-- In a symmetric simple graph, a target has an arc, with a defined time, to each source. -/
+theorem exists_arcTime_eq_some_right [G.IsSymm] (h : G.IsExtremallyMatched s t)
+    (h₀ : G.IsSimple) (h₁ : v ∈ t) (h₂ : y ∈ s) : ∃ n, G.arcTime v y = some n :=
+  (arcTime_comm h₀ v y).symm ▸ h.exists_arcTime_eq_some_left h₀ h₂ h₁
+
+/-- In a simple proper graph, the earliest edge at a vertex `v` of the bi-clique, to
+`N_min v = w`, is also the earliest edge at `w`, and happens at the `arcTime` of the arc. -/
+theorem exists_earliestEdge_of_earliestNeighborFn_eq_some (h : G.IsExtremallyMatched s t)
+    (h₀ : G.IsSimple) (h₁ : G.IsProper) (h₂ : v ∈ s ∪ t) (h₃ : G.earliestNeighborFn v = some w) :
+    ∃ n, G.arcTime v w = some n ∧ G.EarliestEdge v w n ∧ G.EarliestEdge w v n := by
+  obtain ⟨w', n, h₄, h₅⟩ := h.earliest v h₂
+  -- the matched earliest edge goes to `N_min v`, so `w' = w`
+  obtain rfl : w' = w := Option.some_inj.1 ((h₄.earliestNeighborFn_eq_some h₁).symm.trans h₃)
+  exact ⟨n, h₄.arcTime_eq_some h₀, h₄, h₅⟩
+
+/-- In a simple proper graph, the latest edge at a vertex `v` of the bi-clique, to
+`N_max v = w`, is also the latest edge at `w`, and happens at the `arcTime` of the arc. -/
+theorem exists_latestEdge_of_latestNeighborFn_eq_some (h : G.IsExtremallyMatched s t)
+    (h₀ : G.IsSimple) (h₁ : G.IsProper) (h₂ : v ∈ s ∪ t) (h₃ : G.latestNeighborFn v = some w) :
+    ∃ n, G.arcTime v w = some n ∧ G.LatestEdge v w n ∧ G.LatestEdge w v n := by
+  obtain ⟨w', n, h₄, h₅⟩ := h.latest v h₂
+  -- the matched latest edge goes to `N_max v`, so `w' = w`
+  obtain rfl : w' = w := Option.some_inj.1 ((h₄.latestNeighborFn_eq_some h₁).symm.trans h₃)
+  exact ⟨n, h₄.arcTime_eq_some h₀, h₄, h₅⟩
+
+/-- The edge `{v, N_min v}`, at time `a`, is the earliest edge at `N_min v`: no arc leaving
+`N_min v` is earlier. -/
+theorem arcTime_le_of_earliestNeighborFn_eq_some (h : G.IsExtremallyMatched s t)
+    (h₀ : G.IsSimple) (h₁ : G.IsProper) (h₂ : v ∈ s ∪ t) (h₃ : G.earliestNeighborFn v = some w)
+    (h₄ : G.arcTime v w = some a) (h₅ : G.arcTime w y = some b) : a ≤ b := by
+  obtain ⟨n, h₆, -, h₇⟩ := h.exists_earliestEdge_of_earliestNeighborFn_eq_some h₀ h₁ h₂ h₃
+  exact Option.some_inj.1 (h₄.symm.trans h₆) ▸ h₇.2 y b (adj_of_arcTime_eq_some h₅)
+
+/-- The edge `{v, N_max v}`, at time `a`, is the latest edge at `N_max v`: no arc leaving
+`N_max v` is later. -/
+theorem arcTime_le_of_latestNeighborFn_eq_some (h : G.IsExtremallyMatched s t)
+    (h₀ : G.IsSimple) (h₁ : G.IsProper) (h₂ : v ∈ s ∪ t) (h₃ : G.latestNeighborFn v = some w)
+    (h₄ : G.arcTime v w = some a) (h₅ : G.arcTime w y = some b) : b ≤ a := by
+  obtain ⟨n, h₆, -, h₇⟩ := h.exists_latestEdge_of_latestNeighborFn_eq_some h₀ h₁ h₂ h₃
+  exact Option.some_inj.1 (h₄.symm.trans h₆) ▸ h₇.2 y b (adj_of_arcTime_eq_some h₅)
+
+end Times
 
 end IsExtremallyMatched
 

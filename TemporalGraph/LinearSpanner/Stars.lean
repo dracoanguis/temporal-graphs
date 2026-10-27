@@ -42,7 +42,7 @@ these values exist, so nothing is lost.
 * `TemporalGraph.eMin_subset_edgeSet`, … : all these sets consist of edges of the graph, with no
   hypothesis (their times are given by `arcTime`).
 * `TemporalGraph.ncard_eMin_le`, `ncard_eMax_le`, `ncard_incidentEdges_le` : at most one edge per
-  vertex of the indexing set.
+  vertex of the indexing set (through `finite_and_ncard_le_of_functional`).
 * `TemporalGraph.IsExtremallyMatched.mem_eMin`, `mem_eMax` : `E_min` and `E_max` also contain the
   earliest and latest edges at the targets.
 
@@ -199,38 +199,45 @@ end Subset
 
 section Count
 
-/-- A set in which each element is the value of a partial function `f` at some point of a finite
-set `A` has at most `|A|` elements. -/
-private theorem ncard_le_of_subset_partial {α : Type*} {S : Set α} (f : V → Option α)
-    (h₀ : A.Finite) (h₁ : ∀ e ∈ S, ∃ v ∈ A, f v = some e) : S.ncard ≤ A.ncard := by
-  rcases S.eq_empty_or_nonempty with rfl | ⟨e₀, -⟩
+/-- A set `S` in which each element is related by a functional relation `R` to a vertex of a
+finite set `A` is finite, with at most `|A|` elements: at most one element per vertex. -/
+theorem finite_and_ncard_le_of_functional {α : Type*} {S : Set α} (R : V → α → Prop)
+    (h₀ : A.Finite) (h₁ : ∀ e ∈ S, ∃ v ∈ A, R v e) (h₂ : ∀ v e e', R v e → R v e' → e = e') :
+    S.Finite ∧ S.ncard ≤ A.ncard := by
+  rcases S.eq_empty_or_nonempty with rfl | ⟨e₀, he₀⟩
   · simp
-  -- `S` lies in the image of `A` under `f` (with `e₀` where `f` is undefined)
-  refine (Set.ncard_le_ncard (t := (fun v ↦ (f v).getD e₀) '' A) ?_ (h₀.image _)).trans
-    (Set.ncard_image_le h₀)
-  intro e he
-  obtain ⟨v, hv, hf⟩ := h₁ e he
-  exact ⟨v, hv, show (f v).getD e₀ = e by rw [hf, Option.getD_some]⟩
+  obtain ⟨v₀, -⟩ := h₁ e₀ he₀
+  have : Nonempty V := ⟨v₀⟩
+  -- choose a related vertex of `A` for each element of `S`; this is an injection
+  choose! f hfA hfR using h₁
+  have h₃ : S.InjOn f := fun e he e' he' h ↦ h₂ (f e) e e' (hfR e he) (h ▸ hfR e' he')
+  exact ⟨Set.Finite.of_injOn hfA h₃ h₀, Set.ncard_le_ncard_of_injOn f hfA h₃ h₀⟩
 
 /-- At most one edge of `E_min` per vertex of `A`: `N_min` and `arcTime` are functions. -/
 theorem ncard_eMin_le (h₀ : A.Finite) : (G.eMin A).ncard ≤ A.ncard :=
-  ncard_le_of_subset_partial (fun v ↦ (G.earliestNeighborFn v).bind fun w ↦
-      (G.arcTime v w).map fun n ↦ (s(v, w), n)) h₀ <| by
-    rintro _ ⟨v, hv, w, hw, n, hn, rfl⟩
-    exact ⟨v, hv, by simp [Option.mem_def.1 hw, Option.mem_def.1 hn]⟩
+  (finite_and_ncard_le_of_functional (S := G.eMin A)
+    (fun v e ↦ ∃ w ∈ G.earliestNeighborFn v, ∃ n ∈ G.arcTime v w, e = (s(v, w), n)) h₀
+    (fun _ ⟨v, hv, hr⟩ ↦ ⟨v, hv, hr⟩) fun _ _ _ ⟨w, hw, n, hn, he⟩ ⟨w', hw', n', hn', he'⟩ ↦ by
+      obtain rfl := Option.mem_unique hw hw'
+      obtain rfl := Option.mem_unique hn hn'
+      rw [he, he']).2
 
 /-- At most one edge of `E_max` per vertex of `A`. -/
 theorem ncard_eMax_le (h₀ : A.Finite) : (G.eMax A).ncard ≤ A.ncard :=
-  ncard_le_of_subset_partial (fun v ↦ (G.latestNeighborFn v).bind fun w ↦
-      (G.arcTime v w).map fun n ↦ (s(v, w), n)) h₀ <| by
-    rintro _ ⟨v, hv, w, hw, n, hn, rfl⟩
-    exact ⟨v, hv, by simp [Option.mem_def.1 hw, Option.mem_def.1 hn]⟩
+  (finite_and_ncard_le_of_functional (S := G.eMax A)
+    (fun v e ↦ ∃ w ∈ G.latestNeighborFn v, ∃ n ∈ G.arcTime v w, e = (s(v, w), n)) h₀
+    (fun _ ⟨v, hv, hr⟩ ↦ ⟨v, hv, hr⟩) fun _ _ _ ⟨w, hw, n, hn, he⟩ ⟨w', hw', n', hn', he'⟩ ↦ by
+      obtain rfl := Option.mem_unique hw hw'
+      obtain rfl := Option.mem_unique hn hn'
+      rw [he, he']).2
 
 /-- At most `|A|` edges join `x` to `A`. -/
 theorem ncard_incidentEdges_le {x : V} (h₀ : A.Finite) : (G.incidentEdges x A).ncard ≤ A.ncard :=
-  ncard_le_of_subset_partial (fun v ↦ (G.arcTime x v).map fun n ↦ (s(x, v), n)) h₀ <| by
-    rintro _ ⟨v, hv, n, hn, rfl⟩
-    exact ⟨v, hv, by simp [Option.mem_def.1 hn]⟩
+  (finite_and_ncard_le_of_functional (S := G.incidentEdges x A)
+    (fun v e ↦ ∃ n ∈ G.arcTime x v, e = (s(x, v), n)) h₀
+    (fun _ ⟨v, hv, hr⟩ ↦ ⟨v, hv, hr⟩) fun _ _ _ ⟨n, hn, he⟩ ⟨n', hn', he'⟩ ↦ by
+      obtain rfl := Option.mem_unique hn hn'
+      rw [he, he']).2
 
 end Count
 

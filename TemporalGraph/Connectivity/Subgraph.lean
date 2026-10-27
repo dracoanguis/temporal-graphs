@@ -166,4 +166,13 @@ theorem exists_isTCSpanner_iff_temporallyConnectedGraph :
 end ReachabilityPreservation
 
 end Subgraph
+
+/-- A walk of a subgraph `H` whose edges all lie in `E` reaches its end, by its arrival time, in
+`Subgraph.fromEdgeSet G E`. -/
+theorem TemporalWalk.reachableBefore_fromEdgeSet {H : Subgraph G} {x y : V} {n m : ℕ}
+    (p : H.toTemporalGraph.TemporalWalk x n y m) {E : Set (Sym2 V × ℕ)}
+    (h₀ : ∀ e ∈ p.edges, e ∈ E) : (Subgraph.fromEdgeSet G E).ReachableBefore x y m :=
+  ⟨n, m, Nat.zero_le _, le_rfl, ⟨p.transfer _ fun a ha ↦ Subgraph.adj_fromEdgeSet
+    (h₀ _ (List.mem_map.2 ⟨a, ha, rfl⟩)) (H.adj_sub (p.adj_of_mem_arcs a ha).1)⟩⟩
+
 end TemporalGraph

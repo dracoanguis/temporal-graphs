@@ -1300,6 +1300,11 @@ lemma adj_of_fromEdgeSet_le {K : Subgraph G} {E : Set (Sym2 V × ℕ)} {a b : V}
     K.Adj a b n :=
   h₀.right ⟨⟨(s(a, b), n), h₁⟩, Sym2.mem_mk_left _ _, Sym2.mem_mk_right _ _, rfl, h₂⟩
 
+/-- An edge of `E` that is an arc of `G` is an arc of `Subgraph.fromEdgeSet G E`. -/
+lemma adj_fromEdgeSet {E : Set (Sym2 V × ℕ)} {a b : V} {n : ℕ} (h₀ : (s(a, b), n) ∈ E)
+    (h₁ : G.Adj a b n) : (Subgraph.fromEdgeSet G E).Adj a b n :=
+  adj_of_fromEdgeSet_le le_rfl h₀ h₁
+
 /-- A relation `R` that gives each `a ∈ A` a unique partner in `B` yields a set of at most
 `|A|` unordered edges, one per `a`, that contains every such edge and consists only of them. -/
 lemma exists_matchingEdges {A B : Set V} {R : V → V → ℕ → Prop} (h₀ : A.Finite)

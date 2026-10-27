@@ -34,6 +34,8 @@ whose values are `Option`s (`none` for a vertex without edges); on the bi-clique
   `E_max` are matchings: `N_min v = some w → N_min w = some v`, in a proper graph.
 * `TemporalGraph.IsExtremallyMatched.ncard_eq` : an extremally matched proper bi-clique has
   `|s| = |t|`.
+* `TemporalGraph.IsExtremallyMatched.induce`, `TemporalGraph.isExtremallyMatched_induce_empty` :
+  restricting to the parts keeps the extremal matching; the empty bi-clique is extremally matched.
 * `TemporalGraph.IsExtremallyMatched.temporallyConnected` : a subgraph that contains the
   matchings `E_min`, `E_max` and in which `s` reaches `t` is temporally connected on `s ∪ t`
   (through SAND 2025's `temporallyConnected_of_reachable_of_matchings`).
@@ -199,6 +201,38 @@ theorem temporallyConnected {H K : Subgraph G} [K.IsSymm] (h : H.IsExtremallyMat
     have hw : w ∈ t := h.isBicliqueWith.isBipartiteWith.mem_of_mem_adj hy h₄.1
     exact ⟨w, hw, n, Subgraph.latestEdge_of_ge h₀ h₅ (h₂ w (Or.inr hw) y n h₅)⟩
 
+/-- An extremally matched bi-clique stays extremally matched when restricted to its own parts:
+the matched edges of `s ∪ t` stay inside `s ∪ t`, so they remain earliest and latest edges. -/
+theorem induce {H : Subgraph G} (h : H.IsExtremallyMatched s t) :
+    (H.induce (s ∪ t)).IsExtremallyMatched s t := by
+  have h₀ : H.induce (s ∪ t) ≤ H := Subgraph.induce_le_of_subset h.subset_verts
+  -- an edge at a vertex of `s ∪ t` ends in `s ∪ t`, since the graph is bipartite on `s`, `t`
+  have h₁ : ∀ {v w : V} {n : ℕ}, v ∈ s ∪ t → H.Adj v w n → w ∈ s ∪ t := by
+    rintro v w n (hv | hv) hadj
+    · exact Or.inr (h.isBicliqueWith.isBipartiteWith.mem_of_mem_adj hv hadj)
+    · exact Or.inl (h.isBicliqueWith.isBipartiteWith.mem_of_mem_adj' hv hadj)
+  refine ⟨Subgraph.isBicliqueWith_induce h.isBicliqueWith subset_rfl subset_rfl, fun v hv ↦ ?_,
+    fun v hv ↦ ?_⟩
+  · obtain ⟨w, n, h₂, h₃⟩ := h.earliest v hv
+    have hw := h₁ hv h₂.1
+    exact ⟨w, n, Subgraph.earliestEdge_of_ge h₀ h₂ ⟨hv, hw, h₂.1⟩,
+      Subgraph.earliestEdge_of_ge h₀ h₃ ⟨hw, hv, h₃.1⟩⟩
+  · obtain ⟨w, n, h₂, h₃⟩ := h.latest v hv
+    have hw := h₁ hv h₂.1
+    exact ⟨w, n, Subgraph.latestEdge_of_ge h₀ h₂ ⟨hv, hw, h₂.1⟩,
+      Subgraph.latestEdge_of_ge h₀ h₃ ⟨hw, hv, h₃.1⟩⟩
+
 end IsExtremallyMatched
+
+/-- The empty bi-clique, induced on no vertex, is (vacuously) extremally matched. -/
+theorem isExtremallyMatched_induce_empty {H : Subgraph G} :
+    (H.induce ∅).IsExtremallyMatched (∅ : Set V) ∅ where
+  isBicliqueWith :=
+    { isBipartiteWith :=
+        { disjoint := disjoint_bot_left
+          mem_of_adj := fun _ _ _ h ↦ absurd h.1 (Set.notMem_empty _) }
+      adj_of_mem := fun _ _ h ↦ absurd h (Set.notMem_empty _) }
+  earliest v hv := by simp at hv
+  latest v hv := by simp at hv
 
 end TemporalGraph

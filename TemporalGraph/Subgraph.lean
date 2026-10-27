@@ -642,6 +642,15 @@ instance deleteVerts_finite (H : Subgraph G) [Finite H.verts] (s : Set V) :
     Finite (H.deleteVerts s).verts :=
   Finite.Set.subset H.verts deleteVerts_le.1
 
+/-- Deleting vertices before inducing on a set that avoids them changes nothing. -/
+lemma deleteVerts_induce_of_subset {H : Subgraph G} {s U : Set V} (h₀ : U ⊆ H.verts \ s) :
+    (H.deleteVerts s).induce U = H.induce U := by
+  refine le_antisymm (le_def.mpr ⟨subset_rfl, ?_⟩) (le_def.mpr ⟨subset_rfl, ?_⟩)
+  · rintro x y n ⟨hx, hy, -, -, hadj⟩
+    exact ⟨hx, hy, hadj⟩
+  · rintro x y n ⟨hx, hy, hadj⟩
+    exact ⟨hx, hy, h₀ hx, h₀ hy, hadj⟩
+
 end DeleteVerts
 
 section AddVerts

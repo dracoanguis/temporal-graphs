@@ -56,3 +56,8 @@ number $n$ of vertices.
   $\mathrm{spannerBound}(n) \le 2n\lceil\log_2 n\rceil + n$
   (Lemma~\ref{lem:spanner-bound-closed-form}).
 \end{enumerate}
+
+The bound $O(n \log n)$ is not optimal: Baligács (arXiv:2606.05156v1) shows
+that temporal cliques admit spanners of linear size, at most $7n$ edges. That
+result is formalized in Chapter~\ref{chap:linear-spanners}
+(Theorems~\ref{thm:clique-spanner-seven-mul} and~\ref{thm:linear-main}).

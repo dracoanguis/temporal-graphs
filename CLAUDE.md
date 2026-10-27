@@ -159,10 +159,13 @@ utilisaient vraiment).
   `H.incidenceSet x` sont les notions héritées. Une notion qui porte sur des sommets donnés les
   prend dans `V` (avec des hypothèses d'appartenance) ; une notion qui quantifie sur les sommets
   prend un `Set V`. `H.coe : TemporalGraph H.verts` reste une petite API optionnelle (ponts
-  `is*_iff_coe`, `coe_earliestEdge`…). Les bijections `earliestNeighborFn`/`latestNeighborFn`
-  suivent aussi cette règle : ce sont des fonctions totales `V → V` (`earliestNeighborFn_bijOn`,
-  `latestNeighborFn_bijOn` énoncent `Set.BijOn` entre `H.vplus` et `H.vminus`), sans passer par le
-  sous-type.
+  `is*_iff_coe`, `coe_earliestEdge`…). Les fonctions `earliestNeighborFn`/`latestNeighborFn`
+  suivent aussi cette règle : définies sur `TemporalGraph` (héritées par `H`), elles vont de `V`
+  dans `Option V`, `none` signalant l'absence de voisin (une valeur par défaut dans `V` serait une
+  réponse valide, donc indiscernable). `earliestNeighborFn_bijOn`/`latestNeighborFn_bijOn`
+  énoncent `Set.BijOn` de `H.vplus` sur `some '' H.vminus` (et réciproquement), sans passer par le
+  sous-type. Même choix pour `arcTime : Option ℕ`. Ne jamais comparer ces valeurs avec l'ordre
+  d'`Option` (où `none` est minimal) : passer par des témoins `arcTime u v = some n`.
 - **Renommage ultérieur (commit `acb993a`)** : le constructeur à une seule orientation, sans
   aucune hypothèse de symétrie, s'appelle maintenant `addArc` (l'ancien `addEdge` générique), et
   le constructeur à deux orientations qui demande `[G.IsSymm]` s'appelle maintenant `addEdge`

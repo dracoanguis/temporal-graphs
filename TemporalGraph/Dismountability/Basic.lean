@@ -35,12 +35,17 @@ and `vplus` (`earliestNeighborFn`, `latestNeighborFn`), which forces `vzero` to 
   partition of `H.verts` defined just before Lemma 3.1.
 * `TemporalGraph.Subgraph.TwoHopDismountable` : SAND 2025, §2.1, `{1,2}`-hop dismountability
   (`k`-hop with `k ≤ 2`).
-* `TemporalGraph.earliestNeighborFn`, `latestNeighborFn` : the bijections between
-  `vminus` and `vplus` obtained when `H` is not two-hop-dismountable (as `V → V` functions, with
-  `Set.MapsTo`/`Set.InjOn`/`Set.BijOn` lemmas, suffixed `_mapsTo`/`_injOn`/`_bijOn`).
+* `TemporalGraph.earliestNeighborFn`, `latestNeighborFn` : an earliest (resp. latest) neighbor
+  of a vertex, as an `Option` (`none` when there is none). On a subgraph `H` that is not
+  two-hop-dismountable they are bijections from `vplus` onto `some '' vminus` (resp. from `vminus`
+  onto `some '' vplus`), with `Set.MapsTo`/`Set.InjOn`/`Set.BijOn` lemmas suffixed
+  `_mapsTo`/`_injOn`/`_bijOn`.
 
 ## Main results
 
+* `TemporalGraph.earliestNeighborFn_eq_some_iff`, `latestNeighborFn_eq_some_iff` : in a proper
+  graph, the neighbor functions characterize the earliest (resp. latest) neighbors;
+  `earliestNeighborFn_eq_none_iff` : `none` exactly when no arc leaves the vertex.
 * `TemporalGraph.Subgraph.partition_of_not_dismountable` : SAND 2025, Lemma 3.1, `vminus`, `vplus`,
   `vzero` partition `H.verts`.
 * `TemporalGraph.Subgraph.vplus_ne_neighbor_of_not_twoHopDismountable`,
@@ -97,14 +102,16 @@ variable {G : TemporalGraph V} {x y : V}
 
 /-- The earliest-neighbor function: `some y` for an earliest neighbor `y` of `x` (the other end of
 an earliest edge at `x`, unique in a proper graph: `earliestNeighborFn_eq_some`), and `none` when
-`x` has no edge. On a subgraph `H`, `H.earliestNeighborFn` sends `vplus` into `some '' vminus`
+`x` has no earliest neighbor, that is when no arc leaves `x` (`earliestNeighborFn_eq_none_iff`).
+On a subgraph `H`, `H.earliestNeighborFn` sends `vplus` into `some '' vminus`
 (`Subgraph.earliestNeighborFn_mapsTo`). -/
 noncomputable def earliestNeighborFn (G : TemporalGraph V) (x : V) : Option V := by
   classical
   exact if h : ∃ y, G.EarliestNeighbor x y then some h.choose else none
 
 /-- The latest-neighbor function: `some y` for a latest neighbor `y` of `x` (unique in a proper
-graph: `latestNeighborFn_eq_some`), and `none` when `x` has no edge. -/
+graph: `latestNeighborFn_eq_some`), and `none` when `x` has no latest neighbor: when no arc leaves
+`x`, or when the times of the arcs leaving `x` are unbounded. -/
 noncomputable def latestNeighborFn (G : TemporalGraph V) (x : V) : Option V := by
   classical
   exact if h : ∃ y, G.LatestNeighbor x y then some h.choose else none
@@ -120,6 +127,26 @@ theorem latestNeighborFn_isSome_iff :
     (G.latestNeighborFn x).isSome ↔ ∃ y, G.LatestNeighbor x y := by
   unfold latestNeighborFn
   split_ifs with h <;> simp [h]
+
+/-- A vertex has an earliest neighbor exactly when some arc leaves it: the times are natural
+numbers, so the least of them exists. -/
+theorem exists_earliestNeighbor_iff : (∃ y, G.EarliestNeighbor x y) ↔ ∃ y n, G.Adj x y n := by
+  classical
+  refine ⟨fun ⟨y, n, h₀, _⟩ ↦ ⟨y, n, h₀⟩, fun ⟨y, n, h₀⟩ ↦ ?_⟩
+  -- the least time `k` of an arc leaving `x`
+  have h₁ : ∃ k, ∃ z, G.Adj x z k := ⟨n, y, h₀⟩
+  obtain ⟨z, h₂⟩ := Nat.find_spec h₁
+  exact ⟨z, Nat.find h₁, h₂, fun w j h₃ ↦ Nat.find_min' h₁ ⟨w, h₃⟩⟩
+
+/-- `earliestNeighborFn x` is `none` exactly when no arc leaves `x`. -/
+theorem earliestNeighborFn_eq_none_iff : G.earliestNeighborFn x = none ↔ ∀ y n, ¬G.Adj x y n := by
+  rw [← Option.not_isSome_iff_eq_none, earliestNeighborFn_isSome_iff, exists_earliestNeighbor_iff]
+  simp only [not_exists]
+
+/-- `latestNeighborFn x` is `none` exactly when `x` has no latest neighbor. -/
+theorem latestNeighborFn_eq_none_iff :
+    G.latestNeighborFn x = none ↔ ∀ y, ¬G.LatestNeighbor x y := by
+  rw [← Option.not_isSome_iff_eq_none, latestNeighborFn_isSome_iff, not_exists]
 
 /-- The value of `earliestNeighborFn x` is an earliest neighbor of `x`. -/
 theorem earliestNeighbor_of_earliestNeighborFn_eq_some (h₀ : G.earliestNeighborFn x = some y) :
@@ -167,6 +194,21 @@ theorem earliestNeighborFn_eq_some_iff (h₀ : G.IsProper) :
 theorem latestNeighborFn_eq_some_iff (h₀ : G.IsProper) :
     G.latestNeighborFn x = some y ↔ G.LatestNeighbor x y :=
   ⟨latestNeighbor_of_latestNeighborFn_eq_some, latestNeighborFn_eq_some h₀⟩
+
+/-- In a proper graph, the endpoint of an earliest edge at `x` is the value of
+`earliestNeighborFn x`. This is the form `grind` can use as a forward rule from an earliest edge:
+it unfolds `EarliestNeighbor`, so `earliestNeighborFn_eq_some` never fires on an `EarliestEdge`. -/
+@[grind →]
+theorem EarliestEdge.earliestNeighborFn_eq_some {n : ℕ} (h₀ : G.IsProper)
+    (h₁ : G.EarliestEdge x y n) : G.earliestNeighborFn x = some y :=
+  TemporalGraph.earliestNeighborFn_eq_some h₀ ⟨n, h₁⟩
+
+/-- In a proper graph, the endpoint of a latest edge at `x` is the value of `latestNeighborFn x`.
+-/
+@[grind →]
+theorem LatestEdge.latestNeighborFn_eq_some {n : ℕ} (h₀ : G.IsProper)
+    (h₁ : G.LatestEdge x y n) : G.latestNeighborFn x = some y :=
+  TemporalGraph.latestNeighborFn_eq_some h₀ ⟨n, h₁⟩
 
 end NeighborFunctions
 
@@ -541,7 +583,8 @@ lemma exists_earliestNeighborFn_eq_some {H : Subgraph G} [Finite H.verts] [Nontr
   obtain ⟨y, n, h₃⟩ := earliestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x h₂
   exact Option.isSome_iff_exists.1 (earliestNeighborFn_isSome_iff.2 ⟨y, n, h₃⟩)
 
-/-- `earliestNeighborFn` sends `vplus` into `vminus`. -/
+/-- `earliestNeighborFn` sends `vplus` into `vminus`: its values there are `some` of a vertex of
+`vminus`. -/
 lemma earliestNeighborFn_mapsTo {H : Subgraph G} [Finite H.verts] [Nontrivial H.verts]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) :
     Set.MapsTo H.earliestNeighborFn H.vplus (some '' H.vminus) := by
@@ -574,7 +617,7 @@ lemma vplus_card_le_vminus_card {H : Subgraph G}
           (earliestNeighborFn_injOn h₀ h₁ h₂)
     _ = H.vminus.ncard := Set.ncard_image_of_injective _ (Option.some_injective V)
 
-/-- In a finite nontrivial simple clique subgraph, every vertex of `H.verts` has an latest
+/-- In a finite nontrivial simple clique subgraph, every vertex of `H.verts` has a latest
 neighbor, so `latestNeighborFn` is defined on it. -/
 lemma exists_latestNeighborFn_eq_some {H : Subgraph G} [Finite H.verts] [Nontrivial H.verts]
     {x : V} (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : x ∈ H.verts) :
@@ -582,7 +625,8 @@ lemma exists_latestNeighborFn_eq_some {H : Subgraph G} [Finite H.verts] [Nontriv
   obtain ⟨y, n, h₃⟩ := latestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x h₂
   exact Option.isSome_iff_exists.1 (latestNeighborFn_isSome_iff.2 ⟨y, n, h₃⟩)
 
-/-- `latestNeighborFn` sends `vminus` into `vplus`. -/
+/-- `latestNeighborFn` sends `vminus` into `vplus`: its values there are `some` of a vertex of
+`vplus`. -/
 lemma latestNeighborFn_mapsTo {H : Subgraph G} [Finite H.verts] [Nontrivial H.verts]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) :
     Set.MapsTo H.latestNeighborFn H.vminus (some '' H.vplus) := by

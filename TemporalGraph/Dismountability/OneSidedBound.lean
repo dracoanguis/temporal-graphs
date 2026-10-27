@@ -44,6 +44,9 @@ the bi-clique between `V⁻` and `V⁺`, plus the matchings `M⁻` and `M⁺`. T
 * `TemporalGraph.Subgraph.spannerBound_le` : closed form, `spannerBound n ≤ 2 n ⌈log₂ n⌉ + n`.
 * `TemporalGraph.Subgraph.spannerBound_two_pow` : the bound is attained at powers of two.
 * `TemporalGraph.Subgraph.spannerBound_isBigO` : `spannerBound` is `O(n log n)`.
+* `TemporalGraph.Subgraph.isBicliqueWith_deleteVerts_singleton_left`,
+  `deleteVerts_subproblem_left`, `isSpannerFromTo_of_sourceDismount` : the source-side mirrors of
+  the dismount step (delete a source from a bi-clique, and put it back at two edges).
 * `TemporalGraph.Subgraph.exists_isSpannerFromTo_ncard_le` : the recursion itself. For a finite
   simple bi-clique on `s`/`t` with `s` nonempty and `|s| ≤ |t|`, there is a symmetric one-sided
   spanner with at most `2 (|t| - |s|) + spannerBound |s|` edges.
@@ -197,6 +200,13 @@ lemma isBicliqueWith_deleteVerts_singleton {H : Subgraph G} {s t : Set V} {x : V
     (H.deleteVerts {x}).IsBicliqueWith s (t \ {x}) := by
   simpa [Set.sdiff_singleton_eq_self h₁] using isBicliqueWith_deleteVerts (u := ({x} : Set V)) h₀
 
+/-- Removing a source vertex `x` (not in the target) from a bi-clique on `s`/`t` leaves a
+bi-clique on `s \ {x}`/`t`. -/
+lemma isBicliqueWith_deleteVerts_singleton_left {H : Subgraph G} {s t : Set V} {x : V}
+    (h₀ : H.IsBicliqueWith s t) (h₁ : x ∉ t) :
+    (H.deleteVerts {x}).IsBicliqueWith (s \ {x}) t := by
+  simpa [Set.sdiff_singleton_eq_self h₁] using isBicliqueWith_deleteVerts (u := ({x} : Set V)) h₀
+
 /-- SAND 2025, §4.1 (dismount step): the subproblem left by dismounting `x` is still simple, a
 bi-clique on `s`/`t \ {x}`, and `t \ {x}` is one vertex smaller than `t`. -/
 lemma deleteVerts_subproblem {H : Subgraph G} {s t : Set V} {x : V} (h₀ : H.IsSimple)
@@ -204,6 +214,16 @@ lemma deleteVerts_subproblem {H : Subgraph G} {s t : Set V} {x : V} (h₀ : H.Is
     (H.deleteVerts {x}).IsSimple ∧ (H.deleteVerts {x}).IsBicliqueWith s (t \ {x}) ∧
       (t \ {x}).ncard = t.ncard - 1 :=
   ⟨h₀.mono (toTemporalGraph_le deleteVerts_le), isBicliqueWith_deleteVerts_singleton h₁ h₃,
+    Set.ncard_sdiff_singleton_of_mem h₂⟩
+
+/-- Baligács 2026, §2.3 (dismount step, source case): the subproblem left by dismounting the
+source `x` is still simple, a bi-clique on `s \ {x}`/`t`, and `s \ {x}` is one vertex smaller
+than `s`. -/
+lemma deleteVerts_subproblem_left {H : Subgraph G} {s t : Set V} {x : V} (h₀ : H.IsSimple)
+    (h₁ : H.IsBicliqueWith s t) (h₂ : x ∈ s) (h₃ : x ∉ t) :
+    (H.deleteVerts {x}).IsSimple ∧ (H.deleteVerts {x}).IsBicliqueWith (s \ {x}) t ∧
+      (s \ {x}).ncard = s.ncard - 1 :=
+  ⟨h₀.mono (toTemporalGraph_le deleteVerts_le), isBicliqueWith_deleteVerts_singleton_left h₁ h₃,
     Set.ncard_sdiff_singleton_of_mem h₂⟩
 
 /-- SAND 2025, §4.1 (dismount step): if `x` is one-sided dismountable in the bi-clique on `s`/`t`
@@ -223,6 +243,25 @@ lemma isSpannerFromTo_of_dismount {H H'' : Subgraph G} [G.IsSymm] [H.IsSymm] [H'
   have hreach : (H.deleteVerts {x}).Reachable y x' := reachable_of_isBicliqueWith hKbc hy hx'mem
   obtain ⟨hyv, hx'v⟩ := mem_verts_of_reachable (h₂.2 y hy x' hx'mem hreach) hyne
   exact ⟨_, inferInstance, oneSidedDismountability h₀ hx hx' hne hlatest hadj hle h₂ hx'v hyv,
+    ncard_edgeSet_oneSidedMount_le⟩
+
+/-- Baligács 2026, §2.3 (dismount step, source case): if `x` is a dismountable source in the
+bi-clique on `s`/`t` and `H''` is a symmetric one-sided spanner of `H` without `x` from `s \ {x}`
+to `t`, then putting `x` back with its two delegation edges yields a symmetric one-sided spanner of
+`H` from `s` to `t`, with at most two more edges. -/
+lemma isSpannerFromTo_of_sourceDismount {H H'' : Subgraph G} [G.IsSymm] [H.IsSymm] [H''.IsSymm]
+    {s t : Set V} {x : V} (h₀ : H.IsBicliqueWith s t) (h₁ : H.SourceDismountable s t x)
+    (h₂ : H''.IsSpannerFromTo (H.deleteVerts {x}) (s \ {x}) t) :
+    ∃ H' : Subgraph G, H'.IsSymm ∧ H'.IsSpannerFromTo H s t ∧
+      H'.edgeSet.ncard ≤ H''.edgeSet.ncard + 2 := by
+  obtain ⟨hx, x', hx', hne, y, hy, n, m, hearliest, hadj, hle⟩ := h₁
+  have hxnt : x ∉ t := Set.disjoint_left.mp h₀.isBipartiteWith.disjoint hx
+  have hKbc := isBicliqueWith_deleteVerts_singleton_left (x := x) h₀ hxnt
+  have hx'mem : x' ∈ s \ {x} := ⟨hx', fun he ↦ hne (Set.mem_singleton_iff.mp he)⟩
+  have hx'y : x' ≠ y := fun he ↦ Set.disjoint_left.mp h₀.isBipartiteWith.disjoint hx' (he ▸ hy)
+  have hreach : (H.deleteVerts {x}).Reachable x' y := reachable_of_isBicliqueWith hKbc hx'mem hy
+  obtain ⟨hx'v, hyv⟩ := mem_verts_of_reachable (h₂.2 x' hx'mem y hy hreach) hx'y
+  exact ⟨_, inferInstance, sourceDismountability h₀ hx hx' hne hearliest hadj hle h₂ hx'v hyv,
     ncard_edgeSet_oneSidedMount_le⟩
 
 /-- SAND 2025, §4.1 (split step): symmetric one-sided spanners of the two source-halves `s₁`,

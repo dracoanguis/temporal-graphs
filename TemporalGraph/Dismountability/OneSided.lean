@@ -20,8 +20,10 @@ tracked (`IsSpannerFromTo`); the matchings `M⁻`, `M⁺` then upgrade it to tem
 ## Main definitions
 
 * `TemporalGraph.Subgraph.IsSpannerFromTo` : one-sided spanner from a source set to a target set.
-* `TemporalGraph.Subgraph.OneSidedDismountable` : a target vertex that can delegate its
+* `TemporalGraph.OneSidedDismountable` : a target vertex that can delegate its
   receptions from the source to another target vertex.
+* `TemporalGraph.SourceDismountable` : the time-reversed mirror, a source vertex that can delegate
+  its emissions to the targets to another source vertex.
 * `TemporalGraph.Subgraph.oneSidedMount` : put a dismounted target vertex back, with its two
   delegation edges.
 
@@ -32,6 +34,8 @@ tracked (`IsSpannerFromTo`); the matchings `M⁻`, `M⁺` then upgrade it to tem
 * `TemporalGraph.Subgraph.oneSidedDismountability` : putting a one-sided dismountable target
   back with its two delegation edges keeps a one-sided spanner (`oneSidedMount_size`: at most two
   more edges).
+* `TemporalGraph.Subgraph.sourceDismountability` : the mirror of `oneSidedDismountability`,
+  putting a dismountable source back with its two delegation edges.
 * `TemporalGraph.Subgraph.exists_oneSidedDismountable_of_ncard_lt` : pigeonhole, a dismountable
   target exists when the target part is larger than the source part.
 * `TemporalGraph.Subgraph.temporallyConnected_of_isSpannerFromTo` : a one-sided spanner from `V⁺`
@@ -60,6 +64,24 @@ variable {V : Type u}
 
 namespace TemporalGraph
 
+section Dismountable
+
+/-- SAND 2025, §4.1: the target vertex `x ∈ t` is one-sided dismountable (relative to the source
+`s`) when another target vertex `x'` has a latest edge to some `y ∈ s`, at time `n`, and `y` is
+joined to `x` at a time `m ≥ n`: `x` then receives, through `x' → y → x`, everything `x'`
+receives from `s`. -/
+def OneSidedDismountable (G : TemporalGraph V) (s t : Set V) (x : V) : Prop :=
+  x ∈ t ∧ ∃ x' ∈ t, x' ≠ x ∧ ∃ y ∈ s, ∃ n m : ℕ, G.LatestEdge x' y n ∧ G.Adj y x m ∧ n ≤ m
+
+/-- Baligács 2026, §2.3: the source vertex `x ∈ s` is dismountable (relative to the target `t`)
+when another source vertex `x'` has an earliest edge to some `y ∈ t`, at time `n`, and `y` is
+joined to `x` at a time `m ≤ n`: `x` then reaches, through `x → y → x'`, everything `x'` reaches.
+The mirror image of `OneSidedDismountable`, which dismounts a target. -/
+def SourceDismountable (G : TemporalGraph V) (s t : Set V) (x : V) : Prop :=
+  x ∈ s ∧ ∃ x' ∈ s, x' ≠ x ∧ ∃ y ∈ t, ∃ n m : ℕ, G.EarliestEdge x' y n ∧ G.Adj y x m ∧ m ≤ n
+
+end Dismountable
+
 namespace Subgraph
 
 variable {G : TemporalGraph V}
@@ -70,13 +92,6 @@ section OneSided
 which every vertex of `s` still reaches every vertex of `t` that it reaches in `H`. -/
 def IsSpannerFromTo (H' H : Subgraph G) (s t : Set V) : Prop :=
   H' ≤ H ∧ ∀ x ∈ s, ∀ y ∈ t, H.Reachable x y → H'.Reachable x y
-
-/-- SAND 2025, §4.1: the target vertex `x ∈ t` is one-sided dismountable (relative to the source
-`s`) when another target vertex `x'` has a latest edge to some `y ∈ s`, at time `n`, and `y` is
-joined to `x` at a time `m ≥ n`: `x` then receives, through `x' → y → x`, everything `x'`
-receives from `s`. -/
-def OneSidedDismountable (H : Subgraph G) (s t : Set V) (x : V) : Prop :=
-  x ∈ t ∧ ∃ x' ∈ t, x' ≠ x ∧ ∃ y ∈ s, ∃ n m : ℕ, H.LatestEdge x' y n ∧ H.Adj y x m ∧ n ≤ m
 
 /-- Put `x` back into `H` with the two delegation edges `y x'` (time `n`) and `y x` (time `m`). -/
 def oneSidedMount (H : Subgraph G) [G.IsSymm] {x' y : V} {n m : ℕ}
@@ -248,6 +263,48 @@ theorem oneSidedDismountability {H H' : Subgraph G} [G.IsSymm] [H.IsSymm] [H'.Is
     exact TemporalGraph.reachable_of_extended_latestEdge hML
       (oneSidedMount_adj_right H' hx' hy (H.adj_sub h₄.1).symm (H.adj_sub h₅)) h₆ z hMx'
   · exact key w ⟨hw, hwx⟩
+
+/-- Baligács 2026, §2.3: correctness of source dismounting, the mirror of
+`oneSidedDismountability`. In a bi-clique on `s` and `t`, if `x` is a dismountable source through
+`x'` and `y`, and `H'` is a one-sided spanner from `s \ {x}` to `t` of `H` without `x`, then putting
+`x` back with the edges `y x'` and `y x` gives a one-sided spanner from `s` to `t` of `H`. -/
+theorem sourceDismountability {H H' : Subgraph G} [G.IsSymm] [H.IsSymm] [H'.IsSymm]
+    {s t : Set V} {x x' y : V} {n m : ℕ}
+    (h₀ : H.IsBicliqueWith s t) (h₁ : x ∈ s) (h₂ : x' ∈ s) (h₃ : x' ≠ x)
+    (h₄ : H.EarliestEdge x' y n) (h₅ : H.Adj y x m) (h₆ : m ≤ n)
+    (h₇ : H'.IsSpannerFromTo (H.deleteVerts {x}) (s \ {x}) t)
+    (hx' : x' ∈ H'.verts) (hy : y ∈ H'.verts) :
+    (H'.oneSidedMount hx' hy x (H.adj_sub h₄.1).symm (H.adj_sub h₅)).IsSpannerFromTo H s t := by
+  set M := H'.oneSidedMount hx' hy x (H.adj_sub h₄.1).symm (H.adj_sub h₅) with hM
+  have hMH : M ≤ H :=
+    oneSidedMount_le hx' hy _ _ (h₇.1.trans deleteVerts_le) (H.edge_vert' h₅) h₄.1.symm h₅
+  refine ⟨hMH, ?_⟩
+  intro z hz w hw hr
+  have hxt : x ∉ t := Set.disjoint_left.mp h₀.isBipartiteWith.disjoint h₁
+  have hwx : w ≠ x := fun he ↦ hxt (he ▸ hw)
+  -- Every source of `s \ {x}` keeps reaching `w`, through the one-sided spanner `H'` of
+  -- `H.deleteVerts {x}`, then lifted to the bigger graph `M`.
+  have key : ∀ z' ∈ s \ {x}, M.Reachable z' w := by
+    intro z' hz'
+    obtain ⟨k, hadj⟩ := h₀.adj_of_mem hz'.1 hw
+    have hzw'del : (H.deleteVerts {x}).Adj z' w k := by
+      simp only [deleteVerts, induce_Adj, Set.mem_sdiff, Set.mem_singleton_iff]
+      exact ⟨⟨H.edge_vert hadj, hz'.2⟩, ⟨H.edge_vert' hadj, hwx⟩, hadj⟩
+    have hrd : (H.deleteVerts {x}).Reachable z' w :=
+      NonemptyTemporalWalk.reachable (.single hzw'del)
+    have hle : H' ≤ M := le_oneSidedMount hx' hy (H.adj_sub h₄.1).symm (H.adj_sub h₅)
+    exact Reachable.mono (toTemporalGraph_le hle) (h₇.2 z' hz' w hw hrd)
+  by_cases hzx : z = x
+  · -- `z = x`: reach `w` from `x'` first (it survives the dismount), then prepend `x → y → x'`,
+    -- using that `x'`'s edge to `y` is still the earliest one in `M` (it was in `H ⊇ M`).
+    subst hzx
+    have hMx'y : M.Adj x' y n :=
+      (oneSidedMount_adj_left H' hx' hy (H.adj_sub h₄.1).symm (H.adj_sub h₅)).symm
+    have hME : M.EarliestEdge x' y n := earliestEdge_of_ge hMH h₄ hMx'y
+    exact TemporalGraph.reachable_of_extended_earliestEdge hME
+      (oneSidedMount_adj_right H' hx' hy (H.adj_sub h₄.1).symm (H.adj_sub h₅)).symm h₆ w
+      (key x' ⟨h₂, h₃⟩)
+  · exact key z ⟨hz, hzx⟩
 
 /-- In a finite simple bi-clique on `s` and `t` with `s` nonempty, every vertex of `t` has a
 latest edge, and it goes to `s`. -/

@@ -38,6 +38,8 @@ spanner of another), and `IsTCSpanner` (temporally connected spanner).
   temporal connectivity
 * `mem_verts_of_reachable` : A reachable pair of distinct vertices lies in `H`'s own vertex set
 * `top_isSpanner` : The whole graph `⊤` is a spanner of itself
+* `isSpannerOf_of_le_of_temporallyConnected` : a subgraph of a nontrivial `H` that is temporally
+  connected on `H.verts` is a spanner of `H`
 * `Reachable.addVerts`, `Reachable.addEdge`, `Reachable.of_deleteVerts` : reachability is
   preserved by these subgraph constructions
 -/
@@ -162,6 +164,16 @@ theorem exists_isTCSpanner_iff_temporallyConnectedGraph :
     refine ⟨⊤, isSpanning_top, ?_⟩
     intro x _ y _
     exact h_tc x (Set.mem_univ _) y (Set.mem_univ _)
+
+/-- A subgraph `K ≤ H` that is temporally connected on the vertices of a nontrivial `H` is a
+spanner of `H`: it has all the vertices of `H`, each being reached from another one, and every
+pair of vertices of `H` is reachable in `K`. -/
+theorem isSpannerOf_of_le_of_temporallyConnected {K H : Subgraph G} [Nontrivial H.verts]
+    (h₀ : K ≤ H) (h₁ : K.TemporallyConnected H.verts) : K.IsSpannerOf H := by
+  refine ⟨h₀, Set.Subset.antisymm h₀.left fun x hx ↦ ?_, fun x hx y hy _ ↦ h₁ x hx y hy⟩
+  -- `x` reaches some other vertex `y` of `H`, so `x` is a vertex of `K`
+  obtain ⟨y, hy, hxy⟩ := (Set.nontrivial_coe_sort.mp ‹_›).exists_ne x
+  exact (mem_verts_of_reachable (h₁ x hx y hy) hxy.symm).1
 
 end ReachabilityPreservation
 

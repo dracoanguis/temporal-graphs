@@ -22,4 +22,5 @@ import TemporalGraph.LinearSpanner.Stars
 import TemporalGraph.LinearSpanner.SimpleStar
 import TemporalGraph.LinearSpanner.ExtendedStar
 import TemporalGraph.LinearSpanner.Bound
+import TemporalGraph.LinearSpanner.Clique
 import TemporalGraph.Examples

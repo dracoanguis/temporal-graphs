@@ -12,17 +12,19 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Base
 # Size of one-sided spanners
 
 This module bounds the size of the one-sided spanner built by `oneSidedDismountability`
-(`TemporalGraph/Dismountability/OneSided.lean`) by repeated halving. The strategy is due to
-Angrick et al. (ESA 2024), as recalled in SAND 2025, §4.1: splitting the source part of a
-bi-clique into two halves of size `⌈n / 2⌉` and `⌊n / 2⌋`, then dismounting the other half's
-targets at two edges each, yields the recurrence
-`size(n) ≤ 2 * size(n / 2) + O(n)`. `spannerBound` is this recurrence made explicit (with the
-`O(n)` term instantiated to `2 * n`), `spannerBound_le` solves it in closed form,
-`spannerBound n ≤ 2 * n * ⌈log₂ n⌉ + n`, and `exists_isSpannerFromTo_ncard_le` proves it is
-actually realized by a symmetric one-sided spanner of any finite simple temporal bi-clique with a
-nonempty source part `s` and a target part `t` at least as large as `s`. That spanner has at most
-`2 (|t| - |s|) + spannerBound |s|` edges. The balanced case `|s| = |t|` yields the `O(n log n)`
-bound `exists_isBigO_isOneSidedSpannerBound`.
+(`TemporalGraph/Dismountability/OneSided.lean`) by repeated halving, and transfers the bound to
+temporal cliques.
+
+The strategy is due to Angrick et al. (ESA 2024), as recalled in SAND 2025, §4.1. Split the
+source part of a bi-clique into two halves of size `⌈n / 2⌉` and `⌊n / 2⌋`, then dismount the other
+half's targets at two edges each. This yields the recurrence `size(n) ≤ 2 * size(n / 2) + O(n)`.
+`spannerBound` is this recurrence made explicit (with the `O(n)` term instantiated to `2 * n`), and
+`spannerBound_le` solves it in closed form, `spannerBound n ≤ 2 * n * ⌈log₂ n⌉ + n`.
+
+`exists_isSpannerFromTo_ncard_le` proves that the bound is realized by a symmetric one-sided
+spanner of any finite simple temporal bi-clique with a nonempty source part `s` and a target part
+`t` at least as large as `s`, with at most `2 (|t| - |s|) + spannerBound |s|` edges. The balanced
+case `|s| = |t|` gives the `O(n log n)` bound `exists_isBigO_isOneSidedSpannerBound`.
 
 The last section transfers the bound to temporal cliques. A `{1,2}`-hop dismountable clique loses
 a vertex and gains at most 4 edges back (`exists_isSpannerOf_of_twoHopDismountable`, in
@@ -39,14 +41,16 @@ the bi-clique between `V⁻` and `V⁺`, plus the matchings `M⁻` and `M⁺`. T
 
 ## Main results
 
-* `TemporalGraph.Subgraph.exists_isSpannerFromTo_of_singleton` : the base case of the recursion,
-  a single edge is a one-sided spanner of itself.
 * `TemporalGraph.Subgraph.spannerBound_le` : closed form, `spannerBound n ≤ 2 n ⌈log₂ n⌉ + n`.
 * `TemporalGraph.Subgraph.spannerBound_two_pow` : the bound is attained at powers of two.
 * `TemporalGraph.Subgraph.spannerBound_isBigO` : `spannerBound` is `O(n log n)`.
-* `TemporalGraph.Subgraph.isBicliqueWith_deleteVerts_singleton_left`,
-  `deleteVerts_subproblem_left`, `isSpannerFromTo_of_sourceDismount` : the source-side mirrors of
-  the dismount step (delete a source from a bi-clique, and put it back at two edges).
+* `TemporalGraph.Subgraph.exists_isSpannerFromTo_of_singleton` : the base case of the recursion,
+  a single edge is a one-sided spanner of itself.
+* `TemporalGraph.Subgraph.isSpannerFromTo_of_dismount`, `isSpannerFromTo_of_sourceDismount` : the
+  dismount step on the target side (SAND 2025, §4.1) and on the source side (Baligács 2026,
+  §2.3), delete a vertex and put it back at two edges; `deleteVerts_subproblem` and
+  `deleteVerts_subproblem_left` describe the subproblem left.
+* `TemporalGraph.Subgraph.isSpannerFromTo_of_split` : the split step.
 * `TemporalGraph.Subgraph.exists_isSpannerFromTo_ncard_le` : the recursion itself. For a finite
   simple bi-clique on `s`/`t` with `s` nonempty and `|s| ≤ |t|`, there is a symmetric one-sided
   spanner with at most `2 (|t| - |s|) + spannerBound |s|` edges.
@@ -69,12 +73,9 @@ the bi-clique between `V⁻` and `V⁺`, plus the matchings `M⁻` and `M⁺`. T
 * Angrick, Bals, Friedrich, Gawendowicz, Hastrich, Klodt, Lenzner, Schmidt, Skretas & Wells,
   *How to Reduce Temporal Cliques to Find Sparse Spanners*, ESA 2024 (LIPIcs 308,
   doi:10.4230/LIPIcs.ESA.2024.11, arXiv:2402.13624) — origin of the one-sided strategy.
-* Sorrachai Yingchareonthawornchai, CSLib, `Cslib/Algorithms/Lean/MergeSort/MergeSort.lean`
-  (https://github.com/leanprover/cslib, commit `9a99cbb`) — the explicit computation of the
-  bound follows its merge-sort analysis: the recurrence on the halves `⌊n/2⌋`, `⌈n/2⌉`
-  (`timeMergeSortRec`, here `spannerBound`), the halving lemma for `Nat.clog 2`
-  (`clog2_half_le`, here `clog_half_le`), and the closed form `n * ⌈log₂ n⌉`
-  (`timeMergeSortRec_le`, here `spannerBound_le`).
+* Sorrachai Yingchareonthawornchai, *CSLib*, `Cslib/Algorithms/Lean/MergeSort/MergeSort.lean`,
+  https://github.com/leanprover/cslib, commit `9a99cbb` — the merge-sort analysis that the
+  explicit computation of `spannerBound` follows.
 -/
 
 @[expose] public section
@@ -87,32 +88,15 @@ namespace Subgraph
 
 variable {V : Type u} {G : TemporalGraph V}
 
-/-- SAND 2025, §4.1 (base case of the one-sided recursion): a single edge of `H` from `a` to `b`
-at time `n` is itself a one-sided spanner from `{a}` to `{b}`, with at most one edge. -/
-lemma exists_isSpannerFromTo_of_singleton {H : Subgraph G} [G.IsSymm] [H.IsSymm] {a b : V} {n : ℕ}
-    (h : H.Adj a b n) :
-    ∃ H' : Subgraph G, H'.IsSymm ∧ H'.IsSpannerFromTo H {a} {b} ∧ H'.edgeSet.ncard ≤ 1 := by
-  have ha : a ∈ H.verts := H.edge_vert h
-  have hb : b ∈ H.verts := H.edge_vert' h
-  set H' := ((⊥ : Subgraph G).addVerts {a, b}).addEdge (H.adj_sub h) (by simp) with hH'
-  refine ⟨H', inferInstance, ⟨?_, ?_⟩, ?_⟩
-  · -- `H' ≤ H`: its one edge is `H`'s own, and its two vertices are `H`'s
-    rw [le_iff_edgeSet_and_verts]
-    refine ⟨?_, ?_⟩
-    · rw [hH', addEdge_edgeSet, addVerts_edgeSet, bot_edgeSet, insert_empty_eq]
-      exact Set.singleton_subset_iff.mpr (Adj.mem_edgeSet h)
-    · rw [hH', addEdge_verts, addVerts_verts, bot_verts, Set.empty_union]
-      rintro v (rfl | rfl) <;> assumption
-  · -- `{a}` reaches `{b}`, through the edge just added
-    rintro x rfl y rfl -
-    refine NonemptyTemporalWalk.reachable (.single (n := n) ?_)
-    rw [hH']; exact addEdge_edge
-  · -- at most one edge: `H'`'s edge set is `∅` plus the one edge just inserted
-    rw [hH']; simp
+section Arithmetic
 
 /-- SAND 2025, §4.1: the recurrence on balanced one-sided instances of size `n`: split the
 source in halves `⌈n/2⌉` and `⌊n/2⌋`; in each half, dismount the other half of the targets, at
-two edges each. -/
+two edges each.
+
+The analysis follows the merge-sort analysis of CSLib (`timeMergeSortRec` for `spannerBound`,
+`clog2_half_le` for `clog_half_le`, `timeMergeSortRec_le` for `spannerBound_le`); see the
+references in the module docstring. -/
 def spannerBound : ℕ → ℕ
   | 0 => 1
   | 1 => 1
@@ -153,6 +137,7 @@ theorem spannerBound_le {n : ℕ} (h₀ : 1 ≤ n) :
     spannerBound n ≤ 2 * n * Nat.clog 2 n + n := by
   induction n using Nat.strong_induction_on with
   | _ n ih =>
+    -- the cases `n = 1` (base) and `n + 2` (recurrence); `n = 0` is excluded by `1 ≤ n`
     match n, h₀ with
     | 1, _ => simp
     | n + 2, _ =>
@@ -164,6 +149,9 @@ theorem spannerBound_le {n : ℕ} (h₀ : 1 ≤ n) :
         Nat.clog_mono_right 2 (by omega)
       have hab : (n + 3) / 2 + (n + 2) / 2 = n + 2 := by omega
       rw [spannerBound_add_two]
+      -- with `a = (n + 3) / 2`, `b = (n + 2) / 2` and `c = ⌈log₂ (n + 2)⌉`, the bound reads
+      -- `(2 a ⌈log₂ a⌉ + a) + (2 b ⌈log₂ b⌉ + b) + 2 (n + 2) ≤ 2 (n + 2) c + (n + 2)`,
+      -- because `⌈log₂ a⌉, ⌈log₂ b⌉ ≤ c - 1` and `a + b = n + 2`
       nlinarith [Nat.mul_le_mul_left ((n + 3) / 2) hca, Nat.mul_le_mul_left ((n + 2) / 2) hcb,
         Nat.mul_le_mul_left ((n + 2) / 2) hca]
 
@@ -174,14 +162,49 @@ theorem spannerBound_two_pow (k : ℕ) :
   | zero => simp
   | succ k ih =>
     have hp : 0 < 2 ^ k := by positivity
-    have heq : 2 ^ (k + 1) = (2 * 2 ^ k - 2) + 2 := by rw [pow_succ]; omega
+    -- write `2 ^ (k + 1)` as `n + 2` with `n = 2 * 2 ^ k - 2`, to unfold the recurrence
+    have heq : 2 ^ (k + 1) = (2 * 2 ^ k - 2) + 2 := by
+      rw [pow_succ]
+      omega
+    -- both halves are exactly `2 ^ k`
     have ha : (2 * 2 ^ k - 2 + 3) / 2 = 2 ^ k := by omega
     have hb : (2 * 2 ^ k - 2 + 2) / 2 = 2 ^ k := by omega
-    have key : spannerBound (2 ^ (k + 1)) = 2 * spannerBound (2 ^ k) + 2 * 2 ^ (k + 1) := by
+    have hrec : spannerBound (2 ^ (k + 1)) = 2 * spannerBound (2 ^ k) + 2 * 2 ^ (k + 1) := by
       rw [heq, spannerBound_add_two, ha, hb, ← heq]
       ring
-    rw [key, ih, pow_succ]
+    rw [hrec, ih, pow_succ]
     ring
+
+end Arithmetic
+
+section Recursion
+
+/-! ### Base case and subproblems -/
+
+/-- SAND 2025, §4.1 (base case of the one-sided recursion): a single edge of `H` from `a` to `b`
+at time `n` is itself a one-sided spanner from `{a}` to `{b}`, with at most one edge. -/
+lemma exists_isSpannerFromTo_of_singleton {H : Subgraph G} [G.IsSymm] [H.IsSymm] {a b : V} {n : ℕ}
+    (h : H.Adj a b n) :
+    ∃ H' : Subgraph G, H'.IsSymm ∧ H'.IsSpannerFromTo H {a} {b} ∧ H'.edgeSet.ncard ≤ 1 := by
+  have ha : a ∈ H.verts := H.edge_vert h
+  have hb : b ∈ H.verts := H.edge_vert' h
+  set H' := ((⊥ : Subgraph G).addVerts {a, b}).addEdge (H.adj_sub h) (by simp) with hH'
+  refine ⟨H', inferInstance, ⟨?_, ?_⟩, ?_⟩
+  · -- `H' ≤ H`: its one edge is `H`'s own, and its two vertices are `H`'s
+    rw [le_iff_edgeSet_and_verts]
+    refine ⟨?_, ?_⟩
+    · rw [hH', addEdge_edgeSet, addVerts_edgeSet, bot_edgeSet, insert_empty_eq]
+      exact Set.singleton_subset_iff.mpr (Adj.mem_edgeSet h)
+    · rw [hH', addEdge_verts, addVerts_verts, bot_verts, Set.empty_union]
+      rintro v (rfl | rfl) <;> assumption
+  · -- `{a}` reaches `{b}`, through the edge just added
+    rintro x rfl y rfl -
+    refine NonemptyTemporalWalk.reachable (.single (n := n) ?_)
+    rw [hH']
+    exact addEdge_edge
+  · -- at most one edge: `H'`'s edge set is `∅` plus the one edge just inserted
+    rw [hH']
+    simp
 
 /-- SAND 2025, §4.1 (split step): the subproblem induced by a part `s' ⊆ s` of the source is still
 finite, simple, and a bi-clique on `s'`/`t`. -/
@@ -198,14 +221,16 @@ on `s`/`t \ {x}`. -/
 lemma isBicliqueWith_deleteVerts_singleton {H : Subgraph G} {s t : Set V} {x : V}
     (h₀ : H.IsBicliqueWith s t) (h₁ : x ∉ s) :
     (H.deleteVerts {x}).IsBicliqueWith s (t \ {x}) := by
-  simpa [Set.sdiff_singleton_eq_self h₁] using isBicliqueWith_deleteVerts (u := ({x} : Set V)) h₀
+  have h := isBicliqueWith_deleteVerts (u := ({x} : Set V)) h₀
+  rwa [Set.sdiff_singleton_eq_self h₁] at h
 
 /-- Removing a source vertex `x` (not in the target) from a bi-clique on `s`/`t` leaves a
 bi-clique on `s \ {x}`/`t`. -/
 lemma isBicliqueWith_deleteVerts_singleton_left {H : Subgraph G} {s t : Set V} {x : V}
     (h₀ : H.IsBicliqueWith s t) (h₁ : x ∉ t) :
     (H.deleteVerts {x}).IsBicliqueWith (s \ {x}) t := by
-  simpa [Set.sdiff_singleton_eq_self h₁] using isBicliqueWith_deleteVerts (u := ({x} : Set V)) h₀
+  have h := isBicliqueWith_deleteVerts (u := ({x} : Set V)) h₀
+  rwa [Set.sdiff_singleton_eq_self h₁] at h
 
 /-- SAND 2025, §4.1 (dismount step): the subproblem left by dismounting `x` is still simple, a
 bi-clique on `s`/`t \ {x}`, and `t \ {x}` is one vertex smaller than `t`. -/
@@ -235,14 +260,17 @@ lemma isSpannerFromTo_of_dismount {H H'' : Subgraph G} [G.IsSymm] [H.IsSymm] [H'
     (h₂ : H''.IsSpannerFromTo (H.deleteVerts {x}) s (t \ {x})) :
     ∃ H' : Subgraph G, H'.IsSymm ∧ H'.IsSpannerFromTo H s t ∧
       H'.edgeSet.ncard ≤ H''.edgeSet.ncard + 2 := by
+  -- `x ∈ t` delegates to `x' ∈ t` through `y ∈ s`: latest edge `x' y` at `n`, edge `y x` at `m ≥ n`
   obtain ⟨hx, x', hx', hne, y, hy, n, m, hlatest, hadj, hle⟩ := h₁
   have hxns : x ∉ s := Set.disjoint_right.mp h₀.isBipartiteWith.disjoint hx
   have hKbc := isBicliqueWith_deleteVerts_singleton (x := x) h₀ hxns
   have hx'mem : x' ∈ t \ {x} := ⟨hx', fun he ↦ hne (Set.mem_singleton_iff.mp he)⟩
   have hyne : y ≠ x' := fun he ↦ Set.disjoint_left.mp h₀.isBipartiteWith.disjoint hy (he ▸ hx')
   have hreach : (H.deleteVerts {x}).Reachable y x' := reachable_of_isBicliqueWith hKbc hy hx'mem
+  -- `y` reaches `x'` in `H''`, so both are vertices of `H''` and the mount is defined
   obtain ⟨hyv, hx'v⟩ := mem_verts_of_reachable (h₂.2 y hy x' hx'mem hreach) hyne
-  exact ⟨_, inferInstance, oneSidedDismountability h₀ hx hx' hne hlatest hadj hle h₂ hx'v hyv,
+  let M := H''.oneSidedMount hx'v hyv x (H.adj_sub hlatest.1).symm (H.adj_sub hadj)
+  exact ⟨M, inferInstance, oneSidedDismountability h₀ hx hx' hne hlatest hadj hle h₂ hx'v hyv,
     ncard_edgeSet_oneSidedMount_le⟩
 
 /-- Baligács 2026, §2.3 (dismount step, source case): if `x` is a dismountable source in the
@@ -254,14 +282,18 @@ lemma isSpannerFromTo_of_sourceDismount {H H'' : Subgraph G} [G.IsSymm] [H.IsSym
     (h₂ : H''.IsSpannerFromTo (H.deleteVerts {x}) (s \ {x}) t) :
     ∃ H' : Subgraph G, H'.IsSymm ∧ H'.IsSpannerFromTo H s t ∧
       H'.edgeSet.ncard ≤ H''.edgeSet.ncard + 2 := by
+  -- `x ∈ s` delegates to `x' ∈ s` through `y ∈ t`: earliest edge `x' y` at `n`, edge `y x` at
+  -- `m ≤ n`
   obtain ⟨hx, x', hx', hne, y, hy, n, m, hearliest, hadj, hle⟩ := h₁
   have hxnt : x ∉ t := Set.disjoint_left.mp h₀.isBipartiteWith.disjoint hx
   have hKbc := isBicliqueWith_deleteVerts_singleton_left (x := x) h₀ hxnt
   have hx'mem : x' ∈ s \ {x} := ⟨hx', fun he ↦ hne (Set.mem_singleton_iff.mp he)⟩
   have hx'y : x' ≠ y := fun he ↦ Set.disjoint_left.mp h₀.isBipartiteWith.disjoint hx' (he ▸ hy)
   have hreach : (H.deleteVerts {x}).Reachable x' y := reachable_of_isBicliqueWith hKbc hx'mem hy
+  -- `x'` reaches `y` in `H''`, so both are vertices of `H''` and the mount is defined
   obtain ⟨hx'v, hyv⟩ := mem_verts_of_reachable (h₂.2 x' hx'mem y hy hreach) hx'y
-  exact ⟨_, inferInstance, sourceDismountability h₀ hx hx' hne hearliest hadj hle h₂ hx'v hyv,
+  let M := H''.oneSidedMount hx'v hyv x (H.adj_sub hearliest.1).symm (H.adj_sub hadj)
+  exact ⟨M, inferInstance, sourceDismountability h₀ hx hx' hne hearliest hadj hle h₂ hx'v hyv,
     ncard_edgeSet_oneSidedMount_le⟩
 
 /-- SAND 2025, §4.1 (split step): symmetric one-sided spanners of the two source-halves `s₁`,
@@ -313,26 +345,33 @@ theorem exists_isSpannerFromTo_ncard_le {H : Subgraph G} [Finite H.verts] [G.IsS
       obtain ⟨H', hH'symm, hH'span, hH'bound⟩ := isSpannerFromTo_of_dismount h₁ hdis hH''span
       exact ⟨H', hH'symm, hH'span, by omega⟩
     · -- `s.ncard = t.ncard`: split the source in two and recurse, or settle the base case
+      -- `s` is nonempty, so `1 ≤ |s|`
       rcases (by omega : s.ncard = 1 ∨ 2 ≤ s.ncard) with hone | htwo
       · -- base case: `s` and `t` are singletons joined by their one edge
         obtain ⟨a, hsa⟩ := Set.ncard_eq_one.mp hone
         obtain ⟨b, htb⟩ := Set.ncard_eq_one.mp (heq ▸ hone)
-        obtain ⟨n', hadj⟩ := h₁.adj_of_mem (hsa ▸ rfl : a ∈ s) (htb ▸ rfl : b ∈ t)
+        obtain ⟨n', hadj⟩ := h₁.adj_of_mem (hsa ▸ Set.mem_singleton a) (htb ▸ Set.mem_singleton b)
         obtain ⟨H', hH'symm, hH'span, hH'card⟩ := exists_isSpannerFromTo_of_singleton hadj
-        refine ⟨H', hH'symm, by rw [hsa, htb]; exact hH'span, ?_⟩
-        grind only [spannerBound_one]
+        refine ⟨H', hH'symm, ?_, ?_⟩
+        · rw [hsa, htb]
+          exact hH'span
+        · -- one edge, and `spannerBound 1 = 1` with `|t| - |s| = 0`
+          grind only [spannerBound_one]
       · -- split step (SAND 2025, §4.1): halve `s`, dismount the other half of `t` in each piece
         obtain ⟨s₁, hs₁sub, hs₁card, hs₂card⟩ := exists_ncard_halves s
         set s₂ := s \ s₁ with hs₂def
-        have hs1ne : s₁.Nonempty := Set.nonempty_of_ncard_ne_zero (by omega)
-        have hs2ne : s₂.Nonempty := Set.nonempty_of_ncard_ne_zero (by omega)
-        obtain ⟨H₁, hH₁symm, hH₁span, hH₁bound⟩ := hrec s₁ hs₁sub hs1ne (by omega)
-        obtain ⟨H₂, hH₂symm, hH₂span, hH₂bound⟩ := hrec s₂ Set.sdiff_subset hs2ne (by omega)
+        have hs₁ne : s₁.Nonempty := Set.nonempty_of_ncard_ne_zero (by omega)
+        have hs₂ne : s₂.Nonempty := Set.nonempty_of_ncard_ne_zero (by omega)
+        obtain ⟨H₁, hH₁symm, hH₁span, hH₁bound⟩ := hrec s₁ hs₁sub hs₁ne (by omega)
+        obtain ⟨H₂, hH₂symm, hH₂span, hH₂bound⟩ := hrec s₂ Set.sdiff_subset hs₂ne (by omega)
         have hunion : s₁ ∪ s₂ = s := Set.union_sdiff_cancel hs₁sub
         -- halve the source and recombine the two sub-spanners by union (SAND 2025, §4.1, split)
         obtain ⟨H', hH'symm, hH'span, hH'bound⟩ :=
           isSpannerFromTo_of_split h₁ hsub hs₁sub (s₂ := s₂) Set.sdiff_subset hH₁span hH₂span
-        refine ⟨H', hH'symm, hunion ▸ hH'span, ?_⟩
+        rw [hunion] at hH'span
+        refine ⟨H', hH'symm, hH'span, ?_⟩
+        -- write `|s| = p + 2` to unfold `spannerBound`; `|H'| ≤ |H₁| + |H₂|`, where
+        -- `|t| - |s₁| = |s₂|` and `|t| - |s₂| = |s₁|`, and `|t| - |s| = 0`
         obtain ⟨p, hp⟩ : ∃ p, s.ncard = p + 2 := ⟨s.ncard - 2, by omega⟩
         grind only [spannerBound_add_two]
 
@@ -359,6 +398,8 @@ theorem isOneSidedSpannerBound_spannerBound : IsOneSidedSpannerBound.{u} spanner
     exists_isSpannerFromTo_ncard_le h₀ h₁ h₂ h₃.le
   exact ⟨H', hH'symm, hH'span, by omega⟩
 
+end Recursion
+
 section BigO
 
 open Asymptotics Filter
@@ -376,14 +417,18 @@ private lemma one_le_logb {n : ℕ} (hn : 2 ≤ n) : 1 ≤ Real.logb 2 n := by
   norm_num
   exact_mod_cast hn
 
+/-- Base change of the logarithm: `c / log 2 * (n log n) = c * (n log₂ n)`. -/
+private lemma div_log_two_mul_log (c : ℝ) (n : ℕ) :
+    c / Real.log 2 * (n * Real.log n) = c * (n * Real.logb 2 n) := by
+  rw [← Real.log_div_log]
+  ring
+
 /-- `spannerBound` is `O(n log n)`. -/
 theorem spannerBound_isBigO :
     (fun n ↦ (spannerBound n : ℝ)) =O[atTop] fun n ↦ (n : ℝ) * Real.log n := by
   refine IsBigO.of_bound (5 / Real.log 2) (eventually_atTop.mpr ⟨2, fun n hn ↦ ?_⟩)
   rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
-    show 5 / Real.log 2 * (n * Real.log n) = 5 * (n * Real.logb 2 n) by
-      rw [← Real.log_div_log];
-      ring]
+    div_log_two_mul_log]
   -- `spannerBound n ≤ 2 n ⌈log₂ n⌉ + n ≤ 2 n (log₂ n + 1) + n ≤ 5 n log₂ n`, since `1 ≤ log₂ n`
   have hb : (spannerBound n : ℝ) ≤ 2 * n * Nat.clog 2 n + n := by
     exact_mod_cast spannerBound_le (by omega)
@@ -401,6 +446,8 @@ theorem exists_isBigO_isOneSidedSpannerBound :
 end BigO
 
 section CliqueBound
+
+open Asymptotics Filter
 
 /-- SAND 2025, §4.1: a clique that is not `{1,2}`-hop dismountable has a spanner made of a
 one-sided spanner of the bi-clique between `V⁺` and `V⁻`, plus the matchings `M⁻` and `M⁺`.
@@ -428,9 +475,11 @@ theorem exists_isSpannerOf_of_not_twoHopDismountable {H : Subgraph G}
     · obtain ⟨⟨v, n⟩, ⟨hv, -⟩, -⟩ := existsUnique_vplus_earliestEdge h₀ h₁ h₂ h₃ x hx
       exact ⟨v, hv⟩
     · exact ⟨x, hx⟩
-  -- the one-sided spanner of the bi-clique from `V⁺` to `V⁻`
+  -- the one-sided spanner `S` of the bi-clique from `V⁺` to `V⁻`
   obtain ⟨S, hSsymm, hS, hScard⟩ :=
     exists_isSpannerFromTo_ncard_le (H := B) hBsimple hbc hne hcard.ge
+  -- Each matching gives an edge set `E` with `|E| ≤ |V|` (used in the final count), containing
+  -- every relevant edge, with an edge at every vertex of `V`, and consisting of such edges only.
   -- M⁻: the earliest edge of each vertex of `V⁻`, from `V⁺`
   obtain ⟨E₁, hE₁c, hE₁h, hE₁cov, hE₁m⟩ := exists_matchingEdges (A := H.vminus) (B := H.vplus)
     (R := fun v a n ↦ H.EarliestEdge v a n) (Set.toFinite _)
@@ -439,36 +488,39 @@ theorem exists_isSpannerOf_of_not_twoHopDismountable {H : Subgraph G}
   obtain ⟨E₂, hE₂c, hE₂h, hE₂cov, hE₂m⟩ := exists_matchingEdges (A := H.vplus) (B := H.vminus)
     (R := fun b y n ↦ H.LatestEdge b y n) (Set.toFinite _)
     (existsUnique_vminus_latestEdge h₀ h₁ h₂ h₃)
-  -- both matchings consist of edges of `G` and of the bi-clique `B`
-  have hEG : E₁ ∪ E₂ ⊆ G.edgeSet := by
-    rintro e (he | he)
-    · obtain ⟨v, a, n, -, -, hR, rfl⟩ := hE₁m e he
-      exact G.mem_edgeSet.mpr (H.adj_sub hR.1)
-    · obtain ⟨v, a, n, -, -, hR, rfl⟩ := hE₂m e he
-      exact G.mem_edgeSet.mpr (H.adj_sub hR.1)
+  -- both matchings consist of edges of the bi-clique `B`, hence of `G`
   have hEB : E₁ ∪ E₂ ⊆ B.edgeSet := by
     rintro e (he | he)
-    · obtain ⟨v, a, n, hv, ha, hR, rfl⟩ := hE₁m e he
+    · -- `e = s(v, a)` at time `n`, with `v ∈ V⁺`, `a ∈ V⁻` and an earliest edge `v a`
+      obtain ⟨v, a, n, hv, ha, hR, rfl⟩ := hE₁m e he
       exact B.mem_edgeSet.mpr ⟨hR.1, Or.inr ⟨hv, ha⟩⟩
-    · obtain ⟨v, a, n, hv, ha, hR, rfl⟩ := hE₂m e he
+    · -- `e = s(b, y)` at time `n`, with `b ∈ V⁻`, `y ∈ V⁺` and a latest edge `b y`
+      obtain ⟨v, a, n, hv, ha, hR, rfl⟩ := hE₂m e he
       exact B.mem_edgeSet.mpr ⟨hR.1, Or.inl ⟨hv, ha⟩⟩
-  have hFB : Subgraph.fromEdgeSet G (E₁ ∪ E₂) ≤ B := fromEdgeSet_le hEB
-  have hTB : S ⊔ Subgraph.fromEdgeSet G (E₁ ∪ E₂) ≤ B := sup_le hS.1 hFB
-  have hTH : S ⊔ Subgraph.fromEdgeSet G (E₁ ∪ E₂) ≤ H := hTB.trans between_le
-  -- the edges `a v` of `M⁻` and `M⁺` lie in `T`
-  have hmem : ∀ {v a : V} {n : ℕ}, (s(v, a), n) ∈ E₁ ∪ E₂ → G.Adj v a n →
-      (S ⊔ Subgraph.fromEdgeSet G (E₁ ∪ E₂)).Adj v a n := fun hm hG ↦
-    sup_adj.mpr (Or.inr ⟨⟨_, hm⟩, Sym2.mem_mk_left _ _, Sym2.mem_mk_right _ _, rfl, hG⟩)
+  have hEG : E₁ ∪ E₂ ⊆ G.edgeSet := hEB.trans B.edgeSet_subset
+  -- the spanner `T`: `S` together with the two matchings
+  set T := S ⊔ Subgraph.fromEdgeSet G (E₁ ∪ E₂) with hT
+  have hTsymm : T.IsSymm := by
+    rw [hT]
+    infer_instance
+  have hTB : T ≤ B := sup_le hS.1 (fromEdgeSet_le hEB)
+  have hTH : T ≤ H := hTB.trans between_le
+  -- an edge `s(v, a)` of the matchings that is an arc of `G` is an arc of `T`: `v` and `a` are
+  -- vertices of `fromEdgeSet G (E₁ ∪ E₂)` (endpoints of `s(v, a)`), and `Adj` holds by definition
+  have hmem : ∀ {v a : V} {n : ℕ}, (s(v, a), n) ∈ E₁ ∪ E₂ → G.Adj v a n → T.Adj v a n := by
+    intro v a n hm hG
+    refine sup_adj.mpr (Or.inr ?_)
+    exact ⟨⟨_, hm⟩, Sym2.mem_mk_left _ _, Sym2.mem_mk_right _ _, rfl, hG⟩
+  -- the three ingredients of `temporallyConnected_of_isSpannerFromTo`
+  have hTspan : T.IsSpannerFromTo B H.vplus H.vminus :=
+    ⟨hTB, fun x hx y hy hr ↦ Reachable.mono (toTemporalGraph_le le_sup_left) (hS.2 x hx y hy hr)⟩
+  have hM₁ : ∀ v ∈ H.vplus, ∀ a n, H.EarliestEdge v a n → T.Adj v a n := fun v hv a n he ↦
+    hmem (Or.inl (hE₁h a (earliestNeighbor_mem_vminus ⟨n, he⟩) v n hv he)) (H.adj_sub he.1)
+  have hM₂ : ∀ b ∈ H.vminus, ∀ y n, H.LatestEdge b y n → T.Adj b y n := fun b hb y n hl ↦
+    hmem (Or.inr (hE₂h y (latestNeighbor_mem_vplus ⟨n, hl⟩) b n hb hl)) (H.adj_sub hl.1)
   -- `T` is temporally connected on `H.verts`
-  have hTC := temporallyConnected_of_isSpannerFromTo (S := S ⊔ Subgraph.fromEdgeSet G (E₁ ∪ E₂))
-    h₀ h₁ h₂ h₃
-    ⟨hTB, fun x hx y hy hr ↦
-      Reachable.mono (toTemporalGraph_le le_sup_left) (hS.2 x hx y hy hr)⟩
-    (fun v hv a n he ↦
-      hmem (Or.inl (hE₁h a (earliestNeighbor_mem_vminus ⟨n, he⟩) v n hv he)) (H.adj_sub he.1))
-    (fun b hb y n hl ↦
-      hmem (Or.inr (hE₂h y (latestNeighbor_mem_vplus ⟨n, hl⟩) b n hb hl)) (H.adj_sub hl.1))
-  refine ⟨S ⊔ Subgraph.fromEdgeSet G (E₁ ∪ E₂), inferInstance, ⟨hTH, ?_, ?_⟩, ?_⟩
+  have hTC := temporallyConnected_of_isSpannerFromTo (S := T) h₀ h₁ h₂ h₃ hTspan hM₁ hM₂
+  refine ⟨T, hTsymm, ⟨hTH, ?_, ?_⟩, ?_⟩
   · -- every vertex of `H.verts = V⁻ ∪ V⁺` is the end of a matching edge
     refine Set.Subset.antisymm hTH.1 fun x hx ↦ ?_
     rcases hverts.subset hx with hx | hx
@@ -477,8 +529,8 @@ theorem exists_isSpannerOf_of_not_twoHopDismountable {H : Subgraph G}
     · obtain ⟨v, n, hm⟩ := hE₂cov x hx
       exact Or.inr ⟨⟨_, Or.inr hm⟩, Sym2.mem_mk_right _ _⟩
   · exact fun x hx y hy _ ↦ hTC x hx y hy
-  · -- count: `S` plus the two matchings
-    rw [sup_edgeSet, fromEdgeSet_eq hEG]
+  · -- count: `S` plus the two matchings, each of at most `|V⁻| = |V⁺|` edges
+    rw [hT, sup_edgeSet, fromEdgeSet_eq hEG]
     have h₄ := Set.ncard_union_le S.edgeSet (E₁ ∪ E₂)
     have h₅ := Set.ncard_union_le E₁ E₂
     omega
@@ -492,20 +544,20 @@ theorem exists_isSpannerOf_ncard_le {H : Subgraph G} [Finite H.verts]
     ∃ K : Subgraph G, K.IsSymm ∧ K.IsSpannerOf H ∧
       K.edgeSet.ncard ≤ 2 * H.verts.ncard * Nat.clog 2 H.verts.ncard + 4 * H.verts.ncard := by
   refine exists_isSpannerOf_ncard_le_of_not_twoHopDismountable
-    (fun n ↦ 2 * n * Nat.clog 2 n + 4 * n) (fun n ↦ ?_) (fun h₀ h₁ h₂ hd ↦ ?_) h₀ h₁ h₂
-  · -- `⌈log₂ n⌉` is monotone
+    (fun n ↦ 2 * n * Nat.clog 2 n + 4 * n) (fun n ↦ ?_) ?_ h₀ h₁ h₂
+  · -- the step `f n + 4 ≤ f (n + 1)`, from the monotonicity of `⌈log₂ n⌉`
     have hc : Nat.clog 2 n ≤ Nat.clog 2 (n + 1) := Nat.clog_mono_right 2 (by omega)
     nlinarith [Nat.mul_le_mul_left n hc]
   · -- SAND 2025, §4.1: `n = 2 k`, a one-sided spanner of the bi-clique plus the matchings
-    rename_i H' _ _ _
+    intro H' _ _ _ hsimple hclique hproper hd
     obtain ⟨K, hKsymm, hKspan, hKcard⟩ :=
-      exists_isSpannerOf_of_not_twoHopDismountable h₀ h₁ h₂ hd
+      exists_isSpannerOf_of_not_twoHopDismountable hsimple hclique hproper hd
     refine ⟨K, hKsymm, hKspan, ?_⟩
-    have hcard := vminus_card_eq_vplus_card h₀ h₁ hd
+    have hcard := vminus_card_eq_vplus_card hsimple hclique hd
     have hverts : H'.verts = H'.vminus ∪ H'.vplus := by
-      rw [← vunion_eq_univ, vzero_empty_of_not_twoHopDismountable h₀ h₁ h₂ hd,
+      rw [← vunion_eq_univ, vzero_empty_of_not_twoHopDismountable hsimple hclique hproper hd,
         Set.union_empty]
-    have hdisj := (biclique_of_not_twoHopDismountable h₁ hd).isBipartiteWith.disjoint
+    have hdisj := (biclique_of_not_twoHopDismountable hclique hd).isBipartiteWith.disjoint
     have h2k : H'.verts.ncard = 2 * H'.vplus.ncard := by
       rw [hverts, Set.ncard_union_eq hdisj
         ((Set.toFinite H'.verts).subset vminus_sub_verts)
@@ -516,9 +568,9 @@ theorem exists_isSpannerOf_ncard_le {H : Subgraph G} [Finite H.verts]
     set k := H'.vplus.ncard
     have hb := spannerBound_le (n := k) (by omega)
     have hc : Nat.clog 2 k ≤ Nat.clog 2 H'.verts.ncard := Nat.clog_mono_right 2 (by omega)
+    -- `|K| ≤ spannerBound k + 2 k ≤ 2 k ⌈log₂ k⌉ + 3 k ≤ 2 (2 k) ⌈log₂ (2 k)⌉ + 4 (2 k)`
     nlinarith [Nat.mul_le_mul_left k hc]
 
-open Asymptotics Filter in
 /-- SAND 2025, §4.1: temporal cliques admit spanners of size `O(n log n)`. Precisely, there is
 `f = O(n log n)` such that every finite, simple, proper clique subgraph `H` (symmetric, in a
 symmetric loopless ambient graph `G`) has a symmetric spanner with at most `f n` edges, where
@@ -533,9 +585,7 @@ theorem exists_isBigO_isSpannerOf :
     exists_isSpannerOf_ncard_le h₀ h₁ h₂⟩
   refine IsBigO.of_bound (8 / Real.log 2) (eventually_atTop.mpr ⟨2, fun n hn ↦ ?_⟩)
   rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
-    show 8 / Real.log 2 * (n * Real.log n) = 8 * (n * Real.logb 2 n) by
-      rw [← Real.log_div_log];
-      ring]
+    div_log_two_mul_log]
   -- `2 n ⌈log₂ n⌉ + 4 n ≤ 2 n (log₂ n + 1) + 4 n ≤ 8 n log₂ n`, since `1 ≤ log₂ n`
   push_cast
   nlinarith [mul_le_mul_of_nonneg_left (clog_le_logb_add_one (by omega : 1 ≤ n))

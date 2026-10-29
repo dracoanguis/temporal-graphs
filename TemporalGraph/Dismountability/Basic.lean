@@ -13,12 +13,13 @@ public import TemporalGraph.Connectivity.Subgraph
 /-!
 # Dismountability
 
-This module formalizes the *dismountability* argument as revisited by Carnevale, Casteigts &
-Corsini (SAND 2025, §§2–3), originally due to Casteigts, Peters & Schoeters (CPS, ICALP 2019 /
-JCSS), which underlies the `O(n log n)` spanner bound for temporal cliques: a clique
-with no dismountable vertex is small enough (via `vzero`) and structured enough (via the
-earliest/latest neighbor bijections) to sparsify inductively. See `Dismountability/Operations.lean`
-for the operations (`dismount`, `mount`, `twoHopMount`) that carry out the induction.
+This module formalizes the structure of temporal cliques that are not dismountable, following
+Carnevale, Casteigts & Corsini (SAND 2025, §§2–3), after Casteigts, Peters & Schoeters (CPS,
+ICALP 2019 / JCSS). It underlies the `O(n log n)` spanner bound for temporal cliques and the
+linear `7n` bound of `LinearSpanner/`: a clique with no `{1,2}`-hop dismountable vertex is
+structured enough (earliest/latest neighbor bijections, `vzero = ∅`, reciprocity) to be reduced to
+a bi-clique. The operations (`dismount`, `mount`, `twoHopMount`) that carry out the induction are
+in `Dismountability/Operations.lean`.
 
 A subgraph `H` partitions its vertices into `vminus` (vertices that are someone's earliest
 neighbor), `vplus` (vertices that are someone's latest neighbor) and `vzero` (neither). `H` is
@@ -31,55 +32,34 @@ and `vplus` (`earliestNeighborFn`, `latestNeighborFn`), which forces `vzero` to 
 
 * `TemporalGraph.Subgraph.Dismountable` : SAND 2025, §2, 1-hop dismountability (the hypothesis of
   Theorem 2.1).
-* `TemporalGraph.Subgraph.vminus`, `vplus`, `vzero` : SAND 2025, §3.1, `V⁻`/`V⁺`/`V⁰`, the
-  partition of `H.verts` defined just before Lemma 3.1.
 * `TemporalGraph.Subgraph.TwoHopDismountable` : SAND 2025, §2.1, `{1,2}`-hop dismountability
   (`k`-hop with `k ≤ 2`).
+* `TemporalGraph.Subgraph.vminus`, `vplus`, `vzero` : SAND 2025, §3.1, `V⁻`/`V⁺`/`V⁰`, the
+  partition of `H.verts` defined just before Lemma 3.1.
 * `TemporalGraph.earliestNeighborFn`, `latestNeighborFn` : an earliest (resp. latest) neighbor
-  of a vertex, as an `Option` (`none` when there is none). On a subgraph `H` that is not
-  two-hop-dismountable they are bijections from `vplus` onto `some '' vminus` (resp. from `vminus`
-  onto `some '' vplus`), with `Set.MapsTo`/`Set.InjOn`/`Set.BijOn` lemmas suffixed
-  `_mapsTo`/`_injOn`/`_bijOn`.
+  of a vertex, as an `Option` (`none` when there is none); in a proper graph they characterize
+  the earliest (resp. latest) neighbors (`earliestNeighborFn_eq_some_iff`) and exist exactly when
+  an arc leaves the vertex (`earliestNeighborFn_eq_none_iff`, `exists_earliestNeighbor_iff`).
 
 ## Main results
 
-* `TemporalGraph.earliestNeighborFn_eq_some_iff`, `latestNeighborFn_eq_some_iff` : in a proper
-  graph, the neighbor functions characterize the earliest (resp. latest) neighbors;
-  `earliestNeighborFn_eq_none_iff` : `none` exactly when no arc leaves the vertex.
-* `TemporalGraph.Subgraph.partition_of_not_dismountable` : SAND 2025, Lemma 3.1, `vminus`, `vplus`,
-  `vzero` partition `H.verts`.
+* `TemporalGraph.Subgraph.partition_of_not_dismountable` : SAND 2025, Lemma 3.1.
 * `TemporalGraph.Subgraph.vplus_ne_neighbor_of_not_twoHopDismountable`,
-  `vminus_ne_neighbor_of_not_twoHopDismountable` : SAND 2025, Lemma 3.2, distinct vertices of
-  `vplus` (resp. `vminus`) have distinct earliest (resp. latest) neighbors.
-* `TemporalGraph.Subgraph.exists_edgeSet_of_earliest`, `exists_edgeSet_of_latest` : each side
-  of `{1,2}`-hop dismountability, as a set of 1 or 2 edges of `H` through which `x` reaches (resp.
-  is reached by) everything a vertex `y ≠ x` does.
-* `ncard_pair_le`, `ncard_le_four` (section `CardHelpers`) : `Set.ncard` bounds on a set given by
-  2, resp. 4, elements, shared by the edge-count bounds of `mount`, `twoHopMount`,
-  `oneSidedMount` and the sides above.
-* `TemporalGraph.Subgraph.existsUnique_vplus_earliestEdge`, `existsUnique_vminus_latestEdge` :
-  SAND 2025, Corollary 3.3 (1)–(2), perfect matchings between `vminus` and `vplus` given by the
-  earliest (resp. latest) edges.
-* `TemporalGraph.Subgraph.earliestNeighborFn_bijOn`, `latestNeighborFn_bijOn` : `Set.BijOn`
-  bijections between the sets `vminus` and `vplus` (SAND 2025, Corollary 3.3, via Lemma 3.2).
-* `TemporalGraph.Subgraph.vminus_card_eq_vplus_card` : SAND 2025, Corollary 3.3 (3),
-  `vminus.ncard = vplus.ncard`.
-* `TemporalGraph.Subgraph.vzero_empty_of_not_twoHopDismountable` : SAND 2025, Lemma 3.4,
-  `vzero = ∅`.
+  `vminus_ne_neighbor_of_not_twoHopDismountable` : SAND 2025, Lemma 3.2.
+* `TemporalGraph.Subgraph.existsUnique_vplus_earliestEdge`, `existsUnique_vminus_latestEdge`,
+  `earliestNeighborFn_bijOn`, `latestNeighborFn_bijOn`, `vminus_card_eq_vplus_card` :
+  SAND 2025, Corollary 3.3, perfect matchings and bijections between `vminus` and `vplus`
+  (`Set.BijOn` from `vplus` onto `some '' vminus`, and conversely).
+* `TemporalGraph.Subgraph.vzero_empty_of_not_twoHopDismountable` : SAND 2025, Lemma 3.4.
 * `TemporalGraph.Subgraph.earliestEdge_reciprocity`, `latestEdge_reciprocity` : SAND 2025,
-  Lemma 3.5 (Reciprocity), first and second statements.
-* `TemporalGraph.Subgraph.biclique_of_not_twoHopDismountable` : SAND 2025, Corollary 4.1, the
-  bipartite subgraph between `vminus` and `vplus` is a bi-clique when `H` is not
-  two-hop-dismountable.
+  Lemma 3.5 (Reciprocity).
+* `TemporalGraph.Subgraph.biclique_of_not_twoHopDismountable` : SAND 2025, Corollary 4.1.
 * `TemporalGraph.Subgraph.between_TC_of_not_twoHopDismountable` : SAND 2025, remark after
-  Corollary 4.1, this bi-clique is temporally connected.
-* `TemporalGraph.reachable_of_earliestEdge_matching`, `reachable_of_latestEdge_matching`
-  (section `MatchingConnectivity`) : if `s` reaches `t` and every vertex of `t` (resp. `s`) is the
-  endpoint of an earliest (resp. latest) edge of a vertex of `s` (resp. `t`), then `t` (resp. `s`)
-  is temporally connected.
-* `TemporalGraph.temporallyConnected_of_reachable_of_matchings` (section `MatchingConnectivity`) :
-  if `t` is reached from `s` and matched to it on both the earliest-edge and latest-edge side,
-  `s ∪ t` is temporally connected (SAND 2025, §4.1, after Corollary 4.1).
+  Corollary 4.1, the bi-clique between `vminus` and `vplus` is temporally connected.
+* `TemporalGraph.temporallyConnected_of_reachable_of_matchings` : SAND 2025, §4.1, if `s` reaches
+  `t` and the earliest/latest matchings cover `t`/`s`, then `s ∪ t` is temporally connected.
+* `TemporalGraph.Subgraph.exists_edgeSet_of_earliest`, `exists_edgeSet_of_latest` : the two sides
+  of `{1,2}`-hop dismountability, as a set of at most two edges of `H`.
 
 ## References
 
@@ -161,14 +141,16 @@ theorem earliestNeighbor_of_earliestNeighborFn_eq_some (h₀ : G.earliestNeighbo
     G.EarliestNeighbor x y := by
   unfold earliestNeighborFn at h₀
   split_ifs at h₀ with h₁
-  exact Option.some_injective _ h₀ ▸ h₁.choose_spec
+  obtain rfl := Option.some.inj h₀
+  exact h₁.choose_spec
 
 /-- The value of `latestNeighborFn x` is a latest neighbor of `x`. -/
 theorem latestNeighbor_of_latestNeighborFn_eq_some (h₀ : G.latestNeighborFn x = some y) :
     G.LatestNeighbor x y := by
   unfold latestNeighborFn at h₀
   split_ifs at h₀ with h₁
-  exact Option.some_injective _ h₀ ▸ h₁.choose_spec
+  obtain rfl := Option.some.inj h₀
+  exact h₁.choose_spec
 
 /-- In a proper graph, the earliest neighbor is unique: it is the value of `earliestNeighborFn x`.
 Two earliest edges at `x` have the same time, and properness then forces the same endpoint. -/
@@ -259,14 +241,14 @@ def vminus (H : Subgraph G) : Set V := {x : V | ∃ y : V, H.EarliestNeighbor y 
 /-- `H.vminus` is contained in `H.verts`. -/
 @[simp]
 lemma vminus_sub_verts {H : Subgraph G} : H.vminus ⊆ H.verts := by
-  intro _ ⟨_, ⟨_, h⟩⟩
-  exact H.edge_vert' h.left
+  intro x ⟨y, n, h, _⟩
+  exact H.edge_vert' h
 
 instance {H : Subgraph G} [h : Finite H.verts] : Finite H.vminus :=
   Set.Finite.subset (H.verts.finite_coe_iff.mp h) vminus_sub_verts
 
-/-- Noncomputable: obtained from the `Finite` instance above via `Classical.choice`. Useful for
-stating cardinalities of `vminus` (`Fintype.card`), not for computing with them. -/
+/-- A (noncomputable) `Fintype` structure on `H.vminus`, from the `Finite` instance above; for
+stating cardinalities with `Fintype.card`, not for computing. -/
 noncomputable instance {H : Subgraph G} [Finite H.verts] : Fintype H.vminus :=
   Fintype.ofFinite _
 
@@ -277,14 +259,14 @@ def vplus (H : Subgraph G) : Set V := {x : V | ∃ y : V, H.LatestNeighbor y x}
 /-- `H.vplus` is contained in `H.verts`. -/
 @[simp]
 lemma vplus_sub_verts {H : Subgraph G} : H.vplus ⊆ H.verts := by
-  intro _ ⟨_, ⟨_, h⟩⟩
-  exact H.edge_vert' h.left
+  intro x ⟨y, n, h, _⟩
+  exact H.edge_vert' h
 
 instance {H : Subgraph G} [h : Finite H.verts] : Finite H.vplus :=
   Set.Finite.subset (H.verts.finite_coe_iff.mp h) vplus_sub_verts
 
-/-- Noncomputable: obtained from the `Finite` instance above via `Classical.choice`. Useful for
-stating cardinalities of `vplus` (`Fintype.card`), not for computing with them. -/
+/-- A (noncomputable) `Fintype` structure on `H.vplus`, from the `Finite` instance above; for
+stating cardinalities with `Fintype.card`, not for computing. -/
 noncomputable instance {H : Subgraph G} [Finite H.verts] : Fintype H.vplus :=
   Fintype.ofFinite _
 
@@ -295,28 +277,27 @@ def vzero (H : Subgraph G) : Set V := H.verts \ (H.vminus ∪ H.vplus)
 /-- `H.vzero` is contained in `H.verts`. -/
 @[simp]
 lemma vzero_sub_verts {H : Subgraph G} : H.vzero ⊆ H.verts := by
-  intro _ ⟨h, _⟩
+  intro x ⟨h, _⟩
   exact h
 
 instance {H : Subgraph G} [h : Finite H.verts] : Finite H.vzero :=
   Set.Finite.subset (H.verts.finite_coe_iff.mp h) vzero_sub_verts
 
-/-- Noncomputable: obtained from the `Finite` instance above via `Classical.choice`. Useful for
-stating cardinalities of `vzero` (`Fintype.card`), not for computing with them. -/
+/-- A (noncomputable) `Fintype` structure on `H.vzero`, from the `Finite` instance above; for
+stating cardinalities with `Fintype.card`, not for computing. -/
 noncomputable instance {H : Subgraph G} [Finite H.verts] : Fintype H.vzero :=
   Fintype.ofFinite _
 
 /-- A vertex of `H.vzero` lies in neither `H.vminus` nor `H.vplus`. -/
 lemma vzero_mem {H : Subgraph G} : ∀ x : V, x ∈ H.vzero → x ∉ H.vminus ∧ x ∉ H.vplus := by
-  intro _ hx
-  simp [vzero] at hx
-  simp [hx]
+  intro x hx
+  simpa only [vzero, Set.mem_sdiff, Set.mem_union, not_or] using hx.2
 
 /-- `vminus`, `vplus` and `vzero` cover `H.verts`. -/
 lemma vunion_eq_univ {H : Subgraph G} : H.vminus ∪ H.vplus ∪ H.vzero = H.verts := by
   simp [vzero]
 
-/-- `H.vplus` and `H.vminus` intersect iff `H` is a dismountable clique. -/
+/-- `H` is a dismountable clique iff it is a clique and `H.vplus` and `H.vminus` intersect. -/
 lemma nonempty_vplus_inter_vminus_iff_dismountable (H : Subgraph G) :
     H.IsCliqueSubgraph ∧ (H.vplus ∩ H.vminus).Nonempty ↔ H.Dismountable := by
   rw [Dismountable, Set.nonempty_def, vminus, vplus]
@@ -351,81 +332,67 @@ section TwoHop
 two-hop dismountable when some vertex `x` is reached within at most two hops both from an
 earliest edge and from a latest edge. -/
 def TwoHopDismountable (H : Subgraph G) :=
-  H.IsCliqueSubgraph
-  ∧
-  (∃ x : V,
-    ((∃ y : V, H.EarliestNeighbor y x)
-      ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.EarliestEdge y z n ∧ H.Adj z x m ∧ m ≤ n))
-    ∧
-    ((∃ y : V, H.LatestNeighbor y x)
-      ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.LatestEdge y z n ∧ H.Adj z x m ∧ n ≤ m)))
+  H.IsCliqueSubgraph ∧ ∃ x : V,
+    ((∃ y : V, H.EarliestNeighbor y x) ∨
+      ∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.EarliestEdge y z n ∧ H.Adj z x m ∧ m ≤ n) ∧
+    ((∃ y : V, H.LatestNeighbor y x) ∨
+      ∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.LatestEdge y z n ∧ H.Adj z x m ∧ n ≤ m)
 
 /-- A dismountable clique is `{1,2}`-hop dismountable. -/
 @[simp]
 lemma twoHopDismountable_of_dismountable {H : Subgraph G} (h : H.Dismountable) :
     H.TwoHopDismountable := by
-  constructor
-  · exact h.left
-  · rcases h.right with ⟨u, α, β, hen, hln⟩
-    use u
-    constructor <;> apply Or.inl
-    · exists α
-    · exists β
+  obtain ⟨hclique, x, y, z, hen, hln⟩ := h
+  exact ⟨hclique, x, Or.inl ⟨y, hen⟩, Or.inl ⟨z, hln⟩⟩
 
 /-- A subgraph that is not `{1,2}`-hop dismountable is not dismountable. -/
 lemma not_dismountable_of_not_twoHopDismountable {H : Subgraph G}
     (h₀ : ¬H.TwoHopDismountable) : ¬H.Dismountable :=
   mt twoHopDismountable_of_dismountable h₀
 
-/-- SAND 2025, Lemma 3.2: distinct vertices of `vplus` have distinct earliest neighbors. -/
+/-- SAND 2025, Lemma 3.2: distinct vertices of `vplus` have distinct earliest neighbors.
+
+If `x ≠ y` in `V⁺` shared the earliest neighbor `z`, comparing the times `n`, `m` of the earliest
+edges `x z` and `y z` shows that `x` or `y` is `{1,2}`-hop dismountable. -/
 lemma vplus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} [H.IsSymm]
     {x y : V} (hx : x ∈ H.vplus) (hy : y ∈ H.vplus) (h₀ : ¬H.TwoHopDismountable)
     (h₁ : H.IsCliqueSubgraph) (h₂ : x ≠ y) :
     ∀ z z' : V, H.EarliestNeighbor x z ∧ H.EarliestNeighbor y z' → z ≠ z' := by
   simp only [EarliestNeighbor, ne_eq, and_imp, forall_exists_index]
   intro z z' n hee m hee' hzz'
-  absurd h₀
-  constructor ; assumption'
+  refine h₀ ⟨h₁, ?_⟩
+  -- compare the times `n`, `m` of the two earliest edges `x z`, `y z`
   by_cases ht : m ≤ n
-  · use y
-    constructor
-    · apply Or.inr
-      use x, z, n, m
-      refine ⟨by simpa using h₂, hee, ?_, by assumption⟩
-      grind only [= EarliestEdge.eq_1, → TemporalGraph.adj_symm]
-    · apply Or.inl ; assumption
-  · use x
-    constructor
-    · apply Or.inr
-      use y, z', m, n
-      refine ⟨by simpa using h₂.symm, hee', ?_, by omega⟩
-      grind only [= EarliestEdge.eq_1, → TemporalGraph.adj_symm]
-    · apply Or.inl ; assumption
+  · -- the vertex `y` is reached from `x` in two hops: the earliest edge `x z` (time `n`), then
+    -- `z y` (time `m ≤ n`), and `y` is a latest neighbor
+    refine ⟨y, Or.inr ⟨x, z, n, m, h₂, hee, ?_, ht⟩, Or.inl hy⟩
+    -- the arc `y z` read backwards, `z = z'`
+    grind only [= EarliestEdge.eq_1, → TemporalGraph.adj_symm]
+  · -- symmetrically `x` is reached from `y` (so `n ≤ m`)
+    refine ⟨x, Or.inr ⟨y, z', m, n, h₂.symm, hee', ?_, by omega⟩, Or.inl hx⟩
+    -- the arc `x z'` read backwards, `z = z'`
+    grind only [= EarliestEdge.eq_1, → TemporalGraph.adj_symm]
 
-/-- SAND 2025, Lemma 3.2: distinct vertices of `vminus` have distinct latest neighbors. -/
+/-- SAND 2025, Lemma 3.2: distinct vertices of `vminus` have distinct latest neighbors.
+
+Mirror image of `vplus_ne_neighbor_of_not_twoHopDismountable`. -/
 lemma vminus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} [H.IsSymm]
     {x y : V} (hx : x ∈ H.vminus) (hy : y ∈ H.vminus) (h₀ : ¬H.TwoHopDismountable)
     (h₁ : H.IsCliqueSubgraph) (h₂ : x ≠ y) :
     ∀ z z' : V, H.LatestNeighbor x z ∧ H.LatestNeighbor y z' → z ≠ z' := by
   simp only [LatestNeighbor, ne_eq, and_imp, forall_exists_index]
   intro z z' n hle m hle' hzz'
-  absurd h₀
-  constructor ; assumption'
+  refine h₀ ⟨h₁, ?_⟩
   by_cases ht : n ≤ m
-  · use y
-    constructor
-    · apply Or.inl ; assumption
-    · apply Or.inr
-      use x, z, n, m
-      refine ⟨by simpa using h₂, hle, ?_, by assumption⟩
-      grind only [= LatestEdge.eq_1, → TemporalGraph.adj_symm]
-  · use x
-    constructor
-    · apply Or.inl ; assumption
-    · apply Or.inr
-      use y, z', m, n
-      refine ⟨by simpa using h₂.symm, hle', ?_, by omega⟩
-      grind only [= LatestEdge.eq_1, → TemporalGraph.adj_symm]
+  · -- the vertex `y` is reached from `x` in two hops: the latest edge `x z` (time `n`), then `z y`
+    -- (time `m ≥ n`), and `y` is an earliest neighbor
+    refine ⟨y, Or.inl hy, Or.inr ⟨x, z, n, m, h₂, hle, ?_, ht⟩⟩
+    -- the arc `y z` read backwards, `z = z'`
+    grind only [= LatestEdge.eq_1, → TemporalGraph.adj_symm]
+  · -- symmetrically for `x` (so `m ≤ n`)
+    refine ⟨x, Or.inl hx, Or.inr ⟨y, z', m, n, h₂.symm, hle', ?_, by omega⟩⟩
+    -- the arc `x z'` read backwards, `z = z'`
+    grind only [= LatestEdge.eq_1, → TemporalGraph.adj_symm]
 
 /-- Earliest side of two-hop dismountability: one or two edges of `H` such that, in any `K`
 between them and `H`, whatever is reachable from `y` is reachable from `x`. -/
@@ -439,17 +406,23 @@ lemma exists_edgeSet_of_earliest {H : Subgraph G} [G.IsLoopless] [H.IsSymm] {x :
   rcases h₀ with ⟨y, n, hE⟩ | ⟨y, z, n, m, hyx, hE, hzx, hmn⟩
   · -- one hop: the earliest edge `y x`
     have hadj : H.Adj y x n := hE.left
-    refine ⟨y, H.edge_vert hadj, hadj.ne, {(s(y, x), n)}, ?_, ?_,
-      ⟨⟨(s(y, x), n), rfl⟩, Sym2.mem_mk_right _ _⟩, ?_⟩
+    -- `x` is a vertex of the one-edge graph, being an endpoint of the edge `s(y, x)`
+    have hxmem : x ∈ (Subgraph.fromEdgeSet G {(s(y, x), n)}).verts :=
+      ⟨⟨(s(y, x), n), rfl⟩, Sym2.mem_mk_right _ _⟩
+    refine ⟨y, H.edge_vert hadj, hadj.ne, {(s(y, x), n)}, ?_, ?_, hxmem, ?_⟩
     · exact Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hadj)
-    · rw [Set.ncard_singleton]; omega
+    · rw [Set.ncard_singleton]
+      omega
     · intro K _ hK hKH b
       exact reachable_of_earliestEdge
         (earliestEdge_of_ge hKH hE (adj_of_fromEdgeSet_le hK rfl (H.adj_sub hadj))) b
   · -- two hops: the earliest edge `y z`, then the edge `z x`
     have hyz : H.Adj y z n := hE.left
-    refine ⟨y, H.edge_vert hyz, hyx, {(s(y, z), n), (s(z, x), m)}, ?_,
-      ncard_pair_le _ _, ⟨⟨(s(z, x), m), by simp⟩, Sym2.mem_mk_right _ _⟩, ?_⟩
+    -- `x` is a vertex of the two-edge graph, being an endpoint of the edge `s(z, x)`
+    have hxmem : x ∈ (Subgraph.fromEdgeSet G {(s(y, z), n), (s(z, x), m)}).verts :=
+      ⟨⟨(s(z, x), m), by simp⟩, Sym2.mem_mk_right _ _⟩
+    refine ⟨y, H.edge_vert hyz, hyx, {(s(y, z), n), (s(z, x), m)}, ?_, ncard_pair_le _ _,
+      hxmem, ?_⟩
     · exact Set.insert_subset (H.mem_edgeSet.mpr hyz)
         (Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hzx))
     · intro K _ hK hKH b
@@ -469,17 +442,23 @@ lemma exists_edgeSet_of_latest {H : Subgraph G} [G.IsLoopless] [H.IsSymm] {x : V
   rcases h₀ with ⟨y, n, hE⟩ | ⟨y, z, n, m, hyx, hE, hzx, hmn⟩
   · -- one hop: the latest edge `y x`
     have hadj : H.Adj y x n := hE.left
-    refine ⟨y, H.edge_vert hadj, hadj.ne, {(s(y, x), n)}, ?_, ?_,
-      ⟨⟨(s(y, x), n), rfl⟩, Sym2.mem_mk_right _ _⟩, ?_⟩
+    -- `x` is a vertex of the one-edge graph, being an endpoint of the edge `s(y, x)`
+    have hxmem : x ∈ (Subgraph.fromEdgeSet G {(s(y, x), n)}).verts :=
+      ⟨⟨(s(y, x), n), rfl⟩, Sym2.mem_mk_right _ _⟩
+    refine ⟨y, H.edge_vert hadj, hadj.ne, {(s(y, x), n)}, ?_, ?_, hxmem, ?_⟩
     · exact Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hadj)
-    · rw [Set.ncard_singleton]; omega
+    · rw [Set.ncard_singleton]
+      omega
     · intro K _ hK hKH b
       exact reachable_of_latestEdge
         (latestEdge_of_ge hKH hE (adj_of_fromEdgeSet_le hK rfl (H.adj_sub hadj))) b
   · -- two hops: the latest edge `y z`, then the edge `z x`
     have hyz : H.Adj y z n := hE.left
-    refine ⟨y, H.edge_vert hyz, hyx, {(s(y, z), n), (s(z, x), m)}, ?_,
-      ncard_pair_le _ _, ⟨⟨(s(z, x), m), by simp⟩, Sym2.mem_mk_right _ _⟩, ?_⟩
+    -- `x` is a vertex of the two-edge graph, being an endpoint of the edge `s(z, x)`
+    have hxmem : x ∈ (Subgraph.fromEdgeSet G {(s(y, z), n), (s(z, x), m)}).verts :=
+      ⟨⟨(s(z, x), m), by simp⟩, Sym2.mem_mk_right _ _⟩
+    refine ⟨y, H.edge_vert hyz, hyx, {(s(y, z), n), (s(z, x), m)}, ?_, ncard_pair_le _ _,
+      hxmem, ?_⟩
     · exact Set.insert_subset (H.mem_edgeSet.mpr hyz)
         (Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hzx))
     · intro K _ hK hKH b
@@ -489,7 +468,7 @@ lemma exists_edgeSet_of_latest {H : Subgraph G} [G.IsLoopless] [H.IsSymm] {x : V
 
 end TwoHop
 
-section NeighborFunctions
+section Matchings
 
 /-- Every vertex of a finite, nontrivial, simple clique subgraph has an earliest incident
 edge. -/
@@ -736,70 +715,72 @@ lemma existsUnique_vminus_latestEdge {H : Subgraph G}
   -- `z = y`, so simplicity forces the two times to agree
   grind only [= IsSimple.eq_1, = LatestEdge.eq_1]
 
-end NeighborFunctions
+end Matchings
 
 section VzeroEmpty
 
-/-- SAND 2025, Lemma 3.4: in a clique that is not `{1,2}`-hop dismountable, `V⁰ = ∅`. -/
+/-- Earliest side of `SAND 2025, Lemma 3.4`: a vertex `x ∈ V⁰` has an earliest edge `x y`, and `y`
+(being in `V⁻`) is the earliest neighbor of some `y' ∈ V⁺` (Corollary 3.3 (1)); `y'` differs
+from `x` since `x ∉ V⁺`. -/
+private lemma exists_vplus_earliestEdge_of_mem_vzero {H : Subgraph G}
+    [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) (h₃ : ¬H.TwoHopDismountable)
+    {x : V} (hx : x ∈ H.vzero) :
+    ∃ y' ∈ H.vplus, y' ≠ x ∧ ∃ (y : V) (n n' : ℕ),
+      H.EarliestEdge x y n ∧ H.EarliestEdge y' y n' := by
+  obtain ⟨y, n, hee⟩ :=
+    earliestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x (vzero_sub_verts hx)
+  obtain ⟨⟨y', n'⟩, ⟨hy'plus, hee'⟩, -⟩ :=
+    existsUnique_vplus_earliestEdge h₀ h₁ h₂ h₃ y ⟨x, n, hee⟩
+  refine ⟨y', hy'plus, ?_, y, n, n', hee, hee'⟩
+  rintro rfl
+  exact (vzero_mem _ hx).2 hy'plus
+
+/-- Latest side of `SAND 2025, Lemma 3.4`: a vertex `x ∈ V⁰` has a latest edge `x z`, and `z`
+(being in `V⁺`) is the latest neighbor of some `z' ∈ V⁻` (Corollary 3.3 (2)); `z'` differs from
+`x` since `x ∉ V⁻`. -/
+private lemma exists_vminus_latestEdge_of_mem_vzero {H : Subgraph G}
+    [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
+    (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) (h₃ : ¬H.TwoHopDismountable)
+    {x : V} (hx : x ∈ H.vzero) :
+    ∃ z' ∈ H.vminus, z' ≠ x ∧ ∃ (z : V) (m m' : ℕ),
+      H.LatestEdge x z m ∧ H.LatestEdge z' z m' := by
+  obtain ⟨z, m, hle⟩ :=
+    latestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x (vzero_sub_verts hx)
+  obtain ⟨⟨z', m'⟩, ⟨hz'minus, hle'⟩, -⟩ :=
+    existsUnique_vminus_latestEdge h₀ h₁ h₂ h₃ z ⟨x, m, hle⟩
+  refine ⟨z', hz'minus, ?_, z, m, m', hle, hle'⟩
+  rintro rfl
+  exact (vzero_mem _ hx).1 hz'minus
+
+/-- SAND 2025, Lemma 3.4: in a clique that is not `{1,2}`-hop dismountable, `V⁰ = ∅`.
+
+Proof of the paper: for `x ∈ V⁰` let `x y` (time `n`) be its earliest edge and `x z` (time `m`) its
+latest edge; by Corollary 3.3, `y' y` (time `n'`) is the earliest edge of `y` from some `y' ∈ V⁺`
+and `z' z` (time `m'`) the latest edge of `z` from some `z' ∈ V⁻`. If `n' ≤ n`, then `y'` is
+`{1,2}`-hop dismountable (earliest side through `y`, latest side as a vertex of `V⁺`); symmetrically
+`z'` if `m ≤ m'`; otherwise `x` itself is. -/
 lemma vzero_empty_of_not_twoHopDismountable {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable) :
     H.vzero = ∅ := by
   by_contra! ⟨x, hx⟩
-  have ⟨y, n, hee⟩ :=
-    earliestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x (vzero_sub_verts hx)
-  have hyin : y ∈ H.vminus := ⟨x, ⟨n, hee⟩⟩
-  have ⟨z, m, hle⟩ :=
-    latestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x (vzero_sub_verts hx)
-  have hzin : z ∈ H.vplus := ⟨x, ⟨m, hle⟩⟩
-  -- Here call SAND 2025 Corollary 3.3 to define y' ∈ H.vplus with y it's earliest neighbor
-  -- symm for z' ∈ H.vminus with z it's latest neighbor
-  have ⟨⟨y', n'⟩, ⟨hy'in, hee'⟩, _⟩ := existsUnique_vplus_earliestEdge h₀ h₁ h₂ h₃ y hyin
-  have ⟨⟨z', m'⟩, ⟨hz'in, hle'⟩, _⟩ := existsUnique_vminus_latestEdge h₀ h₁ h₂ h₃ z hzin
-  by_cases hlt : n' ≤ n
-  <;> absurd h₃
-  · constructor
-    · trivial
-    · use y'
-      have ⟨⟨y'', _⟩, ⟨_, hle''⟩, _⟩ := existsUnique_vminus_latestEdge h₀ h₁ h₂ h₃ y' hy'in
-      refine ⟨?_, Or.inl ⟨y'', ⟨_, hle''⟩⟩⟩
-      apply Or.inr
-      use x, y, n, n'
-      refine ⟨?_, hee, H.adj_symm hee'.left, hlt⟩
-      intro heq
-      absurd hy'in
-      rw [heq] at hx
-      exact (vzero_mem y' hx).right
-  · constructor
-    · trivial
-    · by_cases hlt' : m ≤ m'
-      · -- Same as above with z and hee instead of y and hle
-        use z'
-        have ⟨⟨z'', _⟩, ⟨_, hee''⟩, _⟩ := existsUnique_vplus_earliestEdge h₀ h₁ h₂ h₃ z' hz'in
-        refine ⟨Or.inl ⟨z'', ⟨_, hee''⟩⟩, ?_⟩
-        apply Or.inr
-        use x, z, m, m'
-        refine ⟨?_, hle, H.adj_symm hle'.left, hlt'⟩
-        intro heq
-        absurd hz'in
-        rw [heq] at hx
-        exact (vzero_mem z' hx).left
-      · use x
-        constructor
-        <;> apply Or.inr
-        · use y', y, n' , n
-          refine ⟨?_, hee', H.adj_symm hee.left, Nat.le_of_not_le hlt⟩
-          intro heq
-          absurd hy'in
-          rw [←heq] at hx
-          exact (vzero_mem y' hx).right
-        · use z', z, m', m
-          refine ⟨?_, hle', H.adj_symm hle.left, Nat.le_of_not_le hlt'⟩
-          intro heq
-          absurd hz'in
-          rw [←heq] at hx
-          exact (vzero_mem z' hx).left
+  obtain ⟨y', hy'plus, hy'x, y, n, n', hee, hee'⟩ :=
+    exists_vplus_earliestEdge_of_mem_vzero h₀ h₁ h₂ h₃ hx
+  obtain ⟨z', hz'minus, hz'x, z, m, m', hle, hle'⟩ :=
+    exists_vminus_latestEdge_of_mem_vzero h₀ h₁ h₂ h₃ hx
+  by_cases hn : n' ≤ n
+  · -- `y'` is reached from `x` through `y` within two hops, and is a latest neighbor
+    exact h₃ ⟨h₁, y', Or.inr ⟨x, y, n, n', hy'x.symm, hee, H.adj_symm hee'.left, hn⟩,
+      Or.inl hy'plus⟩
+  by_cases hm : m ≤ m'
+  · -- `z'` is an earliest neighbor, and reaches `x` through `z` within two hops
+    exact h₃ ⟨h₁, z', Or.inl hz'minus, Or.inr ⟨x, z, m, m', hz'x.symm, hle,
+      H.adj_symm hle'.left, hm⟩⟩
+  · -- `x` itself: through `y` on the earliest side, through `z` on the latest side
+    exact h₃ ⟨h₁, x, Or.inr ⟨y', y, n', n, hy'x, hee', H.adj_symm hee.left, (not_le.1 hn).le⟩,
+      Or.inr ⟨z', z, m', m, hz'x, hle', H.adj_symm hle.left, (not_le.1 hm).le⟩⟩
 
 end VzeroEmpty
 
@@ -831,7 +812,7 @@ lemma latestEdge_reciprocity {H : Subgraph G} [H.IsSymm] {u v : V} {n : ℕ}
 
 end Reciprocity
 
-section biclique
+section Biclique
 
 /-- SAND 2025, Corollary 4.1: when `H` is not `{1,2}`-hop dismountable, the bipartite subgraph
 between `vminus` and `vplus` is a bi-clique on those two sets. -/
@@ -858,7 +839,7 @@ lemma between_TC_of_not_twoHopDismountable {H : Subgraph G}
     push Not at hc
     have hz : v ∈ H.vzero := ⟨hv, by simp [hc.1, hc.2]⟩
     rw [vzero_empty_of_not_twoHopDismountable h₀ h₁ h₂ h₃] at hz
-    exact hz
+    exact Set.notMem_empty v hz
   -- an edge across the bi-clique, in both directions
   have hdirect : ∀ v w, v ∈ H.vminus → w ∈ H.vplus →
       K.toTemporalGraph.Reachable v w ∧ K.toTemporalGraph.Reachable w v := by
@@ -881,15 +862,14 @@ lemma between_TC_of_not_twoHopDismountable {H : Subgraph G}
       ⟨⟨hal.1, Or.inl ⟨ha, hyp⟩⟩, fun z j hz ↦ hal.2 z j hz.1⟩
     exact TemporalGraph.reachable_of_latestEdge hKl x (hdirect a x ha hxp).2
 
-
-end biclique
+end Biclique
 
 end Subgraph
 
 section MatchingConnectivity
 
-/-- `t` reaches `t` when every vertex of `t` is the endpoint of the earliest edge of some vertex
-of `s`, and `s` reaches `t`: leave `b ∈ t` along that earliest edge, then follow `s → t`. -/
+/-- If `s` reaches `t` and every vertex of `t` ends an earliest edge from a vertex of `s`, any two
+vertices of `t` reach each other. -/
 lemma reachable_of_earliestEdge_matching {G : TemporalGraph V} [G.IsSymm] {s t : Set V}
     (h₀ : ∀ b ∈ t, ∃ v ∈ s, ∃ n, G.EarliestEdge v b n)
     (h₁ : ∀ x ∈ s, ∀ y ∈ t, G.Reachable x y) :
@@ -898,8 +878,8 @@ lemma reachable_of_earliestEdge_matching {G : TemporalGraph V} [G.IsSymm] {s t :
   obtain ⟨v, hv, n, hvn⟩ := h₀ a ha
   exact reachable_of_earliestEdge hvn b (h₁ v hv b hb)
 
-/-- `s` reaches `s` when every vertex of `s` is the endpoint of the latest edge of some vertex of
-`t`, and `s` reaches `t`: follow `s → t`, then extend along that latest edge. -/
+/-- If `s` reaches `t` and every vertex of `s` ends a latest edge from a vertex of `t`, any two
+vertices of `s` reach each other. -/
 lemma reachable_of_latestEdge_matching {G : TemporalGraph V} [G.IsSymm] {s t : Set V}
     (h₀ : ∀ y ∈ s, ∃ b ∈ t, ∃ n, G.LatestEdge b y n)
     (h₁ : ∀ x ∈ s, ∀ y ∈ t, G.Reachable x y) :

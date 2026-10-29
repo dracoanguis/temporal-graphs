@@ -47,7 +47,7 @@ restrict or enlarge the vertex set. Adding edges, edge sets and sizes are in
   the whole of `G`, `⊥` the empty subgraph and `⊔` the union of vertex sets and arcs; `le_def`,
   `lt_iff`, `toTemporalGraph_le`, `toTemporalGraph_le_self`.
 * Induce, delete, add: `induce_le_of_subset`, `deleteVerts_le`, `addVerts_le`.
-* Earliest and latest edges: `earliestEdge_exists_of_nonempty_finite_incidenceSet` and its
+* Earliest and latest edges: `exists_earliestEdge_of_incidenceSet` and its
   `latest` counterpart.
 
 ## Implementation notes
@@ -199,7 +199,7 @@ end Spanning
 
 section Props
 
-instance [Finite V] {H : Subgraph G} : Finite H.verts :=
+instance finite_verts [Finite V] {H : Subgraph G} : Finite H.verts :=
   H.verts.toFinite
 
 /-- A subgraph is symmetric iff its subtype view `H.coe` is. Deliberately not `@[simp]`, unlike
@@ -322,7 +322,7 @@ lemma nonempty_incidenceSet_of_nontrivial_clique {H : Subgraph G} [h : Nontrivia
     exact ⟨⟨y.1, n⟩, hadj⟩
 
 /-- A vertex with a nonempty, finite incidence set has an earliest edge. -/
-lemma earliestEdge_exists_of_nonempty_finite_incidenceSet {x : V} {H : Subgraph G}
+lemma exists_earliestEdge_of_incidenceSet {x : V} {H : Subgraph G}
     (h₀ : (H.incidenceSet x).Nonempty)
     (h₁ : (H.incidenceSet x).Finite) :
     ∃ (y : V) (n : ℕ), H.EarliestEdge x y n := by
@@ -333,8 +333,11 @@ lemma earliestEdge_exists_of_nonempty_finite_incidenceSet {x : V} {H : Subgraph 
   refine ⟨hin, fun z m hadj ↦ ?_⟩
   simpa using hmin ⟨⟨z, m⟩, hadj⟩
 
+@[deprecated (since := "2026-10-29")]
+alias earliestEdge_exists_of_nonempty_finite_incidenceSet := exists_earliestEdge_of_incidenceSet
+
 /-- A vertex with a nonempty, finite incidence set has a latest edge. -/
-lemma latestEdge_exists_of_nonempty_finite_incidenceSet {x : V} {H : Subgraph G}
+lemma exists_latestEdge_of_incidenceSet {x : V} {H : Subgraph G}
     (h₀ : (H.incidenceSet x).Nonempty)
     (h₁ : (H.incidenceSet x).Finite) :
     ∃ (z : V) (m : ℕ), H.LatestEdge x z m := by
@@ -344,6 +347,9 @@ lemma latestEdge_exists_of_nonempty_finite_incidenceSet {x : V} {H : Subgraph G}
   -- the chosen pair is an adjacency, and minimal (resp. maximal) for the time among all of them
   refine ⟨hin, fun z m hadj ↦ ?_⟩
   simpa using hmax ⟨⟨z, m⟩, hadj⟩
+
+@[deprecated (since := "2026-10-29")]
+alias latestEdge_exists_of_nonempty_finite_incidenceSet := exists_latestEdge_of_incidenceSet
 
 end incidenceSet
 

@@ -42,9 +42,9 @@ few edges that made it dismountable (or two-hop-dismountable) in the first place
   (earliest, latest) is a set of 1 or 2 edges, so the mixed 1/2-hop cases are handled at once.
   This is the form used by the induction below; `dismountability` and `twoHopDismountability`
   are the paper-faithful statements, with explicit `mount`s.
-* `TemporalGraph.Subgraph.exists_isSpannerOf_ncard_le_of_not_twoHopDismountable` : the generic
-  induction on cliques, the central entry point of the library: if every finite simple proper
-  clique that is not `{1,2}`-hop dismountable has a spanner with at most `f n` edges and
+* `TemporalGraph.Subgraph.exists_isSpannerOf_ncard_le_of_forall_not_twoHopDismountable` :
+  the generic induction on cliques, the central entry point of the library: if every finite simple
+  proper clique that is not `{1,2}`-hop dismountable has a spanner with at most `f n` edges and
   `f n + 4 ≤ f (n + 1)`, then every finite simple proper clique has one. The `O(n log n)` and
   `7n` bounds are instances.
 
@@ -178,7 +178,7 @@ theorem mount_temporallyConnected (H : Subgraph G) [H.IsSymm] [G.IsSymm] {x y z 
     H.TemporallyConnectedSubgraph → (mount H hy hz x h₀ h₁).TemporallyConnectedSubgraph := by
   intro hTC
   have hReach : ∀ a b : V, H.Reachable a b → (mount H hy hz x h₀ h₁).Reachable a b :=
-    fun _ _ ↦ reachable_of_le_reachable (mount_le hy hz)
+    fun _ _ ↦ reachable_mono (mount_le hy hz)
   intro a ha b hb
   simp only [mount_verts, Set.union_singleton, Set.mem_insert_iff] at ha hb
   rcases ha with rfl | ha
@@ -189,7 +189,7 @@ theorem mount_temporallyConnected (H : Subgraph G) [H.IsSymm] [G.IsSymm] {x y z 
     · exact reachable_of_latestEdge h₃ a (hReach a z (hTC a ha z hz))
     · exact hReach a b (hTC a ha b hb)
 
-instance {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm] {x y z : V}
+instance finite_edgeSet_mount {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm] {x y z : V}
     {n m : ℕ} {hy : y ∈ H.verts} {hz : z ∈ H.verts} {h₁ : G.Adj y x n} {h₂ : G.Adj z x m} :
     Finite (H.mount hy hz x h₁ h₂).edgeSet := by
   rw [H.mount_edgeSet]
@@ -202,7 +202,7 @@ theorem ncard_edgeSet_mount_le {H : Subgraph G} [G.IsSymm] {x y z : V} {n m : �
     (H.mount hy hz x h₀ h₁).edgeSet.ncard ≤ H.edgeSet.ncard + 2 := by
   rw [H.mount_edgeSet]
   have hunion := Set.ncard_union_le H.edgeSet ({⟨s(z, x), m⟩, ⟨s(y, x), n⟩} : Set (Sym2 V × ℕ))
-  have hpair := ncard_pair_le (⟨s(z, x), m⟩ : Sym2 V × ℕ) ⟨s(y, x), n⟩
+  have hpair := Set.ncard_pair_le (⟨s(z, x), m⟩ : Sym2 V × ℕ) ⟨s(y, x), n⟩
   -- `|E ∪ {e₁, e₂}| ≤ |E| + |{e₁, e₂}| ≤ |E| + 2`
   omega
 
@@ -237,8 +237,8 @@ theorem dismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSymm]
   -- the mount is temporally connected, hence a spanner of the clique `H`
   have htc : (H'.mount hy hz x h₁ h₂).TemporallyConnectedSubgraph := by
     apply mount_temporallyConnected H'
-    · exact earliestEdge_of_ge hle h₃ (mount_adj_left H' hy hz h₁ h₂).symm
-    · exact latestEdge_of_ge hle h₄ (mount_adj_right H' hy hz h₁ h₂)
+    · exact earliestEdge_of_le hle h₃ (mount_adj_left H' hy hz h₁ h₂).symm
+    · exact latestEdge_of_le hle h₄ (mount_adj_right H' hy hz h₁ h₂)
     · exact temporallyConnectedSubgraph_of_isSpannerOf_dismount h₀ h₅
   refine ⟨hle, heq, fun u hu v hv _ ↦ htc u ?_ v ?_⟩
   · rwa [heq]
@@ -359,7 +359,7 @@ theorem twoHopMount_temporallyConnected (H : Subgraph G) [H.IsSymm] [G.IsSymm] {
   intro hTC
   have hReach : ∀ a b : V, H.Reachable a b →
       (twoHopMount H hy hy' hz hz' x h₀ h₁ h₂ h₃).Reachable a b :=
-    fun _ _ ↦ reachable_of_le_reachable (twoHopMount_le hy hy' hz hz')
+    fun _ _ ↦ reachable_mono (twoHopMount_le hy hy' hz hz')
   intro a ha b hb
   simp only [twoHopMount_verts, Set.union_singleton, Set.mem_insert_iff] at ha hb
   rcases ha with rfl | ha
@@ -372,7 +372,8 @@ theorem twoHopMount_temporallyConnected (H : Subgraph G) [H.IsSymm] [G.IsSymm] {
         h₅.right a (hReach a z (hTC a ha z hz))
     · exact hReach a b (hTC a ha b hb)
 
-instance {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm] {y y' z z' : V}
+instance finite_edgeSet_twoHopMount {H : Subgraph G} [h₀ : Finite H.edgeSet] [G.IsSymm]
+    {y y' z z' : V}
     {n n' m m' : ℕ} {hy : y ∈ H.verts} {hy' : y' ∈ H.verts} {hz : z ∈ H.verts}
     {hz' : z' ∈ H.verts} {x : V} {h₁ : G.Adj x y' n'} {h₂ : G.Adj y' y n} {h₃ : G.Adj x z' m'}
     {h₄ : G.Adj z' z m} :
@@ -390,7 +391,7 @@ theorem ncard_edgeSet_twoHopMount_le {H : Subgraph G} [G.IsSymm]
   rw [H.twoHopMount_edgeSet hy hy' hz hz' x h₀ h₁ h₂ h₃]
   have hunion := Set.ncard_union_le H.edgeSet
     ({⟨s(z', z), m⟩, ⟨s(x, z'), m'⟩, ⟨s(y', y), n⟩, ⟨s(x, y'), n'⟩} : Set (Sym2 V × ℕ))
-  have hfour := ncard_le_four (⟨s(z', z), m⟩ : Sym2 V × ℕ) ⟨s(x, z'), m'⟩ ⟨s(y', y), n⟩
+  have hfour := Set.ncard_le_four (⟨s(z', z), m⟩ : Sym2 V × ℕ) ⟨s(x, z'), m'⟩ ⟨s(y', y), n⟩
     ⟨s(x, y'), n'⟩
   -- `|E ∪ F| ≤ |E| + |F| ≤ |E| + 4` for the four new edges `F`
   omega
@@ -432,8 +433,8 @@ theorem twoHopDismountability {H H' : Subgraph G} [H.IsSymm] [H'.IsSymm] [G.IsSy
   -- the mount is temporally connected, hence a spanner of the clique `H`
   have htc : (H'.twoHopMount hy hy' hz hz' x h₁ h₂ h₃ h₄).TemporallyConnectedSubgraph := by
     apply twoHopMount_temporallyConnected H' hy hy' hz hz' x
-    · exact ⟨earliestEdge_of_ge hle h₅.1 (twoHopMount_adj_y'_y hy hy' hz hz').symm, h₅.2.1⟩
-    · exact ⟨latestEdge_of_ge hle h₆.1 (twoHopMount_adj_z'_z hy hy' hz hz').symm, h₆.2.1⟩
+    · exact ⟨earliestEdge_of_le hle h₅.1 (twoHopMount_adj_y'_y hy hy' hz hz').symm, h₅.2.1⟩
+    · exact ⟨latestEdge_of_le hle h₆.1 (twoHopMount_adj_z'_z hy hy' hz hz').symm, h₆.2.1⟩
     · exact temporallyConnectedSubgraph_of_isSpannerOf_dismount h₀ h₇
   refine ⟨hle, heq, fun u hu v hv _ ↦ htc u ?_ v ?_⟩
   · rwa [heq]
@@ -464,20 +465,20 @@ lemma exists_edgeSet_of_earliest {H : Subgraph G} [G.IsLoopless] [H.IsSymm] {x :
       omega
     · intro K _ hK hKH b
       exact reachable_of_earliestEdge
-        (earliestEdge_of_ge hKH hE (adj_of_fromEdgeSet_le hK rfl (H.adj_sub hadj))) b
+        (earliestEdge_of_le hKH hE (adj_of_fromEdgeSet_le hK rfl (H.adj_sub hadj))) b
   · -- two hops: the earliest edge `y z`, then the edge `z x`
     have hyz : H.Adj y z n := hE.left
     -- `x` is a vertex of the two-edge graph, being an endpoint of the edge `s(z, x)`
     have hxmem : x ∈ (Subgraph.fromEdgeSet G {(s(y, z), n), (s(z, x), m)}).verts :=
       ⟨⟨(s(z, x), m), by simp⟩, Sym2.mem_mk_right _ _⟩
-    refine ⟨y, H.edge_vert hyz, hyx, {(s(y, z), n), (s(z, x), m)}, ?_, ncard_pair_le _ _,
+    refine ⟨y, H.edge_vert hyz, hyx, {(s(y, z), n), (s(z, x), m)}, ?_, Set.ncard_pair_le _ _,
       hxmem, ?_⟩
     · exact Set.insert_subset (H.mem_edgeSet.mpr hyz)
         (Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hzx))
     · intro K _ hK hKH b
       have hKyz : K.Adj y z n := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hyz)
       have hzx' : K.Adj z x m := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hzx)
-      exact reachable_of_extended_earliestEdge (earliestEdge_of_ge hKH hE hKyz) hzx'.symm hmn b
+      exact reachable_of_extended_earliestEdge (earliestEdge_of_le hKH hE hKyz) hzx'.symm hmn b
 
 /-- Latest side of two-hop dismountability: one or two edges of `H` such that, in any `K`
 between them and `H`, whatever reaches `y` reaches `x`. -/
@@ -500,20 +501,20 @@ lemma exists_edgeSet_of_latest {H : Subgraph G} [G.IsLoopless] [H.IsSymm] {x : V
       omega
     · intro K _ hK hKH b
       exact reachable_of_latestEdge
-        (latestEdge_of_ge hKH hE (adj_of_fromEdgeSet_le hK rfl (H.adj_sub hadj))) b
+        (latestEdge_of_le hKH hE (adj_of_fromEdgeSet_le hK rfl (H.adj_sub hadj))) b
   · -- two hops: the latest edge `y z`, then the edge `z x`
     have hyz : H.Adj y z n := hE.left
     -- `x` is a vertex of the two-edge graph, being an endpoint of the edge `s(z, x)`
     have hxmem : x ∈ (Subgraph.fromEdgeSet G {(s(y, z), n), (s(z, x), m)}).verts :=
       ⟨⟨(s(z, x), m), by simp⟩, Sym2.mem_mk_right _ _⟩
-    refine ⟨y, H.edge_vert hyz, hyx, {(s(y, z), n), (s(z, x), m)}, ?_, ncard_pair_le _ _,
+    refine ⟨y, H.edge_vert hyz, hyx, {(s(y, z), n), (s(z, x), m)}, ?_, Set.ncard_pair_le _ _,
       hxmem, ?_⟩
     · exact Set.insert_subset (H.mem_edgeSet.mpr hyz)
         (Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hzx))
     · intro K _ hK hKH b
       have hKyz : K.Adj y z n := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hyz)
       have hzx' : K.Adj z x m := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hzx)
-      exact reachable_of_extended_latestEdge (latestEdge_of_ge hKH hE hKyz) hzx' hmn b
+      exact reachable_of_extended_latestEdge (latestEdge_of_le hKH hE hKyz) hzx' hmn b
 
 /-- SAND 2025, Theorem 2.1 and §2.1: a `{1,2}`-hop dismountable clique has a vertex `x` such that
 every spanner of `H.dismount x` extends to a spanner of `H` with at most 4 more edges (1 or 2 on
@@ -558,7 +559,7 @@ theorem exists_isSpannerOf_of_twoHopDismountable {H : Subgraph G}
   · intro a ha b hb _
     have hmono : ∀ u v, H'.Reachable u v →
         (H' ⊔ Subgraph.fromEdgeSet G (Eₒ ∪ Eᵢ)).Reachable u v :=
-      fun _ _ ↦ reachable_of_le_reachable le_sup_left
+      fun _ _ ↦ reachable_mono le_sup_left
     by_cases hax : a = x
     · subst hax
       by_cases hbx : b = a
@@ -585,8 +586,9 @@ proper clique subgraph that is not `{1,2}`-hop dismountable has a symmetric span
 `f n` edges (`n` its number of vertices), and `f n + 4 ≤ f (n + 1)`, then every finite simple
 proper clique subgraph has a symmetric spanner with at most `f n` edges: a `{1,2}`-hop
 dismountable clique is reduced to one vertex fewer at the cost of 4 edges. -/
-theorem exists_isSpannerOf_ncard_le_of_not_twoHopDismountable {H : Subgraph G} [Finite H.verts]
-    [G.IsSymm] [G.IsLoopless] [H.IsSymm] (f : ℕ → ℕ) (h₀ : ∀ n, f n + 4 ≤ f (n + 1))
+theorem exists_isSpannerOf_ncard_le_of_forall_not_twoHopDismountable {H : Subgraph G}
+    [Finite H.verts] [G.IsSymm] [G.IsLoopless] [H.IsSymm] (f : ℕ → ℕ)
+    (h₀ : ∀ n, f n + 4 ≤ f (n + 1))
     (h₁ : ∀ {H' : Subgraph G} [Finite H'.verts] [Nontrivial H'.verts] [H'.IsSymm],
       H'.IsSimple → H'.IsCliqueSubgraph → H'.IsProper → ¬H'.TwoHopDismountable →
       ∃ K : Subgraph G, K.IsSymm ∧ K.IsSpannerOf H' ∧ K.edgeSet.ncard ≤ f H'.verts.ncard)
@@ -628,6 +630,10 @@ theorem exists_isSpannerOf_ncard_le_of_not_twoHopDismountable {H : Subgraph G} [
     · -- not dismountable: the hypothesis gives the spanner directly
       have hbase := h₁ h₂ h₃ h₄ hd
       rwa [hn] at hbase
+
+@[deprecated (since := "2026-10-29")]
+alias exists_isSpannerOf_ncard_le_of_not_twoHopDismountable :=
+  exists_isSpannerOf_ncard_le_of_forall_not_twoHopDismountable
 
 end CliqueInduction
 

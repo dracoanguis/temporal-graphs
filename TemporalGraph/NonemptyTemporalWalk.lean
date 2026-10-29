@@ -98,12 +98,12 @@ def IsStrict {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → Prop
 than the second leaves it (time `k`). -/
 @[grind =]
 def append {x y z : V} {n m k l}
-    (p : G.NonemptyTemporalWalk x n y m) (ext : G.NonemptyTemporalWalk y k z l)
+    (p : G.NonemptyTemporalWalk x n y m) (q : G.NonemptyTemporalWalk y k z l)
     (h : m ≤ k) :
     G.NonemptyTemporalWalk x n z l :=
-  match ext with
+  match q with
   | single h₀ => p.step h₀ h
-  | step q h₀ h₁ => step (append p q h) h₀ h₁
+  | step q' h₀ h₁ => step (append p q' h) h₀ h₁
 
 /-- The reverse of `NonemptyTemporalWalk.step`: add an arc from `z` to `x`, at a time `k ≤ n`,
 at the start of a walk. -/

@@ -12,17 +12,17 @@ import Mathlib.Data.Set.Finite.Lattice
 /-!
 # Generic lemmas about `Set.ncard`
 
-Generic lemmas about `Set.ncard`, candidates for Mathlib. They have no graph content; they live
-in the `TemporalGraph` namespaces for now.
+Generic lemmas about `Set.ncard`, candidates for Mathlib. They have no graph content and live in
+the `Set` namespace, ready to be upstreamed.
 
 ## Main results
 
-* `TemporalGraph.exists_threshold` : a median threshold for a family of times.
-* `TemporalGraph.finite_and_ncard_le_of_functional` : a set whose elements are each related, by a
+* `Set.exists_median_threshold` : a median threshold for a family of times.
+* `Set.finite_and_ncard_le_of_functional` : a set whose elements are each related, by a
   functional relation, to a vertex of a finite set `A` has at most `|A|` elements.
-* `TemporalGraph.Subgraph.exists_ncard_halves` : split a set into two halves of complementary
+* `Set.exists_subset_ncard_halves` : split a set into two halves of complementary
   size.
-* `TemporalGraph.Subgraph.ncard_pair_le`, `TemporalGraph.Subgraph.ncard_le_four` : an unordered
+* `Set.ncard_pair_le`, `Set.ncard_le_four` : an unordered
   pair (resp. four elements) has `Set.ncard` at most 2 (resp. 4).
 -/
 
@@ -30,13 +30,13 @@ in the `TemporalGraph` namespaces for now.
 
 universe u
 
-namespace TemporalGraph
+namespace Set
 
 /-- A median threshold: for a finite set `A` and any `f : α → ℕ`, some `τ` leaves at most `|A| / 2`
 elements strictly below it and at most `|A| / 2` strictly above it. Baligács 2026 cuts the
 labeling ordered by the times at a source `c` at `k = ⌊n / 2⌋` (Theorem 18), which is this
 threshold for `f`, the times of the edges at `c`. -/
-theorem exists_threshold {α : Type*} {A : Set α} (f : α → ℕ) (h₀ : A.Finite) :
+theorem exists_median_threshold {α : Type*} {A : Set α} (f : α → ℕ) (h₀ : A.Finite) :
     ∃ τ, {v ∈ A | f v < τ}.ncard ≤ A.ncard / 2 ∧ {v ∈ A | τ < f v}.ncard ≤ A.ncard / 2 := by
   classical
   -- Proof idea: take for `τ` the first value that leaves more than `|A| / 2` elements at or below
@@ -90,12 +90,10 @@ theorem finite_and_ncard_le_of_functional {α : Type*} {S : Set α} (R : V → �
   have h₃ : S.InjOn f := fun e he e' he' h ↦ h₂ (f e) e e' (hfR e he) (h ▸ hfR e' he')
   exact ⟨Set.Finite.of_injOn hfA h₃ h₀, Set.ncard_le_ncard_of_injOn f hfA h₃ h₀⟩
 
-namespace Subgraph
-
 /-- Split a set into two halves of complementary size, `⌈|s| / 2⌉` and `⌊|s| / 2⌋`: used to divide
 a bi-clique's source part in two before recursing (SAND 2025, §4.1, split step). Holds
 unconditionally, including when `s` is infinite (both sides are then `0`, since `s.ncard = 0`). -/
-lemma exists_ncard_halves {α : Type*} (s : Set α) :
+lemma exists_subset_ncard_halves {α : Type*} (s : Set α) :
     ∃ s₁ ⊆ s, s₁.ncard = (s.ncard + 1) / 2 ∧ (s \ s₁).ncard = s.ncard / 2 := by
   rcases s.finite_or_infinite with hfin | hinf
   · obtain ⟨s₁, hsub, hcard⟩ :=
@@ -122,6 +120,21 @@ lemma ncard_le_four {α : Type*} (a b c d : α) : ({a, b, c, d} : Set α).ncard 
   have h4 := Set.ncard_singleton d
   omega
 
-end Subgraph
+end Set
 
-end TemporalGraph
+/-! ### Deprecated aliases -/
+
+@[deprecated (since := "2026-10-29")]
+alias TemporalGraph.exists_threshold := Set.exists_median_threshold
+
+@[deprecated (since := "2026-10-29")]
+alias TemporalGraph.finite_and_ncard_le_of_functional := Set.finite_and_ncard_le_of_functional
+
+@[deprecated (since := "2026-10-29")]
+alias TemporalGraph.Subgraph.exists_ncard_halves := Set.exists_subset_ncard_halves
+
+@[deprecated (since := "2026-10-29")]
+alias TemporalGraph.Subgraph.ncard_pair_le := Set.ncard_pair_le
+
+@[deprecated (since := "2026-10-29")]
+alias TemporalGraph.Subgraph.ncard_le_four := Set.ncard_le_four

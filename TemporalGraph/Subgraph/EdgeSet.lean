@@ -108,7 +108,7 @@ lemma addEdge_edgeSet (H : Subgraph G) {x y : V} {n : ℕ}
       Sym2.eq_iff]
     tauto
 
-instance {H : Subgraph G} [h : Finite H.edgeSet] {x y : V} {n : ℕ}
+instance finite_edgeSet_addEdge {H : Subgraph G} [h : Finite H.edgeSet] {x y : V} {n : ℕ}
     [G.IsSymm]
     {h₀ : G.Adj x y n}
     {h₁ : x ∈ H.verts ∧ y ∈ H.verts} :
@@ -127,7 +127,7 @@ lemma addVerts_edgeSet {H : Subgraph G} {s : Set V} :
   · rintro ⟨a, b, hp, hadj⟩
     exact ⟨a, b, hp, Or.inl (H.edge_vert hadj), Or.inl (H.edge_vert' hadj), hadj⟩
 
-instance {H : Subgraph G} {s : Set V} [h₀ : Finite H.edgeSet] :
+instance finite_edgeSet_addVerts {H : Subgraph G} {s : Set V} [h₀ : Finite H.edgeSet] :
     Finite (H.addVerts s).edgeSet := by
   rw [addVerts_edgeSet]
   exact h₀

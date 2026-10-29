@@ -223,7 +223,7 @@ theorem ncard_edgeSet_oneSidedMount_le {H : Subgraph G} [G.IsSymm] {x' y x : V}
     (H.oneSidedMount hx' hy x h₀ h₁).edgeSet.ncard ≤ H.edgeSet.ncard + 2 := by
   rw [H.oneSidedMount_edgeSet]
   have hunion := Set.ncard_union_le H.edgeSet ({⟨s(y, x), m⟩, ⟨s(y, x'), n⟩} : Set (Sym2 V × ℕ))
-  have hpair := ncard_pair_le (⟨s(y, x), m⟩ : Sym2 V × ℕ) ⟨s(y, x'), n⟩
+  have hpair := Set.ncard_pair_le (⟨s(y, x), m⟩ : Sym2 V × ℕ) ⟨s(y, x'), n⟩
   -- `|E ∪ {e₁, e₂}| ≤ |E| + |{e₁, e₂}| ≤ |E| + 2`
   omega
 
@@ -282,7 +282,7 @@ theorem oneSidedDismountability {H H' : Subgraph G} [G.IsSymm] [H.IsSymm] [H'.Is
     -- `x'`'s edge to `y` is still the latest one in `M` (it was in `H`, which contains `M`)
     subst hwx
     have hMx'y : M.Adj x' y n := (oneSidedMount_adj_left H' hx' hy hyx' hyx).symm
-    have hML : M.LatestEdge x' y n := latestEdge_of_ge hMH h₄ hMx'y
+    have hML : M.LatestEdge x' y n := latestEdge_of_le hMH h₄ hMx'y
     exact TemporalGraph.reachable_of_extended_latestEdge hML
       (oneSidedMount_adj_right H' hx' hy hyx' hyx) h₆ z (key x' ⟨h₂, h₃⟩)
   · exact key w ⟨hw, hwx⟩
@@ -315,7 +315,7 @@ theorem sourceDismountability {H H' : Subgraph G} [G.IsSymm] [H.IsSymm] [H'.IsSy
     -- as `x'`'s edge to `y` is still the earliest one in `M` (it was in `H`, which contains `M`)
     subst hzx
     have hMx'y : M.Adj x' y n := (oneSidedMount_adj_left H' hx' hy hyx' hyx).symm
-    have hME : M.EarliestEdge x' y n := earliestEdge_of_ge hMH h₄ hMx'y
+    have hME : M.EarliestEdge x' y n := earliestEdge_of_le hMH h₄ hMx'y
     exact TemporalGraph.reachable_of_extended_earliestEdge hME
       (oneSidedMount_adj_right H' hx' hy hyx' hyx).symm h₆ w (key x' ⟨h₂, h₃⟩)
   · exact key z ⟨hz, hzx⟩
@@ -333,7 +333,7 @@ lemma exists_latestEdge_of_isBicliqueWith {H : Subgraph G} [Finite H.verts] [H.I
   have hin : ((z, k) : V × ℕ) ∈ H.incidenceSet x := hadj.symm
   have hne : (H.incidenceSet x).Nonempty := ⟨(z, k), hin⟩
   have hfin : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ x
-  obtain ⟨y, n, hlat⟩ := latestEdge_exists_of_nonempty_finite_incidenceSet hne hfin
+  obtain ⟨y, n, hlat⟩ := exists_latestEdge_of_incidenceSet hne hfin
   exact ⟨y, h₁.isBipartiteWith.mem_of_mem_adj' h₃ hlat.1, n, hlat⟩
 
 /-- In a finite simple bi-clique on `s` and `t` with `s` nonempty, every vertex of `t` has an
@@ -346,7 +346,7 @@ lemma exists_earliestEdge_of_isBicliqueWith {H : Subgraph G} [Finite H.verts] [H
   obtain ⟨k, hadj⟩ := h₁.adj_of_mem hz h₃
   have hne : (H.incidenceSet x).Nonempty := ⟨(z, k), hadj.symm⟩
   have hfin : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ x
-  obtain ⟨y, n, hear⟩ := earliestEdge_exists_of_nonempty_finite_incidenceSet hne hfin
+  obtain ⟨y, n, hear⟩ := exists_earliestEdge_of_incidenceSet hne hfin
   exact ⟨y, h₁.isBipartiteWith.mem_of_mem_adj' h₃ hear.1, n, hear⟩
 
 /-- SAND 2025, §4.1 (after Angrick et al., ESA 2024), pigeonhole: in a finite simple bi-clique on
@@ -397,18 +397,18 @@ theorem temporallyConnected_of_isSpannerFromTo {H S : Subgraph G}
   have hSH : S ≤ H := h₄.1.trans between_le
   have hbc := biclique_of_not_twoHopDismountable h₁ h₃
   have hverts : H.verts = H.vplus ∪ H.vminus := by
-    rw [← vunion_eq_univ, vzero_empty_of_not_twoHopDismountable h₀ h₁ h₂ h₃, Set.union_empty,
-      Set.union_comm]
+    rw [← vminus_union_vplus_union_vzero,
+      vzero_empty_of_not_twoHopDismountable h₀ h₁ h₂ h₃, Set.union_empty, Set.union_comm]
   rw [hverts]
   refine temporallyConnected_of_reachable_of_matchings (G := S.toTemporalGraph) ?_ ?_ ?_
   · -- `M⁻`: every vertex of `V⁻` is the end of the earliest edge of a vertex of `V⁺`
     intro a ha
     obtain ⟨⟨v, n⟩, ⟨hv, he⟩, -⟩ := existsUnique_vplus_earliestEdge h₀ h₁ h₂ h₃ a ha
-    exact ⟨v, hv, n, earliestEdge_of_ge hSH he (h₅ v hv a n he)⟩
+    exact ⟨v, hv, n, earliestEdge_of_le hSH he (h₅ v hv a n he)⟩
   · -- `M⁺`: every vertex of `V⁺` is the end of the latest edge of a vertex of `V⁻`
     intro y hy
     obtain ⟨⟨b, n⟩, ⟨hb, hl⟩, -⟩ := existsUnique_vminus_latestEdge h₀ h₁ h₂ h₃ y hy
-    exact ⟨b, hb, n, latestEdge_of_ge hSH hl (h₆ b hb y n hl)⟩
+    exact ⟨b, hb, n, latestEdge_of_le hSH hl (h₆ b hb y n hl)⟩
   · -- `V⁺ → V⁻`: a direct edge of the bi-clique, kept by the one-sided spanner
     intro x hx y hy
     obtain ⟨n, hn⟩ := hbc.adj_of_mem' hy hx

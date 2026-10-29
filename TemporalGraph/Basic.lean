@@ -68,6 +68,8 @@ and its clean characterization `mem_edgeSet` needs `[G.IsSymm]` (the uncondition
 * `TemporalGraph.mem_edgeSet_iff_or` : unconditional characterization of `edgeSet` membership, as
   a disjunction of the two orientations.
 * `TemporalGraph.mem_edgeSet` : under `[G.IsSymm]`, `(s(x, y), n) ∈ G.edgeSet ↔ G.Adj x y n`.
+* `TemporalGraph.mem_edgeSet_of_arcTime_eq_some` : an edge whose time is given by `arcTime` is an
+  edge of the graph.
 * `TemporalGraph.size_eq_ncard`, `TemporalGraph.arcSize_eq_ncard` : the counts `size`/`arcSize`
   equal `Set.ncard` of `edgeSet`/`arcSet`.
 
@@ -477,6 +479,11 @@ theorem mem_edgeSet (G : TemporalGraph V) [G.IsSymm] {x y : V} {n : ℕ} :
     (s(x, y), n) ∈ G.edgeSet ↔ G.Adj x y n := by
   rw [mem_edgeSet_iff_or]
   exact or_iff_left_iff_imp.mpr fun h ↦ h.symm
+
+/-- An edge whose time is given by `arcTime` is an edge of the graph. -/
+theorem mem_edgeSet_of_arcTime_eq_some {G : TemporalGraph V} {u v : V} {n : ℕ}
+    (h₀ : G.arcTime u v = some n) : (s(u, v), n) ∈ G.edgeSet :=
+  ⟨u, v, rfl, adj_of_arcTime_eq_some h₀⟩
 
 end EdgeSet
 

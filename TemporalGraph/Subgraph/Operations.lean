@@ -216,10 +216,13 @@ lemma earliestEdge_of_graph_earliestEdge {H : Subgraph G}
 
 /-- If `H'`'s earliest edge at `x` is already an adjacency of the smaller `H ≤ H'`, it is `H`'s
 earliest edge at `x` too. -/
-lemma earliestEdge_of_ge {H H' : Subgraph G} (h₀ : H ≤ H') (h₁ : H'.EarliestEdge x y n)
+lemma earliestEdge_of_le {H H' : Subgraph G} (h₀ : H ≤ H') (h₁ : H'.EarliestEdge x y n)
     (h₂ : H.Adj x y n) :
     H.EarliestEdge x y n :=
   ⟨h₂, fun _ _ h ↦ h₁.right _ _ (h₀.right h)⟩
+
+@[deprecated (since := "2026-10-29")]
+alias earliestEdge_of_ge := earliestEdge_of_le
 
 /-- A latest edge of `H` is a latest edge of its subtype view `H.coe`. -/
 lemma coe_latestEdge {H : Subgraph G} {x y : H.verts} {n : ℕ}
@@ -242,10 +245,13 @@ lemma latestEdge_of_graph_latestEdge {H : Subgraph G}
 
 /-- If `H'`'s latest edge at `x` is already an adjacency of the smaller `H ≤ H'`, it is `H`'s
 latest edge at `x` too. -/
-lemma latestEdge_of_ge {H H' : Subgraph G} (h₀ : H ≤ H') (h₁ : H'.LatestEdge x y n)
+lemma latestEdge_of_le {H H' : Subgraph G} (h₀ : H ≤ H') (h₁ : H'.LatestEdge x y n)
     (h₂ : H.Adj x y n) :
     H.LatestEdge x y n :=
   ⟨h₂, fun _ _ h ↦ h₁.right _ _ (h₀.right h)⟩
+
+@[deprecated (since := "2026-10-29")]
+alias latestEdge_of_ge := latestEdge_of_le
 
 end EdgeProps
 

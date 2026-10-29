@@ -26,7 +26,8 @@ to the edges crossing a disjoint partition (`between`) is exactly a bi-clique on
 bridge to Mathlib's static bipartite graphs (`isBipartite_iff_simpleFootprint`), and a labelled
 complete bipartite graph constructor (`completeBipartite`); the reduction itself (SAND 2025,
 Corollary 4.1) is carried out in `Dismountability/Basic.lean`
-(`Subgraph.biclique_of_not_twoHopDismountable` and `Subgraph.between_TC_of_not_twoHopDismountable`).
+(`Subgraph.biclique_of_not_twoHopDismountable` and
+`Subgraph.temporallyConnectedSubgraph_between_of_not_twoHopDismountable`).
 
 ## Main definitions
 

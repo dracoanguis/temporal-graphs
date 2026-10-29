@@ -213,7 +213,7 @@ theorem exists_isExtremallyMatched_reduction {H : Subgraph G} [Finite H.verts] [
     by_cases hsrc : ∃ x, H.SourceDismountable s t x
     · -- a dismountable source `x`: reduce `H` without `x`, then put `x` back at two edges
       obtain ⟨x, hdis⟩ := hsrc
-      obtain ⟨-, hbc, hcard⟩ := deleteVerts_subproblem_left h₀ h₁ hdis.1
+      obtain ⟨-, hbc, hcard⟩ := deleteVerts_subproblem_source h₀ h₁ hdis.1
         (Set.disjoint_left.mp h₁.isBipartiteWith.disjoint hdis.1)
       -- `|s \ {x}| = |s| - 1` with `|s| > 0`, so the measure `|s| + |t|` decreases
       obtain ⟨s', hs', t', ht', hverts, hem, hext⟩ :=
@@ -230,7 +230,7 @@ theorem exists_isExtremallyMatched_reduction {H : Subgraph G} [Finite H.verts] [
     by_cases htgt : ∃ x, H.OneSidedDismountable s t x
     · -- a dismountable target `x`: the mirror image, with the one-sided dismount step
       obtain ⟨x, hdis⟩ := htgt
-      obtain ⟨-, hbc, hcard⟩ := deleteVerts_subproblem h₀ h₁ hdis.1
+      obtain ⟨-, hbc, hcard⟩ := deleteVerts_subproblem_target h₀ h₁ hdis.1
         (Set.disjoint_right.mp h₁.isBipartiteWith.disjoint hdis.1)
       -- `|t \ {x}| = |t| - 1` with `|t| > 0`, so the measure decreases
       obtain ⟨s', hs', t', ht', hverts, hem, hext⟩ :=
@@ -240,7 +240,7 @@ theorem exists_isExtremallyMatched_reduction {H : Subgraph G} [Finite H.verts] [
       refine ⟨s', hs', t', ht'.trans Set.sdiff_subset, hverts.trans Set.sdiff_subset, hem,
         fun K hK hspan ↦ ?_⟩
       obtain ⟨K₁, hK₁, hK₁span, hK₁card⟩ := hext K hK hspan
-      obtain ⟨K', hK', hK'span, hK'card⟩ := isSpannerFromTo_of_dismount h₁ hdis hK₁span
+      obtain ⟨K', hK', hK'span, hK'card⟩ := isSpannerFromTo_of_targetDismount h₁ hdis hK₁span
       -- `|K'| ≤ |K₁| + 2` and `|K₁| + 2 (|s'| + |t'|) ≤ |K| + 2 (|s| + |t| - 1)`
       exact ⟨K', hK', hK'span, by omega⟩
     · -- no dismountable vertex: `H` is extremally matched, nothing is deleted

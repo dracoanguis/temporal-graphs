@@ -54,8 +54,9 @@ and `vplus` (`earliestNeighborFn`, `latestNeighborFn`), which forces `vzero` to 
 * `TemporalGraph.Subgraph.earliestEdge_reciprocity`, `latestEdge_reciprocity` : SAND 2025,
   Lemma 3.5 (Reciprocity).
 * `TemporalGraph.Subgraph.biclique_of_not_twoHopDismountable` : SAND 2025, Corollary 4.1.
-* `TemporalGraph.Subgraph.between_TC_of_not_twoHopDismountable` : SAND 2025, remark after
-  Corollary 4.1, the bi-clique between `vminus` and `vplus` is temporally connected.
+* `TemporalGraph.Subgraph.temporallyConnectedSubgraph_between_of_not_twoHopDismountable` :
+  SAND 2025, remark after Corollary 4.1, the bi-clique between `vminus` and `vplus` is temporally
+  connected.
 
 ## References
 
@@ -216,12 +217,15 @@ def vminus (H : Subgraph G) : Set V := {x : V | ∃ y : V, H.EarliestNeighbor y 
 
 /-- `H.vminus` is contained in `H.verts`. -/
 @[simp]
-lemma vminus_sub_verts {H : Subgraph G} : H.vminus ⊆ H.verts := by
+lemma vminus_subset_verts {H : Subgraph G} : H.vminus ⊆ H.verts := by
   intro x ⟨y, n, h, _⟩
   exact H.edge_vert' h
 
+@[deprecated (since := "2026-10-29")]
+alias vminus_sub_verts := vminus_subset_verts
+
 instance {H : Subgraph G} [h : Finite H.verts] : Finite H.vminus :=
-  Set.Finite.subset (H.verts.finite_coe_iff.mp h) vminus_sub_verts
+  Set.Finite.subset (H.verts.finite_coe_iff.mp h) vminus_subset_verts
 
 /-- A (noncomputable) `Fintype` structure on `H.vminus`, from the `Finite` instance above; for
 stating cardinalities with `Fintype.card`, not for computing. -/
@@ -234,12 +238,15 @@ def vplus (H : Subgraph G) : Set V := {x : V | ∃ y : V, H.LatestNeighbor y x}
 
 /-- `H.vplus` is contained in `H.verts`. -/
 @[simp]
-lemma vplus_sub_verts {H : Subgraph G} : H.vplus ⊆ H.verts := by
+lemma vplus_subset_verts {H : Subgraph G} : H.vplus ⊆ H.verts := by
   intro x ⟨y, n, h, _⟩
   exact H.edge_vert' h
 
+@[deprecated (since := "2026-10-29")]
+alias vplus_sub_verts := vplus_subset_verts
+
 instance {H : Subgraph G} [h : Finite H.verts] : Finite H.vplus :=
-  Set.Finite.subset (H.verts.finite_coe_iff.mp h) vplus_sub_verts
+  Set.Finite.subset (H.verts.finite_coe_iff.mp h) vplus_subset_verts
 
 /-- A (noncomputable) `Fintype` structure on `H.vplus`, from the `Finite` instance above; for
 stating cardinalities with `Fintype.card`, not for computing. -/
@@ -252,12 +259,15 @@ def vzero (H : Subgraph G) : Set V := H.verts \ (H.vminus ∪ H.vplus)
 
 /-- `H.vzero` is contained in `H.verts`. -/
 @[simp]
-lemma vzero_sub_verts {H : Subgraph G} : H.vzero ⊆ H.verts := by
+lemma vzero_subset_verts {H : Subgraph G} : H.vzero ⊆ H.verts := by
   intro x ⟨h, _⟩
   exact h
 
+@[deprecated (since := "2026-10-29")]
+alias vzero_sub_verts := vzero_subset_verts
+
 instance {H : Subgraph G} [h : Finite H.verts] : Finite H.vzero :=
-  Set.Finite.subset (H.verts.finite_coe_iff.mp h) vzero_sub_verts
+  Set.Finite.subset (H.verts.finite_coe_iff.mp h) vzero_subset_verts
 
 /-- A (noncomputable) `Fintype` structure on `H.vzero`, from the `Finite` instance above; for
 stating cardinalities with `Fintype.card`, not for computing. -/
@@ -265,13 +275,20 @@ noncomputable instance {H : Subgraph G} [Finite H.verts] : Fintype H.vzero :=
   Fintype.ofFinite _
 
 /-- A vertex of `H.vzero` lies in neither `H.vminus` nor `H.vplus`. -/
-lemma vzero_mem {H : Subgraph G} : ∀ x : V, x ∈ H.vzero → x ∉ H.vminus ∧ x ∉ H.vplus := by
-  intro x hx
-  simpa only [vzero, Set.mem_sdiff, Set.mem_union, not_or] using hx.2
+lemma notMem_vminus_and_notMem_vplus_of_mem_vzero {H : Subgraph G} {x : V} (h₀ : x ∈ H.vzero) :
+    x ∉ H.vminus ∧ x ∉ H.vplus := by
+  simpa only [vzero, Set.mem_sdiff, Set.mem_union, not_or] using h₀.2
+
+@[deprecated notMem_vminus_and_notMem_vplus_of_mem_vzero (since := "2026-10-29")]
+lemma vzero_mem {H : Subgraph G} : ∀ x : V, x ∈ H.vzero → x ∉ H.vminus ∧ x ∉ H.vplus :=
+  fun _ h₀ ↦ notMem_vminus_and_notMem_vplus_of_mem_vzero h₀
 
 /-- `vminus`, `vplus` and `vzero` cover `H.verts`. -/
-lemma vunion_eq_univ {H : Subgraph G} : H.vminus ∪ H.vplus ∪ H.vzero = H.verts := by
+lemma vminus_union_vplus_union_vzero {H : Subgraph G} : H.vminus ∪ H.vplus ∪ H.vzero = H.verts := by
   simp [vzero]
+
+@[deprecated (since := "2026-10-29")]
+alias vunion_eq_univ := vminus_union_vplus_union_vzero
 
 /-- `H` is a dismountable clique iff it is a clique and `H.vplus` and `H.vminus` intersect. -/
 lemma nonempty_vplus_inter_vminus_iff_dismountable (H : Subgraph G) :
@@ -291,11 +308,11 @@ lemma partition_of_not_dismountable {H : Subgraph G} (h₀ : H.IsCliqueSubgraph)
   by_cases hm : x ∈ H.vminus
   · refine ⟨H.vminus, ⟨by simp, hm⟩, ?_⟩
     rintro s ⟨(rfl | rfl | rfl), hs⟩
-    exacts [rfl, absurd hs (hd hm), absurd hm (vzero_mem x hs).1]
+    exacts [rfl, absurd hs (hd hm), absurd hm (notMem_vminus_and_notMem_vplus_of_mem_vzero hs).1]
   by_cases hp : x ∈ H.vplus
   · refine ⟨H.vplus, ⟨by simp, hp⟩, ?_⟩
     rintro s ⟨(rfl | rfl | rfl), hs⟩
-    exacts [absurd hs hm, rfl, absurd hp (vzero_mem x hs).2]
+    exacts [absurd hs hm, rfl, absurd hp (notMem_vminus_and_notMem_vplus_of_mem_vzero hs).2]
   · refine ⟨H.vzero, ⟨by simp, hx, by simp [hm, hp]⟩, ?_⟩
     rintro s ⟨(rfl | rfl | rfl), hs⟩
     exacts [absurd hs hm, absurd hs hp, rfl]
@@ -315,7 +332,6 @@ def TwoHopDismountable (H : Subgraph G) :=
       ∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.LatestEdge y z n ∧ H.Adj z x m ∧ n ≤ m)
 
 /-- A dismountable clique is `{1,2}`-hop dismountable. -/
-@[simp]
 lemma twoHopDismountable_of_dismountable {H : Subgraph G} (h : H.Dismountable) :
     H.TwoHopDismountable := by
   obtain ⟨hclique, x, y, z, hen, hln⟩ := h
@@ -376,7 +392,7 @@ section Matchings
 
 /-- Every vertex of a finite, nontrivial, simple clique subgraph has an earliest incident
 edge. -/
-lemma earliestEdge_exists_of_finite_nontrivial_simple_clique {H : Subgraph G}
+lemma exists_earliestEdge_of_isCliqueSubgraph {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) :
     ∀ x ∈ H.verts, ∃ (y : V) (n : ℕ), H.EarliestEdge x y n := by
@@ -384,11 +400,15 @@ lemma earliestEdge_exists_of_finite_nontrivial_simple_clique {H : Subgraph G}
   have his₀ : (H.incidenceSet x).Nonempty :=
     nonempty_incidenceSet_of_nontrivial_clique h₁ x hx
   have his₁ : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ x
-  exact earliestEdge_exists_of_nonempty_finite_incidenceSet his₀ his₁
+  exact exists_earliestEdge_of_incidenceSet his₀ his₁
+
+@[deprecated (since := "2026-10-29")]
+alias earliestEdge_exists_of_finite_nontrivial_simple_clique :=
+  exists_earliestEdge_of_isCliqueSubgraph
 
 /-- Every vertex of a finite, nontrivial, simple clique subgraph has a latest incident
 edge. -/
-lemma latestEdge_exists_of_finite_nontrivial_simple_clique {H : Subgraph G}
+lemma exists_latestEdge_of_isCliqueSubgraph {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) :
     ∀ x ∈ H.verts, ∃ (y : V) (n : ℕ), H.LatestEdge x y n := by
@@ -396,16 +416,19 @@ lemma latestEdge_exists_of_finite_nontrivial_simple_clique {H : Subgraph G}
   have his₀ : (H.incidenceSet x).Nonempty :=
     nonempty_incidenceSet_of_nontrivial_clique h₁ x hx
   have his₁ : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ x
-  exact latestEdge_exists_of_nonempty_finite_incidenceSet his₀ his₁
+  exact exists_latestEdge_of_incidenceSet his₀ his₁
+
+@[deprecated (since := "2026-10-29")]
+alias latestEdge_exists_of_finite_nontrivial_simple_clique := exists_latestEdge_of_isCliqueSubgraph
 
 /-- Every vertex of a finite, nontrivial, simple, proper clique subgraph has a unique earliest
 incident edge. -/
-lemma earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : Subgraph G}
+lemma existsUnique_earliestEdge_of_isCliqueSubgraph {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
     ∀ x ∈ H.verts, ∃! q : V × ℕ, H.EarliestEdge x q.1 q.2 := by
   intro x hx
-  have ⟨y, n, h⟩ := earliestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x hx
+  have ⟨y, n, h⟩ := exists_earliestEdge_of_isCliqueSubgraph h₀ h₁ x hx
   use ⟨y, n⟩
   constructor
   · simp [h]
@@ -414,14 +437,18 @@ lemma earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : S
     -- both are earliest edges at `x`, so `n = m`; properness then gives `z = y`
     grind only [= IsProper.eq_1, = EarliestEdge.eq_1]
 
+@[deprecated (since := "2026-10-29")]
+alias earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique :=
+  existsUnique_earliestEdge_of_isCliqueSubgraph
+
 /-- Every vertex of a finite, nontrivial, simple, proper clique subgraph has a unique latest
 incident edge. -/
-lemma latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : Subgraph G}
+lemma existsUnique_latestEdge_of_isCliqueSubgraph {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) :
     ∀ x ∈ H.verts, ∃! q : V × ℕ, H.LatestEdge x q.1 q.2 := by
   intro x hx
-  have ⟨y, n, h⟩ := latestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x hx
+  have ⟨y, n, h⟩ := exists_latestEdge_of_isCliqueSubgraph h₀ h₁ x hx
   use ⟨y, n⟩
   constructor
   · simp [h]
@@ -429,6 +456,10 @@ lemma latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique {H : Sub
     simp only [Prod.mk.injEq]
     -- both are latest edges at `x`, so `n = m`; properness then gives `z = y`
     grind only [= IsProper.eq_1, = LatestEdge.eq_1]
+
+@[deprecated (since := "2026-10-29")]
+alias latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique :=
+  existsUnique_latestEdge_of_isCliqueSubgraph
 
 /-- Every vertex of `H.verts`, in a finite, nontrivial, simple, proper clique subgraph, has a
 unique earliest neighbor. -/
@@ -438,7 +469,7 @@ lemma existsUnique_earliestNeighbor {H : Subgraph G}
     ∀ x ∈ H.verts, ∃! y, H.EarliestNeighbor x y := by
   intro x hx
   obtain ⟨⟨y, n⟩, hee, hunique⟩ :=
-    earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique h₀ h₁ h₂ x hx
+    existsUnique_earliestEdge_of_isCliqueSubgraph h₀ h₁ h₂ x hx
   refine ⟨y, ⟨n, hee⟩, ?_⟩
   intro z ⟨m, hee'⟩
   exact congrArg Prod.fst (hunique ⟨z, m⟩ hee')
@@ -456,7 +487,7 @@ lemma existsUnique_latestNeighbor {H : Subgraph G}
     ∀ x ∈ H.verts, ∃! y, H.LatestNeighbor x y := by
   intro x hx
   obtain ⟨⟨y, n⟩, hle, hunique⟩ :=
-    latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique h₀ h₁ h₂ x hx
+    existsUnique_latestEdge_of_isCliqueSubgraph h₀ h₁ h₂ x hx
   refine ⟨y, ⟨n, hle⟩, ?_⟩
   intro z ⟨m, hle'⟩
   exact congrArg Prod.fst (hunique ⟨z, m⟩ hle')
@@ -471,7 +502,7 @@ neighbor, so `earliestNeighborFn` is defined on it. -/
 lemma exists_earliestNeighborFn_eq_some {H : Subgraph G} [Finite H.verts] [Nontrivial H.verts]
     {x : V} (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : x ∈ H.verts) :
     ∃ y, H.earliestNeighborFn x = some y := by
-  obtain ⟨y, n, h₃⟩ := earliestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x h₂
+  obtain ⟨y, n, h₃⟩ := exists_earliestEdge_of_isCliqueSubgraph h₀ h₁ x h₂
   exact Option.isSome_iff_exists.1 (earliestNeighborFn_isSome_iff.2 ⟨y, n, h₃⟩)
 
 /-- `earliestNeighborFn` sends `vplus` into `vminus`: its values there are `some` of a vertex of
@@ -480,7 +511,7 @@ lemma earliestNeighborFn_mapsTo {H : Subgraph G} [Finite H.verts] [Nontrivial H.
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) :
     Set.MapsTo H.earliestNeighborFn H.vplus (some '' H.vminus) := by
   intro x hx
-  obtain ⟨y, h₂⟩ := exists_earliestNeighborFn_eq_some h₀ h₁ (vplus_sub_verts hx)
+  obtain ⟨y, h₂⟩ := exists_earliestNeighborFn_eq_some h₀ h₁ (vplus_subset_verts hx)
   exact ⟨y, earliestNeighbor_mem_vminus (earliestNeighbor_of_earliestNeighborFn_eq_some h₂),
     h₂.symm⟩
 
@@ -493,7 +524,7 @@ lemma earliestNeighborFn_injOn {H : Subgraph G}
   intro x hx y hy hfeq
   by_contra hne
   -- `x` and `y` would share their earliest neighbor `z` (SAND 2025, Lemma 3.2)
-  obtain ⟨z, hz⟩ := exists_earliestNeighborFn_eq_some h₀ h₁ (vplus_sub_verts hy)
+  obtain ⟨z, hz⟩ := exists_earliestNeighborFn_eq_some h₀ h₁ (vplus_subset_verts hy)
   exact (vplus_ne_neighbor_of_not_twoHopDismountable hx hy h₂ h₁ hne _ _
     ⟨earliestNeighbor_of_earliestNeighborFn_eq_some (hfeq.trans hz),
       earliestNeighbor_of_earliestNeighborFn_eq_some hz⟩) rfl
@@ -513,7 +544,7 @@ neighbor, so `latestNeighborFn` is defined on it. -/
 lemma exists_latestNeighborFn_eq_some {H : Subgraph G} [Finite H.verts] [Nontrivial H.verts]
     {x : V} (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : x ∈ H.verts) :
     ∃ y, H.latestNeighborFn x = some y := by
-  obtain ⟨y, n, h₃⟩ := latestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x h₂
+  obtain ⟨y, n, h₃⟩ := exists_latestEdge_of_isCliqueSubgraph h₀ h₁ x h₂
   exact Option.isSome_iff_exists.1 (latestNeighborFn_isSome_iff.2 ⟨y, n, h₃⟩)
 
 /-- `latestNeighborFn` sends `vminus` into `vplus`: its values there are `some` of a vertex of
@@ -522,7 +553,7 @@ lemma latestNeighborFn_mapsTo {H : Subgraph G} [Finite H.verts] [Nontrivial H.ve
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) :
     Set.MapsTo H.latestNeighborFn H.vminus (some '' H.vplus) := by
   intro x hx
-  obtain ⟨y, h₂⟩ := exists_latestNeighborFn_eq_some h₀ h₁ (vminus_sub_verts hx)
+  obtain ⟨y, h₂⟩ := exists_latestNeighborFn_eq_some h₀ h₁ (vminus_subset_verts hx)
   exact ⟨y, latestNeighbor_mem_vplus (latestNeighbor_of_latestNeighborFn_eq_some h₂),
     h₂.symm⟩
 
@@ -535,7 +566,7 @@ lemma latestNeighborFn_injOn {H : Subgraph G}
   intro x hx y hy hfeq
   by_contra hne
   -- `x` and `y` would share their latest neighbor `z` (SAND 2025, Lemma 3.2)
-  obtain ⟨z, hz⟩ := exists_latestNeighborFn_eq_some h₀ h₁ (vminus_sub_verts hy)
+  obtain ⟨z, hz⟩ := exists_latestNeighborFn_eq_some h₀ h₁ (vminus_subset_verts hy)
   exact (vminus_ne_neighbor_of_not_twoHopDismountable hx hy h₂ h₁ hne _ _
     ⟨latestNeighbor_of_latestNeighborFn_eq_some (hfeq.trans hz),
       latestNeighbor_of_latestNeighborFn_eq_some hz⟩) rfl
@@ -633,12 +664,12 @@ private lemma exists_vplus_earliestEdge_of_mem_vzero {H : Subgraph G}
     ∃ y' ∈ H.vplus, y' ≠ x ∧ ∃ (y : V) (n n' : ℕ),
       H.EarliestEdge x y n ∧ H.EarliestEdge y' y n' := by
   obtain ⟨y, n, hee⟩ :=
-    earliestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x (vzero_sub_verts hx)
+    exists_earliestEdge_of_isCliqueSubgraph h₀ h₁ x (vzero_subset_verts hx)
   obtain ⟨⟨y', n'⟩, ⟨hy'plus, hee'⟩, -⟩ :=
     existsUnique_vplus_earliestEdge h₀ h₁ h₂ h₃ y ⟨x, n, hee⟩
   refine ⟨y', hy'plus, ?_, y, n, n', hee, hee'⟩
   rintro rfl
-  exact (vzero_mem _ hx).2 hy'plus
+  exact (notMem_vminus_and_notMem_vplus_of_mem_vzero hx).2 hy'plus
 
 /-- Latest side of `SAND 2025, Lemma 3.4`: a vertex `x ∈ V⁰` has a latest edge `x z`, and `z`
 (being in `V⁺`) is the latest neighbor of some `z' ∈ V⁻` (Corollary 3.3 (2)); `z'` differs from
@@ -650,12 +681,12 @@ private lemma exists_vminus_latestEdge_of_mem_vzero {H : Subgraph G}
     ∃ z' ∈ H.vminus, z' ≠ x ∧ ∃ (z : V) (m m' : ℕ),
       H.LatestEdge x z m ∧ H.LatestEdge z' z m' := by
   obtain ⟨z, m, hle⟩ :=
-    latestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ x (vzero_sub_verts hx)
+    exists_latestEdge_of_isCliqueSubgraph h₀ h₁ x (vzero_subset_verts hx)
   obtain ⟨⟨z', m'⟩, ⟨hz'minus, hle'⟩, -⟩ :=
     existsUnique_vminus_latestEdge h₀ h₁ h₂ h₃ z ⟨x, m, hle⟩
   refine ⟨z', hz'minus, ?_, z, m, m', hle, hle'⟩
   rintro rfl
-  exact (vzero_mem _ hx).1 hz'minus
+  exact (notMem_vminus_and_notMem_vplus_of_mem_vzero hx).1 hz'minus
 
 /-- SAND 2025, Lemma 3.4: in a clique that is not `{1,2}`-hop dismountable, `V⁰ = ∅`.
 
@@ -723,14 +754,14 @@ between `vminus` and `vplus` is a bi-clique on those two sets. -/
 lemma biclique_of_not_twoHopDismountable {H : Subgraph G}
     (h₀ : H.IsCliqueSubgraph) (h₁ : ¬H.TwoHopDismountable) :
     (H.between H.vminus H.vplus).IsBicliqueWith H.vminus H.vplus := by
-  refine IsClique.between_isBicliqueWith h₀ vminus_sub_verts vplus_sub_verts ?_
+  refine IsClique.between_isBicliqueWith h₀ vminus_subset_verts vplus_subset_verts ?_
   -- a vertex in both `V⁻` and `V⁺` would make `H` dismountable (Lemma 3.1)
   exact Set.disjoint_left.mpr fun x hm hp ↦ not_dismountable_of_not_twoHopDismountable h₁
     ((nonempty_vplus_inter_vminus_iff_dismountable H).mp ⟨h₀, x, hp, hm⟩)
 
 /-- SAND 2025, remark after Corollary 4.1: the bi-clique between `vminus` and `vplus` is always
 temporally connected. -/
-lemma between_TC_of_not_twoHopDismountable {H : Subgraph G}
+lemma temporallyConnectedSubgraph_between_of_not_twoHopDismountable {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper)
     (h₃ : ¬H.TwoHopDismountable) :
@@ -765,6 +796,10 @@ lemma between_TC_of_not_twoHopDismountable {H : Subgraph G}
     have hKl : K.toTemporalGraph.LatestEdge a y n :=
       ⟨⟨hal.1, Or.inl ⟨ha, hyp⟩⟩, fun z j hz ↦ hal.2 z j hz.1⟩
     exact TemporalGraph.reachable_of_latestEdge hKl x (hdirect a x ha hxp).2
+
+@[deprecated (since := "2026-10-29")]
+alias between_TC_of_not_twoHopDismountable :=
+  temporallyConnectedSubgraph_between_of_not_twoHopDismountable
 
 end Biclique
 

@@ -57,7 +57,7 @@ SAND below — do not introduce a different numbering here.
 \begin{lemma}[Vertex set decomposition]
   \label{lem:vminus-vplus-vzero-decomp}
   \uses{def:vminus-vplus-vzero,lem:partition-finite}
-  \lean{TemporalGraph.Subgraph.vunion_eq_univ}
+  \lean{TemporalGraph.Subgraph.vminus_union_vplus_union_vzero}
   \leanok
   All three sets $V^-(H)$, $V^+(H)$, $V^0(H)$ are subsets of
   $\mathrm{Verts}(H)$, and their union is all of $\mathrm{Verts}(H)$.
@@ -130,9 +130,9 @@ SAND below — do not introduce a different numbering here.
 \begin{lemma}[$V^-$, $V^+$, $V^0$ are subsets of $V(H)$]
   \label{lem:partition-finite}
   \uses{def:vminus-vplus-vzero}
-  \lean{TemporalGraph.Subgraph.vminus_sub_verts}
-  \lean{TemporalGraph.Subgraph.vplus_sub_verts}
-  \lean{TemporalGraph.Subgraph.vzero_sub_verts}
+  \lean{TemporalGraph.Subgraph.vminus_subset_verts}
+  \lean{TemporalGraph.Subgraph.vplus_subset_verts}
+  \lean{TemporalGraph.Subgraph.vzero_subset_verts}
   \leanok
   $V^-(H)$, $V^+(H)$ and $V^0(H)$ are subsets of $\mathrm{Verts}(H)$; in
   particular they are finite when $H$ has finitely many vertices.
@@ -164,8 +164,8 @@ SAND below — do not introduce a different numbering here.
 \begin{lemma}[Earliest edges are finitely witnessed]
   \label{lem:earliestEdge-exists-finite-clique}
   \uses{def:is-simple-clique,def:incidence-set}
-  \lean{TemporalGraph.Subgraph.earliestEdge_exists_of_finite_nontrivial_simple_clique}
-  \lean{TemporalGraph.Subgraph.latestEdge_exists_of_finite_nontrivial_simple_clique}
+  \lean{TemporalGraph.Subgraph.exists_earliestEdge_of_isCliqueSubgraph}
+  \lean{TemporalGraph.Subgraph.exists_latestEdge_of_isCliqueSubgraph}
   \leanok
   If $H$ is finite, nontrivial, and a simple clique, then every vertex has an
   earliest and a latest edge.
@@ -180,8 +180,8 @@ SAND below — do not introduce a different numbering here.
 \begin{lemma}[Earliest edges are uniquely witnessed in proper cliques]
   \label{lem:earliestEdge-unique-proper-clique}
   \uses{def:is-proper-happy,def:is-simple-clique}
-  \lean{TemporalGraph.Subgraph.earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique}
-  \lean{TemporalGraph.Subgraph.latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique}
+  \lean{TemporalGraph.Subgraph.existsUnique_earliestEdge_of_isCliqueSubgraph}
+  \lean{TemporalGraph.Subgraph.existsUnique_latestEdge_of_isCliqueSubgraph}
   \leanok
   If $H$ is finite, nontrivial, simple, and proper, then each vertex has a
   unique earliest (resp.\ latest) edge.
@@ -347,7 +347,7 @@ SAND below — do not introduce a different numbering here.
 \begin{lemma}[The bi-clique is temporally connected --- SAND remark after Corollary 4.1]
   \label{lem:between-tc}
   \uses{cor:biclique-of-not-two-hop,lem:vzero-empty,lem:vminus-vplus-matchings,lem:reachable-of-earliestEdge,lem:reachable-of-latestEdge}
-  \lean{TemporalGraph.Subgraph.between_TC_of_not_twoHopDismountable}
+  \lean{TemporalGraph.Subgraph.temporallyConnectedSubgraph_between_of_not_twoHopDismountable}
   \leanok
   Let $H$ be a finite, nontrivial, simple, proper, symmetric clique that is not
   $\{1,2\}$-hop dismountable. Then $H.\mathrm{between}\ V^-(H)\ V^+(H)$ is
@@ -581,7 +581,7 @@ the source with another target can be dismounted at the cost of two edges.
 
 \begin{lemma}[Splitting a set into halves]
   \label{lem:exists-ncard-halves}
-  \lean{TemporalGraph.Subgraph.exists_ncard_halves}
+  \lean{Set.exists_subset_ncard_halves}
   \leanok
   Any set $S$ has a subset $S_1 \subseteq S$ with $|S_1| = \lceil |S|/2 \rceil$
   and $|S \setminus S_1| = \lfloor |S|/2 \rfloor$, unconditionally (an infinite

@@ -217,11 +217,11 @@ theorem temporallyConnected {H K : Subgraph G} [K.IsSymm] (h : H.IsExtremallyMat
   · -- the earliest edge at `b ∈ t` goes to a source `w`, and it is the earliest edge at `w`
     obtain ⟨w, n, h₄, h₅⟩ := h.earliest b (Or.inr hb)
     have hw : w ∈ s := h.isBicliqueWith.isBipartiteWith.mem_of_mem_adj' hb h₄.1
-    exact ⟨w, hw, n, Subgraph.earliestEdge_of_ge h₀ h₅ (h₁ w (Or.inl hw) b n h₅)⟩
+    exact ⟨w, hw, n, Subgraph.earliestEdge_of_le h₀ h₅ (h₁ w (Or.inl hw) b n h₅)⟩
   · -- the latest edge at `y ∈ s` goes to a target `w`, and it is the latest edge at `w`
     obtain ⟨w, n, h₄, h₅⟩ := h.latest y (Or.inl hy)
     have hw : w ∈ t := h.isBicliqueWith.isBipartiteWith.mem_of_mem_adj hy h₄.1
-    exact ⟨w, hw, n, Subgraph.latestEdge_of_ge h₀ h₅ (h₂ w (Or.inr hw) y n h₅)⟩
+    exact ⟨w, hw, n, Subgraph.latestEdge_of_le h₀ h₅ (h₂ w (Or.inr hw) y n h₅)⟩
 
 /-- An extremally matched bi-clique stays extremally matched when restricted to its own parts:
 the matched edges of `s ∪ t` stay inside `s ∪ t`, so they remain earliest and latest edges. -/
@@ -237,12 +237,12 @@ theorem induce {H : Subgraph G} (h : H.IsExtremallyMatched s t) :
     fun v hv ↦ ?_⟩
   · obtain ⟨w, n, h₂, h₃⟩ := h.earliest v hv
     have hw := h₁ hv h₂.1
-    exact ⟨w, n, Subgraph.earliestEdge_of_ge h₀ h₂ ⟨hv, hw, h₂.1⟩,
-      Subgraph.earliestEdge_of_ge h₀ h₃ ⟨hw, hv, h₃.1⟩⟩
+    exact ⟨w, n, Subgraph.earliestEdge_of_le h₀ h₂ ⟨hv, hw, h₂.1⟩,
+      Subgraph.earliestEdge_of_le h₀ h₃ ⟨hw, hv, h₃.1⟩⟩
   · obtain ⟨w, n, h₂, h₃⟩ := h.latest v hv
     have hw := h₁ hv h₂.1
-    exact ⟨w, n, Subgraph.latestEdge_of_ge h₀ h₂ ⟨hv, hw, h₂.1⟩,
-      Subgraph.latestEdge_of_ge h₀ h₃ ⟨hw, hv, h₃.1⟩⟩
+    exact ⟨w, n, Subgraph.latestEdge_of_le h₀ h₂ ⟨hv, hw, h₂.1⟩,
+      Subgraph.latestEdge_of_le h₀ h₃ ⟨hw, hv, h₃.1⟩⟩
 
 section Times
 

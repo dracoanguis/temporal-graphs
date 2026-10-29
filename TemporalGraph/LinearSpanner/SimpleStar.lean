@@ -86,9 +86,8 @@ source uses its own walk to some `N_min w`, then `N_min w → c → y`. -/
 theorem exists_reachable_simpleStar (h : H.IsExtremallyMatched s t) (h₀ : H.IsSimple)
     (h₁ : H.IsProper) (c : V) (τ m : ℕ) :
     ∃ E ⊆ H.edgeSet, E.ncard ≤ m * {v ∈ s | H.IsCutCrossing s c τ m v}.ncard ∧
-      ∀ x ∈ {v ∈ s | ∃ u ∈ H.earliestNeighborFn v, ∃ k ∈ H.arcTime c u, k ≤ τ} ∪
-          {v ∈ s | H.IsCutCrossing s c τ m v},
-        ∀ y ∈ {u ∈ t | ∃ k ∈ H.arcTime c u, τ ≤ k},
+      ∀ x ∈ H.earlySources s c τ ∪ {v ∈ s | H.IsCutCrossing s c τ m v},
+        ∀ y ∈ H.lateTargets t c τ,
           (Subgraph.fromEdgeSet G (E ∪ H.simpleStar s t c)).Reachable x y := by
   classical
   -- each crossing source `v` comes with its crossing walk `walk v` to some `u = N_min w`

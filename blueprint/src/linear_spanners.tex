@@ -432,7 +432,7 @@ Design choices that differ from the paper.
 
 \begin{lemma}[Median threshold]
   \label{lem:exists-threshold}
-  \lean{TemporalGraph.exists_threshold}
+  \lean{Set.exists_median_threshold}
   \leanok
   For a finite set $A$ and any $f : V \to \mathbb{N}$, some threshold $\tau$
   leaves at most $\lfloor |A| / 2 \rfloor$ elements of $A$ with $f < \tau$ and
@@ -450,7 +450,7 @@ Design choices that differ from the paper.
 \begin{lemma}[Reaching half of the bi-clique --- Baligács Lemma 17]
   \label{lem:reachable-half}
   \uses{lem:reachable-simple-star,lem:cut-crossing-or-reachable,lem:ext-star-ncard}
-  \lean{TemporalGraph.IsExtremallyMatched.exists_reachable_half}
+  \lean{TemporalGraph.IsExtremallyMatched.exists_reachable_of_threshold}
   \leanok
   Let $H$ be a finite, simple, proper, symmetric extremally matched bi-clique
   subgraph, $s^* \in S$, and $\tau$ an arbitrary threshold time cutting the
@@ -477,7 +477,7 @@ Design choices that differ from the paper.
 \begin{theorem}[Extremally matched bi-cliques --- Baligács Theorem 18 (and Theorem 6)]
   \label{thm:spanner-extremally-matched}
   \uses{lem:reachable-half,lem:exists-threshold,lem:bal-dismountability,lem:extremally-matched-basic,thm:extremally-matched-tc,lem:spanner-from-to-split}
-  \lean{TemporalGraph.IsExtremallyMatched.exists_isSpannerFromTo}
+  \lean{TemporalGraph.IsExtremallyMatched.exists_isSpannerFromTo_temporallyConnected}
   \leanok
   Let $H$ be a finite, simple, proper, symmetric extremally matched bi-clique
   subgraph on $S$ and $T$, with $n = |S| = |T|$. There is a symmetric
@@ -576,7 +576,7 @@ Design choices that differ from the paper.
 \begin{theorem}[Generic clique induction]
   \label{thm:clique-induction}
   \uses{thm:spanner-of-two-hop-dismountable,def:spanner}
-  \lean{TemporalGraph.Subgraph.exists_isSpannerOf_ncard_le_of_not_twoHopDismountable}
+  \lean{TemporalGraph.Subgraph.exists_isSpannerOf_ncard_le_of_forall_not_twoHopDismountable}
   \leanok
   Let $G$ be symmetric and loopless, and $f : \mathbb{N} \to \mathbb{N}$ with
   $f(n) + 4 \le f(n + 1)$ for all $n$. If every finite, nontrivial,

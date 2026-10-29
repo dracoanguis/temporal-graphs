@@ -77,15 +77,6 @@ private theorem exists_min_of_isSome {S : Set V} (f : V → Option ℕ) (h₀ : 
   obtain ⟨u, hu⟩ := Finite.exists_min g
   exact ⟨u.1, u.2, fun y hy ↦ ⟨g u, hg u, g ⟨y, hy⟩, hg ⟨y, hy⟩, hu ⟨y, hy⟩⟩⟩
 
-/-- Extend a window-bounded walk of `Subgraph.fromEdgeSet G E` by the arc `y → z` of a subgraph
-`H` of `G`, when the edge `{y, z}` of `E` is at the time of this arc. -/
-private theorem ReachableWithin.step_fromEdgeSet {H : Subgraph G} {E : Set (Sym2 V × ℕ)}
-    {x y z : V} {a b k : ℕ} (h₀ : (Subgraph.fromEdgeSet G E).ReachableWithin x y a b)
-    (h₁ : H.arcTime y z = some k) (h₂ : (s(y, z), k) ∈ E) (h₃ : b ≤ k) :
-    (Subgraph.fromEdgeSet G E).ReachableWithin x z a k :=
-  h₀.step ⟨⟨_, h₂⟩, Sym2.mem_mk_left _ _, Sym2.mem_mk_right _ _, rfl,
-    H.adj_sub (adj_of_arcTime_eq_some h₁)⟩ h₃
-
 /-- An edge is in a set of edges if it is there with its endpoints swapped. -/
 private theorem mem_of_mem_swap {A : Set (Sym2 V × ℕ)} {a b : V} {n : ℕ} (h₀ : (s(b, a), n) ∈ A) :
     (s(a, b), n) ∈ A := by
@@ -171,7 +162,7 @@ source. -/
 private theorem finite_and_ncard_sourceExtendEdges_le [Finite H.verts]
     (h : H.IsExtremallyMatched s t) (h₀ : H.IsProper) :
     (H.sourceExtendEdges s t c).Finite ∧ (H.sourceExtendEdges s t c).ncard ≤ s.ncard := by
-  refine finite_and_ncard_le_of_functional
+  refine Set.finite_and_ncard_le_of_functional
     (fun v e ↦ ∃ u, H.IsSourceExtendTarget t c v u ∧ ∃ n ∈ H.arcTime v u, e = (s(v, u), n))
     h.finite_left (fun _ he ↦ he) ?_
   rintro v e e' ⟨u, hu, n, hn, rfl⟩ ⟨u', hu', n', hn', rfl⟩
@@ -184,7 +175,7 @@ target. -/
 private theorem finite_and_ncard_targetExtendEdges_le [Finite H.verts]
     (h : H.IsExtremallyMatched s t) (h₀ : H.IsProper) :
     (H.targetExtendEdges s t c).Finite ∧ (H.targetExtendEdges s t c).ncard ≤ t.ncard := by
-  refine finite_and_ncard_le_of_functional
+  refine Set.finite_and_ncard_le_of_functional
     (fun v e ↦ ∃ u, H.IsTargetExtendSource s c v u ∧ ∃ n ∈ H.arcTime u v, e = (s(u, v), n))
     h.finite_right (fun _ he ↦ he) ?_
   rintro v e e' ⟨u, hu, n, hn, rfl⟩ ⟨u', hu', n', hn', rfl⟩
@@ -279,7 +270,7 @@ theorem reachable_extStarSource (h : H.IsExtremallyMatched s t) (h₀ : H.IsSimp
     .refl v le_rfl
   -- `v → x`, an edge of `E_min`
   have hvx := hv.step_fromEdgeSet (H := H) ha
-    (eMin_subset_extStarSource (h.mem_eMin h₀ h₁ (.inl h₂) h₄ ha)) (Nat.zero_le _)
+    (eMin_subset_extStarSource (h.mem_eMin_of_mem_union h₀ h₁ (.inl h₂) h₄ ha)) (Nat.zero_le _)
   -- `x → c`, an edge at `c`; temporal since `{v, x}` is the earliest edge at `x`
   have hxc := hvx.step_fromEdgeSet (H := H) ((hcomm x c).trans hk)
     (mem_of_mem_swap (incidentEdges_subset_extStarSource (mem_incidentEdges hx hk)))
@@ -294,7 +285,7 @@ theorem reachable_extStarSource (h : H.IsExtremallyMatched s t) (h₀ : H.IsSimp
     (hlb.trans_le hab'.le)
   -- `z → u'`, an edge of `E_max`; temporal since it is the latest edge at `z`
   have hzu' := huz.step_fromEdgeSet (H := H) ((hcomm z u').trans hm)
-    (mem_of_mem_swap (eMax_subset_extStarSource (h.mem_eMax h₀ h₁ (.inr h₃) h₅ hm)))
+    (mem_of_mem_swap (eMax_subset_extStarSource (h.mem_eMax_of_mem_union h₀ h₁ (.inr h₃) h₅ hm)))
     (h.arcTime_le_of_latestNeighborFn_eq_some h₀ h₁ (.inr h₃) h₅ hm ((hcomm z u).trans hb'))
   exact hzu'.reachable
 
@@ -326,7 +317,7 @@ theorem reachable_extStarTarget (h : H.IsExtremallyMatched s t) (h₀ : H.IsSimp
     .refl v le_rfl
   -- `v → x`, an edge of `E_min`
   have hvx := hv.step_fromEdgeSet (H := H) ha
-    (eMin_subset_extStarTarget (h.mem_eMin h₀ h₁ (.inl h₂) h₄ ha)) (Nat.zero_le _)
+    (eMin_subset_extStarTarget (h.mem_eMin_of_mem_union h₀ h₁ (.inl h₂) h₄ ha)) (Nat.zero_le _)
   -- `x → u`, the extend edge of `x`; temporal since `{v, x}` is the earliest edge at `x`
   have hxu := hvx.step_fromEdgeSet (H := H) ((hcomm x u).trans ha')
     (mem_of_mem_swap (targetExtendEdges_subset_extStarTarget ⟨x, hx, u, h₆, a', ha', rfl⟩))
@@ -341,7 +332,7 @@ theorem reachable_extStarTarget (h : H.IsExtremallyMatched s t) (h₀ : H.IsSimp
     (incidentEdges_subset_extStarTarget (mem_incidentEdges hz hl)) (hkb.symm.trans_le hkl)
   -- `z → u'`, an edge of `E_max`; temporal since it is the latest edge at `z`
   have hzu' := hcz.step_fromEdgeSet (H := H) ((hcomm z u').trans hm)
-    (mem_of_mem_swap (eMax_subset_extStarTarget (h.mem_eMax h₀ h₁ (.inr h₃) h₅ hm)))
+    (mem_of_mem_swap (eMax_subset_extStarTarget (h.mem_eMax_of_mem_union h₀ h₁ (.inr h₃) h₅ hm)))
     (h.arcTime_le_of_latestNeighborFn_eq_some h₀ h₁ (.inr h₃) h₅ hm ((hcomm z c).trans hl))
   exact hzu'.reachable
 
@@ -436,7 +427,7 @@ theorem isCutCrossing_or_reachable (h : H.IsExtremallyMatched s t) (h₀ : H.IsS
     (h₁ : H.IsProper) (h₂ : c ∈ s) (τ : ℕ) {w : V} (h₃ : v ∈ s)
     (h₄ : H.earliestNeighborFn v = some w) (h₅ : ∃ k ∈ H.arcTime c w, τ < k) :
     H.IsCutCrossing s c τ 3 v ∨
-      ∀ x ∈ {x ∈ s | ∃ u ∈ H.earliestNeighborFn x, ∃ k ∈ H.arcTime c u, k ≤ τ}, ∀ y ∈ t,
+      ∀ x ∈ H.earlySources s c τ, ∀ y ∈ t,
         (Subgraph.fromEdgeSet G (H.extStarSource s t c ∪ H.extStarTarget s t w)).Reachable x y := by
   refine or_iff_not_imp_right.2 fun h₆ ↦ ?_
   -- some pair `(s_j, y)` with `j ≤ k` is not reached

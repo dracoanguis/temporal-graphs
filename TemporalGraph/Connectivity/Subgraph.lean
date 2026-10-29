@@ -29,7 +29,7 @@ spanner of another), and `IsTCSpanner` (temporally connected spanner).
 
 ## Main results
 
-* `reachable_of_le_reachable` : Reachability preserved under subgraph inclusion
+* `reachable_mono` : Reachability preserved under subgraph inclusion
 * `isTCSpanner_iff_isSpanner_and_temporallyConnectedSubgraph` : A TC-spanner is a spanner that
   is temporally connected
 * `temporallyConnectedGraph_toTemporalGraph_of_isSpanning` : A spanning subgraph
@@ -46,6 +46,8 @@ spanner of another), and `IsTCSpanner` (temporally connected spanner).
   preserved by these subgraph constructions
 * `TemporalWalk.reachableBefore_fromEdgeSet` : a walk whose edges lie in `E` reaches its end, by
   its arrival time, in `Subgraph.fromEdgeSet G E`
+* `ReachableWithin.step_fromEdgeSet` : extend a window-bounded walk of `Subgraph.fromEdgeSet G E`
+  by the arc of a subgraph `H` whose edge lies in `E`
 -/
 
 @[expose] public section
@@ -110,9 +112,12 @@ lemma mem_verts_of_reachable {H : Subgraph G} {x y : V} (h₀ : H.Reachable x y)
     exact ⟨H.edge_vert hz, H.edge_vert' hz'⟩
 
 /-- Reachability is preserved along subgraph inclusion. -/
-lemma reachable_of_le_reachable {H H' : Subgraph G} (h : H ≤ H') {x y : V} :
+lemma reachable_mono {H H' : Subgraph G} (h : H ≤ H') {x y : V} :
     H.Reachable x y → H'.Reachable x y :=
   Reachable.mono (toTemporalGraph_le h)
+
+@[deprecated (since := "2026-10-29")]
+alias reachable_of_le_reachable := reachable_mono
 
 /-- If `H` is spanning and temporally connected on its own vertices, then `H`'s own adjacency
 (`H.toTemporalGraph`) is temporally connected on all of `V`: spanning turns the quantification
@@ -133,19 +138,19 @@ lemma IsTCSpanner.temporallyConnectedGraph {H : Subgraph G} :
 `H ≤ H.addVerts s`. -/
 theorem _root_.TemporalGraph.Reachable.addVerts {s : Set V} {H : Subgraph G} {x y : V} :
     H.Reachable x y → (H.addVerts s).Reachable x y :=
-  reachable_of_le_reachable addVerts_le
+  reachable_mono addVerts_le
 
 /-- Reachability in `H` is preserved by adding an edge (`Subgraph.addEdge`), since
 `H ≤ H.addEdge h h₁`. -/
 theorem _root_.TemporalGraph.Reachable.addEdge {x y : V} {n : ℕ} {H : Subgraph G} [G.IsSymm]
     {h : G.Adj x y n} {h₁ : x ∈ H.verts ∧ y ∈ H.verts} {a b : V} :
     H.Reachable a b → (H.addEdge h h₁).Reachable a b :=
-  reachable_of_le_reachable addEdge_le
+  reachable_mono addEdge_le
 
 /-- Reachability in `H.deleteVerts s` implies reachability in `H`, since `H.deleteVerts s ≤ H`. -/
 theorem _root_.TemporalGraph.Reachable.of_deleteVerts {s : Set V} {H : Subgraph G} {x y : V} :
     (H.deleteVerts s).Reachable x y → H.Reachable x y :=
-  reachable_of_le_reachable deleteVerts_le
+  reachable_mono deleteVerts_le
 
 /-- The whole graph `⊤ : Subgraph G` is a spanner of itself: it is spanning and trivially
 preserves reachability. -/
@@ -189,5 +194,14 @@ theorem TemporalWalk.reachableBefore_fromEdgeSet {H : Subgraph G} {x y : V} {n m
   -- the arc `a` of `p` is an arc of `H`, hence of `G`, and its edge lies in `E`
   have hE : (s(a.1, a.2.1), a.2.2) ∈ E := h₀ _ (List.mem_map.2 ⟨a, ha, rfl⟩)
   exact Subgraph.adj_fromEdgeSet hE (H.adj_sub (p.adj_of_mem_arcs a ha).1)
+
+/-- Extend a window-bounded walk of `Subgraph.fromEdgeSet G E` by the arc `y → z` of a subgraph
+`H` of `G`, when the edge `{y, z}` of `E` is at the time of this arc. -/
+theorem ReachableWithin.step_fromEdgeSet {H : Subgraph G} {E : Set (Sym2 V × ℕ)}
+    {x y z : V} {a b k : ℕ} (h₀ : (Subgraph.fromEdgeSet G E).ReachableWithin x y a b)
+    (h₁ : H.arcTime y z = some k) (h₂ : (s(y, z), k) ∈ E) (h₃ : b ≤ k) :
+    (Subgraph.fromEdgeSet G E).ReachableWithin x z a k :=
+  h₀.step ⟨⟨_, h₂⟩, Sym2.mem_mk_left _ _, Sym2.mem_mk_right _ _, rfl,
+    H.adj_sub (adj_of_arcTime_eq_some h₁)⟩ h₃
 
 end TemporalGraph

@@ -32,9 +32,11 @@ of the edge `{a, b}`; `c` is the center and `τ` the threshold time of a cut.
   `k < l`.)
 * *extend index* : see `IsSourceExtendTarget` and `IsTargetExtendSource`.
 * an *early* source `v` (for the center `c` and the threshold `τ`) : `λ(c, N_min v) ≤ τ`, that is
-  `∃ u ∈ G.earliestNeighborFn v, ∃ k ∈ G.arcTime c u, k ≤ τ` (the paper's `s_j`, `j ≤ k`).
-* an *upper* source `v` : `τ < λ(c, N_min v)` (the paper's `s_i`, `i > k`).
-* a *late* target `u` : `τ ≤ λ(c, u)`.
+  `∃ u ∈ G.earliestNeighborFn v, ∃ k ∈ G.arcTime c u, k ≤ τ` (the paper's `s_j`, `j ≤ k`). The
+  set of early sources in `s` is `G.earlySources s c τ`.
+* an *upper* source `v` : `τ < λ(c, N_min v)` (the paper's `s_i`, `i > k`). The set of upper
+  sources in `s` is `G.upperSources s c τ`.
+* a *late* target `u` : `τ ≤ λ(c, u)`. The set of late targets in `t` is `G.lateTargets t c τ`.
 * a *crossing* source : an upper source from which a short temporal walk reaches an early source's
   `N_min`, before the edge of that `N_min` to `c` (see `IsCutCrossing`).
 
@@ -45,6 +47,8 @@ these values exist, so nothing is lost.
 
 ## Main definitions
 
+* `TemporalGraph.earlySources`, `TemporalGraph.upperSources`, `TemporalGraph.lateTargets` : the
+  early sources, upper sources and late targets of a cut.
 * `TemporalGraph.eMin`, `TemporalGraph.eMax` : the matchings `E_min` and `E_max`.
 * `TemporalGraph.incidentEdges` : the edges from a vertex to a set.
 * `TemporalGraph.simpleStar` : Definition 8 (i), the simple star `Star(c)`.
@@ -61,7 +65,8 @@ these values exist, so nothing is lost.
   hypothesis (their times are given by `arcTime`).
 * `TemporalGraph.ncard_eMin_le`, `TemporalGraph.ncard_eMax_le`,
   `TemporalGraph.ncard_incidentEdges_le` : at most one edge per vertex of the indexing set.
-* `TemporalGraph.IsExtremallyMatched.mem_eMin`, `TemporalGraph.IsExtremallyMatched.mem_eMax` :
+* `TemporalGraph.IsExtremallyMatched.mem_eMin_of_mem_union`,
+  `TemporalGraph.IsExtremallyMatched.mem_eMax_of_mem_union` :
   `E_min` and `E_max` also contain the earliest and latest edges at the targets.
 
 ## References
@@ -78,6 +83,23 @@ namespace TemporalGraph
 variable {V : Type u} {G : TemporalGraph V} {s t A : Set V}
 
 section Definitions
+
+/-- The early sources of the cut at `τ`, for the center `c`: the sources `v ∈ s` whose
+`N_min v` is joined to `c` at a time at most `τ` (Baligács 2026, §3: the sources `s_j` with
+`j ≤ k`, the cut `k` being the threshold time `τ`). -/
+abbrev earlySources (G : TemporalGraph V) (s : Set V) (c : V) (τ : ℕ) : Set V :=
+  {v ∈ s | ∃ u ∈ G.earliestNeighborFn v, ∃ k ∈ G.arcTime c u, k ≤ τ}
+
+/-- The upper sources of the cut at `τ`, for the center `c`: the sources `v ∈ s` whose `N_min v`
+is joined to `c` at a time strictly after `τ` (Baligács 2026, §3: the sources `s_i` with `i > k`,
+the cut `k` being the threshold time `τ`). -/
+abbrev upperSources (G : TemporalGraph V) (s : Set V) (c : V) (τ : ℕ) : Set V :=
+  {v ∈ s | ∃ u ∈ G.earliestNeighborFn v, ∃ k ∈ G.arcTime c u, τ < k}
+
+/-- The late targets of the cut at `τ`, for the center `c`: the targets `u ∈ t` joined to `c` at
+a time at least `τ` (Baligács 2026, §3: the targets `t_j` on the far side of the cut at `τ`). -/
+abbrev lateTargets (G : TemporalGraph V) (t : Set V) (c : V) (τ : ℕ) : Set V :=
+  {u ∈ t | ∃ k ∈ G.arcTime c u, τ ≤ k}
 
 /-- The edges `{v, N_min(v)}` for `v ∈ A`, at their times. For an extremally matched bi-clique,
 `G.eMin s` is the matching `E_min` of Baligács 2026, §2.3. -/
@@ -172,35 +194,30 @@ end Membership
 
 section Subset
 
-/-- An edge whose time is given by `arcTime` is an edge of the graph. -/
-private theorem mem_edgeSet_of_arcTime {u v : V} {n : ℕ} (h₀ : G.arcTime u v = some n) :
-    (s(u, v), n) ∈ G.edgeSet :=
-  ⟨u, v, rfl, adj_of_arcTime_eq_some h₀⟩
-
 /-- `G.eMin A` consists of edges of `G`. -/
 theorem eMin_subset_edgeSet : G.eMin A ⊆ G.edgeSet := by
   rintro _ ⟨v, -, w, -, n, h₀, rfl⟩
-  exact mem_edgeSet_of_arcTime h₀
+  exact mem_edgeSet_of_arcTime_eq_some h₀
 
 /-- `G.eMax A` consists of edges of `G`. -/
 theorem eMax_subset_edgeSet : G.eMax A ⊆ G.edgeSet := by
   rintro _ ⟨v, -, w, -, n, h₀, rfl⟩
-  exact mem_edgeSet_of_arcTime h₀
+  exact mem_edgeSet_of_arcTime_eq_some h₀
 
 /-- `G.incidentEdges x A` consists of edges of `G`. -/
 theorem incidentEdges_subset_edgeSet {x : V} : G.incidentEdges x A ⊆ G.edgeSet := by
   rintro _ ⟨v, -, n, h₀, rfl⟩
-  exact mem_edgeSet_of_arcTime h₀
+  exact mem_edgeSet_of_arcTime_eq_some h₀
 
 /-- The extend edges of `Ext(c)`, `c` a source, are edges of `G`. -/
 theorem sourceExtendEdges_subset_edgeSet {c : V} : G.sourceExtendEdges s t c ⊆ G.edgeSet := by
   rintro _ ⟨v, -, u, -, n, h₀, rfl⟩
-  exact mem_edgeSet_of_arcTime h₀
+  exact mem_edgeSet_of_arcTime_eq_some h₀
 
 /-- The extend edges of `Ext(c)`, `c` a target, are edges of `G`. -/
 theorem targetExtendEdges_subset_edgeSet {c : V} : G.targetExtendEdges s t c ⊆ G.edgeSet := by
   rintro _ ⟨v, -, u, -, n, h₀, rfl⟩
-  exact mem_edgeSet_of_arcTime h₀
+  exact mem_edgeSet_of_arcTime_eq_some h₀
 
 /-- The simple star consists of edges of `G`. -/
 theorem simpleStar_subset_edgeSet {c : V} : G.simpleStar s t c ⊆ G.edgeSet :=
@@ -224,7 +241,7 @@ section Count
 
 /-- At most one edge of `E_min` per vertex of `A`: `N_min` and `arcTime` are functions. -/
 theorem ncard_eMin_le (h₀ : A.Finite) : (G.eMin A).ncard ≤ A.ncard :=
-  (finite_and_ncard_le_of_functional (S := G.eMin A)
+  (Set.finite_and_ncard_le_of_functional (S := G.eMin A)
     (fun v e ↦ ∃ w ∈ G.earliestNeighborFn v, ∃ n ∈ G.arcTime v w, e = (s(v, w), n)) h₀
     (fun _ he ↦ he) fun _ _ _ ⟨w, hw, n, hn, he⟩ ⟨w', hw', n', hn', he'⟩ ↦ by
       obtain rfl := Option.mem_unique hw hw'
@@ -233,7 +250,7 @@ theorem ncard_eMin_le (h₀ : A.Finite) : (G.eMin A).ncard ≤ A.ncard :=
 
 /-- At most one edge of `E_max` per vertex of `A`. -/
 theorem ncard_eMax_le (h₀ : A.Finite) : (G.eMax A).ncard ≤ A.ncard :=
-  (finite_and_ncard_le_of_functional (S := G.eMax A)
+  (Set.finite_and_ncard_le_of_functional (S := G.eMax A)
     (fun v e ↦ ∃ w ∈ G.latestNeighborFn v, ∃ n ∈ G.arcTime v w, e = (s(v, w), n)) h₀
     (fun _ he ↦ he) fun _ _ _ ⟨w, hw, n, hn, he⟩ ⟨w', hw', n', hn', he'⟩ ↦ by
       obtain rfl := Option.mem_unique hw hw'
@@ -242,7 +259,7 @@ theorem ncard_eMax_le (h₀ : A.Finite) : (G.eMax A).ncard ≤ A.ncard :=
 
 /-- At most `|A|` edges join `x` to `A`. -/
 theorem ncard_incidentEdges_le {x : V} (h₀ : A.Finite) : (G.incidentEdges x A).ncard ≤ A.ncard :=
-  (finite_and_ncard_le_of_functional (S := G.incidentEdges x A)
+  (Set.finite_and_ncard_le_of_functional (S := G.incidentEdges x A)
     (fun v e ↦ ∃ n ∈ G.arcTime x v, e = (s(x, v), n)) h₀
     (fun _ he ↦ he) fun _ _ _ ⟨n, hn, he⟩ ⟨n', hn', he'⟩ ↦ by
       obtain rfl := Option.mem_unique hn hn'
@@ -257,26 +274,32 @@ variable [G.IsSymm] {v w : V} {n : ℕ}
 /-- `E_min` also contains the earliest edges at the targets: the earliest edge at a vertex `v` of
 the bi-clique, from `v` to `N_min v`, is in `G.eMin s` (for a target, it is the earliest edge at
 the source `N_min v`). -/
-theorem IsExtremallyMatched.mem_eMin (h : G.IsExtremallyMatched s t) (h₀ : G.IsSimple)
+theorem IsExtremallyMatched.mem_eMin_of_mem_union (h : G.IsExtremallyMatched s t) (h₀ : G.IsSimple)
     (h₁ : G.IsProper) (h₂ : v ∈ s ∪ t) (h₃ : G.earliestNeighborFn v = some w)
     (h₄ : G.arcTime v w = some n) : (s(v, w), n) ∈ G.eMin s := by
   rcases h₂ with h₂ | h₂
-  · exact TemporalGraph.mem_eMin h₂ h₃ h₄
+  · exact mem_eMin h₂ h₃ h₄
   · -- the edge `{v, w}` seen from the source `w`, whose earliest neighbor is `v`
     rw [Sym2.eq_swap]
-    exact TemporalGraph.mem_eMin (h.mem_left_of_earliestNeighborFn_eq_some h₂ h₃)
+    exact mem_eMin (h.mem_left_of_earliestNeighborFn_eq_some h₂ h₃)
       (h.earliestNeighborFn_eq_some_symm h₁ (Or.inr h₂) h₃) (arcTime_comm h₀ v w ▸ h₄)
 
+@[deprecated (since := "2026-10-29")]
+alias IsExtremallyMatched.mem_eMin := IsExtremallyMatched.mem_eMin_of_mem_union
+
 /-- `E_max` also contains the latest edges at the targets. -/
-theorem IsExtremallyMatched.mem_eMax (h : G.IsExtremallyMatched s t) (h₀ : G.IsSimple)
+theorem IsExtremallyMatched.mem_eMax_of_mem_union (h : G.IsExtremallyMatched s t) (h₀ : G.IsSimple)
     (h₁ : G.IsProper) (h₂ : v ∈ s ∪ t) (h₃ : G.latestNeighborFn v = some w)
     (h₄ : G.arcTime v w = some n) : (s(v, w), n) ∈ G.eMax s := by
   rcases h₂ with h₂ | h₂
-  · exact TemporalGraph.mem_eMax h₂ h₃ h₄
+  · exact mem_eMax h₂ h₃ h₄
   · -- the edge `{v, w}` seen from the source `w`, whose latest neighbor is `v`
     rw [Sym2.eq_swap]
-    exact TemporalGraph.mem_eMax (h.mem_left_of_latestNeighborFn_eq_some h₂ h₃)
+    exact mem_eMax (h.mem_left_of_latestNeighborFn_eq_some h₂ h₃)
       (h.latestNeighborFn_eq_some_symm h₁ (Or.inr h₂) h₃) (arcTime_comm h₀ v w ▸ h₄)
+
+@[deprecated (since := "2026-10-29")]
+alias IsExtremallyMatched.mem_eMax := IsExtremallyMatched.mem_eMax_of_mem_union
 
 end ExtremallyMatched
 

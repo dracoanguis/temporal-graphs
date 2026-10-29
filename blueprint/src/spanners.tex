@@ -176,8 +176,8 @@ spanners at the subgraph level).
 \begin{lemma}[Earliest / latest edge from a finite incidence set]
   \label{lem:earliest-latest-edge-exists}
   \uses{def:incidence-set,def:earliest-latest-neighbor}
-  \lean{TemporalGraph.Subgraph.earliestEdge_exists_of_nonempty_finite_incidenceSet}
-  \lean{TemporalGraph.Subgraph.latestEdge_exists_of_nonempty_finite_incidenceSet}
+  \lean{TemporalGraph.Subgraph.exists_earliestEdge_of_incidenceSet}
+  \lean{TemporalGraph.Subgraph.exists_latestEdge_of_incidenceSet}
   \leanok
   If $x$'s incidence set in $H$ is nonempty and finite, $x$ has an earliest
   edge in $H$; dually, it has a latest edge. (A nonempty finite set of times

@@ -30,14 +30,16 @@ whose values are `Option`s (`none` for a vertex without edges); on the bi-clique
 
 ## Main results
 
-* `TemporalGraph.IsExtremallyMatched.earliestNeighborFn_eq_some_symm`, `…latest…` : `E_min` and
-  `E_max` are matchings: `N_min v = some w → N_min w = some v`, in a proper graph.
+* `TemporalGraph.IsExtremallyMatched.earliestNeighborFn_eq_some_symm`,
+  `TemporalGraph.IsExtremallyMatched.latestNeighborFn_eq_some_symm` : `E_min` and `E_max` are
+  matchings: `N_min v = some w → N_min w = some v` (and likewise for `N_max`), in a proper graph.
 * `TemporalGraph.IsExtremallyMatched.ncard_eq` : an extremally matched proper bi-clique has
   `|s| = |t|`.
 * `TemporalGraph.IsExtremallyMatched.induce`, `TemporalGraph.isExtremallyMatched_induce_empty` :
   restricting to the parts keeps the extremal matching; the empty bi-clique is extremally matched.
-* `TemporalGraph.IsExtremallyMatched.arcTime_le_of_earliestNeighborFn_eq_some`, `…latest…` : the
-  matched edges are the earliest (resp. latest) at both of their endpoints, read on `arcTime`.
+* `TemporalGraph.IsExtremallyMatched.arcTime_le_of_earliestNeighborFn_eq_some`,
+  `TemporalGraph.IsExtremallyMatched.arcTime_le_of_latestNeighborFn_eq_some` : the matched edges
+  are the earliest (resp. latest) at both of their endpoints, read on `arcTime`.
 * `TemporalGraph.IsExtremallyMatched.temporallyConnected` : a subgraph that contains the
   matchings `E_min`, `E_max` and in which `s` reaches `t` is temporally connected on `s ∪ t`
   (through SAND 2025's `temporallyConnected_of_reachable_of_matchings`).
@@ -62,8 +64,11 @@ bi-clique in which the earliest edges form a perfect matching `E_min`, and the l
 perfect matching `E_max` (the earliest, resp. latest, edge at any vertex is also the earliest,
 resp. latest, edge at its other endpoint). -/
 structure IsExtremallyMatched (G : TemporalGraph V) (s t : Set V) : Prop where
+  /-- `G` is a temporal bi-clique on `s` and `t`. -/
   isBicliqueWith : G.IsBicliqueWith s t
+  /-- The earliest edge at any vertex is also the earliest edge at its other endpoint. -/
   earliest : ∀ v ∈ s ∪ t, ∃ w n, G.EarliestEdge v w n ∧ G.EarliestEdge w v n
+  /-- The latest edge at any vertex is also the latest edge at its other endpoint. -/
   latest : ∀ v ∈ s ∪ t, ∃ w n, G.LatestEdge v w n ∧ G.LatestEdge w v n
 
 namespace IsExtremallyMatched
@@ -157,33 +162,48 @@ theorem ncard_eq (h : G.IsExtremallyMatched s t) (h₀ : G.IsProper) : s.ncard =
   rw [← Set.ncard_image_of_injective t (Option.some_injective V), ← h.image_earliestNeighborFn h₀,
     ((h.injOn_earliestNeighborFn h₀).mono Set.subset_union_left).ncard_image]
 
+/-- `N_min` maps the sources whose `N_min` satisfies `P` onto the targets satisfying `P`. -/
+private theorem image_setOf_earliestNeighborFn (h : G.IsExtremallyMatched s t) (h₀ : G.IsProper)
+    (P : V → Prop) :
+    G.earliestNeighborFn '' {v ∈ s | ∃ w ∈ G.earliestNeighborFn v, P w} =
+      some '' {u ∈ t | P u} := by
+  ext o
+  constructor
+  · rintro ⟨v, ⟨h₂, w, h₃, h₄⟩, rfl⟩
+    rw [Option.mem_def] at h₃
+    exact ⟨w, ⟨h.mem_right_of_earliestNeighborFn_eq_some h₂ h₃, h₄⟩, h₃.symm⟩
+  · rintro ⟨u, ⟨h₂, h₃⟩, rfl⟩
+    -- a target `u` is `N_min` of the source `N_min u`
+    obtain ⟨v, h₄⟩ := h.exists_earliestNeighborFn_eq_some (Or.inr h₂)
+    have h₅ := h.earliestNeighborFn_eq_some_symm h₀ (Or.inr h₂) h₄
+    exact ⟨v, ⟨h.mem_left_of_earliestNeighborFn_eq_some h₂ h₄, u, h₅, h₃⟩, h₅⟩
+
 /-- `N_min` transports the sources to the targets: for any property `P` of targets, the sources
 whose `N_min` satisfies `P` are as many as the targets satisfying `P`. -/
 theorem ncard_setOf_earliestNeighborFn (h : G.IsExtremallyMatched s t) (h₀ : G.IsProper)
     (P : V → Prop) :
     {v ∈ s | ∃ w ∈ G.earliestNeighborFn v, P w}.ncard = {u ∈ t | P u}.ncard := by
-  have h₁ : G.earliestNeighborFn '' {v ∈ s | ∃ w ∈ G.earliestNeighborFn v, P w} =
-      some '' {u ∈ t | P u} := by
-    ext o
-    constructor
-    · rintro ⟨v, ⟨h₂, w, h₃, h₄⟩, rfl⟩
-      rw [Option.mem_def] at h₃
-      exact ⟨w, ⟨h.mem_right_of_earliestNeighborFn_eq_some h₂ h₃, h₄⟩, h₃.symm⟩
-    · rintro ⟨u, ⟨h₂, h₃⟩, rfl⟩
-      -- a target `u` is `N_min` of the source `N_min u`
-      obtain ⟨v, h₄⟩ := h.exists_earliestNeighborFn_eq_some (Or.inr h₂)
-      have h₅ := h.earliestNeighborFn_eq_some_symm h₀ (Or.inr h₂) h₄
-      exact ⟨v, ⟨h.mem_left_of_earliestNeighborFn_eq_some h₂ h₄, u, h₅, h₃⟩, h₅⟩
   calc {v ∈ s | ∃ w ∈ G.earliestNeighborFn v, P w}.ncard
       = (G.earliestNeighborFn '' {v ∈ s | ∃ w ∈ G.earliestNeighborFn v, P w}).ncard :=
         ((h.injOn_earliestNeighborFn h₀).mono
           ((Set.sep_subset s _).trans Set.subset_union_left)).ncard_image.symm
     _ = {u ∈ t | P u}.ncard := by
-        rw [h₁, Set.ncard_image_of_injective _ (Option.some_injective V)]
+        rw [h.image_setOf_earliestNeighborFn h₀ P,
+          Set.ncard_image_of_injective _ (Option.some_injective V)]
 
 /-- Every vertex of an extremally matched bi-clique carries an edge, so lies in `H.verts`. -/
 theorem subset_verts {H : Subgraph G} (h : H.IsExtremallyMatched s t) : s ∪ t ⊆ H.verts :=
   fun v h₀ ↦ let ⟨_, _, h₁, _⟩ := h.earliest v h₀; H.edge_vert h₁.1
+
+/-- The sources of an extremally matched bi-clique of a finite subgraph are finitely many. -/
+theorem finite_left {H : Subgraph G} [Finite H.verts] (h : H.IsExtremallyMatched s t) :
+    s.Finite :=
+  (Set.toFinite H.verts).subset (Set.subset_union_left.trans h.subset_verts)
+
+/-- The targets of an extremally matched bi-clique of a finite subgraph are finitely many. -/
+theorem finite_right {H : Subgraph G} [Finite H.verts] (h : H.IsExtremallyMatched s t) :
+    t.Finite :=
+  (Set.toFinite H.verts).subset (Set.subset_union_right.trans h.subset_verts)
 
 /-- Baligács 2026, Theorem 18 (second part): a subgraph `K` of an extremally matched bi-clique
 `H` that contains the matchings `E_min` and `E_max`, and in which every source reaches every
@@ -227,16 +247,6 @@ theorem induce {H : Subgraph G} (h : H.IsExtremallyMatched s t) :
 section Times
 
 variable {y : V} {a b : ℕ}
-
-/-- The sources of an extremally matched bi-clique of a finite subgraph are finitely many. -/
-theorem finite_left {H : Subgraph G} [Finite H.verts] (h : H.IsExtremallyMatched s t) :
-    s.Finite :=
-  (Set.toFinite H.verts).subset (Set.subset_union_left.trans h.subset_verts)
-
-/-- The targets of an extremally matched bi-clique of a finite subgraph are finitely many. -/
-theorem finite_right {H : Subgraph G} [Finite H.verts] (h : H.IsExtremallyMatched s t) :
-    t.Finite :=
-  (Set.toFinite H.verts).subset (Set.subset_union_right.trans h.subset_verts)
 
 /-- In a simple graph, a source has an arc, with a defined time, to each target. -/
 theorem exists_arcTime_eq_some_left (h : G.IsExtremallyMatched s t) (h₀ : G.IsSimple)
@@ -297,7 +307,7 @@ theorem isExtremallyMatched_induce_empty {H : Subgraph G} :
         { disjoint := disjoint_bot_left
           mem_of_adj := fun _ _ _ h ↦ absurd h.1 (Set.notMem_empty _) }
       adj_of_mem := fun _ _ h ↦ absurd h (Set.notMem_empty _) }
-  earliest v hv := by simp at hv
-  latest v hv := by simp at hv
+  earliest v hv := by simp only [Set.union_empty, Set.mem_empty_iff_false] at hv
+  latest v hv := by simp only [Set.union_empty, Set.mem_empty_iff_false] at hv
 
 end TemporalGraph

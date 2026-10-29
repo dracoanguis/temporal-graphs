@@ -50,75 +50,94 @@ namespace Subgraph
 
 variable {V : Type u} {G : TemporalGraph V}
 
-section ExtremallyMatched
+section Theorem20
 
-/-- Baligács 2026, Theorem 20 (SAND 2025, Corollary 4.1 with Lemma 3.5): in a finite simple
-proper clique `H` that is not `{1,2}`-hop dismountable, the bi-clique `H.between V⁻ V⁺` between
-`V⁻` and `V⁺` is extremally matched. The sources are `V⁺` and the targets `V⁻`: in Baligács's
-notation, the vertices matched by `E_min` to the targets are the sources, and the earliest
-(resp. latest) edge of a vertex of `V⁻` (resp. `V⁺`) comes from `V⁺` (resp. `V⁻`)
-(SAND 2025, Corollary 3.3), and is also the earliest (resp. latest) edge of its other endpoint,
-by reciprocity (SAND 2025, Lemma 3.5). -/
+/-- An earliest edge `a b` of `a ∈ V⁺` to `b ∈ V⁻` is the earliest edge at both ends in the
+bi-clique `H.between V⁻ V⁺`, in a clique that is not `{1,2}`-hop dismountable. -/
+private theorem earliestEdge_between_of_earliestEdge_vplus {H : Subgraph G}
+    [H.IsSymm] {a b : V} {n : ℕ} (h₀ : H.IsCliqueSubgraph)
+    (h₁ : ¬H.TwoHopDismountable) (h₂ : a ∈ H.vplus) (h₃ : b ∈ H.vminus)
+    (h₄ : H.EarliestEdge a b n) :
+    (H.between H.vminus H.vplus).EarliestEdge a b n ∧
+      (H.between H.vminus H.vplus).EarliestEdge b a n := by
+  have hdisj : Disjoint H.vminus H.vplus :=
+    (biclique_of_not_twoHopDismountable h₀ h₁).isBipartiteWith.disjoint
+  -- `between A B` has the arcs of `H` going from `A` to `B` or from `B` to `A`
+  have hab : (H.between H.vminus H.vplus).Adj a b n := ⟨h₄.1, Or.inr ⟨h₂, h₃⟩⟩
+  refine ⟨earliestEdge_of_ge between_le h₄ hab, ⟨hab.symm, fun z m hz ↦ ?_⟩⟩
+  -- the edges of `b ∈ V⁻` in the bi-clique go to `V⁺`, where reciprocity bounds the time
+  have hzp : z ∈ H.vplus := by
+    rcases hz.2 with ⟨-, hz⟩ | ⟨hb', -⟩
+    · -- orientation `b ∈ V⁻`, `z ∈ V⁺`
+      exact hz
+    · -- orientation `b ∈ V⁺`, `z ∈ V⁻`: impossible, `b ∈ V⁻` and `V⁻`, `V⁺` are disjoint
+      exact absurd hb' (Set.disjoint_left.mp hdisj h₃)
+  exact earliestEdge_reciprocity h₀ h₁ h₄ z hzp m hz.1
+
+/-- A latest edge `a b` of `a ∈ V⁻` to `b ∈ V⁺` is the latest edge at both ends in the bi-clique
+`H.between V⁻ V⁺`, in a clique that is not `{1,2}`-hop dismountable. -/
+private theorem latestEdge_between_of_latestEdge_vminus {H : Subgraph G}
+    [H.IsSymm] {a b : V} {n : ℕ} (h₀ : H.IsCliqueSubgraph)
+    (h₁ : ¬H.TwoHopDismountable) (h₂ : a ∈ H.vminus) (h₃ : b ∈ H.vplus)
+    (h₄ : H.LatestEdge a b n) :
+    (H.between H.vminus H.vplus).LatestEdge a b n ∧
+      (H.between H.vminus H.vplus).LatestEdge b a n := by
+  have hdisj : Disjoint H.vminus H.vplus :=
+    (biclique_of_not_twoHopDismountable h₀ h₁).isBipartiteWith.disjoint
+  have hab : (H.between H.vminus H.vplus).Adj a b n := ⟨h₄.1, Or.inl ⟨h₂, h₃⟩⟩
+  refine ⟨latestEdge_of_ge between_le h₄ hab, ⟨hab.symm, fun z m hz ↦ ?_⟩⟩
+  -- the edges of `b ∈ V⁺` in the bi-clique go to `V⁻`, where reciprocity bounds the time
+  have hzm : z ∈ H.vminus := by
+    rcases hz.2 with ⟨hb', -⟩ | ⟨-, hz⟩
+    · -- orientation `b ∈ V⁻`, `z ∈ V⁺`: impossible, `b ∈ V⁺` and `V⁻`, `V⁺` are disjoint
+      exact absurd hb' (Set.disjoint_right.mp hdisj h₃)
+    · -- orientation `b ∈ V⁺`, `z ∈ V⁻`
+      exact hz
+  exact latestEdge_reciprocity h₀ h₁ h₄ z hzm m hz.1
+
+/-- Baligács 2026, Theorem 20: in a finite simple proper clique `H` that is not `{1,2}`-hop
+dismountable, the bi-clique `H.between V⁻ V⁺` is extremally matched, with sources `V⁺` and targets
+`V⁻` (the order is swapped relative to `between`). The earliest edge of a vertex of `V⁻` comes from
+`V⁺` (SAND 2025, Corollary 3.3), and by reciprocity (SAND 2025, Lemma 3.5) it is also the earliest
+edge of its other endpoint; likewise for the latest edges. -/
 theorem isExtremallyMatched_between_of_not_twoHopDismountable {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [H.IsSymm]
     (h₀ : H.IsSimple) (h₁ : H.IsCliqueSubgraph) (h₂ : H.IsProper) (h₃ : ¬H.TwoHopDismountable) :
     (H.between H.vminus H.vplus).IsExtremallyMatched H.vplus H.vminus := by
-  have hbc := biclique_of_not_twoHopDismountable h₁ h₃
-  have hdisj : Disjoint H.vminus H.vplus := hbc.isBipartiteWith.disjoint
-  -- an earliest edge `a b` of `a ∈ V⁺` to `b ∈ V⁻` is the earliest edge at both ends
-  have key : ∀ a ∈ H.vplus, ∀ b ∈ H.vminus, ∀ n, H.EarliestEdge a b n →
-      (H.between H.vminus H.vplus).EarliestEdge a b n ∧
-      (H.between H.vminus H.vplus).EarliestEdge b a n := by
-    intro a ha b hb n h
-    have hab : (H.between H.vminus H.vplus).Adj a b n := ⟨h.1, Or.inr ⟨ha, hb⟩⟩
-    refine ⟨earliestEdge_of_ge between_le h hab, ⟨hab.symm, fun z m hz ↦ ?_⟩⟩
-    -- the edges of `b ∈ V⁻` in the bi-clique go to `V⁺`, where reciprocity bounds the time
-    have hzp : z ∈ H.vplus := by
-      rcases hz.2 with ⟨-, hz⟩ | ⟨hb', -⟩
-      · exact hz
-      · exact absurd hb' (Set.disjoint_left.mp hdisj hb)
-    exact earliestEdge_reciprocity h₁ h₃ h z hzp m hz.1
-  -- a latest edge `a b` of `a ∈ V⁻` to `b ∈ V⁺` is the latest edge at both ends
-  have key' : ∀ a ∈ H.vminus, ∀ b ∈ H.vplus, ∀ n, H.LatestEdge a b n →
-      (H.between H.vminus H.vplus).LatestEdge a b n ∧
-      (H.between H.vminus H.vplus).LatestEdge b a n := by
-    intro a ha b hb n h
-    have hab : (H.between H.vminus H.vplus).Adj a b n := ⟨h.1, Or.inl ⟨ha, hb⟩⟩
-    refine ⟨latestEdge_of_ge between_le h hab, ⟨hab.symm, fun z m hz ↦ ?_⟩⟩
-    -- the edges of `b ∈ V⁺` in the bi-clique go to `V⁻`, where reciprocity bounds the time
-    have hzm : z ∈ H.vminus := by
-      rcases hz.2 with ⟨hb', -⟩ | ⟨-, hz⟩
-      · exact absurd hb' (Set.disjoint_right.mp hdisj hb)
-      · exact hz
-    exact latestEdge_reciprocity h₁ h₃ h z hzm m hz.1
-  refine ⟨hbc.symm, fun v hv ↦ ?_, fun v hv ↦ ?_⟩
+  refine ⟨(biclique_of_not_twoHopDismountable h₁ h₃).symm, fun v hv ↦ ?_, fun v hv ↦ ?_⟩
   · rcases hv with hv | hv
     · -- `v ∈ V⁺`: its earliest edge goes to `V⁻`
       obtain ⟨b, n, h⟩ := earliestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ v
         (vplus_sub_verts hv)
       have hb := earliestNeighbor_mem_vminus ⟨n, h⟩
-      exact ⟨b, n, (key v hv b hb n h).1, (key v hv b hb n h).2⟩
+      have hboth := earliestEdge_between_of_earliestEdge_vplus h₁ h₃ hv hb h
+      exact ⟨b, n, hboth.1, hboth.2⟩
     · -- `v ∈ V⁻`: SAND 2025, Corollary 3.3, a unique earliest edge from `V⁺`
       obtain ⟨⟨a, n⟩, ⟨ha, h⟩, -⟩ := existsUnique_vplus_earliestEdge h₀ h₁ h₂ h₃ v hv
-      exact ⟨a, n, (key a ha v hv n h).2, (key a ha v hv n h).1⟩
+      have hboth := earliestEdge_between_of_earliestEdge_vplus h₁ h₃ ha hv h
+      exact ⟨a, n, hboth.2, hboth.1⟩
   · rcases hv with hv | hv
     · -- `v ∈ V⁺`: SAND 2025, Corollary 3.3, a unique latest edge from `V⁻`
       obtain ⟨⟨a, n⟩, ⟨ha, h⟩, -⟩ := existsUnique_vminus_latestEdge h₀ h₁ h₂ h₃ v hv
-      exact ⟨a, n, (key' a ha v hv n h).2, (key' a ha v hv n h).1⟩
+      have hboth := latestEdge_between_of_latestEdge_vminus h₁ h₃ ha hv h
+      exact ⟨a, n, hboth.2, hboth.1⟩
     · -- `v ∈ V⁻`: its latest edge goes to `V⁺`
       obtain ⟨b, n, h⟩ := latestEdge_exists_of_finite_nontrivial_simple_clique h₀ h₁ v
         (vminus_sub_verts hv)
       have hb := latestNeighbor_mem_vplus ⟨n, h⟩
-      exact ⟨b, n, (key' v hv b hb n h).1, (key' v hv b hb n h).2⟩
+      have hboth := latestEdge_between_of_latestEdge_vminus h₁ h₃ hv hb h
+      exact ⟨b, n, hboth.1, hboth.2⟩
 
-end ExtremallyMatched
+end Theorem20
 
-section Bound
+section LinearBound
 
 /-- Baligács 2026, §5 (non-dismountable case of Theorem 2): a finite simple proper clique `H`
 that is not `{1,2}`-hop dismountable has a symmetric spanner with at most `7 n` edges, where
-`n = |H.verts|`. By Theorem 20, `H.between V⁻ V⁺` is extremally matched, and Theorem 18 gives a
-spanner of it, temporally connected on `V⁺ ∪ V⁻ = H.verts` (SAND 2025, Lemma 3.4), with at most
+`n = |H.verts|`.
+
+Proof: by Theorem 20, `H.between V⁻ V⁺` is extremally matched, and Theorem 18 gives a spanner of
+it, temporally connected on `V⁺ ∪ V⁻ = H.verts` (SAND 2025, Lemma 3.4), with at most
 `14 |V⁺| = 7 n` edges (SAND 2025, Corollary 3.3 (3)). -/
 theorem exists_isSpannerOf_ncard_le_seven_mul_of_not_twoHopDismountable {H : Subgraph G}
     [Finite H.verts] [Nontrivial H.verts] [G.IsSymm] [G.IsLoopless] [H.IsSymm]
@@ -130,7 +149,7 @@ theorem exists_isSpannerOf_ncard_le_seven_mul_of_not_twoHopDismountable {H : Sub
   -- Theorem 18 on the bi-clique, with sources `V⁺`
   obtain ⟨K, hKsymm, hKspan, hKtc, hKcard⟩ := hem.exists_isSpannerFromTo
     (h₀.mono (toTemporalGraph_le hBle)) (h₂.mono (toTemporalGraph_le hBle))
-  -- `V⁰ = ∅`, so `H.verts = V⁺ ∪ V⁻`, of size `2 |V⁺|`
+  -- `V⁻ ∪ V⁺ ∪ V⁰ = H.verts` and `V⁰ = ∅` (SAND 2025, Lemma 3.4), so `H.verts = V⁺ ∪ V⁻`
   have hverts : H.verts = H.vplus ∪ H.vminus := by
     rw [Set.union_comm, ← vunion_eq_univ, vzero_empty_of_not_twoHopDismountable h₀ h₁ h₂ h₃,
       Set.union_empty]
@@ -140,10 +159,12 @@ theorem exists_isSpannerOf_ncard_le_seven_mul_of_not_twoHopDismountable {H : Sub
     rw [hverts, Set.ncard_union_eq hdisj.symm
       ((Set.toFinite H.verts).subset vplus_sub_verts)
       ((Set.toFinite H.verts).subset vminus_sub_verts)]
+    -- `|V⁺| + |V⁻| = 2 |V⁺|`, as `|V⁻| = |V⁺|`
     omega
   refine ⟨K, hKsymm, isSpannerOf_of_le_of_temporallyConnected (hKspan.1.trans hBle) ?_, ?_⟩
   · rwa [hverts]
-  · omega
+  · -- `|K| ≤ 14 |V⁺| = 7 (2 |V⁺|) = 7 n`
+    omega
 
 /-- Baligács 2026, Theorem 2: every finite simple proper temporal clique on `n` vertices admits
 a symmetric spanner with at most `7 n` edges. This is SAND 2025, Theorem 2.1 and §2.1 (the
@@ -170,11 +191,12 @@ theorem exists_isBigO_isSpannerOf_linear :
         H.IsSimple → H.IsCliqueSubgraph → H.IsProper →
         ∃ K : Subgraph G, K.IsSymm ∧ K.IsSpannerOf H ∧ K.edgeSet.ncard ≤ f H.verts.ncard := by
   refine ⟨fun n ↦ 7 * n, ?_, fun h₀ h₁ h₂ ↦ exists_isSpannerOf_ncard_le_seven_mul h₀ h₁ h₂⟩
+  -- `‖7 n‖ ≤ 7 ‖n‖`
   refine IsBigO.of_bound 7 (Eventually.of_forall fun n ↦ ?_)
   simp only [Nat.cast_mul, Nat.cast_ofNat, norm_mul, Real.norm_ofNat, RCLike.norm_natCast,
     Std.le_refl]
 
-end Bound
+end LinearBound
 
 end Subgraph
 

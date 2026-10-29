@@ -8,11 +8,12 @@ module
 public import TemporalGraph.LinearSpanner.ExtremallyMatched
 
 /-!
-# Stars of an extremally matched bi-clique: definitions
+# Stars of an extremally matched bi-clique
 
 The edge sets and vertex predicates of Baligács 2026, §§3–4, on a temporal bi-clique with sources
-`s` and targets `t`. The results about them are in `LinearSpanner/SimpleStar.lean` (§3,
-Observation 9) and `LinearSpanner/ExtendedStar.lean` (§4, Lemmas 13–16).
+`s` and targets `t`, with their membership and counting lemmas. The results about them are in
+`LinearSpanner/SimpleStar.lean` (§3, Observation 9) and `LinearSpanner/ExtendedStar.lean` (§4,
+Lemmas 13–16).
 
 **Labelings without indices.** The paper numbers the vertices along the order induced by a center
 (Definition 7). For a source center `c`, the targets are sorted by the times of their edges to
@@ -20,6 +21,20 @@ Observation 9) and `LinearSpanner/ExtendedStar.lean` (§4, Lemmas 13–16).
 these indices: "`j ≤ i`" is a comparison of arc times at the center. For a target `u` the index is
 read on `G.arcTime c u`; for a source `v` on `G.arcTime c w` with `w = N_min v`. A cut at `k`
 (Definition 8) is a threshold time `τ`. For a target center the order is by decreasing time.
+
+**Vocabulary used in this file and the next ones.** Write `λ(a, b)` for `G.arcTime a b`, the time
+of the edge `{a, b}`; `c` is the center and `τ` the threshold time of a cut.
+
+* `pos_x(z) ≤ pos_x(c)` : the edge `{x, z}` comes no later than the edge `{x, c}`, that is
+  `∃ k ∈ G.arcTime x z, ∃ l ∈ G.arcTime x c, k ≤ l`. (`pos_x(z) < pos_x(c)` : the same with
+  `k < l`.)
+* *extend index* : see `IsSourceExtendTarget` and `IsTargetExtendSource`.
+* an *early* source `v` (for the center `c` and the threshold `τ`) : `λ(c, N_min v) ≤ τ`, that is
+  `∃ u ∈ G.earliestNeighborFn v, ∃ k ∈ G.arcTime c u, k ≤ τ` (the paper's `s_j`, `j ≤ k`).
+* an *upper* source `v` : `τ < λ(c, N_min v)` (the paper's `s_i`, `i > k`).
+* a *late* target `u` : `τ ≤ λ(c, u)`.
+* a *crossing* source : an upper source from which a short temporal walk reaches an early source's
+  `N_min`, before the edge of that `N_min` to `c` (see `IsCutCrossing`).
 
 **`Option` values.** `arcTime` and `earliestNeighborFn` are `Option`-valued. Every comparison is
 stated through the values, `∃ k ∈ G.arcTime c u, k ≤ τ`, which is false on `none`, never through
@@ -39,12 +54,13 @@ these values exist, so nothing is lost.
 
 ## Main results
 
-* `TemporalGraph.eMin_subset_edgeSet`, … : all these sets consist of edges of the graph, with no
+* `TemporalGraph.simpleStar_subset_edgeSet`, `TemporalGraph.extStarSource_subset_edgeSet`,
+  `TemporalGraph.extStarTarget_subset_edgeSet` : the stars consist of edges of the graph, with no
   hypothesis (their times are given by `arcTime`).
-* `TemporalGraph.ncard_eMin_le`, `ncard_eMax_le`, `ncard_incidentEdges_le` : at most one edge per
-  vertex of the indexing set (through `finite_and_ncard_le_of_functional`).
-* `TemporalGraph.IsExtremallyMatched.mem_eMin`, `mem_eMax` : `E_min` and `E_max` also contain the
-  earliest and latest edges at the targets.
+* `TemporalGraph.ncard_eMin_le`, `TemporalGraph.ncard_eMax_le`,
+  `TemporalGraph.ncard_incidentEdges_le` : at most one edge per vertex of the indexing set.
+* `TemporalGraph.IsExtremallyMatched.mem_eMin`, `TemporalGraph.IsExtremallyMatched.mem_eMax` :
+  `E_min` and `E_max` also contain the earliest and latest edges at the targets.
 
 ## References
 
@@ -81,26 +97,29 @@ def simpleStar (G : TemporalGraph V) (s t : Set V) (c : V) : Set (Sym2 V × ℕ)
   G.eMin s ∪ G.incidentEdges c t
 
 /-- Baligács 2026, Definition 8 (ii), with the cut `k` given by the threshold time `τ`: in the
-`c`-ordered labeling, the source `v = sᵢ` is `m`-hop-`k`-cut-crossing when `i > k` and some
-temporal walk of length at most `m + 1` starts at `v` and ends with the edge `{t_j, c}` for some
-`j ≤ k`. The walk is split into its part from `v` to `t_j = N_min(s_j)`, of length at most `m`,
-and the final edge to `c`, which must come no earlier. -/
+`c`-ordered labeling, the source `v = sᵢ` is `m`-hop-`k`-cut-crossing when `i > k` (the first
+conjunct: `τ < λ(c, N_min v)`, `v` is an upper source) and some temporal walk of length at most
+`m + 1` starts at `v` and ends with the edge `{t_j, c}` for some `j ≤ k` (the second conjunct: `t_j`
+is `N_min` of an early source). The walk is split into its part from `v` to `t_j = N_min(s_j)`, of
+length at most `m`, and the final edge to `c`, which must come no earlier. -/
 def IsCutCrossing (G : TemporalGraph V) (s : Set V) (c : V) (τ m : ℕ) (v : V) : Prop :=
   (∃ u ∈ G.earliestNeighborFn v, ∃ k ∈ G.arcTime c u, τ < k) ∧
     ∃ w ∈ s, ∃ u ∈ G.earliestNeighborFn w, (∃ k ∈ G.arcTime c u, k ≤ τ) ∧
       ∃ n n' : ℕ, ∃ p : G.TemporalWalk v n u n', p.length ≤ m ∧ ∃ k ∈ G.arcTime u c, n' ≤ k
 
-/-- Baligács 2026, Definition 12 (a): for the source center `c`, the extend index of the source
-`v` is the target `u = t_{ind(v)}`: the last target, in the `c`-ordered labeling, whose edge to
-`v` comes after its edge to `c`. -/
+/-- Baligács 2026, Definition 12 (a): for the source center `c` ("Source" refers to the side of the
+center), `u` is the extend target of the source `v`, i.e. `u = t_{ind(v)}`: among the targets `u'`
+with `λ(u', c) < λ(u', v)`, it is the one with the greatest `λ(c, u')`, that is, the last in the
+`c`-ordered labeling. -/
 def IsSourceExtendTarget (G : TemporalGraph V) (t : Set V) (c v u : V) : Prop :=
   u ∈ t ∧ (∃ a ∈ G.arcTime u c, ∃ b ∈ G.arcTime u v, a < b) ∧
     ∀ u' ∈ t, (∃ a ∈ G.arcTime u' c, ∃ b ∈ G.arcTime u' v, a < b) →
       ∃ a ∈ G.arcTime c u', ∃ b ∈ G.arcTime c u, a ≤ b
 
-/-- Baligács 2026, Definition 12 (b): for the target center `c`, the extend index of the target
-`v` is the source `u = s_{ind(v)}`: the last source, in the `c`-ordered labeling (by decreasing
-time at `c`), whose edge to `v` comes before its edge to `c`. -/
+/-- Baligács 2026, Definition 12 (b): for the target center `c` ("Target" refers to the side of the
+center), `u` is the extend source of the target `v`, i.e. `u = s_{ind(v)}`: among the sources `u'`
+with `λ(u', v) < λ(u', c)`, it is the one with the least `λ(c, u')`, that is, the last in the
+`c`-ordered labeling (by decreasing time at `c`). -/
 def IsTargetExtendSource (G : TemporalGraph V) (s : Set V) (c v u : V) : Prop :=
   u ∈ s ∧ (∃ a ∈ G.arcTime u v, ∃ b ∈ G.arcTime u c, a < b) ∧
     ∀ u' ∈ s, (∃ a ∈ G.arcTime u' v, ∃ b ∈ G.arcTime u' c, a < b) →
@@ -186,14 +205,16 @@ theorem simpleStar_subset_edgeSet {c : V} : G.simpleStar s t c ⊆ G.edgeSet :=
   Set.union_subset eMin_subset_edgeSet incidentEdges_subset_edgeSet
 
 /-- The extended star from a source consists of edges of `G`. -/
-theorem extStarSource_subset_edgeSet {c : V} : G.extStarSource s t c ⊆ G.edgeSet :=
-  Set.union_subset (Set.union_subset (Set.union_subset eMin_subset_edgeSet eMax_subset_edgeSet)
-    incidentEdges_subset_edgeSet) sourceExtendEdges_subset_edgeSet
+theorem extStarSource_subset_edgeSet {c : V} : G.extStarSource s t c ⊆ G.edgeSet := by
+  simp only [extStarSource, Set.union_subset_iff]
+  exact ⟨⟨⟨eMin_subset_edgeSet, eMax_subset_edgeSet⟩, incidentEdges_subset_edgeSet⟩,
+    sourceExtendEdges_subset_edgeSet⟩
 
 /-- The extended star from a target consists of edges of `G`. -/
-theorem extStarTarget_subset_edgeSet {c : V} : G.extStarTarget s t c ⊆ G.edgeSet :=
-  Set.union_subset (Set.union_subset (Set.union_subset eMin_subset_edgeSet eMax_subset_edgeSet)
-    incidentEdges_subset_edgeSet) targetExtendEdges_subset_edgeSet
+theorem extStarTarget_subset_edgeSet {c : V} : G.extStarTarget s t c ⊆ G.edgeSet := by
+  simp only [extStarTarget, Set.union_subset_iff]
+  exact ⟨⟨⟨eMin_subset_edgeSet, eMax_subset_edgeSet⟩, incidentEdges_subset_edgeSet⟩,
+    targetExtendEdges_subset_edgeSet⟩
 
 end Subset
 
@@ -207,7 +228,7 @@ theorem finite_and_ncard_le_of_functional {α : Type*} {S : Set α} (R : V → �
   rcases S.eq_empty_or_nonempty with rfl | ⟨e₀, he₀⟩
   · simp
   obtain ⟨v₀, -⟩ := h₁ e₀ he₀
-  have : Nonempty V := ⟨v₀⟩
+  have : Nonempty V := ⟨v₀⟩ -- needed by `choose!`
   -- choose a related vertex of `A` for each element of `S`; this is an injection
   choose! f hfA hfR using h₁
   have h₃ : S.InjOn f := fun e he e' he' h ↦ h₂ (f e) e e' (hfR e he) (h ▸ hfR e' he')
@@ -217,7 +238,7 @@ theorem finite_and_ncard_le_of_functional {α : Type*} {S : Set α} (R : V → �
 theorem ncard_eMin_le (h₀ : A.Finite) : (G.eMin A).ncard ≤ A.ncard :=
   (finite_and_ncard_le_of_functional (S := G.eMin A)
     (fun v e ↦ ∃ w ∈ G.earliestNeighborFn v, ∃ n ∈ G.arcTime v w, e = (s(v, w), n)) h₀
-    (fun _ ⟨v, hv, hr⟩ ↦ ⟨v, hv, hr⟩) fun _ _ _ ⟨w, hw, n, hn, he⟩ ⟨w', hw', n', hn', he'⟩ ↦ by
+    (fun _ he ↦ he) fun _ _ _ ⟨w, hw, n, hn, he⟩ ⟨w', hw', n', hn', he'⟩ ↦ by
       obtain rfl := Option.mem_unique hw hw'
       obtain rfl := Option.mem_unique hn hn'
       rw [he, he']).2
@@ -226,7 +247,7 @@ theorem ncard_eMin_le (h₀ : A.Finite) : (G.eMin A).ncard ≤ A.ncard :=
 theorem ncard_eMax_le (h₀ : A.Finite) : (G.eMax A).ncard ≤ A.ncard :=
   (finite_and_ncard_le_of_functional (S := G.eMax A)
     (fun v e ↦ ∃ w ∈ G.latestNeighborFn v, ∃ n ∈ G.arcTime v w, e = (s(v, w), n)) h₀
-    (fun _ ⟨v, hv, hr⟩ ↦ ⟨v, hv, hr⟩) fun _ _ _ ⟨w, hw, n, hn, he⟩ ⟨w', hw', n', hn', he'⟩ ↦ by
+    (fun _ he ↦ he) fun _ _ _ ⟨w, hw, n, hn, he⟩ ⟨w', hw', n', hn', he'⟩ ↦ by
       obtain rfl := Option.mem_unique hw hw'
       obtain rfl := Option.mem_unique hn hn'
       rw [he, he']).2
@@ -235,7 +256,7 @@ theorem ncard_eMax_le (h₀ : A.Finite) : (G.eMax A).ncard ≤ A.ncard :=
 theorem ncard_incidentEdges_le {x : V} (h₀ : A.Finite) : (G.incidentEdges x A).ncard ≤ A.ncard :=
   (finite_and_ncard_le_of_functional (S := G.incidentEdges x A)
     (fun v e ↦ ∃ n ∈ G.arcTime x v, e = (s(x, v), n)) h₀
-    (fun _ ⟨v, hv, hr⟩ ↦ ⟨v, hv, hr⟩) fun _ _ _ ⟨n, hn, he⟩ ⟨n', hn', he'⟩ ↦ by
+    (fun _ he ↦ he) fun _ _ _ ⟨n, hn, he⟩ ⟨n', hn', he'⟩ ↦ by
       obtain rfl := Option.mem_unique hn hn'
       rw [he, he']).2
 

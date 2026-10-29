@@ -14,7 +14,9 @@ Defines `TemporalWalk`, an inductive type for temporal walks that may be empty. 
 `NonemptyTemporalWalk` or represents an empty walk at a single vertex and time.
 
 ## Main definitions
-* `TemporalWalk` : A (possibly empty) walk with non-decreasing times
+
+* `TemporalWalk` : A (possibly empty) walk with non-decreasing times; built with `nil` (empty walk)
+  and `ofNonempty` (a nonempty walk)
 * `length` : The number of edges
 * `support` : The list of vertices visited, stored from the end vertex back to the start
 * `arcs` : The list of directed edges, stored last arc first
@@ -24,6 +26,7 @@ Defines `TemporalWalk`, an inductive type for temporal walks that may be empty. 
 * `mapLe` : Transport a walk along a spanning-subgraph inclusion `G ≤ G'`
 
 ## Main results
+
 * `nondecreasing_time` : Times are non-decreasing along a walk
 * `length_mapLe`, `support_mapLe`, `arcs_mapLe` : Mapping preserves length, support and arcs
 * `isStrict_mapLe`, `isStrict_ofNonempty` : Strictness is preserved by `mapLe` and by the coercion
@@ -46,36 +49,38 @@ variable {V : Type u} {G : TemporalGraph V}
 
 namespace TemporalGraph
 
-/-- We define a Non-strict TemporalWalk, meaning multiple edges can be crossed at a given time. -/
+/-- A possibly empty temporal walk from `x` at time `n` to `y` at time `m`, with non-decreasing
+times: several arcs may share a time. -/
 inductive TemporalWalk : V → ℕ → V → ℕ → Type u
+  /-- The empty walk at the vertex `x` and time `n`. -/
   | nil {x : V} {n : ℕ} : TemporalWalk x n x n
+  /-- A nonempty walk, seen as a temporal walk. -/
   | ofNonempty {x y : V} {n m : ℕ} (p : G.NonemptyTemporalWalk x n y m) : TemporalWalk x n y m
   deriving DecidableEq
 
 namespace TemporalWalk
 
-/-- The length of a TemporalWalk is the number of edges along it. -/
+/-- The length of a temporal walk: the number of arcs along it. -/
 @[grind =]
 def length {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → ℕ
   | nil => 0
   | ofNonempty p => p.length
 
-/-- The `support` of a TemporalWalk is the list of vertices it visits, stored from the end vertex
+/-- The support of a temporal walk: the list of vertices it visits, stored from the end vertex
 back to the start vertex. -/
 @[grind =]
 def support {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List V
   | nil => [x]
   | ofNonempty p => p.support
 
-
-/-- The `arcs` of a TemporalWalk is the list of arcs (edge with a direction) it traverses, stored
-last arc first. -/
+/-- The arcs of a temporal walk: the list of arcs `(u, v, t)` (directed edges with their time) that
+it traverses, stored last arc first. -/
 @[grind =]
 def arcs {x y : V} {n m : ℕ} : G.TemporalWalk x n y m → List (V × V × ℕ)
   | nil => []
   | ofNonempty p => p.arcs
 
-/-- The `edges` of a TemporalWalk are the edges (unordered pairs, with their times) it traverses,
+/-- The edges of a temporal walk: the unordered pairs, with their times, that it traverses,
 stored last edge first. -/
 @[grind =]
 def edges {x y : V} {n m : ℕ} (p : G.TemporalWalk x n y m) : List (Sym2 V × ℕ) :=
@@ -84,7 +89,7 @@ def edges {x y : V} {n m : ℕ} (p : G.TemporalWalk x n y m) : List (Sym2 V × �
 /-- Times are non-decreasing along a (possibly empty) walk: `n ≤ m`. -/
 lemma nondecreasing_time {x y : V} {n m : ℕ} (tw : G.TemporalWalk x n y m) : n ≤ m := by
   cases tw with
-  | nil => trivial
+  | nil => exact le_rfl
   | ofNonempty p => exact p.nondecreasing_time
 
 /-- A (possibly empty) walk is *strict* when its times increase strictly from each arc to the
@@ -177,6 +182,7 @@ theorem adj_of_mem_arcs (p : G.TemporalWalk x n y m) :
 theorem edges_subset_edgeSet (p : G.TemporalWalk x n y m) :
     ∀ ⦃e⦄, e ∈ p.edges → e ∈ G.edgeSet := by
   intro e he
+  -- the edge `e` comes from an arc `a` of the walk
   obtain ⟨a, ha, rfl⟩ := List.mem_map.1 he
   exact ⟨a.1, a.2.1, rfl, (p.adj_of_mem_arcs a ha).1⟩
 
@@ -185,6 +191,7 @@ theorem edges_subset_edgeSet (p : G.TemporalWalk x n y m) :
 theorem adj_of_edges_subset {G' : TemporalGraph V} [G'.IsSymm] (p : G.TemporalWalk x n y m)
     (h₀ : ∀ e ∈ p.edges, e ∈ G'.edgeSet) : ∀ a ∈ p.arcs, G'.Adj a.1 a.2.1 a.2.2 := by
   intro a ha
+  -- the edge of the arc `a` is in `G'.edgeSet`, and `G'` is symmetric
   exact G'.mem_edgeSet.1 (h₀ _ (List.mem_map.2 ⟨a, ha, rfl⟩))
 
 end API
@@ -195,7 +202,7 @@ namespace NonemptyTemporalWalk
 
 /-- Automatic coercion of a `NonemptyTemporalWalk` to a `TemporalWalk`, since it is never empty. -/
 instance {x y : V} {n m : ℕ} : Coe (G.NonemptyTemporalWalk x n y m) (G.TemporalWalk x n y m) where
-  coe  p := TemporalWalk.ofNonempty p
+  coe p := TemporalWalk.ofNonempty p
 
 /-- Seen as a `TemporalWalk`, a nonempty walk keeps its strictness. -/
 @[simp, grind =]
@@ -215,10 +222,15 @@ theorem exists_isStrict [G.IsSymm] {x y : V} {n m : ℕ} (h₀ : G.IsProper)
   | @step y z n m k p h h₁ ih =>
     obtain ⟨n', m', q, hq, hn, hm⟩ := ih
     cases q with
-    | nil => exact ⟨k, k, .ofNonempty (.single h), trivial, p.nondecreasing_time.trans h₁, le_rfl⟩
+    | nil =>
+      -- the previous walk is empty: the last arc alone is a strict walk, at time `k`
+      refine ⟨k, k, .ofNonempty (.single h), trivial, ?_, le_rfl⟩
+      exact p.nondecreasing_time.trans h₁
     | ofNonempty q =>
+      -- if the last arc is strictly later than the end of `q`, appending it keeps strictness
       by_cases hlt : m' < k
       · exact ⟨n', k, .ofNonempty (q.step h hlt.le), ⟨hlt, hq⟩, hn, le_rfl⟩
+      -- otherwise `m' = k`, from `¬ m' < k` and `m' ≤ m ≤ k`
       obtain rfl : m' = k := by omega
       cases q with
       | single h₂ =>

@@ -15,7 +15,9 @@ to contain at least one edge. Times must be non-decreasing along the walk (*non-
 `IsStrict` selects the walks whose times increase strictly.
 
 ## Main definitions
-* `NonemptyTemporalWalk` : A walk with at least one edge and non-decreasing times
+
+* `NonemptyTemporalWalk` : A walk with at least one edge and non-decreasing times; built with
+  `single` (one arc) and `step` (an arc added at the end)
 * `length` : The number of edges in a walk
 * `support` : The list of vertices visited
 * `arcs` : The list of directed edges (as triples `V × V × ℕ`)
@@ -26,7 +28,10 @@ to contain at least one edge. Times must be non-decreasing along the walk (*non-
 * `transfer` : The same walk, seen in another graph containing all of its arcs
 
 ## Main results
+
 * `nondecreasing_time` : Times are non-decreasing along a walk
+* `EarliestEdge.le_start`, `LatestEdge.end_le` : an earliest edge out of the start vertex is no
+  later than the start time; a latest edge out of the end vertex is no earlier than the end time
 * `exists_adj_fst` : The first vertex of a walk has an outgoing arc
 * `exists_adj_snd` : The last vertex of a walk has an incoming arc
 * `length_append`, `arcs_append` : Concatenation lemmas for walk length and arcs
@@ -49,7 +54,10 @@ variable {V : Type u} {G : TemporalGraph V}
 /-- A nonempty *non-strict* temporal walk from `x` at time `n` to `y` at time `m`: times are only
 required to be non-decreasing along the walk. `IsStrict` singles out the strict ones. -/
 inductive NonemptyTemporalWalk : V → ℕ → V → ℕ → Type u
-  | single {x y : V} {n : ℕ} (h: G.Adj x y n) : NonemptyTemporalWalk x n y n
+  /-- A walk made of a single arc from `x` to `y` at time `n`. -/
+  | single {x y : V} {n : ℕ} (h : G.Adj x y n) : NonemptyTemporalWalk x n y n
+  /-- Extend a walk from `x` to `y` (arriving at time `m`) by an arc from `y` to `z` at a time
+  `k ≥ m`. -/
   | step {x y z : V} {n m k : ℕ}
     (p : NonemptyTemporalWalk x n y m) (h : G.Adj y z k) (h' : m ≤ k) :
     NonemptyTemporalWalk x n z k
@@ -57,26 +65,25 @@ inductive NonemptyTemporalWalk : V → ℕ → V → ℕ → Type u
 
 namespace NonemptyTemporalWalk
 
-/-- The length of a NonemptyTemporalWalk is the number of edges along it. -/
+/-- The length of a nonempty temporal walk: the number of arcs along it. -/
 @[grind =]
 def length {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → ℕ
   | single _ => 1
   | step p _ _ => 1 + p.length
 
-/-- The `support` of a NonemptyTemporalWalk is the list of vertices it visits, stored from the end
+/-- The support of a nonempty temporal walk: the list of vertices it visits, stored from the end
 vertex back to the start vertex. -/
 @[grind =]
 def support {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → List V
-  | single _ => y :: [x]
+  | single _ => [y, x]
   | step p _ _ => y :: p.support
 
--- Arcs
-/-- The `arcs` of a NonemptyTemporalWalk is the list of arcs (edge with a direction) it traverses,
-stored last arc first. -/
+/-- The arcs of a nonempty temporal walk: the list of arcs `(u, v, t)` (directed edges with their
+time) that it traverses, stored last arc first. -/
 @[grind =]
 def arcs {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → List (V × V × ℕ)
-  | @single _ _ x y n _ => [⟨x ,⟨y, n⟩⟩]
-  | @step _ _ _ y z _ _ k p _ _ => ⟨y ,⟨ z, k⟩⟩ :: p.arcs
+  | single (x := x) (y := y) (n := n) _ => [(x, y, n)]
+  | step (y := y) (z := z) (k := k) p _ _ => (y, z, k) :: p.arcs
 
 /-- A walk is *strict* when the time increases strictly from each arc to the next. A
 `NonemptyTemporalWalk` is only required to be non-decreasing; the two notions differ even in a
@@ -85,20 +92,21 @@ is a non-strict walk but not a strict one. -/
 @[grind =]
 def IsStrict {x y : V} {n m : ℕ} : G.NonemptyTemporalWalk x n y m → Prop
   | single _ => True
-  | @step _ _ _ _ _ _ m k p _ _ => m < k ∧ p.IsStrict
+  | step (m := m) (k := k) p _ _ => m < k ∧ p.IsStrict
 
-/-- Concatenate two compatible NonemptyTemporalWalks. -/
+/-- Concatenation of two nonempty temporal walks, the first arriving at `y` no later (time `m`)
+than the second leaves it (time `k`). -/
 @[grind =]
 def append {x y z : V} {n m k l}
     (p : G.NonemptyTemporalWalk x n y m) (ext : G.NonemptyTemporalWalk y k z l)
     (h : m ≤ k) :
     G.NonemptyTemporalWalk x n z l :=
   match ext with
-  | single h_edge => p.step h_edge h
-  | step p' h_edge h_ord' => step (append p p' h) h_edge h_ord'
+  | single h₀ => p.step h₀ h
+  | step q h₀ h₁ => step (append p q h) h₀ h₁
 
-/-- The reversed version of `NonemptyTemporalWalk.step`, concatening an edge at the start of a
-walk. -/
+/-- The reverse of `NonemptyTemporalWalk.step`: add an arc from `z` to `x`, at a time `k ≤ n`,
+at the start of a walk. -/
 def prepend {x y z : V} {n m k : ℕ}
     (p : G.NonemptyTemporalWalk x n y m) (h : G.Adj z x k) (h' : k ≤ n) :
     G.NonemptyTemporalWalk z k y m :=
@@ -119,13 +127,17 @@ protected def transfer {x y : V} {n m : ℕ} (p : G.NonemptyTemporalWalk x n y m
   match p with
   | single _ => single (h₀ (_, _, _) (by simp [arcs]))
   | step p _ h' =>
-    step (p.transfer G' fun a ha ↦ h₀ a (by simp [arcs, ha])) (h₀ (_, _, _) (by simp [arcs])) h'
+    step
+      -- the arcs of the shorter walk `p` are arcs of the whole walk
+      (p.transfer G' fun a ha ↦ h₀ a (by simp [arcs, ha]))
+      -- the last arc
+      (h₀ (_, _, _) (by simp [arcs])) h'
 
 /-- Times are non-decreasing along a walk: `n ≤ m`. -/
 lemma nondecreasing_time {x y : V} {n m : ℕ} (tw : G.NonemptyTemporalWalk x n y m) : n ≤ m := by
   induction tw with
-  | single h => rfl
-  | step h p h' ih => exact le_trans ih h'
+  | single _ => exact le_rfl
+  | step _ _ h ih => exact le_trans ih h
 
 /-- The first vertex of a walk has an outgoing arc, found by recursing to the walk's innermost
 edge. -/
@@ -147,8 +159,10 @@ theorem _root_.TemporalGraph.EarliestEdge.le_start {x y z : V} {n m k : ℕ}
     (h : G.EarliestEdge x z k) (tw : G.NonemptyTemporalWalk x n y m) :
     k ≤ n := by
   induction tw with
-  | single h' => grind only [= EarliestEdge.eq_1]
-  |step _ _ _ hi => exact hi
+  | single h' =>
+    -- `h` says `k` is minimal among the times of arcs leaving `x`, and `h'` is such an arc
+    grind only [= EarliestEdge.eq_1]
+  | step _ _ _ hi => exact hi
 
 /-- For a symmetric graph, the latest edge out of a walk's end vertex occurs no earlier than the
 walk's end time. -/
@@ -156,9 +170,10 @@ theorem _root_.TemporalGraph.LatestEdge.end_le {x y z : V} {n m k : ℕ} [G.IsSy
     (h : G.LatestEdge y z k) (tw : G.NonemptyTemporalWalk x n y m) :
     m ≤ k := by
   cases tw with
-  | single h' => grind only [→ adj_symm, = LatestEdge.eq_1]
+  | single h' =>
+    -- the reversed arc `h'.symm` leaves `y`, so `h` bounds its time by `k`
+    grind only [→ adj_symm, = LatestEdge.eq_1]
   | step _ h' _ => exact h.right _ _ h'.symm
-
 
 section API
 
@@ -240,7 +255,10 @@ theorem adj_of_mem_arcs (p : G.NonemptyTemporalWalk x n y m) :
     ∀ a ∈ p.arcs, G.Adj a.1 a.2.1 a.2.2 ∧ n ≤ a.2.2 ∧ a.2.2 ≤ m := by
   induction p with
   | single h => grind only [arcs, = List.mem_cons, ← List.not_mem_nil]
-  | step p h h' ih => have := p.nondecreasing_time; grind only [arcs, = List.mem_cons]
+  | step p h h' ih =>
+    -- the new arc `h` is at time `k ≥ m ≥ n`; the other arcs are those of `p`
+    have hp := p.nondecreasing_time
+    grind only [arcs, = List.mem_cons]
 
 end API
 

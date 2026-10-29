@@ -11,59 +11,73 @@ import Mathlib.Tactic.IntervalCases
 /-!
 # Worked Examples
 
-This file contains worked examples of temporal graphs and their properties, including bipartite
-examples: the bi-clique obtained by restricting `square` between two disjoint parts, and the
-labelled complete bi-clique `biSquare`.
+This file contains worked examples of temporal graphs and their properties.
+
+## Main definitions
+
+* `square` : a four-vertex temporal graph forming a square, with edges at times 1 to 4. It is
+  symmetric, loopless (`square_isSymm`, `square_isLoopless`) and a clique (`square_clique`).
+* `biSquare` : the complete temporal bi-clique `K₂,₂` with labels 1, 2, 3, 4.
+
+## Main results
+
+* `square_between_isBicliqueWith` : restricting `square` between `{0, 1}` and `{2, 3}` gives a
+  bi-clique.
+* `square_vminus`, `square_vplus` : the sets `V⁻` and `V⁺` of `square` are `{0, 1}` and `{2, 3}`.
+* `biSquare_isBiclique`, `biSquare_isHappy`, `biSquare_simpleFootprint_isBipartite` : `biSquare`
+  is a bi-clique, is happy, and has a bipartite footprint.
 -/
 
 open TemporalGraph
 
-universe u
-
 /-- A four-vertex temporal graph forming a square: edges at times 1, 2, 3, 4. -/
 def square : TemporalGraph (Fin 4) := {
-  Adj := fun v w t =>
+  Adj := fun v w t ↦
     match t with
-    | 1 => (v=0 ∧ w=1) ∨ (w=0 ∧ v=1)
-    | 2 => (v=1 ∧ w=3) ∨ (w=1 ∧ v=3) ∨ (v=0 ∧ w=2) ∨ (w=0 ∧ v=2)
-    | 3 => (v=0 ∧ w=3) ∨ (w=0 ∧ v=3) ∨ (v=1 ∧ w=2) ∨ (w=1 ∧ v=2)
-    | 4 => (v=2 ∧ w=3) ∨ (w=2 ∧ v=3)
+    | 1 => (v = 0 ∧ w = 1) ∨ (w = 0 ∧ v = 1)
+    | 2 => (v = 1 ∧ w = 3) ∨ (w = 1 ∧ v = 3) ∨ (v = 0 ∧ w = 2) ∨ (w = 0 ∧ v = 2)
+    | 3 => (v = 0 ∧ w = 3) ∨ (w = 0 ∧ v = 3) ∨ (v = 1 ∧ w = 2) ∨ (w = 1 ∧ v = 2)
+    | 4 => (v = 2 ∧ w = 3) ∨ (w = 2 ∧ v = 3)
     | _ => False
 }
 
-instance square_isSymm : square.IsSymm := .of_adj (by
-  intro n x y h
-  simp only [square] at h ⊢
-  split at h <;> aesop)
+instance square_isSymm : square.IsSymm :=
+  .of_adj fun n x y h ↦ by
+    simp only [square] at h ⊢
+    split at h <;> aesop
 
-instance square_isLoopless : square.IsLoopless := ⟨fun t => ⟨fun x => by
-  simp only [TemporalGraph.adjAt, square]
-  split <;> aesop⟩⟩
+instance square_isLoopless : square.IsLoopless :=
+  ⟨fun t ↦ ⟨fun x ↦ by
+    simp only [adjAt, square]
+    split <;> aesop⟩⟩
 
 /-- The square graph is a complete temporal clique. -/
 lemma square_clique : square.IsCliqueGraph := by
   intro u _ v _ h
+  -- each pair of distinct vertices is joined at one of the times `1` to `4`
   match u, v with
-  | 0, 1 => use 1 ; simp [square]
-  | 1, 0 => use 1 ; simp [square]
-  | 0, 2 => use 2 ; simp [square]
-  | 2, 0 => use 2 ; simp [square]
-  | 0, 3 => use 3 ; simp [square]
-  | 1, 2 => use 3 ; simp [square]
-  | 2, 1 => use 3 ; simp [square]
-  | 1, 3 => use 2 ; simp [square]
-  | 2, 3 => use 4 ; simp [square]
-  | 3, 0 => use 3 ; simp [square]
-  | 3, 1 => use 2 ; simp [square]
-  | 3, 2 => use 4 ; simp [square]
+  | 0, 1 => exact ⟨1, by simp [square]⟩
+  | 1, 0 => exact ⟨1, by simp [square]⟩
+  | 0, 2 => exact ⟨2, by simp [square]⟩
+  | 2, 0 => exact ⟨2, by simp [square]⟩
+  | 0, 3 => exact ⟨3, by simp [square]⟩
+  | 1, 2 => exact ⟨3, by simp [square]⟩
+  | 2, 1 => exact ⟨3, by simp [square]⟩
+  | 1, 3 => exact ⟨2, by simp [square]⟩
+  | 2, 3 => exact ⟨4, by simp [square]⟩
+  | 3, 0 => exact ⟨3, by simp [square]⟩
+  | 3, 1 => exact ⟨2, by simp [square]⟩
+  | 3, 2 => exact ⟨4, by simp [square]⟩
   | 3, 3 => aesop_temporal_graph
 
 private lemma square_adj_le {y z : Fin 4} {j : ℕ} (h : square.Adj y z j) : j ≤ 4 := by
   simp only [square] at h
+  -- `j` is one of the times `1` to `4`, or else `h` is `False`
   split at h <;> first | omega | exact h.elim
 
 private lemma square_adj_pos {y z : Fin 4} {j : ℕ} (h : square.Adj y z j) : 1 ≤ j := by
   simp only [square] at h
+  -- `j` is one of the times `1` to `4`, or else `h` is `False`
   split at h <;> first | omega | exact h.elim
 
 /-- Restricting the clique `square` to the edges between `{0, 1}` and `{2, 3}` gives a temporal
@@ -77,10 +91,11 @@ theorem square_between_isBicliqueWith :
 /-- The `vminus` set of the full `square` subgraph is `{0, 1}`. -/
 theorem square_vminus : (⊤ : square.Subgraph).vminus = {0, 1} := by
   ext x
-  simp only [Subgraph.vminus, Set.mem_ofPred_eq, TemporalGraph.EarliestNeighbor,
-    TemporalGraph.EarliestEdge, Subgraph.top_adj]
+  simp only [Subgraph.vminus, Set.mem_ofPred_eq, EarliestNeighbor, EarliestEdge, Subgraph.top_adj]
   constructor
   · rintro ⟨y, n, hadj, hmin⟩
+    -- for each `y`, minimality of `n` against a fixed arc leaving `y` bounds `n`, leaving finitely
+    -- many cases
     match y with
     | 0 =>
       have h1 := hmin 1 1 (by simp [square])
@@ -101,11 +116,11 @@ theorem square_vminus : (⊤ : square.Subgraph).vminus = {0, 1} := by
 /-- The `vplus` set of the full `square` subgraph is `{2, 3}`. -/
 theorem square_vplus : (⊤ : square.Subgraph).vplus = {2, 3} := by
   ext x
-  simp only [Subgraph.vplus, Set.mem_ofPred_eq, TemporalGraph.LatestNeighbor,
-    TemporalGraph.LatestEdge, Subgraph.top_adj]
+  simp only [Subgraph.vplus, Set.mem_ofPred_eq, LatestNeighbor, LatestEdge, Subgraph.top_adj]
   constructor
   · rintro ⟨y, n, hadj, hmax⟩
     have hup := square_adj_le hadj
+    -- for each `y`, maximality of `n` against a fixed arc leaving `y` bounds `n` below
     match y with
     | 0 =>
       have h1 := hmax 3 3 (by simp [square])
@@ -115,10 +130,12 @@ theorem square_vplus : (⊤ : square.Subgraph).vplus = {2, 3} := by
       interval_cases n <;> simp_all [square]
     | 2 =>
       have h1 := hmax 3 4 (by simp [square])
-      interval_cases n; simp_all [square]
+      interval_cases n
+      simp_all [square]
     | 3 =>
       have h1 := hmax 2 4 (by simp [square])
-      interval_cases n; simp_all [square]
+      interval_cases n
+      simp_all [square]
   · rintro (rfl | rfl)
     · exact ⟨3, 4, by simp [square], fun _ _ hadj ↦ square_adj_le hadj⟩
     · exact ⟨2, 4, by simp [square], fun _ _ hadj ↦ square_adj_le hadj⟩

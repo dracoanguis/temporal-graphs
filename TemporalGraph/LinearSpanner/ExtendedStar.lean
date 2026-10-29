@@ -7,6 +7,7 @@ module
 
 public import TemporalGraph.LinearSpanner.Stars
 
+import TemporalGraph.ForMathlib.SetCard
 import Mathlib.Data.Fintype.Lattice
 
 /-!

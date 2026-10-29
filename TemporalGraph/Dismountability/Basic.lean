@@ -56,10 +56,6 @@ and `vplus` (`earliestNeighborFn`, `latestNeighborFn`), which forces `vzero` to 
 * `TemporalGraph.Subgraph.biclique_of_not_twoHopDismountable` : SAND 2025, Corollary 4.1.
 * `TemporalGraph.Subgraph.between_TC_of_not_twoHopDismountable` : SAND 2025, remark after
   Corollary 4.1, the bi-clique between `vminus` and `vplus` is temporally connected.
-* `TemporalGraph.temporallyConnected_of_reachable_of_matchings` : SAND 2025, §4.1, if `s` reaches
-  `t` and the earliest/latest matchings cover `t`/`s`, then `s ∪ t` is temporally connected.
-* `TemporalGraph.Subgraph.exists_edgeSet_of_earliest`, `exists_edgeSet_of_latest` : the two sides
-  of `{1,2}`-hop dismountability, as a set of at most two edges of `H`.
 
 ## References
 
@@ -205,26 +201,6 @@ end NeighborFunctions
 namespace Subgraph
 
 variable {G : TemporalGraph V}
-
-section CardHelpers
-
-/-- An unordered pair has `Set.ncard` at most 2. Shared by the `mount`/`twoHopMount`/
-`oneSidedMount` edge-count bounds below. -/
-lemma ncard_pair_le {α : Type*} (a b : α) : ({a, b} : Set α).ncard ≤ 2 := by
-  have h1 := Set.ncard_insert_le a ({b} : Set α)
-  have h2 := Set.ncard_singleton b
-  omega
-
-/-- A set given by (up to) four elements has `Set.ncard` at most 4. Shared by the `twoHopMount`
-edge-count bound below. -/
-lemma ncard_le_four {α : Type*} (a b c d : α) : ({a, b, c, d} : Set α).ncard ≤ 4 := by
-  have h1 := Set.ncard_insert_le a ({b, c, d} : Set α)
-  have h2 := Set.ncard_insert_le b ({c, d} : Set α)
-  have h3 := Set.ncard_insert_le c ({d} : Set α)
-  have h4 := Set.ncard_singleton d
-  omega
-
-end CardHelpers
 
 section Partition
 
@@ -393,78 +369,6 @@ lemma vminus_ne_neighbor_of_not_twoHopDismountable {H : Subgraph G} [H.IsSymm]
     refine ⟨x, Or.inl hx, Or.inr ⟨y, z', m, n, h₂.symm, hle', ?_, by omega⟩⟩
     -- the arc `x z'` read backwards, `z = z'`
     grind only [= LatestEdge.eq_1, → TemporalGraph.adj_symm]
-
-/-- Earliest side of two-hop dismountability: one or two edges of `H` such that, in any `K`
-between them and `H`, whatever is reachable from `y` is reachable from `x`. -/
-lemma exists_edgeSet_of_earliest {H : Subgraph G} [G.IsLoopless] [H.IsSymm] {x : V}
-    (h₀ : (∃ y : V, H.EarliestNeighbor y x)
-      ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.EarliestEdge y z n ∧ H.Adj z x m ∧ m ≤ n)) :
-    ∃ y ∈ H.verts, y ≠ x ∧ ∃ E : Set (Sym2 V × ℕ), E ⊆ H.edgeSet ∧ E.ncard ≤ 2 ∧
-      x ∈ (Subgraph.fromEdgeSet G E).verts ∧
-      ∀ (K : Subgraph G) [K.IsSymm], Subgraph.fromEdgeSet G E ≤ K → K ≤ H →
-        ∀ b, K.Reachable y b → K.Reachable x b := by
-  rcases h₀ with ⟨y, n, hE⟩ | ⟨y, z, n, m, hyx, hE, hzx, hmn⟩
-  · -- one hop: the earliest edge `y x`
-    have hadj : H.Adj y x n := hE.left
-    -- `x` is a vertex of the one-edge graph, being an endpoint of the edge `s(y, x)`
-    have hxmem : x ∈ (Subgraph.fromEdgeSet G {(s(y, x), n)}).verts :=
-      ⟨⟨(s(y, x), n), rfl⟩, Sym2.mem_mk_right _ _⟩
-    refine ⟨y, H.edge_vert hadj, hadj.ne, {(s(y, x), n)}, ?_, ?_, hxmem, ?_⟩
-    · exact Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hadj)
-    · rw [Set.ncard_singleton]
-      omega
-    · intro K _ hK hKH b
-      exact reachable_of_earliestEdge
-        (earliestEdge_of_ge hKH hE (adj_of_fromEdgeSet_le hK rfl (H.adj_sub hadj))) b
-  · -- two hops: the earliest edge `y z`, then the edge `z x`
-    have hyz : H.Adj y z n := hE.left
-    -- `x` is a vertex of the two-edge graph, being an endpoint of the edge `s(z, x)`
-    have hxmem : x ∈ (Subgraph.fromEdgeSet G {(s(y, z), n), (s(z, x), m)}).verts :=
-      ⟨⟨(s(z, x), m), by simp⟩, Sym2.mem_mk_right _ _⟩
-    refine ⟨y, H.edge_vert hyz, hyx, {(s(y, z), n), (s(z, x), m)}, ?_, ncard_pair_le _ _,
-      hxmem, ?_⟩
-    · exact Set.insert_subset (H.mem_edgeSet.mpr hyz)
-        (Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hzx))
-    · intro K _ hK hKH b
-      have hKyz : K.Adj y z n := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hyz)
-      have hzx' : K.Adj z x m := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hzx)
-      exact reachable_of_extended_earliestEdge (earliestEdge_of_ge hKH hE hKyz) hzx'.symm hmn b
-
-/-- Latest side of two-hop dismountability: one or two edges of `H` such that, in any `K`
-between them and `H`, whatever reaches `y` reaches `x`. -/
-lemma exists_edgeSet_of_latest {H : Subgraph G} [G.IsLoopless] [H.IsSymm] {x : V}
-    (h₀ : (∃ y : V, H.LatestNeighbor y x)
-      ∨ (∃ (y z : V) (n m : ℕ), y ≠ x ∧ H.LatestEdge y z n ∧ H.Adj z x m ∧ n ≤ m)) :
-    ∃ y ∈ H.verts, y ≠ x ∧ ∃ E : Set (Sym2 V × ℕ), E ⊆ H.edgeSet ∧ E.ncard ≤ 2 ∧
-      x ∈ (Subgraph.fromEdgeSet G E).verts ∧
-      ∀ (K : Subgraph G) [K.IsSymm], Subgraph.fromEdgeSet G E ≤ K → K ≤ H →
-        ∀ b, K.Reachable b y → K.Reachable b x := by
-  rcases h₀ with ⟨y, n, hE⟩ | ⟨y, z, n, m, hyx, hE, hzx, hmn⟩
-  · -- one hop: the latest edge `y x`
-    have hadj : H.Adj y x n := hE.left
-    -- `x` is a vertex of the one-edge graph, being an endpoint of the edge `s(y, x)`
-    have hxmem : x ∈ (Subgraph.fromEdgeSet G {(s(y, x), n)}).verts :=
-      ⟨⟨(s(y, x), n), rfl⟩, Sym2.mem_mk_right _ _⟩
-    refine ⟨y, H.edge_vert hadj, hadj.ne, {(s(y, x), n)}, ?_, ?_, hxmem, ?_⟩
-    · exact Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hadj)
-    · rw [Set.ncard_singleton]
-      omega
-    · intro K _ hK hKH b
-      exact reachable_of_latestEdge
-        (latestEdge_of_ge hKH hE (adj_of_fromEdgeSet_le hK rfl (H.adj_sub hadj))) b
-  · -- two hops: the latest edge `y z`, then the edge `z x`
-    have hyz : H.Adj y z n := hE.left
-    -- `x` is a vertex of the two-edge graph, being an endpoint of the edge `s(z, x)`
-    have hxmem : x ∈ (Subgraph.fromEdgeSet G {(s(y, z), n), (s(z, x), m)}).verts :=
-      ⟨⟨(s(z, x), m), by simp⟩, Sym2.mem_mk_right _ _⟩
-    refine ⟨y, H.edge_vert hyz, hyx, {(s(y, z), n), (s(z, x), m)}, ?_, ncard_pair_le _ _,
-      hxmem, ?_⟩
-    · exact Set.insert_subset (H.mem_edgeSet.mpr hyz)
-        (Set.singleton_subset_iff.mpr (H.mem_edgeSet.mpr hzx))
-    · intro K _ hK hKH b
-      have hKyz : K.Adj y z n := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hyz)
-      have hzx' : K.Adj z x m := adj_of_fromEdgeSet_le hK (by simp) (H.adj_sub hzx)
-      exact reachable_of_extended_latestEdge (latestEdge_of_ge hKH hE hKyz) hzx' hmn b
 
 end TwoHop
 
@@ -865,47 +769,5 @@ lemma between_TC_of_not_twoHopDismountable {H : Subgraph G}
 end Biclique
 
 end Subgraph
-
-section MatchingConnectivity
-
-/-- If `s` reaches `t` and every vertex of `t` ends an earliest edge from a vertex of `s`, any two
-vertices of `t` reach each other. -/
-lemma reachable_of_earliestEdge_matching {G : TemporalGraph V} [G.IsSymm] {s t : Set V}
-    (h₀ : ∀ b ∈ t, ∃ v ∈ s, ∃ n, G.EarliestEdge v b n)
-    (h₁ : ∀ x ∈ s, ∀ y ∈ t, G.Reachable x y) :
-    ∀ a ∈ t, ∀ b ∈ t, G.Reachable a b := by
-  intro a ha b hb
-  obtain ⟨v, hv, n, hvn⟩ := h₀ a ha
-  exact reachable_of_earliestEdge hvn b (h₁ v hv b hb)
-
-/-- If `s` reaches `t` and every vertex of `s` ends a latest edge from a vertex of `t`, any two
-vertices of `s` reach each other. -/
-lemma reachable_of_latestEdge_matching {G : TemporalGraph V} [G.IsSymm] {s t : Set V}
-    (h₀ : ∀ y ∈ s, ∃ b ∈ t, ∃ n, G.LatestEdge b y n)
-    (h₁ : ∀ x ∈ s, ∀ y ∈ t, G.Reachable x y) :
-    ∀ x ∈ s, ∀ y ∈ s, G.Reachable x y := by
-  intro x hx y hy
-  obtain ⟨b, hb, n, hbn⟩ := h₀ y hy
-  exact reachable_of_latestEdge hbn x (h₁ x hx b hb)
-
-/-- SAND 2025, §4.1 (after Corollary 4.1): if every vertex of `t` (playing `V⁻`) is the endpoint
-of the earliest edge of a vertex of `s` (the matching `M⁻`), every vertex of `s` (playing `V⁺`) is
-the endpoint of the latest edge of a vertex of `t` (the matching `M⁺`), and `s` reaches `t`, then
-`s ∪ t` is temporally connected. -/
-theorem temporallyConnected_of_reachable_of_matchings {G : TemporalGraph V} [G.IsSymm]
-    {s t : Set V}
-    (h₀ : ∀ b ∈ t, ∃ v ∈ s, ∃ n, G.EarliestEdge v b n)
-    (h₁ : ∀ y ∈ s, ∃ b ∈ t, ∃ n, G.LatestEdge b y n)
-    (h₂ : ∀ x ∈ s, ∀ y ∈ t, G.Reachable x y) :
-    G.TemporallyConnected (s ∪ t) := by
-  rintro x (hx | hx) y (hy | hy)
-  · exact reachable_of_latestEdge_matching h₁ h₂ x hx y hy
-  · exact h₂ x hx y hy
-  · -- `x ∈ t` leaves along its `M⁻` edge to some `v ∈ s`, then `s` reaches `s`
-    obtain ⟨v, hv, n, hvn⟩ := h₀ x hx
-    exact reachable_of_earliestEdge hvn y (reachable_of_latestEdge_matching h₁ h₂ v hv y hy)
-  · exact reachable_of_earliestEdge_matching h₀ h₂ x hx y hy
-
-end MatchingConnectivity
 
 end TemporalGraph

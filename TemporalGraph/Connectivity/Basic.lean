@@ -47,6 +47,9 @@ defined at the `Subgraph` level, in `Connectivity/Subgraph.lean`.
 * `reachable_of_earliestEdge`, `reachable_of_latestEdge` : Reachability preservation lemmas
 * `reachable_of_extended_earliestEdge`, `reachable_of_extended_latestEdge` : Variants of these
   lemmas, starting from a vertex `z` joined to the neighbor by an edge at a compatible time
+* `reachable_of_earliestEdge_matching`, `reachable_of_latestEdge_matching`,
+  `temporallyConnected_of_reachable_of_matchings` : SAND 2025, §4.1, if `s` reaches `t` and the
+  earliest/latest matchings cover `t`/`s`, then `s ∪ t` is temporally connected
 -/
 
 @[expose] public section
@@ -282,5 +285,43 @@ lemma reachable_of_extended_latestEdge {x y z : V} {n m : ℕ} {G : TemporalGrap
   | ofNonempty p =>
     have h : k ≤ n := h₀.end_le p
     exact (p.append p' h).reachable
+
+/-- If `s` reaches `t` and every vertex of `t` ends an earliest edge from a vertex of `s`, any two
+vertices of `t` reach each other. -/
+lemma reachable_of_earliestEdge_matching {G : TemporalGraph V} [G.IsSymm] {s t : Set V}
+    (h₀ : ∀ b ∈ t, ∃ v ∈ s, ∃ n, G.EarliestEdge v b n)
+    (h₁ : ∀ x ∈ s, ∀ y ∈ t, G.Reachable x y) :
+    ∀ a ∈ t, ∀ b ∈ t, G.Reachable a b := by
+  intro a ha b hb
+  obtain ⟨v, hv, n, hvn⟩ := h₀ a ha
+  exact reachable_of_earliestEdge hvn b (h₁ v hv b hb)
+
+/-- If `s` reaches `t` and every vertex of `s` ends a latest edge from a vertex of `t`, any two
+vertices of `s` reach each other. -/
+lemma reachable_of_latestEdge_matching {G : TemporalGraph V} [G.IsSymm] {s t : Set V}
+    (h₀ : ∀ y ∈ s, ∃ b ∈ t, ∃ n, G.LatestEdge b y n)
+    (h₁ : ∀ x ∈ s, ∀ y ∈ t, G.Reachable x y) :
+    ∀ x ∈ s, ∀ y ∈ s, G.Reachable x y := by
+  intro x hx y hy
+  obtain ⟨b, hb, n, hbn⟩ := h₀ y hy
+  exact reachable_of_latestEdge hbn x (h₁ x hx b hb)
+
+/-- SAND 2025, §4.1 (after Corollary 4.1): if every vertex of `t` (playing `V⁻`) is the endpoint
+of the earliest edge of a vertex of `s` (the matching `M⁻`), every vertex of `s` (playing `V⁺`) is
+the endpoint of the latest edge of a vertex of `t` (the matching `M⁺`), and `s` reaches `t`, then
+`s ∪ t` is temporally connected. -/
+theorem temporallyConnected_of_reachable_of_matchings {G : TemporalGraph V} [G.IsSymm]
+    {s t : Set V}
+    (h₀ : ∀ b ∈ t, ∃ v ∈ s, ∃ n, G.EarliestEdge v b n)
+    (h₁ : ∀ y ∈ s, ∃ b ∈ t, ∃ n, G.LatestEdge b y n)
+    (h₂ : ∀ x ∈ s, ∀ y ∈ t, G.Reachable x y) :
+    G.TemporallyConnected (s ∪ t) := by
+  rintro x (hx | hx) y (hy | hy)
+  · exact reachable_of_latestEdge_matching h₁ h₂ x hx y hy
+  · exact h₂ x hx y hy
+  · -- `x ∈ t` leaves along its `M⁻` edge to some `v ∈ s`, then `s` reaches `s`
+    obtain ⟨v, hv, n, hvn⟩ := h₀ x hx
+    exact reachable_of_earliestEdge hvn y (reachable_of_latestEdge_matching h₁ h₂ v hv y hy)
+  · exact reachable_of_earliestEdge_matching h₀ h₂ x hx y hy
 
 end TemporalGraph

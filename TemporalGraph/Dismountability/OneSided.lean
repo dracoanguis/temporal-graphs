@@ -8,6 +8,8 @@ module
 public import TemporalGraph.Dismountability.Basic
 public import TemporalGraph.Dismountability.Operations
 
+import TemporalGraph.ForMathlib.SetCard
+
 /-!
 # One-sided dismountability
 
@@ -139,20 +141,6 @@ lemma isSpannerFromTo_sup_of_induce {H H₁ H₂ : Subgraph G} {s t s₁ s₂ : 
   refine (h₄.of_le (hle s₁ h₂) fun x hx y hy ↦ ?_).sup (h₅.of_le (hle s₂ h₃) fun x hx y hy ↦ ?_)
   · exact reachable_of_isBicliqueWith (isBicliqueWith_induce h₀ h₂ subset_rfl) hx hy
   · exact reachable_of_isBicliqueWith (isBicliqueWith_induce h₀ h₃ subset_rfl) hx hy
-
-/-- Split a set into two halves of complementary size, `⌈|s| / 2⌉` and `⌊|s| / 2⌋`: used to divide
-a bi-clique's source part in two before recursing (SAND 2025, §4.1, split step). Holds
-unconditionally, including when `s` is infinite (both sides are then `0`, since `s.ncard = 0`). -/
-lemma exists_ncard_halves {α : Type*} (s : Set α) :
-    ∃ s₁ ⊆ s, s₁.ncard = (s.ncard + 1) / 2 ∧ (s \ s₁).ncard = s.ncard / 2 := by
-  rcases s.finite_or_infinite with hfin | hinf
-  · obtain ⟨s₁, hsub, hcard⟩ :=
-      Set.exists_subset_card_eq (s := s) (n := (s.ncard + 1) / 2) (by omega)
-    refine ⟨s₁, hsub, hcard, ?_⟩
-    rw [Set.ncard_sdiff hsub (hfin.subset hsub), hcard]
-    omega
-  · have h0 : s.ncard = 0 := hinf.ncard
-    exact ⟨∅, Set.empty_subset s, by simp [h0], by simp [h0]⟩
 
 /-! ### Mounting a vertex back -/
 

@@ -8,6 +8,8 @@ module
 public import TemporalGraph.Dismountability.OneSided
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
 
+import TemporalGraph.ForMathlib.SetCard
+
 /-!
 # Size of one-sided spanners
 

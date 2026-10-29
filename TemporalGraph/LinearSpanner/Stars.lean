@@ -7,6 +7,8 @@ module
 
 public import TemporalGraph.LinearSpanner.ExtremallyMatched
 
+import TemporalGraph.ForMathlib.SetCard
+
 /-!
 # Stars of an extremally matched bi-clique
 
@@ -219,20 +221,6 @@ theorem extStarTarget_subset_edgeSet {c : V} : G.extStarTarget s t c ⊆ G.edgeS
 end Subset
 
 section Count
-
-/-- A set `S` in which each element is related by a functional relation `R` to a vertex of a
-finite set `A` is finite, with at most `|A|` elements: at most one element per vertex. -/
-theorem finite_and_ncard_le_of_functional {α : Type*} {S : Set α} (R : V → α → Prop)
-    (h₀ : A.Finite) (h₁ : ∀ e ∈ S, ∃ v ∈ A, R v e) (h₂ : ∀ v e e', R v e → R v e' → e = e') :
-    S.Finite ∧ S.ncard ≤ A.ncard := by
-  rcases S.eq_empty_or_nonempty with rfl | ⟨e₀, he₀⟩
-  · simp
-  obtain ⟨v₀, -⟩ := h₁ e₀ he₀
-  have : Nonempty V := ⟨v₀⟩ -- needed by `choose!`
-  -- choose a related vertex of `A` for each element of `S`; this is an injection
-  choose! f hfA hfR using h₁
-  have h₃ : S.InjOn f := fun e he e' he' h ↦ h₂ (f e) e e' (hfR e he) (h ▸ hfR e' he')
-  exact ⟨Set.Finite.of_injOn hfA h₃ h₀, Set.ncard_le_ncard_of_injOn f hfA h₃ h₀⟩
 
 /-- At most one edge of `E_min` per vertex of `A`: `N_min` and `arcTime` are functions. -/
 theorem ncard_eMin_le (h₀ : A.Finite) : (G.eMin A).ncard ≤ A.ncard :=

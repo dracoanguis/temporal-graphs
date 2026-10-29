@@ -9,6 +9,8 @@ public import TemporalGraph.LinearSpanner.ExtendedStar
 public import TemporalGraph.LinearSpanner.Reduction
 public import TemporalGraph.LinearSpanner.SimpleStar
 
+import TemporalGraph.ForMathlib.SetCard
+
 /-!
 # Linear spanners of temporal bi-cliques
 
@@ -40,7 +42,6 @@ Compare with `Subgraph.exists_isSpannerFromTo_ncard_le`, the `O(n log n)` bound 
 
 ## Main results
 
-* `TemporalGraph.exists_threshold` : a median threshold for a family of times.
 * `TemporalGraph.IsExtremallyMatched.exists_reachable_half` : Baligács 2026, Lemma 17.
 * `TemporalGraph.IsExtremallyMatched.exists_isSpannerFromTo` : Baligács 2026, Theorem 18 (with
   Theorem 6), a temporally connected one-sided spanner with at most `14 |s|` edges.
@@ -59,52 +60,6 @@ universe u
 namespace TemporalGraph
 
 variable {V : Type u} {G : TemporalGraph V} {s t : Set V}
-
-section Auxiliary
-
-/-- A median threshold: for a finite set `A` and any `f : α → ℕ`, some `τ` leaves at most `|A| / 2`
-elements strictly below it and at most `|A| / 2` strictly above it. Baligács 2026 cuts the
-labeling ordered by the times at a source `c` at `k = ⌊n / 2⌋` (Theorem 18), which is this
-threshold for `f`, the times of the edges at `c`. -/
-theorem exists_threshold {α : Type*} {A : Set α} (f : α → ℕ) (h₀ : A.Finite) :
-    ∃ τ, {v ∈ A | f v < τ}.ncard ≤ A.ncard / 2 ∧ {v ∈ A | τ < f v}.ncard ≤ A.ncard / 2 := by
-  classical
-  -- Proof idea: take for `τ` the first value that leaves more than `|A| / 2` elements at or below
-  -- it. Then at most `|A| / 2` are strictly below (minimality), and at most `|A| / 2` are
-  -- strictly above (the complement).
-  rcases Nat.eq_zero_or_pos A.ncard with h₂ | h₂
-  · -- `A` is empty: any threshold works
-    -- both sets are subsets of `A`, of size at most `|A| = 0`
-    refine ⟨0, ?_, ?_⟩ <;> exact (Set.ncard_le_ncard (Set.sep_subset _ _) h₀).trans (by omega)
-  -- some threshold leaves more than `|A| / 2` elements at or below it: a bound of `f` on `A`
-  have h₃ : ∃ τ, A.ncard / 2 < {v ∈ A | f v ≤ τ}.ncard := by
-    obtain ⟨M, h₄⟩ := (h₀.image f).bddAbove
-    have h₅ : {v ∈ A | f v ≤ M} = A := Set.sep_eq_self_iff_mem_true.2 fun v h ↦ h₄ ⟨v, h, rfl⟩
-    -- `|A| / 2 < |A|` since `|A| > 0`
-    refine ⟨M, ?_⟩
-    rw [h₅]
-    omega
-  -- `τ` is the first such threshold
-  refine ⟨Nat.find h₃, ?_, ?_⟩
-  · -- strictly below `τ` is at or below `τ - 1`, which leaves too few elements by minimality
-    rcases h₄ : Nat.find h₃ with _ | τ
-    · -- `τ = 0`: nothing is strictly below
-      simp only [Nat.not_lt_zero, and_false, Set.ofPred_false, Set.ncard_empty, Nat.zero_le]
-    · have h₅ := Nat.find_min h₃ (h₄ ▸ Nat.lt_succ_self τ : τ < Nat.find h₃)
-      simp only [Nat.lt_succ_iff]
-      -- `h₅` : at most `|A| / 2` elements are at or below `τ`, by minimality
-      omega
-  · -- strictly above `τ` is the complement of at or below `τ`, which has more than `|A| / 2`
-    have h₄ := Nat.find_spec h₃
-    have h₅ : {v ∈ A | Nat.find h₃ < f v} = A \ {v ∈ A | f v ≤ Nat.find h₃} := by
-      ext v
-      simp only [Set.mem_ofPred_eq, Set.mem_sdiff, not_and, not_le]
-      exact ⟨fun ⟨hv, h⟩ ↦ ⟨hv, fun _ ↦ h⟩, fun ⟨hv, h⟩ ↦ ⟨hv, h hv⟩⟩
-    rw [h₅, Set.ncard_sdiff (Set.sep_subset _ _) (h₀.subset (Set.sep_subset _ _))]
-    -- `|A| - |B| ≤ |A| / 2` since `|B| > |A| / 2`
-    omega
-
-end Auxiliary
 
 namespace IsExtremallyMatched
 

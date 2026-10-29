@@ -171,7 +171,8 @@ theorem exists_isBigO_isSpannerOf_linear :
         ∃ K : Subgraph G, K.IsSymm ∧ K.IsSpannerOf H ∧ K.edgeSet.ncard ≤ f H.verts.ncard := by
   refine ⟨fun n ↦ 7 * n, ?_, fun h₀ h₁ h₂ ↦ exists_isSpannerOf_ncard_le_seven_mul h₀ h₁ h₂⟩
   refine IsBigO.of_bound 7 (Eventually.of_forall fun n ↦ ?_)
-  simp
+  simp only [Nat.cast_mul, Nat.cast_ofNat, norm_mul, Real.norm_ofNat, RCLike.norm_natCast,
+    Std.le_refl]
 
 end Bound
 

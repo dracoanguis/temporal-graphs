@@ -127,7 +127,7 @@ besoin de le répéter ici.
 | `TemporalGraph/LinearSpanner/Bound.lean` | `Set.exists_median_threshold` (seuil médian), `exists_reachable_of_threshold` (Lemme 17, forme à seuil), `IsExtremallyMatched.exists_isSpannerFromTo_temporallyConnected` (Théorèmes 18 et 6, au plus `14n` arêtes) et `Subgraph.exists_isSpannerFromTo_ncard_le_linear` (Théorème 3, bi-cliques) | — |
 | `TemporalGraph/LinearSpanner/Clique.lean` | `Subgraph.isExtremallyMatched_between_of_not_twoHopDismountable` (Théorème 20), `exists_isSpannerOf_ncard_le_seven_mul_of_not_twoHopDismountable`, `exists_isSpannerOf_ncard_le_seven_mul` (Théorème 2, au plus `7n` arêtes) et `exists_isBigO_isSpannerOf_linear` (forme `O(n)`) | — |
 | `TemporalGraph/Examples.lean` | Graphe de démo `square` (carré à 4 sommets), avec ses propriétés portées comme instances (`square_isSymm`, `square_isLoopless`, …) | — |
-| `TemporalGraph.lean` (racine) | Pur agrégateur d'imports, aucun code | — |
+| `TemporalGraph.lean` (racine) | Pur agrégateur d'imports (tous les modules sauf `Examples`), aucun code | — |
 
 ## État actuel : refactor terminé
 
@@ -293,10 +293,9 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
 - **Imports Mathlib précis, jamais `import Mathlib`** : `Basic` importe `Combinatorics.Digraph.Basic`,
   `Combinatorics.SimpleGraph.Basic` et `Data.Set.Card` ; chaque fichier ajoute ce qu'il utilise
   (`import` simple si seules les preuves en ont besoin). Le build est passé de 8977 à 2095 tâches.
-- **Fichiers en modules** : tous sauf `Examples` et la racine `TemporalGraph.lean`, c'est-à-dire
-  `Init`, `Basic`, `NonemptyTemporalWalk`, `TemporalWalk`, `Connectivity/*`, `Subgraph`,
-  `Bipartite`, `Dismountability/*` et `LinearSpanner/*`. Un module n'importe que des
-  modules, mais un non-module peut importer un module : on porte donc de bas en haut.
+- **Fichiers en modules** : tous, `Examples`, la racine `TemporalGraph.lean`, `Challenge`,
+  `Solution` et `scripts/CheckDecls.lean` compris (exigence de Palomar). La racine n'importe plus
+  `Examples`, qui reste construit par `lake build` (globs). Un module n'importe que des modules.
 - **Motif (celui de Mathlib)** : copyright, `module`, imports en `public import` (en `import`
   simple s'ils ne servent qu'aux preuves), docstring de module, puis `@[expose] public section`
   sans `end`. Le `@[expose]` est indispensable : la bibliothèque déplie ses définitions d'un
@@ -443,7 +442,23 @@ comme pour SAND).
 - `lake env lean TemporalGraph/<Fichier>.lean` : typechecker un fichier isolé (demande que les
   `.olean` de ses dépendances existent déjà).
 - Blueprint : projet uv dans `blueprint/` (`pyproject.toml` + `uv.lock`, pas de
-  `requirements.txt`). Depuis la racine : `uv run --project blueprint leanblueprint web|checkdecls`.
+  `requirements.txt`). Depuis la racine : `uv run --project blueprint leanblueprint web`, puis
+  `lake env lean --run scripts/CheckDecls.lean blueprint/lean_decls` pour vérifier que les
+  déclarations citées existent. **Ne plus utiliser `leanblueprint checkdecls`** : `lake exe
+  checkdecls` importe toutes les bibliothèques du paquet, dont `Challenge` et `Solution`, qui
+  définissent les mêmes noms (exigence de Comparator) ; l'import commun échoue sur ces doublons.
+  Le script n'importe que `TemporalGraph`.
+- Soumission Palomar du `7n` (branche `linear-spanner-submission`, dépôt unique) :
+  `Challenge.lean` (énoncé, imports Mathlib seuls, `sorry` volontaires), `Solution.lean` (mêmes
+  énoncés, prouvés), `comparator.json`, `formalization.yaml` (`review.status: self-assessed`,
+  `related_formalizations` → l'entrée `O(n log n)`, branche
+  `nlogn-spanner-dismountability-submission`, commit `79214ea`). La licence est `LICENSE` (texte
+  brut officiel d'Apache 2.0). Les définitions (`IsLocallyInjective`, `Journey`,
+  `IsTemporalSpanner`) sont identiques **à l'octet près** entre `Challenge.lean`, `Solution.lean`
+  et l'entrée `O(n log n)` ; `Solution.lean` contient tout le pont avec la bibliothèque (aucun
+  fichier propre à la soumission dans `TemporalGraph/`). Tout fichier `.lean` du dépôt doit
+  rester un module (`Examples` et la racine compris). Vérification : `lake comparator --paranoid
+  --inadvisably-no-sandbox` (macOS, sans bwrap).
   plasTeX seul, **aucune distribution TeX** : le `kpsewhich` dont plasTeX a besoin est fourni par
   le projet uv (`blueprint/blueprint_tools/`, script installé dans `blueprint/.venv/bin`). Sans
   lui, plasTeX ne trouve pas `macros/common` et plante avec `TypeError: unhashable type:

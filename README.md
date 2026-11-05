@@ -65,8 +65,8 @@ they don't need the same cross-cutting instance resolution.
 | `TemporalGraph/LinearSpanner/ExtendedStar.lean` | Baligács 2026, Lemmas 13, 14 and 16 and Corollary 15 on the extended stars, and the count `ncard_extStar_union_le` (at most `6n` edges) |
 | `TemporalGraph/LinearSpanner/Bound.lean` | Baligács 2026, §4: `exists_reachable_of_threshold` (Lemma 17, threshold form), `IsExtremallyMatched.exists_isSpannerFromTo_temporallyConnected` (Theorem 18) and `Subgraph.exists_isSpannerFromTo_ncard_le_linear` (Theorem 3, bi-cliques) |
 | `TemporalGraph/LinearSpanner/Clique.lean` | Baligács 2026, §5: `isExtremallyMatched_between_of_not_twoHopDismountable` (Theorem 20), `exists_isSpannerOf_ncard_le_seven_mul` (Theorem 2, at most `7n` edges) and `exists_isBigO_isSpannerOf_linear` (the `O(n)` form) |
-| `TemporalGraph.lean` (root) | Import aggregator for the whole library — no longer carries demo content |
-| `TemporalGraph/Examples.lean` | Worked example: the `square` temporal clique (four vertices, edges at times 1–4) |
+| `TemporalGraph.lean` (root) | Import aggregator for the library (every module except `Examples`) |
+| `TemporalGraph/Examples.lean` | Worked examples: the `square` temporal clique (four vertices, edges at times 1–4) and the bi-clique `biSquare`; built by `lake build` but not imported by the root |
 
 ## Main formalized results
 
@@ -95,6 +95,43 @@ the earliest or the latest neighbor of some other vertex — i.e. `vzero = ∅` 
 and the earliest/latest-neighbor bijections between `vminus` and `vplus` (SAND Corollary 3.3)
 give the V⁻/V⁺ perfect-matching structure that reduces cliques to bi-cliques (SAND Corollary 4.1).
 
+## Palomar submission
+
+This branch prepares the `7n` result (Baligács 2026, Theorem 2) for the
+[Palomar](https://palomar-registry.org) registry of Lean-verified mathematics. It follows the
+`O(n log n)` entry of the same repository (branch `nlogn-spanner-dismountability-submission`,
+commit `79214ea`), whose statement of record uses the same model, and builds on it: the two proofs
+share the dismountability reduction to bi-cliques and the generic clique induction, and differ
+only in how non-dismountable cliques are handled.
+
+The statement of record, [`Challenge.lean`](Challenge.lean), imports Mathlib only and describes a
+temporal clique in the usual way: a labelling `lab : Sym2 V → ℕ` of the edges of the complete
+graph on a finite type `V`, locally injective (two edges sharing an endpoint have distinct labels),
+with journeys of non-decreasing labels and spanners given as finite sets of edges. Its definitions
+are those of the `O(n log n)` entry, verbatim. On these simple, locally injective cliques,
+non-strict and strict journeys give the same reachability. It states two theorems, with deliberate
+`sorry` holes:
+
+- `TemporalCliqueSpanners.exists_isTemporalSpanner_card_le_seven_mul`: every temporal clique on
+  `n` vertices admits a temporal spanner with at most `7n` edges;
+- `TemporalCliqueSpanners.exists_isBigO_isTemporalSpanner_linear`: the `O(n)` form, with one bound
+  function for all temporal cliques.
+
+[`Solution.lean`](Solution.lean) repeats the definitions of the Challenge verbatim and proves both
+theorems from the library (`exists_isSpannerOf_ncard_le_seven_mul`,
+`exists_isBigO_isSpannerOf_linear`), through the same bridge as the `O(n log n)` entry: the
+labelling defines a temporal graph whose clique has a spanner, whose edges form the required set
+and whose walks are journeys. [`comparator.json`](comparator.json) names the compared theorems and
+the permitted axioms (`propext`, `Quot.sound`, `Classical.choice`), and
+[`formalization.yaml`](formalization.yaml) records the sources, the link to the `O(n log n)` entry,
+provenance, use of AI and review. The comparison is run with
+
+    lake comparator --paranoid
+
+which checks that each Solution theorem proves the Challenge statement with the permitted axioms
+only, through Lean's kernel and the external checkers bundled with Lean (`lean4lean`, `nanoda`,
+`con-leche`, `con-ron`). It needs `bwrap` (Linux); on macOS, add `--inadvisably-no-sandbox`.
+
 ## References
 
 1. Daniele Carnevale, Arnaud Casteigts & Timothée Corsini, *Dismountability in Temporal Cliques
@@ -105,8 +142,10 @@ give the V⁻/V⁺ perfect-matching structure that reduces cliques to bi-cliques
    `O(n log n)` spanner bound.
 3. Júlia Baligács, *Temporal Cliques Admit Linear Spanners*, arXiv:2606.05156v1, 2026 (preprint;
    the theorem numbers cited in the code are those of arXiv v1). The `7n` spanner bound.
-4. Angrick et al., ESA 2024 — cited above (introduction) for the observation the SAND 2025 proof
-   builds on.
+4. Sebastian Angrick, Ben Bals, Tobias Friedrich, Hans Gawendowicz, Niko Hastrich, Nicolas Klodt,
+   Pascal Lenzner, Jonas Schmidt, George Skretas & Armin Wells, *How to Reduce Temporal Cliques to
+   Find Sparse Spanners*, ESA 2024, LIPIcs 308, 11. doi:10.4230/LIPIcs.ESA.2024.11. Source of the
+   one-sided dismountability used by both bounds.
 
 ## Blueprint
 
@@ -130,12 +169,14 @@ against for the dependency graph. From the repository root:
     uv run --project blueprint leanblueprint web          # HTML → blueprint/web/index.html
     uv run --project blueprint install-tinytex            # once, before the first PDF build
     uv run --project blueprint leanblueprint pdf          # PDF  → blueprint/print/print.pdf
-    uv run --project blueprint leanblueprint checkdecls   # declarations exist (after `lake build`)
+    lake env lean --run scripts/CheckDecls.lean blueprint/lean_decls   # declarations exist
     uv run --project blueprint leanblueprint serve        # preview the HTML version locally
 
-`checkdecls` is a Lake dependency of this package, used only for that check. If a PDF build
-fails, delete `blueprint/print/` before retrying: latexmk otherwise refuses to rerun after an
-error.
+Do not use `leanblueprint checkdecls`: it imports every library of the package together,
+including the Palomar files `Challenge` and `Solution`, which define the same names (as
+Comparator requires), and fails on the duplicates. `scripts/CheckDecls.lean` checks against the
+`TemporalGraph` library alone. If a PDF build fails, delete `blueprint/print/` before retrying:
+latexmk otherwise refuses to rerun after an error.
 
 ## API documentation
 
@@ -163,7 +204,7 @@ The toolchain (`lean`, `lake`, `elan`) is pinned by [`lean-toolchain`](lean-tool
 it with [elan](https://github.com/leanprover/elan) if needed.
 
 ```sh
-lake build                                  # every module of the library
+lake build                                  # the library, Challenge and Solution
 lake build TemporalGraph.Dismountability.Operations   # one module, with its dependencies
 lake env lean TemporalGraph/<File>.lean     # typecheck a single file in isolation
 ```
@@ -174,9 +215,9 @@ root, which `checkdecls` imports).
 Without it, lake would build only the root module `TemporalGraph.lean` and what it imports, which
 stops at `Subgraph` and silently skips `Connectivity/`, `Dismountability/` and `LinearSpanner/`.
 
-**Module system.** Every file is a Lean module (`module`, `public import`, and
-`@[expose] public section` so that definitions unfold across files), except
-`TemporalGraph/Examples.lean` and the root `TemporalGraph.lean`, which are plain files.
+**Module system.** Every Lean file of the repository is a module (`module`, `public import`, and
+`@[expose] public section` so that definitions unfold across files), as Palomar requires. Each
+file imports only the Mathlib modules it uses.
 
 ## Status
 
@@ -194,7 +235,8 @@ redefined. The oriented world has its own edge measure: `arcSet` and `arcSize` c
 pairs (no hypothesis), while `edgeSet` and `size` count unordered edges (`mem_edgeSet` requires
 only `[IsSymm]`).
 
-Every module typechecks and the library contains no `sorry`.
+Every module typechecks. The library and `Solution.lean` contain no `sorry`; the only `sorry`
+are the deliberate holes of the statement of record `Challenge.lean`.
 
 ## License
 

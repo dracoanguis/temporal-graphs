@@ -40,9 +40,9 @@ sources:
       (Definition 12, Lemmas 13, 14 and 16, Corollary 15), the median threshold argument
       (Lemma 17), the linear bound on bi-cliques (Theorems 18 and 3), the structure of
       non-dismountable cliques (Theorem 20) and the 7n bound (Theorem 2). Numbering follows arXiv
-      v1, the only version available. Lemma 4, Lemma 10, Proposition 11 and the polynomial-time
-      aspect are not formalized.
-    author_endorsement: "not-contacted"
+      v1, the only version publicly available at the moment. Lemma 4, Lemma 10, Proposition 11
+      and the polynomial-time aspect are not formalized.
+    author_endorsement: "endorsed"
   - title: "Dismountability in Temporal Cliques Revisited"
     authors:
       - "Daniele Carnevale"
@@ -94,10 +94,12 @@ sources:
     author_endorsement: "participated"
 
 related_formalizations:
-  - id: "https://github.com/dracoanguis/temporal-graphs (branch nlogn-spanner-dismountability-submission, commit 79214ea8379246e8705cfeee95fb9dca090112e9)"
+  - id: "https://palomar-registry.org/entry?id=PALOMAR-2026-10-23-000009&version=1"
     relationship: "builds-on"
     note: >-
-      The O(n log n) entry of the same repository (Casteigts–Peters–Schoeters 2019 via SAND 2025).
+      Palomar entry PALOMAR-2026-10-23-000009 (version 1): the O(n log n) bound of the same
+      repository (Casteigts–Peters–Schoeters 2019 via SAND 2025; github.com/dracoanguis/temporal-graphs,
+      branch nlogn-spanner-dismountability-submission, commit 79214ea).
       The statement of record uses verbatim the same definitions (IsLocallyInjective, Journey,
       IsTemporalSpanner, namespace TemporalCliqueSpanners), and the Solution reuses its bridge to
       the library unchanged. Both proofs share the dismountability reduction and a generic
@@ -132,7 +134,9 @@ automation:
         Second part, from September 2026: Ethan Bargaud-Arm resumed the work with Claude, which
         assisted in a refactoring guided by him and in the O(n log n) entry (see
         related_formalizations). For the 7n result (October 2026), two independent agent-driven
-        formalizations of Baligács 2026 were first produced on separate branches, without sorry.
+        formalizations of Baligács 2026 were first produced on separate branches, without sorry;
+        Claude Sonnet 5.5 subagents wrote proofs, which Claude Opus 5.5 then reviewed and reworked
+        before committing (hence only Opus appears in the commit trailers).
         They were then merged into the library under his direction (October–November 2026): the
         paper's notions were rewritten on the existing API (time of an arc as an Option, time-window
         reachability, the earliest/latest neighbor functions and the dismountability results of

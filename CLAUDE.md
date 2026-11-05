@@ -451,8 +451,8 @@ comme pour SAND).
 - Soumission Palomar du `7n` (branche `linear-spanner-submission`, dépôt unique) :
   `Challenge.lean` (énoncé, imports Mathlib seuls, `sorry` volontaires), `Solution.lean` (mêmes
   énoncés, prouvés), `comparator.json`, `formalization.yaml` (`review.status: self-assessed`,
-  `related_formalizations` → l'entrée `O(n log n)`, branche
-  `nlogn-spanner-dismountability-submission`, commit `79214ea`). La licence est `LICENSE` (texte
+  `related_formalizations` → l'entrée `O(n log n)` `PALOMAR-2026-10-23-000009` (version 1),
+  branche `nlogn-spanner-dismountability-submission`, commit `79214ea`). La licence est `LICENSE` (texte
   brut officiel d'Apache 2.0). Les définitions (`IsLocallyInjective`, `Journey`,
   `IsTemporalSpanner`) sont identiques **à l'octet près** entre `Challenge.lean`, `Solution.lean`
   et l'entrée `O(n log n)` ; `Solution.lean` contient tout le pont avec la bibliothèque (aucun

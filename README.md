@@ -99,8 +99,9 @@ give the V⁻/V⁺ perfect-matching structure that reduces cliques to bi-cliques
 
 This branch prepares the `7n` result (Baligács 2026, Theorem 2) for the
 [Palomar](https://palomar-registry.org) registry of Lean-verified mathematics. It follows the
-`O(n log n)` entry of the same repository (branch `nlogn-spanner-dismountability-submission`,
-commit `79214ea`), whose statement of record uses the same model, and builds on it: the two proofs
+`O(n log n)` entry of the same repository,
+[`PALOMAR-2026-10-23-000009`](https://palomar-registry.org/entry?id=PALOMAR-2026-10-23-000009&version=1)
+(branch `nlogn-spanner-dismountability-submission`, commit `79214ea`), whose statement of record uses the same model, and builds on it: the two proofs
 share the dismountability reduction to bi-cliques and the generic clique induction, and differ
 only in how non-dismountable cliques are handled.
 

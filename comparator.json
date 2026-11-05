@@ -1,0 +1,14 @@
+{
+  "challenge_module": "Challenge",
+  "solution_module": "Solution",
+  "theorem_names": [
+    "TemporalCliqueSpanners.exists_isTemporalSpanner_card_le_seven_mul",
+    "TemporalCliqueSpanners.exists_isBigO_isTemporalSpanner_linear"
+  ],
+  "definition_names": [],
+  "permitted_axioms": [
+    "propext",
+    "Quot.sound",
+    "Classical.choice"
+  ]
+}

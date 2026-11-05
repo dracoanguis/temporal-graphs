@@ -1,7 +1,7 @@
 name = "temporal-graph"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["TemporalGraph"]
+defaultTargets = ["TemporalGraph", "Challenge", "Solution"]
 
 [leanOptions]
 pp.unicode.fun = true # pretty-prints `fun a ↦ b`
@@ -24,3 +24,12 @@ git = "https://github.com/PatrickMassot/checkdecls.git"
 [[lean_lib]]
 name = "TemporalGraph"
 globs = ["TemporalGraph.*"]
+
+# Palomar submission: the statement of record (Mathlib-only imports) and its proof.
+[[lean_lib]]
+name = "Challenge"
+roots = ["Challenge"]
+
+[[lean_lib]]
+name = "Solution"
+roots = ["Solution"]

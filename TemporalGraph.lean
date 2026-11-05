@@ -4,27 +4,28 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ethan Bargaud-Arm
 -/
 
-import TemporalGraph.Init
-import TemporalGraph.Basic
-import TemporalGraph.NonemptyTemporalWalk
-import TemporalGraph.TemporalWalk
-import TemporalGraph.Helpers.SetCard
-import TemporalGraph.Subgraph.Basic
-import TemporalGraph.Subgraph.Operations
-import TemporalGraph.Subgraph.EdgeSet
-import TemporalGraph.Subgraph
-import TemporalGraph.Connectivity.Basic
-import TemporalGraph.Connectivity.Subgraph
-import TemporalGraph.Dismountability.Basic
-import TemporalGraph.Dismountability.Operations
-import TemporalGraph.Dismountability.OneSided
-import TemporalGraph.Dismountability.OneSidedBound
-import TemporalGraph.Bipartite
-import TemporalGraph.LinearSpanner.ExtremallyMatched
-import TemporalGraph.LinearSpanner.Reduction
-import TemporalGraph.LinearSpanner.Stars
-import TemporalGraph.LinearSpanner.SimpleStar
-import TemporalGraph.LinearSpanner.ExtendedStar
-import TemporalGraph.LinearSpanner.Bound
-import TemporalGraph.LinearSpanner.Clique
-import TemporalGraph.Examples
+module
+
+public import TemporalGraph.Init
+public import TemporalGraph.Basic
+public import TemporalGraph.NonemptyTemporalWalk
+public import TemporalGraph.TemporalWalk
+public import TemporalGraph.Helpers.SetCard
+public import TemporalGraph.Subgraph.Basic
+public import TemporalGraph.Subgraph.Operations
+public import TemporalGraph.Subgraph.EdgeSet
+public import TemporalGraph.Subgraph
+public import TemporalGraph.Connectivity.Basic
+public import TemporalGraph.Connectivity.Subgraph
+public import TemporalGraph.Dismountability.Basic
+public import TemporalGraph.Dismountability.Operations
+public import TemporalGraph.Dismountability.OneSided
+public import TemporalGraph.Dismountability.OneSidedBound
+public import TemporalGraph.Bipartite
+public import TemporalGraph.LinearSpanner.ExtremallyMatched
+public import TemporalGraph.LinearSpanner.Reduction
+public import TemporalGraph.LinearSpanner.Stars
+public import TemporalGraph.LinearSpanner.SimpleStar
+public import TemporalGraph.LinearSpanner.ExtendedStar
+public import TemporalGraph.LinearSpanner.Bound
+public import TemporalGraph.LinearSpanner.Clique

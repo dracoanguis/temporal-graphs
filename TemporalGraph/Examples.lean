@@ -3,9 +3,12 @@ Copyright (c) 2026 Ethan Bargaud-Arm. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Ethan Bargaud-Arm
 -/
-import TemporalGraph.Subgraph
-import TemporalGraph.Bipartite
-import TemporalGraph.Dismountability.Basic
+module
+
+public import TemporalGraph.Subgraph
+public import TemporalGraph.Bipartite
+public import TemporalGraph.Dismountability.Basic
+
 import Mathlib.Tactic.IntervalCases
 
 /-!
@@ -27,6 +30,8 @@ This file contains worked examples of temporal graphs and their properties.
 * `biSquare_isBiclique`, `biSquare_isHappy`, `biSquare_simpleFootprint_isBipartite` : `biSquare`
   is a bi-clique, is happy, and has a bipartite footprint.
 -/
+
+@[expose] public section
 
 open TemporalGraph
 

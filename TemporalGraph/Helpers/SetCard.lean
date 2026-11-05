@@ -12,8 +12,8 @@ import Mathlib.Data.Set.Finite.Lattice
 /-!
 # Generic lemmas about `Set.ncard`
 
-Generic lemmas about `Set.ncard`, candidates for Mathlib. They have no graph content and live in
-the `Set` namespace, ready to be upstreamed.
+Generic helper lemmas about `Set.ncard`, used by the spanner bounds. They have no graph content
+and live in the `Set` namespace.
 
 ## Main results
 

@@ -7,7 +7,7 @@ module
 
 public import TemporalGraph.LinearSpanner.ExtremallyMatched
 
-import TemporalGraph.ForMathlib.SetCard
+import TemporalGraph.Helpers.SetCard
 
 /-!
 # Stars of an extremally matched bi-clique

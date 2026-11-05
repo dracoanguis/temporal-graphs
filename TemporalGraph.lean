@@ -8,7 +8,7 @@ import TemporalGraph.Init
 import TemporalGraph.Basic
 import TemporalGraph.NonemptyTemporalWalk
 import TemporalGraph.TemporalWalk
-import TemporalGraph.ForMathlib.SetCard
+import TemporalGraph.Helpers.SetCard
 import TemporalGraph.Subgraph.Basic
 import TemporalGraph.Subgraph.Operations
 import TemporalGraph.Subgraph.EdgeSet

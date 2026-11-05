@@ -8,7 +8,7 @@ module
 public import TemporalGraph.Dismountability.Basic
 public import TemporalGraph.Dismountability.Operations
 
-import TemporalGraph.ForMathlib.SetCard
+import TemporalGraph.Helpers.SetCard
 
 /-!
 # One-sided dismountability

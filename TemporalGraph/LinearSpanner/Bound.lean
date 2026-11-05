@@ -9,7 +9,7 @@ public import TemporalGraph.LinearSpanner.ExtendedStar
 public import TemporalGraph.LinearSpanner.Reduction
 public import TemporalGraph.LinearSpanner.SimpleStar
 
-import TemporalGraph.ForMathlib.SetCard
+import TemporalGraph.Helpers.SetCard
 
 /-!
 # Linear spanners of temporal bi-cliques

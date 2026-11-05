@@ -10,7 +10,7 @@ public import TemporalGraph.Subgraph
 public import TemporalGraph.Connectivity.Subgraph
 public import TemporalGraph.Dismountability.Basic
 
-import TemporalGraph.ForMathlib.SetCard
+import TemporalGraph.Helpers.SetCard
 
 /-!
 # Dismounting and mounting

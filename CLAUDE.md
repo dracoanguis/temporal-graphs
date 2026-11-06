@@ -61,7 +61,8 @@ besoin de le répéter ici.
   - **Jamais de `lake update`, de `lake exe cache get!` ni de changement de `lake-manifest.json` /
     `lean-toolchain` depuis un worktree** : cela modifierait les paquets du dépôt principal. Une
     montée de version de Mathlib se fait dans le dépôt principal, hors session parallèle.
-  - **Procédure de montée de version** (rodée le 2026-09-25, `v4.29.0-rc6` → `v4.35.0-rc3`) :
+  - **Procédure de montée de version** (rodée le 2026-09-25, `v4.29.0-rc6` → `v4.35.0-rc3` ; rejouée
+    telle quelle le 2026-11-06, `v4.35.0` → `v4.36.0-rc2`, sans aucune rupture d'API) :
     1. prendre comme cible la toolchain de Mathlib `master` (`curl -sL
        https://raw.githubusercontent.com/leanprover-community/mathlib4/master/lean-toolchain`) ;
     2. **arrêter d'abord tous les serveurs Lean de l'ancienne toolchain** sur le dépôt (VS Code,
@@ -293,9 +294,11 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
 - **Imports Mathlib précis, jamais `import Mathlib`** : `Basic` importe `Combinatorics.Digraph.Basic`,
   `Combinatorics.SimpleGraph.Basic` et `Data.Set.Card` ; chaque fichier ajoute ce qu'il utilise
   (`import` simple si seules les preuves en ont besoin). Le build est passé de 8977 à 2095 tâches.
-- **Fichiers en modules** : tous sauf `Examples` et la racine `TemporalGraph.lean`, c'est-à-dire
-  `Init`, `Basic`, `NonemptyTemporalWalk`, `TemporalWalk`, `Connectivity/*`, `Subgraph`,
-  `Bipartite`, `Dismountability/*` et `LinearSpanner/*`. Un module n'importe que des
+- **Fichiers en modules** : tous sauf la racine `TemporalGraph.lean`, c'est-à-dire `Init`,
+  `Basic`, `NonemptyTemporalWalk`, `TemporalWalk`, `Connectivity/*`, `Subgraph`, `Bipartite`,
+  `Dismountability/*`, `LinearSpanner/*`, `Helpers/*` et `Examples`. `Examples` est devenu un module
+  lors du passage en `v4.36.0-rc2`, où un non-module qui importe Mathlib déclenche un avertissement
+  (« designed for use with the module system »). Un module n'importe que des
   modules, mais un non-module peut importer un module : on porte donc de bas en haut.
 - **Motif (celui de Mathlib)** : copyright, `module`, imports en `public import` (en `import`
   simple s'ils ne servent qu'aux preuves), docstring de module, puis `@[expose] public section`

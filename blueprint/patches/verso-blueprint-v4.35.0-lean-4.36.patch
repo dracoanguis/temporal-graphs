@@ -1481,3 +1481,26 @@ index 47e35ebc..e27c373f 100644
    let mut body := #[]
    for block in contents do
      if ← isMetadataBlock block then
+diff --git a/src/VersoBlueprint/TeX/Cleanup.lean b/src/VersoBlueprint/TeX/Cleanup.lean
+index 2658377c..33bec057 100644
+--- a/src/VersoBlueprint/TeX/Cleanup.lean
++++ b/src/VersoBlueprint/TeX/Cleanup.lean
+@@ -167,8 +167,17 @@ def simplifyDiagnosticDecorations (source : String) : String :=
+     (fun source replacement => source.replace replacement.1 replacement.2)
+     source
+ 
++/-- Avoid text overflowing the margin. Verso's `\LeanVerb` only sets `breaklines`, which breaks at
++spaces, so file paths and qualified Lean names could not break: allow breaks after `/`, `.` and
++`_`. Paragraphs dense with inline math and code still found no acceptable break and overflowed;
++`\emergencystretch` lets TeX stretch spaces instead. -/
++def allowVerbBreaks (source : String) : String :=
++  source.replace "\\usepackage{fvextra}\n"
++    "\\usepackage{fvextra}\n\\fvset{breakafter={/.\\_}}\n\\setlength{\\emergencystretch}{3em}\n"
++
+ def patchSourceBase (source : String) : String :=
+-  simplifyDiagnosticDecorations <| compactVerbatimBlocks <| stripLineStartDisplayFences source
++  allowVerbBreaks <| simplifyDiagnosticDecorations <| compactVerbatimBlocks <|
++    stripLineStartDisplayFences source
+ 
+ def patchSourceWithPreamble (source : String) (insertion? : Option String) :
+     String × Option String :=

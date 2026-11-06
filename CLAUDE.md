@@ -465,6 +465,10 @@ comme pour SAND).
     `StrLit`→`VersoCodeBlock`). Le `lakefile.lean` le prend par chemin et force Verso, SubVerso,
     verso-slides et lean-vir (#275) en rc2. Dès qu'une branche `v4.36` amont existe : revenir à
     `require VersoBlueprint from git … @ "v4.36…"`, supprimer `vendor/`, `patches/`, le script.
+    Le patch contient aussi un correctif de mise en page PDF **hors portage**, à reporter en
+    amont (sinon perdu au retour au git) : `allowVerbBreaks` dans `TeX/Cleanup.lean` ajoute
+    `\fvset{breakafter={/.\_}}` (le code en ligne `\LeanVerb` ne se coupait qu'aux espaces) et
+    `\emergencystretch` au préambule. Mesuré : 52 boîtes trop larges → 2.
   - **Piège mesuré** : sans épinglage explicite de ProofWidgets, Cli et plausible sur les
     révisions du manifeste racine, `lake update` dans `blueprint/` remet les révisions de
     verso-blueprint **dans le `.lake/packages` partagé** (mettre la bibliothèque en premier

@@ -23,8 +23,10 @@ jobs:
       - uses: leanprover/lean-action@v1
 
       # Blueprint: checks every `(lean := "…")` name against the library (strictResolve) and
-      # renders the HTML. Verso and the patched verso-blueprint are cached: rebuilt only when the
-      # toolchain, the blueprint manifest or the patch changes.
+      # renders the HTML. Nobody publishes prebuilt Verso or doc-gen4 outputs (Reservoir has none,
+      # checked 2026-11-06), so both are built here and cached. On a key miss the latest cache is
+      # still restored (`restore-keys`): Lake's traces then rebuild only what changed, e.g. a
+      # Mathlib bump leaves Verso untouched.
       - name: Restore blueprint dependencies
         uses: actions/cache@v6
         with:
@@ -38,6 +40,7 @@ jobs:
             .lake/packages/illuminate
             .lake/packages/MD4Lean
           key: blueprint-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'blueprint/lake-manifest.json', 'blueprint/patches/*.patch') }}
+          restore-keys: blueprint-
 
       - name: Build the blueprint
         working-directory: blueprint
@@ -46,10 +49,11 @@ jobs:
           ~/.elan/bin/lake build
           ~/.elan/bin/lake exe vbp build
 
-      # API documentation. doc-gen4 always documents every imported module, Mathlib included; its
-      # per-module data (`:docInfo`) is cached with the doc-gen4 packages, so only a toolchain or
-      # dependency change pays the full extraction again (measured: 15 min on 12 cores, at most
-      # ~1.9 GB per process, 4 processes in parallel on this runner).
+      # API documentation. doc-gen4 always documents every imported module, Mathlib included (no
+      # option to link to the hosted Mathlib docs instead, and no download of their data); its
+      # per-module data (`:docInfo`) is cached with the doc-gen4 packages, and a partial restore
+      # redoes only the modules whose `.olean` changed (measured for a full extraction: 15 min on
+      # 12 cores, at most ~1.9 GB per process, 4 processes in parallel on this runner).
       - name: Restore API documentation data
         if: github.event_name != 'pull_request'
         uses: actions/cache@v6
@@ -62,6 +66,7 @@ jobs:
             .lake/packages/BibtexQuery
             .lake/packages/MD4Lean
           key: docs-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json') }}
+          restore-keys: docs-
 
       - name: Build the API documentation
         if: github.event_name != 'pull_request'

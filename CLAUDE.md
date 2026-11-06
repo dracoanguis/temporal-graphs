@@ -494,7 +494,13 @@ comme pour SAND).
   assemblage `_site/` (`.github/pages/index.html`, `docs/`, `blueprint/`) et job `deploy` avec
   `environment: github-pages` (son absence faisait échouer le déploiement du 2026-10-16). La
   source Pages du dépôt GitHub doit être « GitHub Actions ». Le blueprint en CI est en HTML seul
-  (le PDF demanderait une TeX Live complète sur le runner).
+  (le PDF demanderait une TeX Live complète sur le runner). **Aucun build précompilé à
+  télécharger** (vérifié le 2026-11-06) : `lake cache get` (Reservoir) ne trouve rien pour Verso,
+  SubVerso ni doc-gen4, ni même pour Batteries en `v4.35.0`, sous macOS comme sous Linux ; doc-gen4
+  ne sait ni lier la doc Mathlib hébergée ni en télécharger les données. Seul levier : nos caches
+  Actions, avec `restore-keys` (un cache manqué restaure le plus récent, et les traces de Lake ne
+  refont que ce qui a changé). `setup-verso-blueprint.sh` estampille `vendor/` avec le SHA-256 du
+  patch et le recrée si le patch a changé.
 - `lake build` n'accepte pas `-j` (vérifié en `v4.29.0-rc6`).
 - **Comptage d'arêtes : pattern `SimpleGraph.degree`, pas de `noncomputable` exposé.** `size`/
   `arcSize` sont des `def` calculables, `Fintype.card G.edgeSet`/`G.arcSet` sous une instance

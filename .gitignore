@@ -1,14 +1,11 @@
 /.lake
 
-/blueprint/web/
-/blueprint/print/
-/blueprint/.venv/
 /docbuild/.lake/
-/blueprint/lean_decls
-/blueprint/src/web.paux
 __pycache__/
 
 *.DS_Store
 
 # local build logs
 /build_out.txt
+# lean-beam session directory (registry, daemon logs)
+/.beam

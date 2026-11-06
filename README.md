@@ -110,32 +110,35 @@ give the V⁻/V⁺ perfect-matching structure that reduces cliques to bi-cliques
 
 ## Blueprint
 
-A [blueprint](blueprint/) documents the mathematical content and its Lean formalization
-status (definitions, theorems, dependency graph). Its Python environment is a
-[uv](https://docs.astral.sh/uv/) project ([`blueprint/pyproject.toml`](blueprint/pyproject.toml),
-locked by `blueprint/uv.lock`): `uv run` creates `blueprint/.venv` on first use, so there is no
-manual venv step. Nothing TeX-related is installed outside that environment:
+A [blueprint](blueprint/) documents the mathematical content and its Lean formalization status
+(definitions, theorems, dependency graph, progress summary). It is written with
+[verso-blueprint](https://github.com/leanprover/verso-blueprint): each chapter is a Lean file
+(`blueprint/Blueprint/Chapters/*.lean`), and each statement points to the declarations that
+formalize it (`(lean := "TemporalGraph.…")`). The build checks those names (`strictResolve`) and
+computes each entry's progress from the Lean side, so there is no separate declaration check and
+no hand-maintained `\leanok`.
 
-- the HTML version is rendered by plasTeX alone. The only TeX program plasTeX needs,
-  `kpsewhich` (to resolve `\input{macros/...}`), is a small script of the uv project
-  ([`blueprint/blueprint_tools/`](blueprint/blueprint_tools/), installed into `blueprint/.venv/bin`);
-- the PDF version uses xelatex from a pinned [TinyTeX](https://yihui.org/tinytex/) that
-  `uv run --project blueprint install-tinytex` downloads once into `blueprint/.venv/tinytex`
-  (about 250 MB, plus the few LaTeX packages `print.tex` needs). The environment's `latexmk`
-  script runs it, so deleting `blueprint/.venv` removes TeX too.
+`blueprint/` is a separate Lake project, like `docbuild/`, so the library does not depend on
+Verso. It shares this package's `.lake/packages`, so Mathlib is not rebuilt. From `blueprint/`:
 
-The one system requirement is `graphviz` (`brew install graphviz`), which `pygraphviz` links
-against for the dependency graph. From the repository root:
+    ./scripts/setup-verso-blueprint.sh   # once: patched verso-blueprint into vendor/ (see below)
+    lake build                           # typecheck the chapters, resolve every Lean name
+    lake exe vbp build                   # HTML → blueprint/_out/site/html-multi/index.html
+    lake exe vbp build --pdf             # also the PDF → blueprint/_out/site/pdf/main.pdf
+    lake exe vbp build --serve           # preview the HTML version locally
 
-    uv run --project blueprint leanblueprint web          # HTML → blueprint/web/index.html
-    uv run --project blueprint install-tinytex            # once, before the first PDF build
-    uv run --project blueprint leanblueprint pdf          # PDF  → blueprint/print/print.pdf
-    uv run --project blueprint leanblueprint checkdecls   # declarations exist (after `lake build`)
-    uv run --project blueprint leanblueprint serve        # preview the HTML version locally
+The PDF needs `lualatex` on the `PATH` (any TeX distribution: MacTeX, MacPorts TeX Live, …).
 
-`checkdecls` is a Lake dependency of this package, used only for that check. If a PDF build
-fails, delete `blueprint/print/` before retrying: latexmk otherwise refuses to rerun after an
-error.
+**Temporary patch.** verso-blueprint has no Lean 4.36 release line yet. Until it has one,
+`blueprint/lakefile.lean` takes it from `vendor/verso-blueprint`: upstream `v4.35.0` plus
+[`patches/verso-blueprint-v4.35.0-lean-4.36.patch`](blueprint/patches/), which ports it to the
+Lean 4.36 core APIs (`Lean.Html`, `Lean.Doc` views). The setup script recreates that directory,
+which is not versioned. The same lakefile pins ProofWidgets, Cli and plausible to the revisions of
+the root manifest: without these pins, Lake checks out verso-blueprint's older revisions in the
+shared `.lake/packages` and breaks the library's build.
+
+Verso's TeX output does not escape `&`, `%`, `#` or `_` in prose (only `\`, `{`, `}`, `^`): keep
+them out of chapter text, or the PDF build fails.
 
 ## API documentation
 
@@ -170,13 +173,13 @@ lake env lean TemporalGraph/<File>.lean     # typecheck a single file in isolati
 
 The library target declares `globs = ["TemporalGraph.*"]`, so `lake build` covers every module,
 including the root `TemporalGraph` itself (`.+` would match only its strict submodules and skip the
-root, which `checkdecls` imports).
+root).
 Without it, lake would build only the root module `TemporalGraph.lean` and what it imports, which
 stops at `Subgraph` and silently skips `Connectivity/`, `Dismountability/` and `LinearSpanner/`.
 
 **Module system.** Every file is a Lean module (`module`, `public import`, and
-`@[expose] public section` so that definitions unfold across files), except
-`TemporalGraph/Examples.lean` and the root `TemporalGraph.lean`, which are plain files.
+`@[expose] public section` so that definitions unfold across files), except the root
+`TemporalGraph.lean`, which is a plain file.
 
 ## Status
 

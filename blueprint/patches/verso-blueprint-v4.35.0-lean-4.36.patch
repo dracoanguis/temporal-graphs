@@ -1,0 +1,1483 @@
+diff --git a/lean-toolchain b/lean-toolchain
+index a6aff065..0fc43369 100644
+--- a/lean-toolchain
++++ b/lean-toolchain
+@@ -1 +1 @@
+-leanprover/lean4:v4.35.0
++leanprover/lean4:v4.36.0-rc2
+diff --git a/src/VersoBlueprint/Cite.lean b/src/VersoBlueprint/Cite.lean
+index 06f7f382..22024804 100644
+--- a/src/VersoBlueprint/Cite.lean
++++ b/src/VersoBlueprint/Cite.lean
+@@ -466,7 +466,7 @@ def citationPreviewBody (entryHtml : Verso.Output.Html)
+         | some loc =>
+           {{<div class="bp_bibliography_hover_meta">
+               <span class="bp_bibliography_hover_meta_label">"Locator"</span>
+-              <span class="bp_bibliography_hover_meta_value">{{.text true loc}}</span>
++              <span class="bp_bibliography_hover_meta_value">{{Lean.Html.ofString true loc}}</span>
+             </div>}}
+         | Option.none => .empty}}
+     </div>
+@@ -577,8 +577,8 @@ inline_extension Inline.bpCite (citations : List CiteItem) (style : CitationStyl
+         let txt := pieceText cfg.style item.citation
+         let linkNode : Output.Html :=
+           match href? with
+-          | some href => {{<a href={{href}}>{{.text true txt}}</a>}}
+-          | Option.none => {{<span>{{.text true txt}}</span>}}
++          | some href => {{<a href={{href}}>{{Lean.Html.ofString true txt}}</a>}}
++          | Option.none => {{<span>{{Lean.Html.ofString true txt}}</span>}}
+         if inPreviewRender then
+           pure linkNode
+         else
+@@ -588,7 +588,7 @@ inline_extension Inline.bpCite (citations : List CiteItem) (style : CitationStyl
+           pure <| Informal.HoverRender.inlinePreviewTargetNode linkNode previewTarget
+       let links ← cfg.citations.mapM mkLink
+       let body := joinHtml {{<span>"; "</span>}} links
+-      let locatorHtml? := (locatorText cfg.kind cfg.index).map (fun loc => {{<span>{{.text true loc}}</span>}})
++      let locatorHtml? := (locatorText cfg.kind cfg.index).map (fun loc => {{<span>{{Lean.Html.ofString true loc}}</span>}})
+       let htmlNote? : Option Output.Html ←
+         if content.isEmpty then
+           pure Option.none
+@@ -646,7 +646,7 @@ private def mkItems (config : Cite.CiteConfig) : DocElabM (Array (TSyntax `term)
+     `(Informal.Cite.CiteItem.mk $(quote label) $(mkIdent decl))
+ 
+ private def citeRoleImpl (style : Cite.CitationStyle) (config : Cite.CiteConfig)
+-    (extra : Array (TSyntax `inline)) : DocElabM Term := do
++    (extra : Array (Lean.Doc.VersoInline)) : DocElabM Term := do
+   let items ← mkItems config
+   let inlines ← extra.mapM elabInline
+   ``(Verso.Doc.Inline.other
+diff --git a/src/VersoBlueprint/Commands/Bibliography.lean b/src/VersoBlueprint/Commands/Bibliography.lean
+index e1a7a58b..9fb47c72 100644
+--- a/src/VersoBlueprint/Commands/Bibliography.lean
++++ b/src/VersoBlueprint/Commands/Bibliography.lean
+@@ -99,12 +99,12 @@ block_extension Block.bibliography (biblio : BibliographyData) where
+                 match detailText? with
+                 | some detail =>
+                   {{<span class="bp_bibliography_use_inline_meta">
+-                    {{.text true s!" - {detail}"}}
++                    {{Lean.Html.ofString true s!" - {detail}"}}
+                   </span>}}
+                 | Option.none => .empty
+               let lineNode : Output.Html := {{
+                 <a href={{use.href}} class="bp_bibliography_use_line">
+-                  {{.text true summaryText}}
++                  {{Lean.Html.ofString true summaryText}}
+                   {{inlineMeta}}
+                 </a>}}
+               let previewLine : Output.Html :=
+@@ -149,8 +149,9 @@ block_extension Block.bibliography (biblio : BibliographyData) where
+ open Verso Doc Elab Syntax in
+ def mkBibliographyPart (stx : Syntax) (endPos : String.Pos.Raw) : PartElabM FinishedPart := do
+   let titlePreview := "Blueprint Bibliography"
+-  let titleInlines ← `(inline | "Blueprint Bibliography")
+-  let expandedTitle ← #[titleInlines].mapM (elabInline ·)
++  -- Lean 4.36: no `inline` quotation category; parse the title as Verso does for `inlines!`.
++  let titleInlines ← Verso.Doc.Concrete.stringToInlines (Syntax.mkStrLit "Blueprint Bibliography")
++  let expandedTitle ← titleInlines.mapM (elabInline ⟨·⟩)
+   let metadata : Option (TSyntax `term) := some (← `(term| { number := false }))
+   let entries := Informal.Cite.allBibEntries (← getEnv)
+   if verso.blueprint.debug.commands.get (← Lean.getOptions) then
+@@ -164,9 +165,12 @@ def mkBibliographyPart (stx : Syntax) (endPos : String.Pos.Raw) : PartElabM Fini
+   pure <| FinishedPart.mk stx stx expandedTitle titlePreview metadata #[block] subParts endPos
+ 
+ open Verso Doc Elab Syntax PartElabM in
+-@[part_command Lean.Doc.Syntax.command]
++@[part_command Lean.Doc.Parser.Block.command]
+ public meta def blueprintBibliographyCmd : PartCommand
+-  | stx@`(block|command{blueprint_bibliography}) => do
++  | .command v => do
++    -- Lean 4.36: part commands receive a `BlockView` (was a `block` quotation).
++    unless v.name.getId == `blueprint_bibliography do Lean.Elab.throwUnsupportedSyntax
++    let stx : Syntax := v.stx.raw
+     let endPos := stx.getTailPos?.get!
+     closePartsUntil 1 endPos
+     addPart (← mkBibliographyPart stx endPos)
+diff --git a/src/VersoBlueprint/Commands/Graph.lean b/src/VersoBlueprint/Commands/Graph.lean
+index 0c613fa4..3f0e45f9 100644
+--- a/src/VersoBlueprint/Commands/Graph.lean
++++ b/src/VersoBlueprint/Commands/Graph.lean
+@@ -124,7 +124,7 @@ private def graphToHtml
+               match group.summary? with
+               | some summary => {{
+                   <p class="bp_graph_legend_group_summary">
+-                    {{.text false summary}}
++                    {{Lean.Html.ofString false summary}}
+                   </p>
+                 }}
+               | Option.none => .empty
+@@ -134,18 +134,18 @@ private def graphToHtml
+                 | some swatch => {{
+                     <span class="bp_graph_legend_item">
+                       <span class="bp_graph_legend_swatch" "style"={{swatch.inlineStyle}}></span>
+-                      {{.text false item.label}}
++                      {{Lean.Html.ofString false item.label}}
+                     </span>
+                   }}
+                 | Option.none => {{
+                     <span class="bp_graph_legend_item">
+-                      {{.text false item.label}}
++                      {{Lean.Html.ofString false item.label}}
+                     </span>
+                   }}
+             {{
+               <section class="bp_graph_legend_group">
+                 <div class="bp_graph_legend_group_header">
+-                  <span class="bp_graph_legend_group_title">{{.text false group.title}}</span>
++                  <span class="bp_graph_legend_group_title">{{Lean.Html.ofString false group.title}}</span>
+                   {{summaryHtml}}
+                 </div>
+                 <div class="bp_graph_legend_items">
+@@ -157,7 +157,7 @@ private def graphToHtml
+           match note? with
+           | some note => {{
+               <p class="bp_graph_legend_note">
+-                {{.text false note}}
++                {{Lean.Html.ofString false note}}
+               </p>
+             }}
+           | Option.none => .empty
+@@ -321,7 +321,7 @@ private def graphToHtml
+             "data-bp-graph-pack"={{graphPackDefault}}
+           >
+             <script type="application/json" class="bp-graph-data">
+-              {{.text false s!"{publicGraphDataJson}"}}
++              {{Lean.Html.ofString false s!"{publicGraphDataJson}"}}
+             </script>
+           </div>
+           {{previewPanel}}
+@@ -492,8 +492,9 @@ def mkGraphPart (stx : Syntax) (endPos : String.Pos.Raw) (options : GraphOptions
+     (previewPlacement : Informal.HoverRender.PreviewPlacement := .docked) :
+     PartElabM FinishedPart := do
+   let titlePreview := "Dependency Graph"
+-  let titleInlines ← `(inline | "Dependency Graph")
+-  let expandedTitle ← #[titleInlines].mapM (elabInline ·)
++  -- Lean 4.36: no `inline` quotation category; parse the title as Verso does for `inlines!`.
++  let titleInlines ← Verso.Doc.Concrete.stringToInlines (Syntax.mkStrLit "Dependency Graph")
++  let expandedTitle ← titleInlines.mapM (elabInline ⟨·⟩)
+   let metadata : Option (TSyntax `term) := some (← `(term| { number := false }))
+   reportImportedConflicts
+   if verso.blueprint.debug.commands.get (← Lean.getOptions) then
+@@ -505,9 +506,13 @@ def mkGraphPart (stx : Syntax) (endPos : String.Pos.Raw) (options : GraphOptions
+   pure <| FinishedPart.mk stx stx expandedTitle titlePreview metadata #[block] subParts endPos
+ 
+ open Verso Doc Elab Syntax PartElabM in
+-@[part_command Lean.Doc.Syntax.command]
++@[part_command Lean.Doc.Parser.Block.command]
+ public meta def depGraph : PartCommand
+-  | stx@`(block|command{blueprint_graph $args*}) => do
++  | .command v => do
++    -- Lean 4.36: part commands receive a `BlockView` (was a `block` quotation).
++    unless v.name.getId == `blueprint_graph do Lean.Elab.throwUnsupportedSyntax
++    let stx : Syntax := v.stx.raw
++    let args := v.args
+     let cfg ← Verso.ArgParse.parseThe BlueprintGraphConfig (← parseArgs args)
+     let options ← parseGraphOptions cfg
+     let previewMode ← parseGraphPreviewMode cfg
+diff --git a/src/VersoBlueprint/Commands/Summary.lean b/src/VersoBlueprint/Commands/Summary.lean
+index c2124600..c125667b 100644
+--- a/src/VersoBlueprint/Commands/Summary.lean
++++ b/src/VersoBlueprint/Commands/Summary.lean
+@@ -21,8 +21,9 @@ open Informal Data Environment
+ open Verso Doc Elab Syntax in
+ def mkSummaryPart (stx : Syntax) (endPos : String.Pos.Raw) : PartElabM FinishedPart := do
+   let titlePreview := "Blueprint Summary"
+-  let titleInlines ← `(inline | "Blueprint Summary")
+-  let expandedTitle ← #[titleInlines].mapM (elabInline ·)
++  -- Lean 4.36: no `inline` quotation category; parse the title as Verso does for `inlines!`.
++  let titleInlines ← Verso.Doc.Concrete.stringToInlines (Syntax.mkStrLit "Blueprint Summary")
++  let expandedTitle ← titleInlines.mapM (elabInline ⟨·⟩)
+   let metadata : Option (TSyntax `term) := some (← `(term| { number := false }))
+   reportImportedConflicts
+   let options ← Lean.getOptions
+@@ -35,9 +36,12 @@ def mkSummaryPart (stx : Syntax) (endPos : String.Pos.Raw) : PartElabM FinishedP
+   pure <| FinishedPart.mk stx stx expandedTitle titlePreview metadata #[block] subParts endPos
+ 
+ open Verso Doc Elab Syntax PartElabM in
+-@[part_command Lean.Doc.Syntax.command]
++@[part_command Lean.Doc.Parser.Block.command]
+ public meta def blueprintSummaryCmd : PartCommand
+-  | stx@`(block|command{blueprint_summary}) => do
++  | .command v => do
++    -- Lean 4.36: part commands receive a `BlockView` (was a `block` quotation).
++    unless v.name.getId == `blueprint_summary do Lean.Elab.throwUnsupportedSyntax
++    let stx : Syntax := v.stx.raw
+     let endPos := stx.getTailPos?.get!
+     closePartsUntil 1 endPos
+     addPart (← mkSummaryPart stx endPos)
+diff --git a/src/VersoBlueprint/Commands/Summary/Html.lean b/src/VersoBlueprint/Commands/Summary/Html.lean
+index 88723e0d..012492a4 100644
+--- a/src/VersoBlueprint/Commands/Summary/Html.lean
++++ b/src/VersoBlueprint/Commands/Summary/Html.lean
+@@ -208,7 +208,7 @@ private def summaryMetadataBadges (metadata : MetadataPresentation) : Array Outp
+ 
+ private def summaryMetadataActionLinks (metadata : MetadataPresentation) : Array Output.Html :=
+   metadata.summaryActionLinks.map fun action =>
+-    {{ <a class="bp_code_link" href={{action.href}}>{{.text true action.label}}</a> }}
++    {{ <a class="bp_code_link" href={{action.href}}>{{Lean.Html.ofString true action.label}}</a> }}
+ 
+ private def summaryActionLinksRow (actionLinks : Array Output.Html) : Output.Html :=
+   if Array.isEmpty actionLinks then
+@@ -225,11 +225,11 @@ def summaryCard (label value : String) (status? : Option String := Option.none)
+     (className : String := summaryCardClass) : Output.Html :=
+   let statusNode : Output.Html :=
+     match status? with
+-    | Option.some status => {{<span class="bp_summary_status">{{.text true status}}</span>}}
++    | Option.some status => {{<span class="bp_summary_status">{{Lean.Html.ofString true status}}</span>}}
+     | Option.none => .empty
+   {{ <div class={{className}}>
+-      <span class="bp_summary_label">{{.text true label}}</span>
+-      <span class="bp_summary_value">{{.text true value}}</span>
++      <span class="bp_summary_label">{{Lean.Html.ofString true label}}</span>
++      <span class="bp_summary_value">{{Lean.Html.ofString true value}}</span>
+       {{statusNode}}
+     </div> }}
+ 
+@@ -277,7 +277,7 @@ def summaryDetailsList (title : String) (rows : Array Output.Html)
+     else
+       #[("class", className)]
+   {{ <details {{attrs}}>
+-      <summary>{{.text true title}}</summary>
++      <summary>{{Lean.Html.ofString true title}}</summary>
+       <ul class="bp_summary_list">
+         {{rows}}
+       </ul>
+@@ -291,7 +291,7 @@ def summarySection (title : String) (content : Output.Html)
+     else
+       #[("class", "bp_summary_section")]
+   {{ <details {{attrs}}>
+-      <summary>{{.text true title}}</summary>
++      <summary>{{Lean.Html.ofString true title}}</summary>
+       {{content}}
+     </details> }}
+ 
+@@ -328,7 +328,7 @@ private def summaryItemBody (body : Output.Html) : Output.Html :=
+   {{ <div class="bp_summary_item_body">{{body}}</div> }}
+ 
+ private def summaryItemTextBody (text : String) : Output.Html :=
+-  summaryItemBody (.text true text)
++  summaryItemBody (Lean.Html.ofString true text)
+ 
+ private def summaryItemActions (body : Output.Html) : Output.Html :=
+   {{ <div class="bp_summary_item_actions">{{body}}</div> }}
+@@ -353,7 +353,7 @@ private def SummaryHtmlContext.associatedDecls (ctx : SummaryHtmlContext) (label
+ private def SummaryHtmlContext.leanRow (ctx : SummaryHtmlContext) (label : Name) (kind : String)
+     (leanObjects : List Name) : Output.Html :=
+   let entryRef := ctx.entryRef label
+-  summaryItemShell entryRef (some (.text true s!"({kind})"))
++  summaryItemShell entryRef (some (Lean.Html.ofString true s!"({kind})"))
+     .empty #[] #[ctx.associatedDecls label leanObjects]
+ 
+ private def SummaryHtmlContext.leanRows (ctx : SummaryHtmlContext) (items : List IndexItem) :
+@@ -404,13 +404,13 @@ private def SummaryHtmlContext.incompleteRow (ctx : SummaryHtmlContext) (item :
+   let badgeClass := summaryBadgeClassForStatus item.status
+   let body := {{
+     <div class="bp_summary_item_body">
+-      {{.text true declPrefix}} {{declLink}} " "
++      {{Lean.Html.ofString true declPrefix}} {{declLink}} " "
+       <span class={{badgeClass}}>
+         s!"[{if item.isTheorem then "theorem/lemma" else "definition"}; {statusLabel}; {whereTxt}; refs: {refsTxt}]"
+       </span>
+     </div>
+   }}
+-  pure <| summaryItemShell entryRef (some (.text true s!"({item.kind})")) body #[] #[]
++  pure <| summaryItemShell entryRef (some (Lean.Html.ofString true s!"({item.kind})")) body #[] #[]
+ 
+ private def SummaryHtmlContext.externalDeclNode (ctx : SummaryHtmlContext) (label written canonical : Name) :
+     Output.Html :=
+@@ -432,11 +432,11 @@ private def SummaryHtmlContext.externalDeclIssueRow (ctx : SummaryHtmlContext) (
+   let declNode := ctx.externalDeclNode label written canonical
+   let body := {{
+     <div class="bp_summary_item_body">
+-        {{.text true bodyPrefix}} {{declNode}} " "
++        {{Lean.Html.ofString true bodyPrefix}} {{declNode}} " "
+         {{badge}}
+     </div>
+   }}
+-  summaryItemShell entryRef (some (.text true s!"({kind})")) body #[] #[actions]
++  summaryItemShell entryRef (some (Lean.Html.ofString true s!"({kind})")) body #[] #[actions]
+ 
+ private def SummaryHtmlContext.missingRow (ctx : SummaryHtmlContext) (item : MissingLeanDeclItem) :
+     Output.Html :=
+@@ -447,7 +447,7 @@ private def SummaryHtmlContext.renderFailureRow (ctx : SummaryHtmlContext) (item
+     Output.Html :=
+   ctx.externalDeclIssueRow item.label item.kind item.written item.canonical
+     "External render failed for " (summaryWarnBadge "[render failure]")
+-    (summaryItemActions {{<code>{{.text true item.message}}</code>}})
++    (summaryItemActions {{<code>{{Lean.Html.ofString true item.message}}</code>}})
+ 
+ private def SummaryHtmlContext.priorityRow (ctx : SummaryHtmlContext) (item : PriorityItem) :
+     Output.Html :=
+@@ -461,7 +461,7 @@ private def SummaryHtmlContext.priorityRow (ctx : SummaryHtmlContext) (item : Pr
+       summaryMetricBadge "stage" item.stage,
+       summaryMetricBadge "statement" item.statementStatus
+     ] ++ summaryUsageBadges item.directUses item.downstreamUses ++ proofBadges
+-  summaryItemShell entryRef (some (.text true s!"({item.kind})"))
++  summaryItemShell entryRef (some (Lean.Html.ofString true s!"({item.kind})"))
+     (summaryItemTextBody s!"Ready for {item.stage} work.")
+     badges
+     #[ctx.associatedDecls item.label item.leanObjects, summaryActionLinksRow actionLinks]
+@@ -474,7 +474,7 @@ private def SummaryHtmlContext.usageRow (ctx : SummaryHtmlContext) (item : Usage
+       summaryWarnMetricBadge primaryLabel primaryCount,
+       summaryMetricBadge secondaryLabel secondaryCount
+     ] ++ summaryUsageBadges item.directUses item.downstreamUses
+-  summaryItemShell entryRef (some (.text true s!"({item.kind})"))
++  summaryItemShell entryRef (some (Lean.Html.ofString true s!"({item.kind})"))
+     (summaryItemTextBody bodyText)
+     badges
+     #[ctx.associatedDecls item.label item.leanObjects]
+@@ -500,7 +500,7 @@ private def SummaryHtmlContext.dependencyLoadRow (ctx : SummaryHtmlContext)
+       summaryMetricBadge "statement deps" item.statementDeps,
+       summaryMetricBadge "proof deps" item.proofDeps
+     ] ++ summaryUsageBadges item.directUses item.downstreamUses
+-  summaryItemShell entryRef (some (.text true s!"({item.kind})"))
++  summaryItemShell entryRef (some (Lean.Html.ofString true s!"({item.kind})"))
+     (summaryItemTextBody "Prerequisite fan-in measured from the current statement/proof dependency graph.")
+     badges
+     #[ctx.associatedDecls item.label item.leanObjects]
+@@ -514,7 +514,7 @@ private def summaryProofDebtHotspotRow (item : DebtHotspotItem) : Output.Html :=
+       summaryMetricBadge "total debt" item.totalDebt
+     ]
+   summaryItemShell
+-    (.text true item.header)
++    (Lean.Html.ofString true item.header)
+     (some {{<code>s!"{item.parent}"</code>}})
+     (summaryItemTextBody "Grouped proof/code debt derived from the current incomplete-declaration snapshots.")
+     badges
+@@ -533,7 +533,7 @@ private def summaryOwnerRollupRow (item : OwnerRollupItem) : Output.Html :=
+   let badges :=
+     summaryRollupBadges item.totalEntries item.actionableEntries item.quickWins item.linkedPrs
+   summaryItemShell
+-    (.text true item.displayName)
++    (Lean.Html.ofString true item.displayName)
+     (some {{<code>s!"{item.owner}"</code>}})
+     .empty
+     badges
+@@ -555,7 +555,7 @@ private def SummaryHtmlContext.metadataEntryRow (ctx : SummaryHtmlContext) (item
+   let metadata := metadataPresentationOfMetadataEntryItem item
+   let badges := summaryMetadataBadges metadata
+   let actionLinks := summaryMetadataActionLinks metadata
+-  summaryItemShell entryRef (some (.text true s!"({item.kind})"))
++  summaryItemShell entryRef (some (Lean.Html.ofString true s!"({item.kind})"))
+     (summaryItemTextBody bodyText)
+     badges
+     #[ctx.associatedDecls item.label item.leanObjects, summaryActionLinksRow actionLinks]
+@@ -579,11 +579,11 @@ private def SummaryHtmlContext.groupHealthRow (ctx : SummaryHtmlContext) (item :
+   match item.nextPriority? with
+   | Option.none =>
+     summaryItemShell
+-      (.text true item.header)
++      (Lean.Html.ofString true item.header)
+       (some {{<code>s!"{item.parent}"</code>}})
+       (summaryItemTextBody "Grouped view over entries sharing the same parent.")
+       badges
+-      #[summaryItemActions (.text true "Next: no ready child currently unlocks downstream work.")]
++      #[summaryItemActions (Lean.Html.ofString true "Next: no ready child currently unlocks downstream work.")]
+   | Option.some next =>
+     let nextRef := ctx.entryRef next.label
+     let priorityBadges : Array Output.Html :=
+@@ -591,7 +591,7 @@ private def SummaryHtmlContext.groupHealthRow (ctx : SummaryHtmlContext) (item :
+       | Option.some priority => #[summaryWarnMetricBadge "priority" priority]
+       | Option.none => #[]
+     summaryItemShell
+-      (.text true item.header)
++      (Lean.Html.ofString true item.header)
+       (some {{<code>s!"{item.parent}"</code>}})
+       (summaryItemTextBody "Grouped view over entries sharing the same parent.")
+       badges
+diff --git a/src/VersoBlueprint/Docstring.lean b/src/VersoBlueprint/Docstring.lean
+index cdc2896d..d84d0396 100644
+--- a/src/VersoBlueprint/Docstring.lean
++++ b/src/VersoBlueprint/Docstring.lean
+@@ -54,9 +54,9 @@ private def rewriteMathHtml
+     (texPrelude : String) (html : Verso.Output.Html) : Verso.Output.Html :=
+   html.visitM (m := Id) (tag := fun name attrs contents =>
+     if name == "code" && attrs.contains ("class", "math inline") then
+-      some (.tag name (mathAttrs .inline texPrelude) contents)
++      some (.element name (mathAttrs .inline texPrelude) contents)
+     else if name == "code" && attrs.contains ("class", "math display") then
+-      some (.tag name (mathAttrs .display texPrelude) contents)
++      some (.element name (mathAttrs .display texPrelude) contents)
+     else
+       none)
+ 
+@@ -82,8 +82,8 @@ where
+       if part.title.isEmpty then
+         .empty
+       else
+-        .tag "p" #[] <|
+-          .tag "strong" #[] (.seq <| part.title.map inlineToHtml)
++        .element "p" #[] <|
++          .element "strong" #[] (.seq <| part.title.map inlineToHtml)
+     let content := .seq <| part.content.map blockToHtml
+     let children := .seq <| part.subParts.map partToHtml
+     .seq #[title, content, children]
+diff --git a/src/VersoBlueprint/Docstring/References.lean b/src/VersoBlueprint/Docstring/References.lean
+index 11fbacb8..c067183b 100644
+--- a/src/VersoBlueprint/Docstring/References.lean
++++ b/src/VersoBlueprint/Docstring/References.lean
+@@ -22,7 +22,7 @@ def Reference.label (reference : Reference) : Data.Label :=
+   reference.target.elim id (·.label)
+ 
+ private def referenceInline (target : Data.Label ⊕ Data.UseRef)
+-    (contents : TSyntaxArray `inline) :
++    (contents : TSyntaxArray ``Lean.Doc.Parser.inline) :
+     Lean.Doc.DocM (Lean.Doc.Inline Lean.ElabInline) := do
+   let reference : Reference := { target, hasCustomText := !contents.isEmpty }
+   let contents ← contents.mapM Lean.Doc.elabInline
+@@ -36,7 +36,7 @@ private def referenceInline (target : Data.Label ⊕ Data.UseRef)
+ /-- Preserve dependency metadata without requiring an enclosing Manual directive. -/
+ @[doc_role Informal.uses]
+ def uses (label : StrLit) (origin : String := "manual") (intent : String := "regular")
+-    (contents : TSyntaxArray `inline) :
++    (contents : TSyntaxArray ``Lean.Doc.Parser.inline) :
+     Lean.Doc.DocM (Lean.Doc.Inline Lean.ElabInline) := do
+   let cfg := UsesConfig.ofArgs { val := label.getString, «syntax» := label.raw }
+     (some origin) (some intent)
+@@ -45,7 +45,7 @@ def uses (label : StrLit) (origin : String := "manual") (intent : String := "reg
+ 
+ /-- Preserve a Blueprint prose link without creating a dependency edge. -/
+ @[doc_role Informal.bpref]
+-def bpref (label : StrLit) (contents : TSyntaxArray `inline) :
++def bpref (label : StrLit) (contents : TSyntaxArray ``Lean.Doc.Parser.inline) :
+     Lean.Doc.DocM (Lean.Doc.Inline Lean.ElabInline) :=
+   referenceInline (.inl (LabelNameParsing.parse label.getString)) contents
+ 
+diff --git a/src/VersoBlueprint/ExternalDeclRender.lean b/src/VersoBlueprint/ExternalDeclRender.lean
+index 7036b4c9..3ee265a9 100644
+--- a/src/VersoBlueprint/ExternalDeclRender.lean
++++ b/src/VersoBlueprint/ExternalDeclRender.lean
+@@ -218,9 +218,9 @@ private def templateVersoHoverAttrs
+       let contents :=
+         match marker? with
+         | some localId =>
+-            contents ++ .tag "span" #[(externalDeclHoverInlineMarkerAttrName, toString localId)] .empty
++            contents ++ .element "span" #[(externalDeclHoverInlineMarkerAttrName, toString localId)] .empty
+         | none => contents
+-      pure <| some <| .tag name attrs' contents)
++      pure <| some <| .element name attrs' contents)
+ 
+ private def hoverPayloads
+     (hoverDedup : Verso.Code.Hover.Dedup ExternalDeclHtml) : Array ExternalDeclHoverPayload :=
+@@ -262,7 +262,7 @@ private def renderExternalDeclSignatureVariant
+   let signatureHtml ← highlightedToHtml signature
+   pure {{
+     <pre class="bp_external_decl_signature signature hl lean block">
+-      <span class="keyword token">{{.text true keywordText}}</span> " " {{signatureHtml}}
++      <span class="keyword token">{{Lean.Html.ofString true keywordText}}</span> " " {{signatureHtml}}
+     </pre>
+   }}
+ 
+@@ -283,11 +283,11 @@ private def plainDocstringHtml (docs? : Option String) : ExternalDeclHtml :=
+   match docs? with
+   | none => .empty
+   | some docs =>
+-    {{<pre class="docstring">{{.text true docs}}</pre>}}
++    {{<pre class="docstring">{{Lean.Html.ofString true docs}}</pre>}}
+ 
+ private def structuralDocstringHtml
+     (doc : Lean.VersoDocString) (texPrelude : String) : ExternalDeclHtml :=
+-  .tag "div" #[("class", "docstring")]
++  .element "div" #[("class", "docstring")]
+     (Informal.Docstring.versoDocstringToHtml doc texPrelude)
+ 
+ private def internalDocstringHtml
+@@ -322,7 +322,7 @@ private def renderTitledSection? (decl : Name) (title : String) (rows : Array Ex
+     let labelId := externalDeclSectionLabelId decl title
+     some {{
+       <div class="bp_external_decl_section" role="group" aria-labelledby={{labelId}}>
+-        <p class="bp_external_decl_section_label" id={{labelId}}>{{.text true title}}</p>
++        <p class="bp_external_decl_section_label" id={{labelId}}>{{Lean.Html.ofString true title}}</p>
+         {{rows}}
+       </div>
+     }}
+@@ -401,7 +401,7 @@ private def renderExternalDeclWrapper
+     if headerMeta.isEmpty then
+       .empty
+     else
+-      {{<span class="bp_external_decl_header_meta">{{.text true s!"({String.intercalate ", " headerMeta.toList})"}}</span>}}
++      {{<span class="bp_external_decl_header_meta">{{Lean.Html.ofString true s!"({String.intercalate ", " headerMeta.toList})"}}</span>}}
+   let headerSourceHtml : ExternalDeclHtml :=
+     match headerSource? with
+     | none => .empty
+@@ -409,9 +409,9 @@ private def renderExternalDeclWrapper
+       let sourceNode : ExternalDeclHtml :=
+         match source.href? with
+         | some href =>
+-          {{<a class="bp_external_decl_source_path" href={{href}}>{{.text true source.text}}</a>}}
++          {{<a class="bp_external_decl_source_path" href={{href}}>{{Lean.Html.ofString true source.text}}</a>}}
+         | none =>
+-          {{<span class="bp_external_decl_source_path">{{.text true source.text}}</span>}}
++          {{<span class="bp_external_decl_source_path">{{Lean.Html.ofString true source.text}}</span>}}
+       {{
+         <span class="bp_external_decl_source">
+           "defined in " {{sourceNode}}
+@@ -421,13 +421,13 @@ private def renderExternalDeclWrapper
+     <div class={{s!"declaration decl {kindClass}"}} data-decl={{decl.toString}} data-kind={{kindMarker}}>
+       <div class="bp_external_decl_kicker">
+         <div class="bp_external_decl_kicker_main">
+-          <span class="bp_external_decl_kind">{{.text true kindMarker}}</span>
++          <span class="bp_external_decl_kind">{{Lean.Html.ofString true kindMarker}}</span>
+           {{headerMetaHtml}}
+           {{headerSourceHtml}}
+         </div>
+         <div class="bp_external_decl_kicker_status">
+           {{if let some badge := headerBadge? then
+-            {{<span class={{s!"bp_external_status_badge bp_external_decl_header_status {badge.className}"}}>{{.text true badge.text}}</span>}}
++            {{<span class={{s!"bp_external_status_badge bp_external_decl_header_status {badge.className}"}}>{{Lean.Html.ofString true badge.text}}</span>}}
+           else .empty}}
+         </div>
+       </div>
+@@ -467,7 +467,7 @@ private def renderFieldSignature
+     else
+       let inheritedRows : Array ExternalDeclHtml :=
+         field.fieldFrom.toArray.map fun parent =>
+-          {{<li><code>{{.text true parent.name.toString}}</code></li>}}
++          {{<li><code>{{Lean.Html.ofString true parent.name.toString}}</code></li>}}
+       {{
+         <div class="inheritance docs">
+           "Inherited from "
+@@ -653,7 +653,7 @@ def renderDeclHtmlNodeDirect? (decl : Name) : MetaM (Option ExternalDeclHtml) :=
+     let some cinfo := env.find? decl
+       | return none
+     match ← renderDeclHtmlDirectFromInfoE decl cinfo with
+-    | .ok html => return some (.text false html.selfContained)
++    | .ok html => return some (Lean.Html.ofString false html.selfContained)
+     | .error err =>
+       logError m!"External declaration rendering failed for {decl}: {err.message}"
+       return none
+diff --git a/src/VersoBlueprint/Graft/Render.lean b/src/VersoBlueprint/Graft/Render.lean
+index c4d61606..61e9c088 100644
+--- a/src/VersoBlueprint/Graft/Render.lean
++++ b/src/VersoBlueprint/Graft/Render.lean
+@@ -67,7 +67,7 @@ public def renderNotice (baseClass kind title detail : String) : Html :=
+   }}
+ 
+ private def defaultRenderMissingNode (node : BlueprintNode) (title detail : String) : Html :=
+-  .tag "div" node.renderedAttrs <|
++  .element "div" node.renderedAttrs <|
+     renderNotice "bp_graft_node_notice" "error" title detail
+ 
+ public structure ManifestRenderConfig where
+@@ -90,7 +90,7 @@ public def renderNodeWithContent
+     (entry : Informal.PreviewManifest.Entry)
+     (content : Informal.PreviewManifest.BlockRender.RenderedContent)
+     (group? : Option Informal.PreviewManifest.GroupRelation := none) : Html :=
+-  .tag "div" (cfg.nodeAttrs node) <|
++  .element "div" (cfg.nodeAttrs node) <|
+     Informal.PreviewManifest.BlockRender.renderWithRenderedContent
+       cfg.blockRenderConfig
+       entry
+diff --git a/src/VersoBlueprint/Informal/Author.lean b/src/VersoBlueprint/Informal/Author.lean
+index 2263d3f1..54b3e9a7 100644
+--- a/src/VersoBlueprint/Informal/Author.lean
++++ b/src/VersoBlueprint/Informal/Author.lean
+@@ -14,7 +14,6 @@ import VersoBlueprint.Profiling
+ open Verso Doc Elab
+ open Verso.Genre Manual
+ open Verso.ArgParse
+-open Lean.Doc.Syntax
+ open Lean Elab
+ 
+ namespace Informal
+@@ -51,16 +50,17 @@ private def collapseWhitespace (s : String) : String :=
+   let s := s.replace "\t" " "
+   String.intercalate " " <| (s.splitOn " ").filter (fun chunk => !chunk.isEmpty)
+ 
+-private def blockChunkText (env : Environment) (block : TSyntax `block) : String :=
+-  match block with
+-  | `(block|para[$inlines*]) =>
+-    Verso.Doc.Elab.inlinesToString env inlines
+-  | `(block|header($_){$inlines*}) =>
+-    Verso.Doc.Elab.inlinesToString env inlines
+-  | _ =>
++private def blockChunkText (env : Environment) (block : Lean.Doc.VersoBlock) : String :=
++  -- Lean 4.36: paragraphs and headers are read through `Lean.Doc` views.
++  match Lean.Doc.ParaView.of ⟨block.raw⟩, Lean.Doc.HeaderView.of ⟨block.raw⟩ with
++  | some v, _ =>
++    Verso.Doc.Elab.inlinesToString env (v.content.map (·.raw))
++  | none, some v =>
++    Verso.Doc.Elab.inlinesToString env (v.content.map (·.raw))
++  | none, none =>
+     (Syntax.reprint block.raw).getD ""
+ 
+-private def authorNameFromContents (contents : Array (TSyntax `block)) : DocElabM String := do
++private def authorNameFromContents (contents : Array (Lean.Doc.VersoBlock)) : DocElabM String := do
+   let env ← getEnv
+   let raw := contents.foldl (init := "") fun acc block =>
+     let chunk := (blockChunkText env block).trimAscii.toString
+diff --git a/src/VersoBlueprint/Informal/Block.lean b/src/VersoBlueprint/Informal/Block.lean
+index ea2226bf..d737941a 100644
+--- a/src/VersoBlueprint/Informal/Block.lean
++++ b/src/VersoBlueprint/Informal/Block.lean
+@@ -40,7 +40,7 @@ open Verso Doc Elab
+ open Verso.Genre Manual
+ open Verso.ArgParse
+ open Verso.Output.Html
+-open Lean.Doc.Syntax
++open Lean.Doc.Parser
+ open Lean Elab
+ 
+ namespace Informal
+@@ -189,10 +189,10 @@ def Block.withPreviewAvailability (impls : ExtensionImpls)
+ 
+ private structure ParsedDirectiveContents where
+   sourceRef? : Option Source.Ref := none
+-  body : Array (TSyntax `block) := #[]
++  body : Array (Lean.Doc.VersoBlock) := #[]
+ 
+ private def parseDirectiveSourceMetadata
+-    (cfg : Config) (contents : Array (TSyntax `block)) : DocElabM ParsedDirectiveContents := do
++    (cfg : Config) (contents : Array (Lean.Doc.VersoBlock)) : DocElabM ParsedDirectiveContents := do
+   let leading ← Source.Metadata.splitLeadingMetadata contents
+   let sourceRef? ←
+     match leading.term? with
+diff --git a/src/VersoBlueprint/Informal/Block/Common.lean b/src/VersoBlueprint/Informal/Block/Common.lean
+index c80f2576..a2dd2607 100644
+--- a/src/VersoBlueprint/Informal/Block/Common.lean
++++ b/src/VersoBlueprint/Informal/Block/Common.lean
+@@ -63,7 +63,7 @@ def BlockStatusMark.text (s : BlockStatusMark) : String :=
+ 
+ def BlockStatusMark.toHtml (s : BlockStatusMark) : Output.Html :=
+   open Verso.Output.Html in
+-  {{ <span class="bp_status_mark" title={{s.title}}>{{.text true s.text}}</span> }}
++  {{ <span class="bp_status_mark" title={{s.title}}>{{Lean.Html.ofString true s.text}}</span> }}
+ 
+ def codeHoverListItem (body : Output.Html) : Output.Html :=
+   open Verso.Output.Html in
+@@ -71,23 +71,23 @@ def codeHoverListItem (body : Output.Html) : Output.Html :=
+ 
+ def codeHoverTextItem (text : String) : Output.Html :=
+   open Verso.Output.Html in
+-  let body : Output.Html := .text true text
++  let body : Output.Html := Lean.Html.ofString true text
+   codeHoverListItem body
+ 
+ def codeHoverEmptyItem (text : String) : Output.Html :=
+   open Verso.Output.Html in
+-  {{<li class="bp_code_hover_none">{{.text true text}}</li>}}
++  {{<li class="bp_code_hover_none">{{Lean.Html.ofString true text}}</li>}}
+ 
+ def codeHoverCodeItem (text : String) : Output.Html :=
+   open Verso.Output.Html in
+-  let body : Output.Html := {{<code>{{.text true text}}</code>}}
++  let body : Output.Html := {{<code>{{Lean.Html.ofString true text}}</code>}}
+   codeHoverListItem body
+ 
+ def codeHoverSection (title : String) (items : Array Output.Html) : Output.Html :=
+   open Verso.Output.Html in
+   {{
+     <div class="bp_code_hover_section">
+-      <span class="bp_code_hover_label">{{.text true title}}</span>
++      <span class="bp_code_hover_label">{{Lean.Html.ofString true title}}</span>
+       <ul class="bp_code_hover_list">
+         {{.seq items}}
+       </ul>
+@@ -158,9 +158,9 @@ def mkCodePanel
+       <details class="bp_code_block bp_code_panel" {{attrs}}>
+         <summary class="bp_heading lemma_thmheading" title={{summaryTitle}}>
+           <span class="bp_heading_title_row">
+-            <span class="bp_caption lemma_thmcaption bp_code_summary_text">{{.text true header.caption}}</span>
++            <span class="bp_caption lemma_thmcaption bp_code_summary_text">{{Lean.Html.ofString true header.caption}}</span>
+             {{if let some number := header.number? then
+-                {{<span class="bp_label lemma_thmlabel bp_code_summary_label">{{.text true number}}</span>}}
++                {{<span class="bp_label lemma_thmlabel bp_code_summary_label">{{Lean.Html.ofString true number}}</span>}}
+               else
+                 .empty}}
+           </span>
+diff --git a/src/VersoBlueprint/Informal/Block/RelatedPanel.lean b/src/VersoBlueprint/Informal/Block/RelatedPanel.lean
+index 840f8277..9088d813 100644
+--- a/src/VersoBlueprint/Informal/Block/RelatedPanel.lean
++++ b/src/VersoBlueprint/Informal/Block/RelatedPanel.lean
+@@ -383,7 +383,7 @@ private def groupPreviewId (targetLabel sourceLabel : Data.Label) : String :=
+ /-- Render a relation-row badge with semantic relation styling classes. -/
+ private def relationBadge (className title text : String) : Output.Html :=
+   open Verso.Output.Html in
+-  {{<span class={{className}} title={{title}}>{{.text true text}}</span>}}
++  {{<span class={{className}} title={{title}}>{{Lean.Html.ofString true text}}</span>}}
+ 
+ private def relationBadgeBaseClass : String :=
+   "bp_relation_axis_badge"
+@@ -500,7 +500,7 @@ private def loadingBody (detail : String) : Output.Html :=
+   {{
+     <div class="bp_relation_preview_message" "data-bp-preview-message"="loading">
+       <div class="bp_relation_preview_message_title">"Loading preview"</div>
+-      <div class="bp_relation_preview_message_detail">{{.text true detail}}</div>
++      <div class="bp_relation_preview_message_detail">{{Lean.Html.ofString true detail}}</div>
+     </div>
+   }}
+ 
+@@ -522,13 +522,13 @@ private def panelEntryActive (selectedEntry? : Option PanelEntry) (entry : Panel
+   | none => entry.active
+ 
+ private def scriptJson (json : Json) : Output.Html :=
+-  .text false (json.compress.replace "<" "\\u003c")
++  Lean.Html.ofString false (json.compress.replace "<" "\\u003c")
+ 
+ /-- Assemble JSON leaves structurally so preview keys can be selected before
+ serialization. No HTML or JSON string is parsed during resource finalization. -/
+ private def jsonArrayHtml (values : Array Output.Html) : Output.Html :=
+-  .seq (#[.text false "["] ++
+-    (values.toList.intersperse (.text false ",")).toArray ++ #[.text false "]"])
++  .seq (#[Lean.Html.ofString false "["] ++
++    (values.toList.intersperse (Lean.Html.ofString false ",")).toArray ++ #[Lean.Html.ofString false "]"])
+ 
+ /-- Runtime row: [title, previewKey?, label, href?, badgeCodes, active]. -/
+ private def panelEntryDataHtml (renderPreview : PreviewResources.Render)
+@@ -551,12 +551,12 @@ def renderPanel (cfg : PanelConfig) (entries : Array PanelEntry)
+     (renderPreview : PreviewResources.Render := PreviewResources.immediate) : Output.Html :=
+   open Verso.Output.Html in Id.run do
+   let renderChip (chipClass : String) (chipTitle : String) (n : Nat) : Output.Html :=
+-    {{<span class={{chipClass}} title={{chipTitle}}>{{.text true (cfg.chipText n)}}</span>}}
++    {{<span class={{chipClass}} title={{chipTitle}}>{{Lean.Html.ofString true (cfg.chipText n)}}</span>}}
+   let renderInlinePreview (entry : PanelEntry) : Output.Html :=
+     let chipNode : Output.Html :=
+       if let some href := entry.href then
+         {{<a class={{s!"{cfg.chipClass} bp_code_link"}} href={{href}} title={{cfg.singleTitle entry}}>
+-            {{.text true (cfg.chipText 1)}}
++            {{Lean.Html.ofString true (cfg.chipText 1)}}
+           </a>}}
+       else
+         renderChip cfg.chipClass (cfg.singleTitle entry) 1
+@@ -580,18 +580,18 @@ def renderPanel (cfg : PanelConfig) (entries : Array PanelEntry)
+     let previewBody : Output.Html := loadingBody cfg.previewEmptyText
+     let rowData := jsonArrayHtml (entries.map (panelEntryDataHtml renderPreview selectedEntry?))
+     let rowList : Output.Html :=
+-      .tag "ul" #[("class", "bp_relation_list")] <|
++      .element "ul" #[("class", "bp_relation_list")] <|
+         {{
+           <script type="application/json" class="bp-relation-entries">
+             {{rowData}}
+           </script>
+         }}
+     let panel : Output.Html :=
+-      .tag "div" (#[("class", cfg.panelClass)] ++ cfg.panelAttrs) <|
++      .element "div" (#[("class", cfg.panelClass)] ++ cfg.panelAttrs) <|
+         {{
+           <div class="bp_relation_panel_header">
+-            <div class="bp_relation_panel_title">{{.text true (cfg.panelTitle entries.size)}}</div>
+-            <div class={{cfg.panelMetaClass}}>{{.text true cfg.panelMeta}}</div>
++            <div class="bp_relation_panel_title">{{Lean.Html.ofString true (cfg.panelTitle entries.size)}}</div>
++            <div class={{cfg.panelMetaClass}}>{{Lean.Html.ofString true cfg.panelMeta}}</div>
+           </div>
+           <div class="bp_relation_panel_body">
+             {{rowList}}
+@@ -599,7 +599,7 @@ def renderPanel (cfg : PanelConfig) (entries : Array PanelEntry)
+               <div class="bp_relation_preview_header">
+                 <div class="bp_relation_preview_label">"Preview"</div>
+                 <div class="bp_relation_preview_heading bp_preview_header_heading">
+-                  <div class="bp_relation_preview_title">{{.text true previewTitle}}</div>
++                  <div class="bp_relation_preview_title">{{Lean.Html.ofString true previewTitle}}</div>
+                   <a class="bp_relation_preview_header_label bp_preview_header_label" hidden></a>
+                 </div>
+               </div>
+@@ -610,10 +610,10 @@ def renderPanel (cfg : PanelConfig) (entries : Array PanelEntry)
+           </div>
+         }}
+     let panelShell : Output.Html :=
+-      .tag "div" #[("class", cfg.wrapClass)] <|
++      .element "div" #[("class", cfg.wrapClass)] <|
+         {{
+           <button type="button" class={{cfg.chipClass}} title={{cfg.chipTitle entries.size}} "aria-expanded"="false">
+-            {{.text true (cfg.chipText entries.size)}}
++            {{Lean.Html.ofString true (cfg.chipText entries.size)}}
+           </button>
+           {{panel}}
+         }}
+diff --git a/src/VersoBlueprint/Informal/Block/Render.lean b/src/VersoBlueprint/Informal/Block/Render.lean
+index dc031dc4..b74b52e7 100644
+--- a/src/VersoBlueprint/Informal/Block/Render.lean
++++ b/src/VersoBlueprint/Informal/Block/Render.lean
+@@ -108,8 +108,8 @@ def renderBlockTitleRow (style : BlockKindRenderStyle)
+   let labelClass := s!"bp_label bp_kind_{style.kindCss}_label {style.labelCss}"
+   {{
+     <div class={{titleRowClass}}>
+-      <span class={{captionClass}} title={{labelText}}> {{.text true captionText}} </span>
+-      {{ if style.showLabel then {{<span class={{labelClass}}> {{.text true numberText}} </span>}} else .empty }}
++      <span class={{captionClass}} title={{labelText}}> {{Lean.Html.ofString true captionText}} </span>
++      {{ if style.showLabel then {{<span class={{labelClass}}> {{Lean.Html.ofString true numberText}} </span>}} else .empty }}
+     </div>
+   }}
+ 
+@@ -331,11 +331,11 @@ private def renderExternalMarkupBadge
+   let prefixHtml :=
+     Verso.Output.Html.tag "span"
+       #[("class", "bp_external_markup_badge_prefix")]
+-      (.text true "markup")
++      (Lean.Html.ofString true "markup")
+   let languageText :=
+     Verso.Output.Html.tag "span"
+       #[("class", "bp_external_markup_badge_language")]
+-      (.text true (externalMarkupBadgeText language))
++      (Lean.Html.ofString true (externalMarkupBadgeText language))
+   Verso.Output.Html.tag "span"
+     #[("class", cls),
+       ("title", title),
+@@ -373,16 +373,16 @@ private def renderMetadataItem (key : String) (value : Verso.Output.Html) (extra
+       s!"bp_metadata_item {extraClass}"
+   {{
+     <span class={{itemClass}}>
+-      <span class="bp_metadata_key">{{.text true key}}</span>
++      <span class="bp_metadata_key">{{Lean.Html.ofString true key}}</span>
+       {{value}}
+     </span>
+   }}
+ 
+ private def renderMetadataTextValue (value : String) : Verso.Output.Html :=
+-  {{<span class="bp_metadata_value">{{.text true value}}</span>}}
++  {{<span class="bp_metadata_value">{{Lean.Html.ofString true value}}</span>}}
+ 
+ private def renderMetadataLinkValue (href : String) (label : String) : Verso.Output.Html :=
+-  {{<a class="bp_metadata_link bp_metadata_value" href={{href}}>{{.text true label}}</a>}}
++  {{<a class="bp_metadata_link bp_metadata_value" href={{href}}>{{Lean.Html.ofString true label}}</a>}}
+ 
+ private def renderMetadataCodeValue (value : Data.AuthorId) : Verso.Output.Html :=
+   {{<span class="bp_metadata_value"><code>s!"{value}"</code></span>}}
+@@ -495,7 +495,7 @@ private def renderSourceSpanPreview (span : Source.Span) : Verso.Output.Html :=
+   let summary := sourceSpanPreviewText span
+   {{
+     <li class="bp_source_ref_panel_span">
+-      <span class="bp_source_ref_panel_span_text">{{.text true summary}}</span>
++      <span class="bp_source_ref_panel_span_text">{{Lean.Html.ofString true summary}}</span>
+     </li>
+   }}
+ 
+@@ -518,9 +518,9 @@ private def renderSourceRefPreviewItem (sourceRef : Source.Ref) : Verso.Output.H
+         data-bp-source-document={{sourceRef.document}}>
+       <div class="bp_source_ref_panel_document">
+         <span class="bp_source_ref_panel_key">"Document"</span>
+-        <code>{{.text true sourceRef.document}}</code>
++        <code>{{Lean.Html.ofString true sourceRef.document}}</code>
+       </div>
+-      <div class="bp_source_ref_panel_summary">{{.text true summary}}</div>
++      <div class="bp_source_ref_panel_summary">{{Lean.Html.ofString true summary}}</div>
+       <ul class="bp_source_ref_panel_spans">
+         {{spanNodes}}
+       </ul>
+@@ -540,19 +540,19 @@ private def renderSourceRefPreview (sourceRefs : Array Source.Ref) : Verso.Outpu
+           class="bp_relation_chip bp_source_ref_chip"
+           title={{chipTitle}}
+           aria-expanded="false">
+-        {{.text true chipText}}
++        {{Lean.Html.ofString true chipText}}
+       </button>
+       <div class="bp_relation_panel bp_source_ref_panel">
+         <div class="bp_relation_panel_header">
+-          <div class="bp_relation_panel_title">{{.text true panelTitle}}</div>
+-          <div class="bp_relation_panel_meta">{{.text true panelMeta}}</div>
++          <div class="bp_relation_panel_title">{{Lean.Html.ofString true panelTitle}}</div>
++          <div class="bp_relation_panel_meta">{{Lean.Html.ofString true panelMeta}}</div>
+         </div>
+         <div class="bp_relation_panel_body bp_source_ref_panel_body">
+           <div class="bp_relation_preview_surface bp_source_ref_preview_surface">
+             <div class="bp_relation_preview_header">
+               <div class="bp_relation_preview_label">"Preview"</div>
+               <div class="bp_relation_preview_heading bp_preview_header_heading">
+-                <div class="bp_relation_preview_title">{{.text true panelTitle}}</div>
++                <div class="bp_relation_preview_title">{{Lean.Html.ofString true panelTitle}}</div>
+                 <a class="bp_relation_preview_header_label bp_preview_header_label" hidden></a>
+               </div>
+             </div>
+@@ -622,7 +622,7 @@ private def renderStatementMetadataPanel (data : BlockData) : Verso.Output.Html
+     else
+       renderMetadataItem "Tags" {{
+         <span class="bp_metadata_tags">
+-          {{metadata.tags.map (fun tag => {{ <span class="bp_metadata_tag">{{.text true tag}}</span> }})}}
++          {{metadata.tags.map (fun tag => {{ <span class="bp_metadata_tag">{{Lean.Html.ofString true tag}}</span> }})}}
+         </span>
+       }}
+   if metadata.hasAny then
+@@ -733,7 +733,7 @@ structure InformalBlockShell where
+ private def renderShellTitleRow (shell : InformalBlockShell) : Verso.Output.Html :=
+   let titleRow := renderBlockTitleRow shell.style shell.labelText shell.numberText shell.captionText
+   match shell.titleRowAttrs? with
+-  | some attrs => .tag "a" attrs titleRow
++  | some attrs => .element "a" attrs titleRow
+   | none => titleRow
+ 
+ def renderInformalBlockShell (shell : InformalBlockShell)
+diff --git a/src/VersoBlueprint/Informal/Code.lean b/src/VersoBlueprint/Informal/Code.lean
+index dbe80e72..bff73ab6 100644
+--- a/src/VersoBlueprint/Informal/Code.lean
++++ b/src/VersoBlueprint/Informal/Code.lean
+@@ -26,7 +26,7 @@ open Verso Doc Elab
+ open Verso.Genre Manual
+ open Verso.ArgParse
+ open Lean Lean.Elab
+-open Lean.Doc.Syntax
++open Lean.Doc.Parser
+ 
+ namespace Informal
+ open CodeSummary
+@@ -369,7 +369,7 @@ def internal : CodeBlockExpanderOf Unit
+ 
+ private def rocqImpl : CodeBlockExpanderOf Unit
+   | _cfg, contents => do
+-    ``(Block.code $contents)
++    ``(Block.code $(quote contents.getVersoCodeBlock))
+ 
+ @[code_block]
+ def rocq : CodeBlockExpanderOf Unit
+@@ -401,7 +401,7 @@ private def externalMarkupImpl
+     (language : Data.ExternalMarkupLanguage) : CodeBlockExpanderOf ExternalMarkupConfig
+   | cfg, contents => do
+     let location? ← cfg.location?
+-    let raw := contents.getString
++    let raw := contents.getVersoCodeBlock
+     let markup : Data.ExternalMarkup := {
+       language
+       slot := cfg.slot
+diff --git a/src/VersoBlueprint/Informal/CodeSummary.lean b/src/VersoBlueprint/Informal/CodeSummary.lean
+index 1850d21b..97e633f7 100644
+--- a/src/VersoBlueprint/Informal/CodeSummary.lean
++++ b/src/VersoBlueprint/Informal/CodeSummary.lean
+@@ -103,7 +103,7 @@ private def renderDeclSummaryItems (items : Array DeclSummaryItem) : Array Outpu
+   open Verso.Output.Html in
+   items.map fun item =>
+     let nameNode : Output.Html :=
+-      let txt := {{<code>{{.text true s!"{item.displayName}"}}</code>}}
++      let txt := {{<code>{{Lean.Html.ofString true s!"{item.displayName}"}}</code>}}
+       match item.href with
+       | some href =>
+         Informal.LeanCodeLink.renderResolved
+@@ -115,7 +115,7 @@ private def renderDeclSummaryItems (items : Array DeclSummaryItem) : Array Outpu
+       <li class="bp_code_decl_item">
+         <span class="bp_code_decl_name">{{nameNode}}</span>
+         <span class={{s!"bp_code_decl_status {declSummaryStatusClass item}"}}>
+-          {{.text true s!"[{declSummaryStatusText item}]"}}
++          {{Lean.Html.ofString true s!"[{declSummaryStatusText item}]"}}
+         </span>
+       </li>
+     }}
+@@ -148,7 +148,7 @@ private def renderExternalRenderFailureItems (failures : Array ExternalRenderFai
+       else
+         hrefOf failure.decl.written
+     let declNode :=
+-      let txt := {{<code>{{.text true s!"{failure.decl.written}"}}</code>}}
++      let txt := {{<code>{{Lean.Html.ofString true s!"{failure.decl.written}"}}</code>}}
+       match href with
+       | some href =>
+         Informal.LeanCodeLink.renderResolved
+@@ -156,7 +156,7 @@ private def renderExternalRenderFailureItems (failures : Array ExternalRenderFai
+           (previewTitle := s!"{failure.decl.canonical}")
+       | none => txt
+     codeHoverListItem {{
+-      <span>{{declNode}}": " {{.text true failure.message}}</span>
++      <span>{{declNode}}": " {{Lean.Html.ofString true failure.message}}</span>
+     }}
+ 
+ private def inlineDeclSummaryItems (definedDefs definedTheorems : Array CodeDeclData)
+@@ -298,7 +298,7 @@ private def renderCodeEntryNode (href : Option String) (title : String) (visual
+     (if visual.absent then " bp_code_link_empty" else "")
+   let body : Output.Html := {{
+     {{renderCodeHeadingRenderHealthBadge renderHealth}}
+-    <span class="bp_code_status_symbol">{{.text true visual.symbol}}</span>
++    <span class="bp_code_status_symbol">{{Lean.Html.ofString true visual.symbol}}</span>
+     <span class="bp_code_link_label">"L∃∀N"</span>
+   }}
+   match href with
+@@ -573,8 +573,8 @@ private def renderExternalPanelIndicator (decls : Array Data.ExternalRef)
+     appendRenderHealthSummary presentation.title renderHealth
+   let badge : Output.Html := {{
+     <span class={{s!"bp_external_status_badge bp_external_status_badge_summary {presentation.className}"}} title={{badgeTitle}}>
+-      <span class={{s!"bp_external_status_icon {presentation.className}"}}>{{.text true presentation.iconText}}</span>
+-      <span class="bp_external_status_badge_text">{{.text true presentation.badgeText}}</span>
++      <span class={{s!"bp_external_status_icon {presentation.className}"}}>{{Lean.Html.ofString true presentation.iconText}}</span>
++      <span class="bp_external_status_badge_text">{{Lean.Html.ofString true presentation.badgeText}}</span>
+     </span>
+   }}
+   {
+diff --git a/src/VersoBlueprint/Informal/ExternalCode.lean b/src/VersoBlueprint/Informal/ExternalCode.lean
+index 1a8c5f68..fc1d58b9 100644
+--- a/src/VersoBlueprint/Informal/ExternalCode.lean
++++ b/src/VersoBlueprint/Informal/ExternalCode.lean
+@@ -179,7 +179,7 @@ private def externalDeclStatusView (item : LinkedExternalDecl) : ExternalDeclSta
+ 
+ private def externalDeclNode (item : LinkedExternalDecl) : Output.Html :=
+   open Verso.Output.Html in
+-  let declTxt := {{<code>{{.text true s!"{item.decl.written}"}}</code>}}
++  let declTxt := {{<code>{{Lean.Html.ofString true s!"{item.decl.written}"}}</code>}}
+   if let some href := item.href then
+     Informal.LeanCodeLink.renderResolved
+       item.decl.canonical declTxt "" (some href)
+@@ -206,7 +206,7 @@ private def externalDeclHead (item : LinkedExternalDecl) (status : ExternalDeclS
+   {{
+     <div class="bp_external_decl_head">
+       {{externalDeclNode item}}
+-      <span class={{status.className}}>{{.text true status.panelText}}</span>
++      <span class={{status.className}}>{{Lean.Html.ofString true status.panelText}}</span>
+     </div>
+   }}
+ 
+@@ -216,7 +216,7 @@ private def externalDeclRenderedMeta
+   let metaText := status.panelText
+   let statusBadge : Output.Html :=
+     if !metaText.isEmpty then
+-      {{<span class={{s!"bp_external_status_badge bp_external_decl_footer_status {status.className}"}}>{{.text true metaText}}</span>}}
++      {{<span class={{s!"bp_external_status_badge bp_external_decl_footer_status {status.className}"}}>{{Lean.Html.ofString true metaText}}</span>}}
+     else
+       .empty
+   let sourceRef? := externalDeclSourceRef? item
+@@ -240,11 +240,11 @@ private def externalDeclRenderedWith [Monad m]
+   match item.decl.render with
+   | .ok renderedHtml =>
+     let renderedHtml ← renderHtml renderedHtml
+-    pure <| .tag "div" #[("class", "bp_external_decl_rendered")] (.text false renderedHtml)
++    pure <| .element "div" #[("class", "bp_external_decl_rendered")] (Lean.Html.ofString false renderedHtml)
+   | .error err =>
+-    pure <| .tag "pre"
++    pure <| .element "pre"
+       #[("class", "bp_external_decl_stmt bp_external_decl_render_error")]
+-      (.text true s!"Render failed: {err.message}")
++      (Lean.Html.ofString true s!"Render failed: {err.message}")
+ 
+ private def externalDeclRendered (item : LinkedExternalDecl) : Output.Html :=
+   Id.run <| externalDeclRenderedWith (fun renderedHtml => pure renderedHtml.selfContained) item
+@@ -253,7 +253,7 @@ private def registerPageHoverPayload [Monad m]
+     (payload : ExternalDeclHoverPayload) :
+     Verso.Doc.Html.HtmlT Verso.Genre.Manual m Nat :=
+   modifyGet fun st =>
+-    let (id, dedup) := st.dedup.insert (.text false payload.html)
++    let (id, dedup) := st.dedup.insert (Lean.Html.ofString false payload.html)
+     (id, { st with dedup })
+ 
+ private def renderedHtmlWithHoverTable [Monad m]
+@@ -297,7 +297,7 @@ private def missingExternalDeclBody : Output.Html :=
+   open Verso.Output.Html in
+   {{
+     <pre class="bp_external_decl_stmt bp_code_hover_none">
+-      {{.text true s!"declaration not found ({Data.ExternalDeclLookupError.message .notPresentAtRegistration})"}}
++      {{Lean.Html.ofString true s!"declaration not found ({Data.ExternalDeclLookupError.message .notPresentAtRegistration})"}}
+     </pre>
+   }}
+ 
+@@ -366,7 +366,7 @@ private abbrev ExternalDeclCacheHoverRender :=
+ private def registerCacheHoverPayload (payload : ExternalDeclHoverPayload) :
+     ExternalDeclCacheHoverRender Nat :=
+   modifyGet fun st =>
+-    let (id, dedup) := st.dedup.insert (.text false payload.html)
++    let (id, dedup) := st.dedup.insert (Lean.Html.ofString false payload.html)
+     (id, { st with dedup })
+ 
+ private def renderedHtmlWithCacheHovers
+diff --git a/src/VersoBlueprint/Informal/ExternalMarkupRender.lean b/src/VersoBlueprint/Informal/ExternalMarkupRender.lean
+index 1dbd58c4..0fa3ef68 100644
+--- a/src/VersoBlueprint/Informal/ExternalMarkupRender.lean
++++ b/src/VersoBlueprint/Informal/ExternalMarkupRender.lean
+@@ -181,6 +181,6 @@ def selectedContent?
+ def previewBody? (cfg : Config) (markup : Array Informal.Data.ExternalMarkup) :
+     Option Verso.Output.Html := do
+   let (selected, content) ← selectedContent? cfg markup
+-  return .tag "div" (sourceBackedAttrs selected) (.seq content)
++  return .element "div" (sourceBackedAttrs selected) (.seq content)
+ 
+ end Informal.ExternalMarkupRender
+diff --git a/src/VersoBlueprint/Informal/Group.lean b/src/VersoBlueprint/Informal/Group.lean
+index 6c2ec503..f9e1bfd5 100644
+--- a/src/VersoBlueprint/Informal/Group.lean
++++ b/src/VersoBlueprint/Informal/Group.lean
+@@ -18,7 +18,6 @@ import VersoBlueprint.TraversalIndex
+ open Verso Doc Elab
+ open Verso.Genre Manual
+ open Verso.ArgParse
+-open Lean.Doc.Syntax
+ open Lean Elab
+ 
+ namespace Informal
+@@ -69,16 +68,17 @@ private def collapseWhitespace (s : String) : String :=
+   let s := s.replace "\t" " "
+   String.intercalate " " <| (s.splitOn " ").filter (fun chunk => !chunk.isEmpty)
+ 
+-private def blockChunkText (env : Environment) (block : TSyntax `block) : String :=
+-  match block with
+-  | `(block|para[$inlines*]) =>
+-    Verso.Doc.Elab.inlinesToString env inlines
+-  | `(block|header($_){$inlines*}) =>
+-    Verso.Doc.Elab.inlinesToString env inlines
+-  | _ =>
++private def blockChunkText (env : Environment) (block : Lean.Doc.VersoBlock) : String :=
++  -- Lean 4.36: paragraphs and headers are read through `Lean.Doc` views.
++  match Lean.Doc.ParaView.of ⟨block.raw⟩, Lean.Doc.HeaderView.of ⟨block.raw⟩ with
++  | some v, _ =>
++    Verso.Doc.Elab.inlinesToString env (v.content.map (·.raw))
++  | none, some v =>
++    Verso.Doc.Elab.inlinesToString env (v.content.map (·.raw))
++  | none, none =>
+     (Syntax.reprint block.raw).getD ""
+ 
+-private def groupHeaderFromContents (contents : Array (TSyntax `block)) : DocElabM String := do
++private def groupHeaderFromContents (contents : Array (Lean.Doc.VersoBlock)) : DocElabM String := do
+   let env ← getEnv
+   let raw := contents.foldl (init := "") fun acc block =>
+     let chunk := (blockChunkText env block).trimAscii.toString
+diff --git a/src/VersoBlueprint/Informal/LeanCodeLink.lean b/src/VersoBlueprint/Informal/LeanCodeLink.lean
+index 0f93042d..32c03876 100644
+--- a/src/VersoBlueprint/Informal/LeanCodeLink.lean
++++ b/src/VersoBlueprint/Informal/LeanCodeLink.lean
+@@ -49,8 +49,8 @@ private def renderLinkNode
+     | some title => attrs.push ("title", title)
+     | none => attrs
+   match href? with
+-  | some href => .tag "a" (attrs.push ("href", href)) node
+-  | none => .tag "span" attrs node
++  | some href => .element "a" (attrs.push ("href", href)) node
++  | none => .element "span" attrs node
+ 
+ def renderResolved
+     (decl : Name)
+diff --git a/src/VersoBlueprint/Informal/RustBlock.lean b/src/VersoBlueprint/Informal/RustBlock.lean
+index d2b90c49..4959a163 100644
+--- a/src/VersoBlueprint/Informal/RustBlock.lean
++++ b/src/VersoBlueprint/Informal/RustBlock.lean
+@@ -68,10 +68,10 @@ private def rustImpl : CodeBlockExpanderOf Informal.CodeConfig
+   | cfg, contents => do
+     let data : Informal.Rust.InlineCodeData := {
+       label := cfg.label
+-      raw := contents.getString
++      raw := contents.getVersoCodeBlock
+       foldCodeBlock := verso.blueprint.foldCodeBlocks.get (← getOptions)
+     }
+-    let some _ ← Environment.contribute cfg.label { rustCode := some { raw := contents.getString } }
++    let some _ ← Environment.contribute cfg.label { rustCode := some { raw := contents.getVersoCodeBlock } }
+       | ``(Block.concat #[])
+     ``(Block.other (Block.informalRustCode $(quote data)) #[])
+ 
+diff --git a/src/VersoBlueprint/Informal/Uses.lean b/src/VersoBlueprint/Informal/Uses.lean
+index 414c33a0..c425133c 100644
+--- a/src/VersoBlueprint/Informal/Uses.lean
++++ b/src/VersoBlueprint/Informal/Uses.lean
+@@ -22,7 +22,7 @@ open Verso Doc Elab
+ open Verso.Genre Manual
+ open Verso.ArgParse
+ open Lean Lean.Elab
+-open Lean.Doc.Syntax
++open Lean.Doc.Parser
+ 
+ namespace Informal
+ 
+@@ -128,7 +128,7 @@ private def informalReferenceToHtml (renderPreview : PreviewResources.Render :=
+         | pure .empty
+       let some reference ← ExtensionDecode.report? (RenderingResolution.reference (← HtmlT.state) label)
+         | pure .empty
+-      let content ← if inlines.isEmpty then pure #[.text true reference.title] else inlines.mapM goI
++      let content ← if inlines.isEmpty then pure #[Lean.Html.ofString true reference.title] else inlines.mapM goI
+       let labelText := label.toString (escape := false)
+       let node := match reference.href with
+         | some href => {{<a href={{href}} title={{labelText}}>{{content}}</a>}}
+diff --git a/src/VersoBlueprint/Lean.lean b/src/VersoBlueprint/Lean.lean
+index 1f411dea..82cdd36f 100644
+--- a/src/VersoBlueprint/Lean.lean
++++ b/src/VersoBlueprint/Lean.lean
+@@ -105,7 +105,8 @@ private def quoteHighlightViaSerialization (hls : Highlighted) : DocElabM Term :
+     let repr := hlToExport hls
+     ``(hlFromExport! $(quote repr))
+ 
+-private def toHighlightedLeanBlock (shouldShow : Bool) (hls : Highlighted) (str: StrLit) : DocElabM Term := do
++private def toHighlightedLeanBlock (shouldShow : Bool) (hls : Highlighted)
++    (str : Lean.Doc.VersoCodeBlock) : DocElabM Term := do
+   if !shouldShow then
+     return ← ``(Block.concat #[])
+ 
+@@ -118,7 +119,7 @@ private def toHighlightedLeanBlock (shouldShow : Bool) (hls : Highlighted) (str:
+   let range := range.map (← getFileMap).utf8RangeToLspRange
+   ``(Block.other
+       (Verso.Genre.Manual.InlineLean.Block.lean $(← quoteHighlightViaSerialization hls) (some $(quote (← getFileName))) $(quote range))
+-      #[Block.code $(quote str.getString)])
++      #[Block.code $(quote str.getVersoCodeBlock)])
+ 
+ private def commandLineSpan (fileMap : FileMap) (stx : Syntax) : Nat :=
+   match stx.getRange? with
+@@ -289,9 +290,11 @@ private def cmdAnalysis (cmd : Syntax) (cmdIndex : Nat) : CmdAnalysis :=
+     refs
+   }
+ 
+-def elabCommands (config : LeanBlockConfig) (str : StrLit) : DocElabM ElabCommandResult :=
++-- Lean 4.36: code block expanders receive a `VersoCodeBlock` (was a `StrLit`).
++def elabCommands (config : LeanBlockConfig) (str : Lean.Doc.VersoCodeBlock) :
++    DocElabM ElabCommandResult :=
+   withoutAsync <| do
+-    PointOfInterest.save (← getRef) ((config.name.map (·.toString)).getD (abbrevFirstLine 20 str.getString))
++    PointOfInterest.save (← getRef) ((config.name.map (·.toString)).getD (abbrevFirstLine 20 str.getVersoCodeBlock))
+       (kind := Lsp.SymbolKind.file)
+       (detail? := some ("Lean code" ++ config.outlineMeta))
+ 
+@@ -359,7 +362,7 @@ def elabCommands (config : LeanBlockConfig) (str : StrLit) : DocElabM ElabComman
+           lastPos := (cmd.getTrailingTailPos?).getD lastPos
+         pure hls
+       else
+-        pure <| Highlighted.text str.getString
++        pure <| Highlighted.text str.getVersoCodeBlock
+ 
+     if let some name := config.name then
+       let nonSilentMsgs := cmdState.messages.toList.filter (!·.isSilent)
+@@ -368,7 +371,7 @@ def elabCommands (config : LeanBlockConfig) (str : StrLit) : DocElabM ElabComman
+ 
+     reportMessages cmdState.messages
+     if config.show then
+-      warnLongLines col? str
++      warnLongLines str
+ 
+     let block ← toHighlightedLeanBlock config.show hls str
+     let (definedDefs, definedTheorems) ←
+diff --git a/src/VersoBlueprint/Lib/HoverRender.lean b/src/VersoBlueprint/Lib/HoverRender.lean
+index 04f9152b..49819566 100644
+--- a/src/VersoBlueprint/Lib/HoverRender.lean
++++ b/src/VersoBlueprint/Lib/HoverRender.lean
+@@ -237,7 +237,7 @@ def summaryPreviewWrap
+         if let some previewKey := previewLookupKey? then
+           attrs := attrs.push ("data-bp-preview-key", previewKey)
+         pure attrs
+-      .tag "span" attrs labelNode
++      .element "span" attrs labelNode
+   | none => {{
+       <span class="bp_summary_preview_wrap">
+         {{labelNode}}
+@@ -331,7 +331,7 @@ def inlinePreviewRef
+     (previewHeaderHref? : Option String := none)
+     (previewFooterHtml? : Option String := none) :
+     Verso.Output.Html :=
+-  .tag "span"
++  .element "span"
+     (inlinePreviewRefAttrs previewId previewTitle previewLookupKey? previewHeaderLabel?
+       previewHeaderHref? previewFooterHtml?)
+     node
+diff --git a/src/VersoBlueprint/Lib/PreviewResources.lean b/src/VersoBlueprint/Lib/PreviewResources.lean
+index ba66f3c9..ff1bef7b 100644
+--- a/src/VersoBlueprint/Lib/PreviewResources.lean
++++ b/src/VersoBlueprint/Lib/PreviewResources.lean
+@@ -25,7 +25,7 @@ private def marker := "verso-blueprint-preview-choice"
+ /-- Retain both presentations until resource availability is known. There is no
+ mutable session, side table, or function stored in the resulting fragment. -/
+ def deferred : Render := fun key present absent =>
+-  .tag marker #[("key", key.value)] (.seq #[present (), absent ()])
++  .element marker #[("key", key.value)] (.seq #[present (), absent ()])
+ 
+ /-- Blank text under the browser cache's `String.trim()` contract. Includes
+ ECMAScript whitespace and line terminators, including nonbreaking space and BOM. -/
+@@ -39,9 +39,9 @@ def textIsBlank (text : String) : Bool :=
+ /-- Recognize blank fragments structurally, without serializing choices.
+ Finalization rejects choices whose branches disagree about body presence. -/
+ partial def htmlIsBlank : Html → Bool
+-  | .text _ text => textIsBlank text
++  | .text text | .raw text => textIsBlank text
+   | .seq children => children.all htmlIsBlank
+-  | .tag name attrs contents =>
++  | .element name attrs contents =>
+     if name != marker then false
+     else
+       match attrs, contents with
+@@ -55,9 +55,9 @@ selected path or branches that disagree about body presence are diagnosed.
+ Discarded alternatives are not recursively validated. Raw HTML stays opaque.
+ The result still has type `Html`: callers must enforce this serialization boundary. -/
+ partial def finish (available : PreviewKey → Bool) : Html → Except String Html
+-  | .text escape text => pure (.text escape text)
++  | h@(.text _) | h@(.raw _) => pure h
+   | .seq children => .seq <$> children.mapM (finish available)
+-  | .tag name attrs contents => do
++  | .element name attrs contents => do
+     if name == marker then
+       let (#[ ("key", key) ], .seq #[present, absent]) := (attrs, contents)
+         | throw "Malformed Blueprint preview choice"
+@@ -67,6 +67,6 @@ partial def finish (available : PreviewKey → Bool) : Html → Except String Ht
+         | throw "Empty Blueprint preview choice key"
+       finish available (if available key then present else absent)
+     else
+-      return .tag name attrs (← finish available contents)
++      return .element name attrs (← finish available contents)
+ 
+ end Informal.PreviewResources
+diff --git a/src/VersoBlueprint/Math.lean b/src/VersoBlueprint/Math.lean
+index a5a70275..5d53e9bb 100644
+--- a/src/VersoBlueprint/Math.lean
++++ b/src/VersoBlueprint/Math.lean
+@@ -17,7 +17,6 @@ open Verso.Genre Manual
+ namespace Informal.Math
+ 
+ open Lean Elab Syntax
+-open Lean.Doc.Syntax
+ 
+ instance : Quote MathMode where
+   quote
+@@ -132,7 +131,7 @@ inline_extension Inline.bpMath (data : BpMathData) where
+           #[("class", mathClasses mode)]
+         else
+           #[("class", mathClasses mode), ("data-bp-tex-prelude-id", "default")]
+-      pure <| .tag "code" attrs (.text true source)
++      pure <| .element "code" attrs (Lean.Html.ofString true source)
+ 
+ /-- Build the serialized inline node shared by both the plain and linted elaboration paths. -/
+ private def mkBpMathInlineTermCore [Monad m] [MonadQuotation m]
+@@ -158,16 +157,18 @@ def mkBpMathInlineTermLinted [Monad m] [MonadEnv m] [MonadQuotation m]
+   lintBpMathTerm ref mode source texPrelude
+   mkBpMathInlineTermCore mode source texPrelude
+ 
+-@[inline_expander Lean.Doc.Syntax.inline_math]
+-public meta def _root_.Informal.Math.inlineMathExpand : InlineExpander
+-  | `(inline| \math code( $s )) =>
+-    mkBpMathInlineTermLinted s .inline s.getString
++-- Lean 4.36: inline expanders receive an `InlineView`; both math markers share a `MathView`
++-- (same shape as Verso's own `mathExpand`). The lint reference is the code token, so warning
++-- positions are computed from its raw source text.
++private meta def bpMathExpand : InlineExpander
++  | .math v =>
++    mkBpMathInlineTermLinted ⟨v.code.content.raw⟩ v.mode v.getVersoCode
+   | _ => Lean.Elab.throwUnsupportedSyntax
+ 
+-@[inline_expander Lean.Doc.Syntax.display_math]
+-public meta def _root_.Informal.Math.displayMathExpand : InlineExpander
+-  | `(inline| \displaymath code( $s )) =>
+-    mkBpMathInlineTermLinted s .display s.getString
+-  | _ => Lean.Elab.throwUnsupportedSyntax
++@[inline_expander Lean.Doc.Parser.Inline.inline_math]
++public meta def _root_.Informal.Math.inlineMathExpand : InlineExpander := bpMathExpand
++
++@[inline_expander Lean.Doc.Parser.Inline.display_math]
++public meta def _root_.Informal.Math.displayMathExpand : InlineExpander := bpMathExpand
+ 
+ end Informal.Math
+diff --git a/src/VersoBlueprint/ModuleInclude.lean b/src/VersoBlueprint/ModuleInclude.lean
+index 0407fd04..a16dc5e2 100644
+--- a/src/VersoBlueprint/ModuleInclude.lean
++++ b/src/VersoBlueprint/ModuleInclude.lean
+@@ -70,9 +70,13 @@ the named imported Lean module as a source-ordered Manual part. The optional lea
+ level controls where the part is inserted; omitting it creates a child part.
+ Use {lit}`(title := "...")` to replace the default final module-name component.
+ -/
+-@[part_command Lean.Doc.Syntax.command]
++@[part_command Lean.Doc.Parser.Block.command]
+ public meta def includeBlueprintModuleCmd : PartCommand
+-  | stx@`(block|command{includeBlueprintModule $args*}) => do
++  | .command v => do
++    -- Lean 4.36: part commands receive a `BlockView` (was a `block` quotation).
++    unless v.name.getId == `includeBlueprintModule do Lean.Elab.throwUnsupportedSyntax
++    let stx : Syntax := v.stx.raw
++    let args := v.args
+     let ref ← getRef
+     Hover.addCustomHover ref
+       r#"Includes merged Blueprint nodes whose labels have attribute applications in the named imported Lean module, as one Manual part.
+diff --git a/src/VersoBlueprint/PreviewManifest.lean b/src/VersoBlueprint/PreviewManifest.lean
+index 6588f881..1a5ea967 100644
+--- a/src/VersoBlueprint/PreviewManifest.lean
++++ b/src/VersoBlueprint/PreviewManifest.lean
+@@ -2164,7 +2164,7 @@ private def buildTraversalEntries
+             continue
+           pure html
+         else
+-          pure (externalBody?.getD (.text false codeOnlyBlockPreviewHtml))
++          pure (externalBody?.getD (Lean.Html.ofString false codeOnlyBlockPreviewHtml))
+       let manifestEntry := { blockEntryOfFacet state resolved with
+         codeOnlyPreview := !entry.hasRenderedBody && externalBody?.isNone }
+       entries := entries.push manifestEntry
+@@ -2216,7 +2216,7 @@ private def buildExternalMarkupEntries
+         let heading := manifestEntry.heading
+         if let some html := renderExternalMarkupEntryHtml renderConfig manifestEntry.blockData
+             heading.caption heading.label markup manifestEntry.externalMarkup manifestEntry.sources then
+-          htmlEntries := htmlEntries.push { key := manifestEntry.key, html := .text false html }
++          htmlEntries := htmlEntries.push { key := manifestEntry.key, html := Lean.Html.ofString false html }
+   pure (entries, htmlEntries)
+ 
+ private def declarationRangeToLspRange (range : Lean.DeclarationRange) : Lean.Lsp.Range := {
+diff --git a/src/VersoBlueprint/PreviewManifest/BlockRender.lean b/src/VersoBlueprint/PreviewManifest/BlockRender.lean
+index 460af8af..7fec3425 100644
+--- a/src/VersoBlueprint/PreviewManifest/BlockRender.lean
++++ b/src/VersoBlueprint/PreviewManifest/BlockRender.lean
+@@ -19,7 +19,7 @@ open Verso.Output.Html
+ 
+ /-- Re-inject already-rendered HTML fragments as HTML, not escaped text. -/
+ def htmlFragment (html : String) : Html :=
+-  .text false html
++  Lean.Html.ofString false html
+ 
+ /-- Related-entry panel positions available in a preview-data-backed block header. -/
+ inductive RelationPanelKind where
+diff --git a/src/VersoBlueprint/Slides/Render.lean b/src/VersoBlueprint/Slides/Render.lean
+index f657ddad..0a2e17e4 100644
+--- a/src/VersoBlueprint/Slides/Render.lean
++++ b/src/VersoBlueprint/Slides/Render.lean
+@@ -42,7 +42,7 @@ private def slideNodeAttrs (node : Informal.Graft.BlueprintNode) : Array (String
+   renderedBlueprintNodeAttrs node
+ 
+ private def renderMissingNode (node : Informal.Graft.BlueprintNode) (title detail : String) : Html :=
+-  .tag "div" (slideNodeAttrs node) <|
++  .element "div" (slideNodeAttrs node) <|
+     Informal.Graft.renderNotice "bp_slide_node_notice" "error" title detail
+ 
+ private def slideManifestRenderConfig : Informal.Graft.ManifestRenderConfig :=
+diff --git a/src/VersoBlueprint/Source.lean b/src/VersoBlueprint/Source.lean
+index a64425e6..cf4310b4 100644
+--- a/src/VersoBlueprint/Source.lean
++++ b/src/VersoBlueprint/Source.lean
+@@ -56,14 +56,14 @@ block_extension Block.sourceDocument (document : Document) where
+     some <| fun _ _ _ _ _ => pure .empty
+ 
+ private def reportUnexpectedSourceDocumentBlock
+-    (cfg : DocumentConfig) (block : TSyntax `block) : DocElabM Unit := do
++    (cfg : DocumentConfig) (block : Lean.Doc.VersoBlock) : DocElabM Unit := do
+   if ← Metadata.isMetadataBlock block then
+     logErrorAt block m!"Source document '{cfg.id}' has an extra metadata block; source_document directives accept exactly one leading metadata block"
+   else
+     logErrorAt block m!"Source document '{cfg.id}' has unexpected body content; source_document directives accept exactly one metadata block and no visible body"
+ 
+ private def sourceDocumentMetadataTerm
+-    (cfg : DocumentConfig) (contents : Array (TSyntax `block)) :
++    (cfg : DocumentConfig) (contents : Array (Lean.Doc.VersoBlock)) :
+     DocElabM (Option (TSyntax `term)) := do
+   let leading ← Metadata.splitLeadingMetadata contents
+   match leading.term? with
+diff --git a/src/VersoBlueprint/Source/Metadata.lean b/src/VersoBlueprint/Source/Metadata.lean
+index 47e35ebc..e27c373f 100644
+--- a/src/VersoBlueprint/Source/Metadata.lean
++++ b/src/VersoBlueprint/Source/Metadata.lean
+@@ -11,28 +11,29 @@ namespace Informal.Source.Metadata
+ 
+ open Lean Elab Term
+ open Verso Doc Elab
+-open Lean.Doc.Syntax
+-
+ /-- Reconstruct the Lean structure-initializer term carried by a Verso metadata block. -/
+-def metadataTerm? (block : TSyntax `block) : DocElabM (Option (TSyntax `term)) := do
+-  match block with
+-  | `(block|%%%%$_ $fieldOrAbbrev* %%%%$_) =>
+-      return some (← `(term| { $fieldOrAbbrev* }))
+-  | _ =>
++def metadataTerm? (block : Lean.Doc.VersoBlock) : DocElabM (Option (TSyntax `term)) := do
++  -- Lean 4.36: metadata blocks are read through `Lean.Doc.MetadataView` (as in Verso's own
++  -- `metadata_block.command`), the `block` quotation category is gone.
++  match Lean.Doc.MetadataView.of ⟨block.raw⟩ with
++  | some v =>
++      let fields := v.fields
++      return some ⟨(← `(Lean.Parser.Term.structInst| { $[$fields],* })).raw⟩
++  | none =>
+       return none
+ 
+-def isMetadataBlock (block : TSyntax `block) : DocElabM Bool := do
++def isMetadataBlock (block : Lean.Doc.VersoBlock) : DocElabM Bool := do
+   return (← metadataTerm? block).isSome
+ 
+ structure LeadingMetadata where
+   term? : Option (TSyntax `term) := none
+-  body : Array (TSyntax `block) := #[]
++  body : Array (Lean.Doc.VersoBlock) := #[]
+ 
+ /--
+ Split off the optional leading metadata block used by Blueprint source syntax.
+ The remaining blocks stay in original order so callers can render or reject them.
+ -/
+-def splitLeadingMetadata (contents : Array (TSyntax `block)) : DocElabM LeadingMetadata := do
++def splitLeadingMetadata (contents : Array (Lean.Doc.VersoBlock)) : DocElabM LeadingMetadata := do
+   match contents[0]? with
+   | some first =>
+       match ← metadataTerm? first with
+@@ -43,9 +44,9 @@ def splitLeadingMetadata (contents : Array (TSyntax `block)) : DocElabM LeadingM
+ 
+ /-- Keep visible blocks while letting callers report metadata that appears too late. -/
+ def visibleBlocksWithoutMetadata
+-    (contents : Array (TSyntax `block))
+-    (onMetadataBlock : TSyntax `block → DocElabM Unit) :
+-    DocElabM (Array (TSyntax `block)) := do
++    (contents : Array (Lean.Doc.VersoBlock))
++    (onMetadataBlock : Lean.Doc.VersoBlock → DocElabM Unit) :
++    DocElabM (Array (Lean.Doc.VersoBlock)) := do
+   let mut body := #[]
+   for block in contents do
+     if ← isMetadataBlock block then

@@ -1,0 +1,215 @@
+import Verso
+import VersoManual
+import VersoBlueprint
+import Blueprint.TeXPrelude
+
+open Verso.Genre
+open Verso.Genre.Manual
+open Informal
+
+#doc (Manual) "Temporal graphs" =>
+
+%%%
+tag := "chap:model"
+%%%
+
+This chapter fixes the basic model: a temporal graph is a relation labeled by discrete time, and we
+recall the handful of predicates on such a relation (symmetry, looplessness, simplicity, being a
+clique) that the rest of the library builds on. Formalized in `TemporalGraph/Basic.lean`; the
+bipartite section ({ref "sec:bipartite"}[Bipartite temporal graphs and bi-cliques]: bipartiteness,
+restriction to the arcs between two sets, bi-cliques) is in `TemporalGraph/Bipartite.lean`.
+
+:::definition "def:temporal-graph" (lean := "TemporalGraph")
+*Temporal graph.* A _temporal graph_ on a vertex type $`V` is a relation
+$`\mathrm{Adj} : V \to V \to \mathbb{N} \to \mathrm{Prop}`, where $`\mathrm{Adj}(x,y,t)` means
+there is an edge between $`x` and $`y` present at time $`t`. No symmetry or irreflexivity is
+assumed a priori; see {bpref "def:is-symm-loopless"}[].
+:::
+
+:::definition "def:is-symm-loopless" (uses := "def:temporal-graph") (lean := "TemporalGraph.IsSymm, TemporalGraph.IsLoopless")
+*Symmetric, loopless.* A temporal graph $`G` _is symmetric_ if
+$`\mathrm{Adj}_G(x,y,t) \iff \mathrm{Adj}_G(y,x,t)` for every $`x,y,t`; it _is loopless_ if
+$`\mathrm{Adj}_G(x,x,t)` never holds.
+:::
+
+:::definition "def:is-simple-clique" (uses := "def:temporal-graph") (lean := "TemporalGraph.IsSimple, TemporalGraph.IsClique, TemporalGraph.IsCliqueGraph")
+*Simple, clique.* $`G` _is simple_ if each ordered pair of vertices is joined at most at one time:
+there is at most one time $`n` with $`\mathrm{Adj}_G(x,y,n)` (i.e.
+$`\mathrm{Adj}_G(x,y,n) \wedge \mathrm{Adj}_G(x,y,m) \Rightarrow n = m`). A set $`S` of vertices
+_forms a clique_ in $`G` if every pair of distinct vertices in $`S` is joined by an edge of $`G` at
+some time; $`G` _is a clique graph_ (`IsCliqueGraph`) when $`S` is the set of all vertices.
+:::
+
+:::definition "def:footprint" (uses := "def:temporal-graph") (lean := "TemporalGraph.footprint")
+*Footprint.* The _footprint_ of $`G` is the (time-forgetting) directed graph on $`V` obtained by
+keeping an arc $`x \to y` whenever $`x` and $`y` are adjacent at some time. It is an ordinary
+(non-temporal) directed graph, a Mathlib `Digraph`.
+:::
+
+:::lemma_ "lem:isClique-iff-footprint-complete" (uses := "def:is-simple-clique, def:footprint") (lean := "TemporalGraph.isClique_iff_pairwise_footprint_adj")
+*Clique iff complete footprint.* A set $`S` of vertices forms a clique in $`G` exactly when the
+vertices of $`S` are pairwise adjacent in $`G`'s footprint (i.e. the footprint restricted to $`S`
+is complete).
+:::
+
+:::proof "lem:isClique-iff-footprint-complete"
+Direct from the definitions: both sides say that distinct vertices of $`S` are joined by an arc at
+some time.
+:::
+
+:::definition "def:is-proper-happy" (uses := "def:temporal-graph") (lean := "TemporalGraph.IsProper, TemporalGraph.IsHappy")
+*Proper, happy.* $`G` _is proper_ if, at any given time, a vertex has at most one out-neighbor
+(i.e. $`\mathrm{Adj}_G(x,y,n) \wedge \mathrm{Adj}_G(x,z,n) \Rightarrow y = z`). $`G` _is happy_ if
+it is both simple ({bpref "def:is-simple-clique"}[]) and proper: between any ordered pair there is
+at most one time of adjacency, and at any given time a vertex has at most one out-neighbor.
+:::
+
+:::definition "def:earliest-latest-neighbor" (uses := "def:temporal-graph") (lean := "TemporalGraph.EarliestEdge, TemporalGraph.LatestEdge, TemporalGraph.EarliestNeighbor, TemporalGraph.LatestNeighbor")
+*Earliest / latest neighbor.* For $`x \in V`, an edge $`(x,y,n)` is the _earliest edge_ of $`x`
+towards $`y` if $`n` is minimal among times at which $`x` has an edge; it is the _latest edge_ if
+$`n` is maximal. $`y` is an _earliest_ (resp. _latest_) _neighbor_ of $`x` if such an edge
+exists. These notions drive the dismountability argument of
+{ref "chap:dismountability"}[Dismountability].
+:::
+
+:::definition "def:incidence-set" (uses := "def:temporal-graph") (lean := "TemporalGraph.incidenceSet")
+*Incidence set.* The _incidence set_ of $`x` in $`G` (a temporal graph, or a sub-temporal-graph
+through inheritance, {ref "chap:spanners"}[Sub-temporal-graphs and spanners]) is the set of pairs
+$`(y,n)` such that $`\mathrm{Adj}_G(x,y,n)`: $`x`'s out-neighbors, each paired with a time
+witnessing the edge.
+:::
+
+:::definition "def:spanning-order" (uses := "def:temporal-graph") (lean := "TemporalGraph.IsSpanningSubgraph")
+*Spanning sub-temporal-graph order.* $`G` is a _spanning sub-temporal-graph_ of $`H` (written
+$`G \le H`) if every edge of $`G` is an edge of $`H`:
+$`\mathrm{Adj}_G(x,y,n) \Rightarrow \mathrm{Adj}_H(x,y,n)` for all $`x,y,n`.
+:::
+
+:::lemma_ "lem:monotone-simple-proper-happy" (uses := "def:spanning-order, def:is-simple-clique, def:is-proper-happy") (lean := "TemporalGraph.IsSimple.mono, TemporalGraph.IsProper.mono, TemporalGraph.IsHappy.mono")
+*Monotonicity of simple, proper, happy.* If $`H` is simple (resp. proper, resp. happy) and
+$`G \le H` ({bpref "def:spanning-order"}[]), then $`G` is simple (resp. proper, resp. happy): each
+of these predicates only restricts the edges that are present, so it is inherited by any spanning
+sub-temporal-graph.
+:::
+
+:::proof "lem:monotone-simple-proper-happy"
+An arc of $`G` is an arc of $`H`, so two arcs of $`G` violating simplicity (resp. properness) would
+violate it in $`H`. Happiness is the conjunction of the two.
+:::
+
+:::definition "def:is-subgraph-of" (uses := "def:temporal-graph") (lean := "TemporalGraph.IsSubgraphOf")
+*General sub-temporal-graph.* Let $`P, P'` be predicates on $`V`. A temporal graph $`G` carried by
+the vertices satisfying $`P` is a _sub-temporal-graph_ of $`H`, carried by those satisfying $`P'`,
+when $`P` implies $`P'` and every edge of $`G` is an edge of $`H` between the corresponding
+vertices. This is the general inclusion: it compares graphs living on two different vertex
+subsets, and {bpref "def:spanning-order"}[] is its special case $`P = P'`.
+:::
+
+:::lemma_ "lem:is-subgraph-of-coe" (uses := "def:is-subgraph-of, def:sub-temporal-graph") (lean := "TemporalGraph.Subgraph.isSubgraphOf_coe_iff, TemporalGraph.Subgraph.isSubgraphOf_coe_top")
+*General inclusion of subgraph views.* For two sub-temporal-graphs $`H, H'` of $`G`, the temporal
+graph that $`H` induces on its own vertices is a sub-temporal-graph of the one $`H'` induces on its
+vertices, in the general sense above, exactly when $`H \le H'`. In particular every $`H` is, in
+this sense, a sub-temporal-graph of the whole graph $`G` (the case $`H' = \top`).
+:::
+
+:::proof "lem:is-subgraph-of-coe"
+Both say that the vertices of $`H` are vertices of $`H'` and that the arcs of $`H` are arcs of
+$`H'`; an arc of $`H` has both endpoints in $`\mathrm{Verts}(H)`, so the arcs of the subtype view
+are exactly those of $`H`.
+:::
+
+:::definition "def:arcset-edgeset" (uses := "def:temporal-graph, def:is-symm-loopless") (lean := "TemporalGraph.arcSet, TemporalGraph.edgeSet, TemporalGraph.mem_edgeSet_iff_or, TemporalGraph.arcSize, TemporalGraph.size, TemporalGraph.size_eq_ncard, TemporalGraph.arcSize_eq_ncard")
+*Arcs and edges.* The _arcs_ of $`G` are the triples $`(x,y,n)` with $`\mathrm{Adj}_G(x,y,n)`: an
+oriented notion, counted by $`\mathrm{arcSize}`. The _edges_ of $`G` are unordered: pairs
+$`(\{x,y\}, n)` such that $`\mathrm{Adj}_G(x,y,n)` or $`\mathrm{Adj}_G(y,x,n)`, counted by
+$`\mathrm{size}`. An unordered pair is therefore an edge exactly when one of its orientations is
+an arc, with no hypothesis; when $`G` is symmetric the two orientations coincide and membership
+reduces to $`\mathrm{Adj}_G(x,y,n)`. Both $`\mathrm{size}` and $`\mathrm{arcSize}` are computable
+`Fintype.card` of the edge/arc set, under a `Fintype` instance (the same pattern as Mathlib's
+`SimpleGraph.degree`); the instance-free `Set.ncard` form is always available via
+$`\mathrm{size\_eq\_ncard}` (an infinite edge or arc set then counts as $`0`).
+:::
+
+:::definition "def:symmetrize" (uses := "def:temporal-graph, def:is-symm-loopless, def:spanning-order") (lean := "TemporalGraph.symmetrize, TemporalGraph.le_symmetrize, TemporalGraph.symmetrize_le")
+*Symmetrization.* The _symmetrization_ of $`G` has $`\mathrm{Adj}(x,y,n)` whenever
+$`\mathrm{Adj}_G(x,y,n)` or $`\mathrm{Adj}_G(y,x,n)`. It is symmetric, it lies above $`G`, and it
+lies below every symmetric graph above $`G` — that is, it is the least symmetric temporal graph
+above $`G`. It adds no loop, so it preserves looplessness.
+:::
+
+:::definition "def:from-arc-edge-set" (uses := "def:arcset-edgeset") (lean := "TemporalGraph.fromArcSet, TemporalGraph.fromEdgeSet")
+*Building a temporal graph.* A set of arcs yields a temporal graph directly, with no symmetry
+assumed. A set of unordered edges yields one that is symmetric by construction, each pair being
+read in both directions; its edge set is the set one started from.
+:::
+
+# Bipartite temporal graphs and bi-cliques
+%%%
+tag := "sec:bipartite"
+%%%
+
+:::definition "def:is-bipartite" (uses := "def:temporal-graph") (lean := "TemporalGraph.IsBipartiteWith, TemporalGraph.IsBipartite")
+*Bipartiteness.* A temporal graph $`G` _is bipartite_ relative to a pair of disjoint sets
+$`(s, t)` of vertices if every edge of $`G` connects a vertex in $`s` to a vertex in $`t` (in
+either direction, with no symmetry required). The _witness_ is a pair of such sets; $`G` _is
+bipartite_ if such a pair exists.
+:::
+
+:::definition "def:between" (uses := "def:temporal-graph") (lean := "TemporalGraph.between, TemporalGraph.Subgraph.between")
+*Between (cut edges).* The temporal graph _between_ two sets of vertices $`s` and $`t` is the
+restriction of $`G` to arcs that connect a vertex in $`s` to a vertex in $`t` (in either
+direction). For a sub-temporal-graph $`H`, $`H.\mathrm{between}\ s\ t` is the same restriction of
+$`H`, keeping the vertex set of $`H`.
+:::
+
+:::definition "def:is-biclique" (uses := "def:is-bipartite") (lean := "TemporalGraph.IsBicliqueWith, TemporalGraph.IsBiclique, TemporalGraph.completeBipartite")
+*Temporal bi-clique.* A temporal graph $`G` is a _temporal bi-clique_ relative to disjoint sets
+$`(s, t)` if it is bipartite with witness $`(s, t)` and, moreover, every vertex in $`s` has an
+edge to every vertex in $`t` at some time. A set $`S` of vertices _forms a bi-clique_ in $`G` if
+$`S = s \cup t` for some pair $`(s, t)` relative to which $`G` is a bi-clique; $`G` _is a
+bi-clique_ when $`S` is the set of all vertices. The _complete bipartite_ temporal graph on the
+disjoint union $`\alpha \sqcup \beta` with edge times given by a function
+$`f : \alpha \to \beta \to \mathbb{N}` is the temporal bi-clique where all such edges are present
+at their designated times. (SAND 2025, §1.1: “Temporal bi-cliques are defined analogously, except
+that the footprint is a complete bipartite graph.”)
+:::
+
+:::lemma_ "lem:is-bipartite-iff-footprint" (uses := "def:is-bipartite, def:footprint") (lean := "TemporalGraph.isBipartiteWith_iff_simpleFootprint")
+*Bipartiteness via simple footprint.* A loopless temporal graph $`G` is bipartite with witness
+$`(s, t)` exactly when its simple footprint (the underlying undirected static graph, obtained with
+Mathlib's `SimpleGraph.fromRel`) is bipartite with the same witness. No symmetry is needed. This
+provides a bridge to Mathlib's `SimpleGraph.IsBipartiteWith`.
+:::
+
+:::proof "lem:is-bipartite-iff-footprint"
+Both sides say that $`s` and $`t` are disjoint and that every adjacent pair goes from one part to
+the other. In the simple footprint, $`x` and $`y` are adjacent when $`x \ne y` and an arc joins
+them in either direction at some time. Forward, both orientations of an arc of $`G` cross the
+bipartition. Backward, looplessness gives $`x \ne y` for every arc of $`G`, which is therefore an
+edge of the footprint.
+:::
+
+:::lemma_ "lem:reachable-of-isBicliqueWith" (uses := "def:is-biclique, def:reachable") (lean := "TemporalGraph.Subgraph.reachable_of_isBicliqueWith")
+*A bi-clique part reaches the other.* If $`H` is a bi-clique with witness $`(s, t)`, every vertex
+of $`s` reaches every vertex of $`t` in $`H`: they are joined directly by an edge.
+:::
+
+:::proof "lem:reachable-of-isBicliqueWith"
+The bi-clique property gives an edge from $`x` to $`y` at some time $`n`, which is a one-edge
+temporal walk.
+:::
+
+:::lemma_ "lem:isBicliqueWith-induce-deleteVerts" (uses := "def:is-biclique, def:subgraph-induce-delete-add") (lean := "TemporalGraph.Subgraph.isBicliqueWith_induce, TemporalGraph.Subgraph.isBicliqueWith_deleteVerts")
+*Bi-cliques under induce and deleteVerts.* Let $`H` be a bi-clique with witness $`(s, t)`. For
+$`s' \subseteq s`, the sub-temporal-graph induced by $`H` on $`s' \cup t` is a bi-clique with
+witness $`(s', t)` (SAND 2025, §4.1, the restriction used by the one-sided split step). Dually,
+deleting any set $`u` of vertices from $`H` leaves a bi-clique with witness
+$`(s \setminus u, t \setminus u)`.
+:::
+
+:::proof "lem:isBicliqueWith-induce-deleteVerts"
+Disjointness restricts to subsets. An arc of the induced (resp. reduced) graph is an arc of $`H`
+with both endpoints kept, so it crosses between the parts, and the disjointness of $`s` and $`t`
+rules out the wrong orientation. The edges required between the kept parts are those of $`H`,
+whose endpoints are kept.
+:::

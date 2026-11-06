@@ -212,7 +212,7 @@ le `lean_lib` n'avait pas de `globs`, si bien que `lake build` ne compilait que 
 ses imports — ce qui s'arrête à `Subgraph`. `Connectivity/*` et `Dismountability/*`
 n'étaient donc jamais construits, ni en local ni en CI. Le `lakefile.toml` déclare désormais
 `globs = ["TemporalGraph.*"]` : un `lake build` nu couvre tout, racine comprise (`.+` ne prend
-que les sous-modules stricts et saute la racine `TemporalGraph`, que `checkdecls` importe). Si un doute subsiste sur un module
+que les sous-modules stricts et saute la racine `TemporalGraph`, qu'importe le blueprint). Si un doute subsiste sur un module
 précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Operations`).
 
 ## Conventions de nommage/style observées
@@ -445,15 +445,35 @@ comme pour SAND).
   `lake env lean <fichier>` ; la sortie doit être vide de tout avertissement.
 - `lake env lean TemporalGraph/<Fichier>.lean` : typechecker un fichier isolé (demande que les
   `.olean` de ses dépendances existent déjà).
-- Blueprint : projet uv dans `blueprint/` (`pyproject.toml` + `uv.lock`, pas de
-  `requirements.txt`). Depuis la racine : `uv run --project blueprint leanblueprint web|checkdecls`.
-  plasTeX seul, **aucune distribution TeX** : le `kpsewhich` dont plasTeX a besoin est fourni par
-  le projet uv (`blueprint/blueprint_tools/`, script installé dans `blueprint/.venv/bin`). Sans
-  lui, plasTeX ne trouve pas `macros/common` et plante avec `TypeError: unhashable type:
-  'definition'`. PDF : `uv run --project blueprint install-tinytex` (une fois ; TinyTeX épinglé,
-  xelatex, dans `blueprint/.venv/tinytex`), puis `leanblueprint pdf`. Le script `latexmk` du venv
-  met TinyTeX en tête du PATH. pytinytex n'est pas utilisable : il cherche un `.tgz` macOS alors
-  que TinyTeX ≥ v2026.09 publie des `.tar.xz`.
+- **Blueprint : verso-blueprint** (migré depuis leanblueprint/plasTeX le 2026-11-06). Projet Lake
+  séparé `blueprint/` (comme `docbuild/`, `packagesDir` partagé, la bibliothèque ne dépend pas de
+  Verso). Un chapitre = un fichier `blueprint/Blueprint/Chapters/*.lean`, assemblés par
+  `blueprint/Blueprint.lean` ; macros TeX dans `Blueprint/TeXPrelude.lean`, qui importe aussi
+  `TemporalGraph` (indispensable : `(lean := "…")` ne résout que les noms importés). Depuis
+  `blueprint/` : `./scripts/setup-verso-blueprint.sh` (une fois), `lake build` (vérifie chaque nom
+  Lean, `strictResolve` : remplace `checkdecls`, retiré du dépôt), `lake exe vbp build [--pdf]`
+  (`_out/site/html-multi/`, `_out/site/pdf/main.pdf` via le `lualatex` système), `lake exe vbp
+  query status <label>`. La progression (`\leanok`) est calculée côté Lean. Conventions de
+  portage : `:::definition|lemma_|theorem|corollary "label" (uses := "a, b") (lean := "X, Y")`,
+  titre d'énoncé en tête de corps `*Titre.*` (pas d'option `title`), `_…_` = italique
+  (`*…*` = gras), `{bpref "label"}[]` pour `Lemma~\ref{…}`, `{ref "chap:…"}[Titre]` pour un
+  chapitre/une section.
+  - **Correctif temporaire** : verso-blueprint n'a pas de ligne 4.36. `vendor/verso-blueprint`
+    (non versionné) = tag `v4.35.0` + `blueprint/patches/verso-blueprint-v4.35.0-lean-4.36.patch`
+    (port vers `Lean.Html` et les vues `Lean.Doc` de Lean 4.36 : `.tag`→`.element`,
+    `TSyntax \`block`→`Lean.Doc.VersoBlock`, expandeurs sur `InlineView`/`BlockView`,
+    `StrLit`→`VersoCodeBlock`). Le `lakefile.lean` le prend par chemin et force Verso, SubVerso,
+    verso-slides et lean-vir (#275) en rc2. Dès qu'une branche `v4.36` amont existe : revenir à
+    `require VersoBlueprint from git … @ "v4.36…"`, supprimer `vendor/`, `patches/`, le script.
+  - **Piège mesuré** : sans épinglage explicite de ProofWidgets, Cli et plausible sur les
+    révisions du manifeste racine, `lake update` dans `blueprint/` remet les révisions de
+    verso-blueprint **dans le `.lake/packages` partagé** (mettre la bibliothèque en premier
+    `require` ne suffit pas). Mettre ces épinglages à jour avec chaque montée de version, et
+    vérifier les checkouts partagés après tout `lake update` dans `blueprint/`.
+  - **Piège** : la sortie TeX de Verso n'échappe que `\`, `{`, `}`, `^` : un `&`, `%`, `#` ou `_`
+    dans la prose casse le PDF (lualatex « Misplaced alignment tab »). Les garder hors du texte.
+  - Ouvrir un fichier de `vendor/` dans VS Code lance un serveur Lean sur ce sous-projet : son
+    `lean-toolchain` est donc aligné sur la toolchain racine.
 - Doc API : projet Lake séparé `docbuild/` (miroir de celui de `docgen-action`, `packagesDir`
   partagé avec la racine) : `cd docbuild && DOCGEN_SRC=file lake build TemporalGraph:docs`.
   `DOCGEN_SRC=file` est obligatoire en local : le défaut `github` échoue sur le remote GitLab.

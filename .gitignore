@@ -9,3 +9,5 @@ __pycache__/
 /build_out.txt
 # lean-beam session directory (registry, daemon logs)
 /.beam
+# Claude Code: local settings, worktrees, session state
+/.claude

@@ -153,10 +153,16 @@ doc-gen4. The project mirrors the one `docgen-action` generates in CI. It shares
 `DOCGEN_SRC=file` makes source links point to local files. The default (`github`) derives them
 from the `origin` remote and fails, because this repository's remote is on GitLab.
 
-The first run is long, but no Lean code is recompiled. doc-gen4 extracts the documentation data
-(`:docInfo`) of every imported module, nearly all of Mathlib, into one SQLite database, and it
-has no option to skip dependencies. On the author's machine this took about three hours. Later
-runs are incremental: only this library's modules are redone, in a few minutes. Changing
+No Lean code is recompiled, but the first run extracts the documentation data (`:docInfo`) of
+every imported module, about 4,700 modules including Mathlib, into one SQLite database: doc-gen4
+has no option to skip dependencies. Measured on Lean 4.36.0-rc2: 15 minutes on 12 cores, at most
+~1.9 GB per doc-gen4 process, a 521 MB site. Later runs are incremental: only this library's
+modules are redone.
+
+In CI (`.github/workflows/lean_action_ci.yml`) the same project builds the documentation on every
+push, with its `:docInfo` data cached until the toolchain or a manifest changes, and `main`
+deploys it to GitHub Pages under `docs/`, next to the blueprint under `blueprint/`. The Pages
+source of the repository must be set to "GitHub Actions". Changing
 `DOCGEN_SRC` does not invalidate the dependencies' data. When `lean-toolchain` changes, update the doc-gen4 `rev` in
 `docbuild/lakefile.toml` to the same tag and run `lake update doc-gen4` in `docbuild/`.
 

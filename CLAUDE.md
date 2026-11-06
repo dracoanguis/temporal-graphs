@@ -79,7 +79,7 @@ besoin de le répéter ici.
        l'ancien Mathlib, et un `lake build` dans `docbuild` le remettrait en place pour tout le
        monde. Supprimer ensuite le `docbuild/lean-toolchain` que `lake update` recrée. Les
        `:docInfo` de Mathlib dans `docbuild/.lake` deviennent obsolètes : le prochain build de la
-       documentation reprend les ~3 h.
+       documentation refait l'extraction complète (~15 min mesurées en rc2, voir « Doc API »).
   - Avant de supprimer un worktree : arrêter les serveurs Lean qui y tournent (`lake serve`,
     `lean --server` dont le cwd est le worktree) et retirer le lien (`rm .lake/packages`) par
     précaution, puis `git worktree remove`.
@@ -478,13 +478,23 @@ comme pour SAND).
     dans la prose casse le PDF (lualatex « Misplaced alignment tab »). Les garder hors du texte.
   - Ouvrir un fichier de `vendor/` dans VS Code lance un serveur Lean sur ce sous-projet : son
     `lean-toolchain` est donc aligné sur la toolchain racine.
-- Doc API : projet Lake séparé `docbuild/` (miroir de celui de `docgen-action`, `packagesDir`
-  partagé avec la racine) : `cd docbuild && DOCGEN_SRC=file lake build TemporalGraph:docs`.
-  `DOCGEN_SRC=file` est obligatoire en local : le défaut `github` échoue sur le remote GitLab.
-  Premier lancement : environ 3 h, sans aucune compilation. doc-gen4 extrait les `:docInfo` de
-  tout Mathlib dans un SQLite, et aucune option ne l'évite. Les lancements suivants sont
-  incrémentaux, en quelques minutes. Ne pas supprimer `docbuild/.lake`. Garder le `rev` de doc-gen4
-  égal au tag de `lean-toolchain`.
+- Doc API : projet Lake séparé `docbuild/` (`packagesDir` partagé avec la racine) :
+  `cd docbuild && DOCGEN_SRC=file lake build TemporalGraph:docs`. `DOCGEN_SRC=file` est
+  obligatoire en local : le défaut `github` échoue sur le remote GitLab. Premier lancement, sans
+  aucune compilation : doc-gen4 extrait les `:docInfo` des ~4 700 modules importés (Mathlib
+  compris) dans un SQLite, et aucune option ne l'évite. **Mesuré le 2026-11-06 en rc2 : 15 min sur
+  12 cœurs, 12 processus en parallèle, au plus ~1,9 Go par processus (pic total ~10 Go), site de
+  521 Mo, `docbuild/.lake` de 1,3 Go.** L'ancien « ~3 h » venait de la pression mémoire de
+  l'époque, pas de doc-gen4. Les lancements suivants sont incrémentaux. Ne pas supprimer
+  `docbuild/.lake`. Garder le `rev` de doc-gen4 égal au tag de `lean-toolchain`.
+- **CI GitHub (phase 4, 2026-11-06)** : `lean_action_ci.yml` n'utilise plus `docgen-action`
+  (elle réécrivait `docbuild/lakefile.toml` et ne connaît que leanblueprint). Un job `build` :
+  lean-action, puis le blueprint (`blueprint/`, à chaque push et PR, vérifie les noms Lean), puis
+  la doc API depuis `docbuild/` (sur push), chacun avec son cache de paquets/`.lake` ; sur `main`,
+  assemblage `_site/` (`.github/pages/index.html`, `docs/`, `blueprint/`) et job `deploy` avec
+  `environment: github-pages` (son absence faisait échouer le déploiement du 2026-10-16). La
+  source Pages du dépôt GitHub doit être « GitHub Actions ». Le blueprint en CI est en HTML seul
+  (le PDF demanderait une TeX Live complète sur le runner).
 - `lake build` n'accepte pas `-j` (vérifié en `v4.29.0-rc6`).
 - **Comptage d'arêtes : pattern `SimpleGraph.degree`, pas de `noncomputable` exposé.** `size`/
   `arcSize` sont des `def` calculables, `Fintype.card G.edgeSet`/`G.arcSet` sous une instance
@@ -497,6 +507,6 @@ comme pour SAND).
   avec une égalité d'ensembles (par exemple `addEdge_edgeSet`, `mount_edgeSet`) passe directement
   sous `.ncard` sans détour par `Nat.card` ; la version `size` en est un corollaire sous
   `[Fintype …]`, via `size_eq_ncard`.
-- CI GitHub Actions existante (ne pas modifier sans raison) : `lean_action_ci.yml` (build +
-  docgen), `create-release.yml` (tag de release sur changement de `lean-toolchain`),
+- CI GitHub Actions existante (ne pas modifier sans raison) : `lean_action_ci.yml` (build,
+  blueprint, doc API, déploiement Pages ; voir « CI GitHub » ci-dessus), `create-release.yml` (tag de release sur changement de `lean-toolchain`),
   `update.yml` (PR/issue automatique sur mise à jour Mathlib).

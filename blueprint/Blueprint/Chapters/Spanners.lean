@@ -13,8 +13,14 @@ open Informal
 tag := "chap:spanners"
 %%%
 
-Formalized in `TemporalGraph/Subgraph.lean` (general subgraph theory) and
-`TemporalGraph/Connectivity/Subgraph.lean` (reachability and spanners at the subgraph level).
+Formalized in the directory `TemporalGraph/`:
+
+* `Subgraph/Basic.lean`: the structure, its lattice, `induce`, `deleteVerts`, `addVerts`;
+* `Subgraph/Operations.lean`: `addArc`, `addEdge`, and the transfer of earliest and latest edges;
+* `Subgraph/EdgeSet.lean`: edge sets and sizes, `fromEdgeSet`;
+* `Connectivity/Subgraph.lean`: reachability and spanners at the subgraph level.
+
+`Subgraph.lean` only gathers the three `Subgraph/` modules.
 
 :::definition "def:sub-temporal-graph" (uses := "def:temporal-graph") (lean := "TemporalGraph.Subgraph")
 *Sub-temporal-graph.* A _sub-temporal-graph_ $`H` of a temporal graph $`G` is a choice of vertex

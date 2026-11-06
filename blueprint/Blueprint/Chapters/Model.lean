@@ -201,8 +201,9 @@ temporal walk.
 
 :::lemma_ "lem:isBicliqueWith-induce-deleteVerts" (uses := "def:is-biclique, def:subgraph-induce-delete-add") (lean := "TemporalGraph.Subgraph.isBicliqueWith_induce, TemporalGraph.Subgraph.isBicliqueWith_deleteVerts")
 *Bi-cliques under induce and deleteVerts.* Let $`H` be a bi-clique with witness $`(s, t)`. For
-$`s' \subseteq s`, the sub-temporal-graph induced by $`H` on $`s' \cup t` is a bi-clique with
-witness $`(s', t)` (SAND 2025, §4.1, the restriction used by the one-sided split step). Dually,
+$`s' \subseteq s` and $`t' \subseteq t`, the sub-temporal-graph induced by $`H` on $`s' \cup t'` is
+a bi-clique with witness $`(s', t')` (SAND 2025, §4.1, the restriction used by the one-sided split
+step). Dually,
 deleting any set $`u` of vertices from $`H` leaves a bi-clique with witness
 $`(s \setminus u, t \setminus u)`.
 :::

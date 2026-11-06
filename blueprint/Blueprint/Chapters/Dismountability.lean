@@ -13,11 +13,16 @@ open Informal
 tag := "chap:dismountability"
 %%%
 
-Formalized in `TemporalGraph/Dismountability/Basic.lean` (the partition $`V^-`, $`V^+`, $`V^0`,
-the bijections, reciprocity, the bi-clique), `TemporalGraph/Dismountability/Operations.lean`
-(dismount and mount), `TemporalGraph/Dismountability/OneSided.lean` (one-sided dismountability)
-and `TemporalGraph/Dismountability/OneSidedBound.lean` (the size of one-sided spanners and the
-bound for cliques). The dismountability technique originates with Casteigts, Peters and Schoeters,
+Formalized in the directory `TemporalGraph/Dismountability/`:
+
+* `Basic.lean`: the partition $`V^-`, $`V^+`, $`V^0`, the bijections, reciprocity, the bi-clique;
+* `Operations.lean`: dismount and mount, and the generic clique induction
+  ({bpref "thm:clique-induction"}[]), the proof engine shared by both spanner bounds of this
+  blueprint;
+* `OneSided.lean`: one-sided dismountability;
+* `OneSidedBound.lean`: the size of one-sided spanners and the $`O(n \log n)` bound for cliques.
+
+The dismountability technique originates with Casteigts, Peters and Schoeters,
 _Temporal Cliques Admit Sparse Spanners_, ICALP 2019 / JCSS. The numbering of the definitions,
 lemmas, and theorems below instead follows the more recent treatment by Daniele Carnevale, Arnaud
 Casteigts and Timothée Corsini, _Dismountability in Temporal Cliques Revisited_, SAND 2025 (LIPIcs
@@ -141,8 +146,8 @@ finite and simple; apply {bpref "lem:earliest-latest-edge-exists"}[].
 :::
 
 :::lemma_ "lem:earliestEdge-unique-proper-clique" (uses := "def:is-proper-happy, def:is-simple-clique") (lean := "TemporalGraph.Subgraph.existsUnique_earliestEdge_of_isCliqueSubgraph, TemporalGraph.Subgraph.existsUnique_latestEdge_of_isCliqueSubgraph")
-*Earliest edges are uniquely witnessed in proper cliques.* If $`H` is finite, nontrivial, simple,
-and proper, then each vertex has a unique earliest (resp. latest) edge.
+*Earliest edges are uniquely witnessed in proper cliques.* If $`H` is finite, nontrivial, and a
+simple, proper clique, then each vertex has a unique earliest (resp. latest) edge.
 :::
 
 :::proof "lem:earliestEdge-unique-proper-clique" (uses := "lem:earliestEdge-exists-finite-clique")
@@ -159,9 +164,10 @@ $`V^-(H)`, resp. $`V^-(H)` into $`V^+(H)`.
 :::
 
 :::lemma_ "lem:neighbor-fn-eq" (uses := "def:neighbor-functions, def:earliest-latest-neighbor") (lean := "TemporalGraph.earliestNeighborFn_eq_some_iff, TemporalGraph.latestNeighborFn_eq_some_iff")
-*Neighbor functions characterize membership.* Let $`G` be a proper temporal graph. Then
-$`\mathrm{f_{ee}}(x) = y` if and only if $`G.\mathrm{EarliestNeighbor}(x, y)`, and similarly for
-$`\mathrm{f_{le}}` and $`G.\mathrm{LatestNeighbor}(x,y)`.
+*Neighbor functions characterize membership.* Let $`G` be a proper temporal graph and
+$`x, y \in V` (so $`y \ne \bot`). Then $`\mathrm{f_{ee}}(x) = y` if and only if $`y` is an
+earliest neighbor of $`x` (`EarliestNeighbor`), and $`\mathrm{f_{le}}(x) = y` if and only if
+$`y` is a latest neighbor of $`x` (`LatestNeighbor`).
 :::
 
 :::proof "lem:neighbor-fn-eq" (uses := "lem:earliestEdge-unique-proper-clique")
@@ -195,7 +201,8 @@ An injective map from $`V^+` into $`V^-` gives $`|V^+| \le |V^-|`, and dually.
 :::theorem "thm:neighbor-fn-bijective" (uses := "lem:neighbor-fn-injective, lem:card-bounds") (lean := "TemporalGraph.Subgraph.earliestNeighborFn_mapsTo, TemporalGraph.Subgraph.latestNeighborFn_mapsTo, TemporalGraph.Subgraph.earliestNeighborFn_bijOn, TemporalGraph.Subgraph.latestNeighborFn_bijOn")
 *Neighbor functions are bijections — SAND Corollary 3.3.* When $`H` is a finite, nontrivial,
 simple, symmetric clique that is not two-hop dismountable, both $`\mathrm{f_{ee}}` and
-$`\mathrm{f_{le}}` are bijections between the sets $`V^+(H)` and $`V^-(H)` (`Set.BijOn`):
+$`\mathrm{f_{le}}` are bijections between the sets $`V^+(H)` and $`V^-(H)` (`Set.BijOn`, in Lean onto `some '' H.vminus`,
+resp. `some '' H.vplus`, as the functions are `Option`-valued):
 $`\mathrm{f_{ee}}` maps $`V^+(H)` into $`V^-(H)` and $`\mathrm{f_{le}}` maps $`V^-(H)` into
 $`V^+(H)` (`Set.MapsTo`), and both maps are injective (Lemma above), hence bijective by the
 cardinality equality.
@@ -241,8 +248,7 @@ the latest edge of $`u`.
 :::
 
 :::corollary "cor:biclique-of-not-two-hop" (uses := "lem:dismountable-iff-intersection, lem:twoHop-of-dismountable, lem:partition-finite, def:is-biclique, def:between") (lean := "TemporalGraph.Subgraph.biclique_of_not_twoHopDismountable")
-*Bi-clique between $`V^-` and $`V^+` — SAND Corollary 4.1.* Let $`H` be a finite, nontrivial,
-symmetric clique that is not $`\{1,2\}`-hop dismountable. The restriction
+*Bi-clique between $`V^-` and $`V^+` — SAND Corollary 4.1.* Let $`H` be a clique that is not $`\{1,2\}`-hop dismountable. The restriction
 $`H.\mathrm{between}\ V^-(H)\ V^+(H)` of $`H` to the arcs between $`V^-` and $`V^+` is a temporal
 bi-clique on $`(V^-(H), V^+(H))`.
 :::
@@ -302,7 +308,7 @@ The edge set of the mounted graph is that of $`H` plus two pairs (four for the t
 
 :::theorem "thm:dismountability" (uses := "def:dismount-mount, def:subgraph-reachable-tc-spannerOf, def:sub-spanning-clique, def:earliest-latest-neighbor, def:two-hop-dismountable") (lean := "TemporalGraph.Subgraph.dismountability, TemporalGraph.Subgraph.twoHopDismountability")
 *Dismount/mount preserves spanners — SAND Theorem 2.1 (1-hop), §2.1 (2-hop).* Let the ambient
-graph $`G` be symmetric and loopless, let $`H` be a symmetric clique sub-temporal-graph of $`G`
+graph $`G` be symmetric, let $`H` be a symmetric clique sub-temporal-graph of $`G`
 and $`x \in \mathrm{Verts}(H)`, and let $`H'` be a symmetric sub-temporal-graph of $`G` that is a
 spanner of $`H.\mathrm{dismount}(x)` ({bpref "def:subgraph-reachable-tc-spannerOf"}[]).
 
@@ -409,7 +415,8 @@ times $`n_a, n_b`. If $`n_a \le n_b` then $`b` is one-sided dismountable through
 :::
 
 :::lemma_ "lem:spanner-from-to-split" (uses := "lem:spanner-from-to-sup, lem:isBicliqueWith-induce-deleteVerts, lem:reachable-of-isBicliqueWith") (lean := "TemporalGraph.Subgraph.IsSpannerFromTo.of_le, TemporalGraph.Subgraph.isSpannerFromTo_sup_of_induce")
-*Split, full step.* For $`S_1, S_2 \subseteq S`, the restrictions of a bi-clique on $`(S, T)` to
+*Split, full step.* For $`S_1, S_2 \subseteq S`, and a bi-clique $`H` on $`(S, T)` with
+$`S \cup T \subseteq \mathrm{Verts}(H)`, the restrictions of $`H` to
 $`S_i \cup T` are bi-cliques on $`(S_i, T)`, and one-sided spanners of these two subproblems
 combine, by union, into a one-sided spanner of the bi-clique from $`S_1 \cup S_2` to $`T`.
 :::
@@ -527,6 +534,28 @@ $`H` and at most four more edges. Pairs not involving $`x` are reachable in $`H'
 clique); from $`x`, go as $`y` does, and to $`x`, as one goes to $`z`.
 :::
 
+:::theorem "thm:clique-induction" (uses := "thm:spanner-of-two-hop-dismountable, def:spanner") (lean := "TemporalGraph.Subgraph.exists_isSpannerOf_ncard_le_of_forall_not_twoHopDismountable")
+*Generic clique induction — SAND Theorem 2.1 and §2.1.* Let $`G` be symmetric and loopless, and
+$`f : \mathbb{N} \to \mathbb{N}` with $`f(n) + 4 \le f(n + 1)` for all $`n`. If every finite,
+nontrivial, simple, proper, symmetric clique that is not $`\{1,2\}`-hop dismountable has a
+symmetric spanner with at most $`f(n)` edges, $`n` its number of vertices, then so does every
+finite, simple, proper, symmetric clique.
+:::
+
+:::proof "thm:clique-induction" (uses := "lem:dismount-clique, lem:mount-size")
+By strong induction on $`n`; with at most one vertex, $`H` has no edge and is its own spanner. If
+$`H` is $`\{1,2\}`-hop dismountable, dismount a vertex ($`H - x` is again a clique,
+{bpref "lem:dismount-clique"}[]), recurse, and mount it back with at most $`4` edges
+({bpref "thm:spanner-of-two-hop-dismountable"}[]): $`f(n - 1) + 4 \le f(n)`. Otherwise the
+hypothesis applies.
+
+This induction is the proof engine of the library. It isolates what the two spanner bounds share,
+the dismountable case, and leaves to each bound only the non-dismountable case and the inequality
+$`f(n) + 4 \le f(n + 1)`. The $`O(n \log n)` bound below
+({bpref "thm:clique-spanner-ncard-le"}[]) and the linear bound
+({bpref "thm:clique-spanner-seven-mul"}[]) are two instances of it.
+:::
+
 :::theorem "thm:spanner-of-not-two-hop-dismountable" (uses := "lem:vminus-vplus-matchings, lem:vzero-empty, cor:biclique-of-not-two-hop, thm:tc-of-spanner-from-to, thm:exists-spanner-from-to-ncard-le") (lean := "TemporalGraph.Subgraph.exists_isSpannerOf_of_not_twoHopDismountable")
 *Spanner of a non-dismountable clique.* Let $`G` be symmetric and loopless. A finite, nontrivial,
 simple, proper, symmetric temporal clique $`H` that is not $`\{1,2\}`-hop dismountable has a
@@ -545,19 +574,21 @@ stated number of edges, and is temporally connected ({bpref "thm:tc-of-spanner-f
 which is enough since $`H` is a clique.
 :::
 
-:::theorem "thm:clique-spanner-ncard-le" (uses := "thm:spanner-of-two-hop-dismountable, thm:spanner-of-not-two-hop-dismountable, lem:spanner-bound-closed-form") (lean := "TemporalGraph.Subgraph.exists_isSpannerOf_ncard_le")
-*Spanners of temporal cliques.* Let $`G` be symmetric and loopless and $`H` a finite, simple,
-proper, symmetric temporal clique on $`n` vertices. Then $`H` admits a symmetric spanner with at
-most $`2n\lceil\log_2 n\rceil + 4n` edges.
+:::theorem "thm:clique-spanner-ncard-le" (uses := "thm:clique-induction, thm:spanner-of-not-two-hop-dismountable, lem:spanner-bound-closed-form") (lean := "TemporalGraph.Subgraph.exists_isSpannerOf_ncard_le")
+*Spanners of temporal cliques — SAND §4.1.* Let $`G` be symmetric and loopless and $`H` a finite,
+simple, proper, symmetric temporal clique on $`n` vertices. Then $`H` admits a symmetric spanner
+with at most $`2n\lceil\log_2 n\rceil + 4n` edges.
 :::
 
-:::proof "thm:clique-spanner-ncard-le"
-Strong induction on $`n`. With at most one vertex, $`H` has no edge and is its own spanner.
-Otherwise:
+:::proof "thm:clique-spanner-ncard-le" (uses := "lem:vzero-empty, lem:card-bounds")
+An instance of {bpref "thm:clique-induction"}[] with $`f(n) = 2n\lceil\log_2 n\rceil + 4n`. Two
+obligations remain.
 
-* if $`H` is $`\{1,2\}`-hop dismountable, dismount a vertex, recurse, and mount it back with at
-  most $`4` edges ({bpref "thm:spanner-of-two-hop-dismountable"}[]);
-* otherwise, $`n = 2|V^+|` (since $`V^0 = \emptyset` and $`|V^-| = |V^+|`) and the bi-clique case
-  applies ({bpref "thm:spanner-of-not-two-hop-dismountable"}[], with the closed form of
-  {bpref "lem:spanner-bound-closed-form"}[]).
+* The step $`f(n) + 4 \le f(n + 1)` follows from the monotonicity of $`\lceil\log_2 n\rceil`.
+* For a clique that is not $`\{1,2\}`-hop dismountable, $`V^0 = \emptyset`
+  ({bpref "lem:vzero-empty"}[]) and $`|V^-| = |V^+| = k` ({bpref "lem:card-bounds"}[]), so
+  $`n = 2k`. {bpref "thm:spanner-of-not-two-hop-dismountable"}[] gives a spanner with at most
+  $`\mathrm{spannerBound}(k) + 2k` edges, and the closed form
+  $`\mathrm{spannerBound}(k) \le 2k\lceil\log_2 k\rceil + k`
+  ({bpref "lem:spanner-bound-closed-form"}[]) bounds it by $`f(2k)`.
 :::

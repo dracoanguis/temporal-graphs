@@ -13,19 +13,31 @@ open Informal
 tag := "chap:linear-spanners"
 %%%
 
-Formalized in `TemporalGraph/LinearSpanner/ExtremallyMatched.lean`
-(extremally matched bi-cliques), `Reduction.lean` (dismountability in
-bi-cliques, Lemma 5), `Stars.lean` (the edge sets of the stars),
-`SimpleStar.lean` (Observation 9), `ExtendedStar.lean`
-(Lemmas 13 to 16), `Bound.lean` (Lemma 17, Theorem 18 and the
-bi-clique Theorem 3) and `Clique.lean` (Theorems 20 and 2), with the
-supporting API in `Basic.lean`, `Connectivity/Basic.lean`,
-`TemporalWalk.lean` and `Dismountability/OneSided*.lean`.
+Formalized in the directory `TemporalGraph/LinearSpanner/`:
+
+* `ExtremallyMatched.lean`: extremally matched bi-cliques;
+* `Reduction.lean`: dismountability in bi-cliques, Lemma 5;
+* `Stars.lean`: the edge sets of the stars, Definitions 8 and 12;
+* `SimpleStar.lean`: Observation 9;
+* `ExtendedStar.lean`: Lemmas 13 to 16, Corollary 15;
+* `Bound.lean`: Lemma 17, Theorem 18 and the bi-clique Theorem 3;
+* `Clique.lean`: Theorems 20 and 2.
+
+The supporting API is in `Basic.lean`, `Connectivity/Basic.lean`, `TemporalWalk.lean`,
+`Dismountability/OneSided.lean` and `Helpers/SetCard.lean` (generic lemmas on `Set.ncard`).
+
+The proof reuses the dismountability machinery of {ref "chap:dismountability"}[Dismountability]
+rather than redoing it. The generic clique induction ({bpref "thm:clique-induction"}[]) handles
+the dismountable case exactly as for the $`O(n \log n)` bound, and the non-dismountable case
+reuses SAND's partition $`V^-`, $`V^+`, $`V^0`, its matchings and its reciprocity lemma
+(Theorem 20 below). The genuinely new part is the bound for extremally matched bi-cliques, through
+stars (Observation 9 to Theorem 18).
+
 This chapter follows Júlia Baligács, _Temporal Cliques Admit Linear
 Spanners_, arXiv:2606.05156v1 (2026) — abbreviated Baligács below, an arXiv
 preprint only — which answers the question of Casteigts, Peters and
 Schoeters: temporal cliques admit spanners of size $`O(n)`, improving the
-$`O(n \log n)` bound of {ref "chap:main-theorem"}[Main theorem: sparse spanners for temporal cliques].
+$`O(n \log n)` bound of {ref "chap:main-theorem"}[Main results].
 The numbering below is
 that of the arXiv version v1, which uses a single counter for all statements
 (Theorem 2, Lemma 5, Definition 8, Observation 9, …).
@@ -82,8 +94,8 @@ vertices are collapsed, are built with it one edge at a time.
 of edges (an
 unoriented edge together with its time), of which there are at most
 $`\mathrm{length}(p)` distinct ones. If all edges of $`p` belong to a set $`E`,
-the walk lives in $`\mathrm{fromEdgeSet}(E)`: the endpoints of $`p` are
-reachable one from the other there, before the arrival time of $`p`.
+the walk lives in $`\mathrm{fromEdgeSet}(E)`: the end of $`p` is reachable
+from its start there, by the arrival time of $`p`.
 :::
 
 :::proof "lem:walk-edges"
@@ -108,10 +120,10 @@ $`m \ge n`. Target dismountability is the one-sided dismountability of
 
 :::theorem "thm:source-dismountability" (uses := "def:source-target-dismountable, def:spanner-from-to, thm:one-sided-dismountability") (lean := "TemporalGraph.Subgraph.sourceDismountability, TemporalGraph.Subgraph.isSpannerFromTo_of_sourceDismount")
 *Mounting back a source or a target — Baligács §2.3.* Let $`G` be symmetric and $`x` a
-dismountable source of a bi-clique subgraph
-$`H` on $`S` and $`T`. Every symmetric one-sided spanner of $`H` without $`x`
-extends to a symmetric one-sided spanner of $`H` from $`S` to $`T` with two more
-edges $`x'y` and $`yx`. Dually for a dismountable target
+dismountable source of a symmetric bi-clique subgraph
+$`H` on $`S` and $`T`. Every symmetric one-sided spanner of $`H` without $`x`,
+from $`S \setminus \{x\}` to $`T`, extends to a symmetric one-sided spanner of
+$`H` from $`S` to $`T` with at most two more edges, $`x'y` and $`yx`. Dually for a dismountable target
 ({bpref "thm:one-sided-dismountability"}[]).
 :::
 
@@ -150,7 +162,7 @@ $`|S| = |T|`.
 :::theorem "thm:extremally-matched-tc" (uses := "def:extremally-matched, def:spanner-from-to, thm:tc-of-spanner-from-to") (lean := "TemporalGraph.IsExtremallyMatched.temporallyConnected")
 *Temporal connectivity of a spanner of an extremally matched bi-clique — Baligács §2.3.* Let
 $`H` be an extremally matched bi-clique on $`S` and $`T`, and $`K` a
-symmetric subgraph containing the matchings $`E_{\min}` and $`E_{\max}` and in
+symmetric subgraph of $`H` containing the matchings $`E_{\min}` and $`E_{\max}` and in
 which every source reaches every target. Then $`K` is temporally connected on
 $`S \cup T`.
 :::
@@ -177,8 +189,8 @@ perfect matchings.
 :::
 
 :::lemma_ "lem:bal-dismountability" (uses := "def:extremally-matched, def:between, def:spanner-from-to, thm:source-dismountability, lem:extremally-matched-of-not-dismountable, lem:extremally-matched-basic") (lean := "TemporalGraph.Subgraph.exists_isExtremallyMatched_reduction")
-*Dismountability — Baligács Lemma 5.* Let $`H` be a finite, simple, symmetric bi-clique subgraph
-on $`S` and $`T`.
+*Dismountability — Baligács Lemma 5.* Let $`G` be symmetric and $`H` a finite, simple,
+symmetric bi-clique subgraph on $`S` and $`T`.
 There are $`S' \subseteq S` and $`T' \subseteq T` such that the bi-clique
 $`H[S' \cup T']` induced on them is extremally matched on $`S'` and $`T'`, and
 every symmetric one-sided spanner $`K` of $`H[S' \cup T']` from $`S'` to $`T'`
@@ -224,14 +236,15 @@ for $`v \in S`, at their times.
 :::
 
 :::lemma_ "lem:reachable-simple-star" (uses := "def:simple-star-cut-crossing, lem:walk-edges") (lean := "TemporalGraph.IsExtremallyMatched.exists_reachable_simpleStar")
-*Simple stars cover the cut — Baligács Observation 9.* Let $`H` be a simple proper extremally
-matched bi-clique subgraph, $`s^* \in S`,
+*Simple stars cover the cut — Baligács Observation 9.* Let $`H` be a finite, simple, proper,
+symmetric extremally matched bi-clique subgraph, $`s^* \in S`,
 $`\tau` a threshold and $`m` a length, and let $`S_{\mathrm{cross}}` be the
 $`m`-hop-cut-crossing sources. There is a set $`E` of at most
 $`m\,|S_{\mathrm{cross}}|` edges of $`H` such that, in
 $`\mathrm{fromEdgeSet}(E \cup \mathrm{Star}(s^*))`, every source that is
 early (the time of $`s^*N_{\min}(v)` is at most $`\tau`) or crossing reaches
-every target $`u` with $`\tau \le \mathrm{arcTime}(s^*, u)`.
+every target $`u` such that some value of $`\mathrm{arcTime}(s^*, u)` is at least
+$`\tau`.
 :::
 
 :::proof "lem:reachable-simple-star"
@@ -263,7 +276,8 @@ $`t_j \to s^* \to t` using only edges of $`\mathrm{Star}(s^*)`.
 
 “Last” is read on arc times at the center: $`u'` is no later than $`u` when
 some value of $`\mathrm{arcTime}(s^*, u')` is at most some value of
-$`\mathrm{arcTime}(s^*, u)`.
+$`\mathrm{arcTime}(s^*, u)`; at the center $`t^*`, ordered by decreasing time, the
+comparison is reversed.
 :::
 
 :::lemma_ "lem:ext-star-reachable" (uses := "def:extended-star, lem:extremally-matched-basic") (lean := "TemporalGraph.IsExtremallyMatched.reachable_extStarSource, TemporalGraph.IsExtremallyMatched.reachable_extStarTarget")
@@ -367,7 +381,9 @@ subgraph, $`s^* \in S`, and $`\tau` an arbitrary threshold time cutting the
 $`s^*`-ordered labeling. Some set $`E` of at most $`6|S|` edges of $`H`,
 containing $`E_{\min} \cup E_{\max}`, is such that in
 $`\mathrm{fromEdgeSet}(E)` either every source reaches every target above the
-cut, or every source below the cut reaches every target.
+cut (some value of $`\mathrm{arcTime}(s^*, u)` is at least $`\tau`), or every
+source below the cut (the time of $`s^*N_{\min}(v)` is at most $`\tau`) reaches
+every target.
 :::
 
 :::proof "lem:reachable-half"
@@ -465,25 +481,6 @@ $`|V^-| = |V^+|` ({bpref "lem:card-bounds"}[]) gives
 $`|\mathrm{Verts}(H)| = 2|V^+|`.
 :::
 
-:::theorem "thm:clique-induction" (uses := "thm:spanner-of-two-hop-dismountable, def:spanner") (lean := "TemporalGraph.Subgraph.exists_isSpannerOf_ncard_le_of_forall_not_twoHopDismountable")
-*Generic clique induction.* Let $`G` be symmetric and loopless, and
-$`f : \mathbb{N} \to \mathbb{N}` with
-$`f(n) + 4 \le f(n + 1)` for all $`n`. If every finite, nontrivial,
-simple, proper, symmetric clique that is not $`\{1,2\}`-hop dismountable has a
-symmetric spanner with at most $`f(n)` edges, $`n` its number of vertices,
-then so does every finite, simple, proper, symmetric clique.
-:::
-
-:::proof "thm:clique-induction" (uses := "lem:dismount-clique, lem:mount-size")
-By strong induction on $`n`; with at most one vertex, $`H` has no edge. If $`H`
-is $`\{1,2\}`-hop dismountable, dismount a vertex, recurse, and mount it back
-with at most $`4` edges ({bpref "thm:spanner-of-two-hop-dismountable"}[],
-the paper's Observation 19, that is SAND 2025, Theorem 2.1 and §2.1):
-$`f(n) + 4 \le f(n + 1)`. Otherwise the hypothesis applies. This is the
-induction that proves both the $`O(n \log n)` bound
-({bpref "thm:clique-spanner-ncard-le"}[]) and the linear bound below.
-:::
-
 :::theorem "thm:clique-spanner-seven-mul" (uses := "thm:clique-induction, thm:spanner-of-not-two-hop-linear") (lean := "TemporalGraph.Subgraph.exists_isSpannerOf_ncard_le_seven_mul")
 *Temporal cliques admit spanners of size $`7n` — Baligács Theorem 2.* Let $`G` be symmetric and
 loopless. Every finite, simple, proper, symmetric
@@ -491,9 +488,11 @@ clique $`H` on $`n` vertices has a symmetric spanner with at most $`7n` edges.
 :::
 
 :::proof "thm:clique-spanner-seven-mul"
-{bpref "thm:clique-induction"}[] with $`f(n) = 7n`, which satisfies
-$`7n + 4 \le 7(n + 1)`, and {bpref "thm:spanner-of-not-two-hop-linear"}[] for
-the non-dismountable case.
+An instance of the generic clique induction {bpref "thm:clique-induction"}[] (the paper's
+Observation 19, which is SAND 2025, Theorem 2.1 and §2.1), reused unchanged from the
+$`O(n \log n)` bound, with $`f(n) = 7n`. Only two obligations are new: the step
+$`7n + 4 \le 7(n + 1)`, and the non-dismountable case,
+{bpref "thm:spanner-of-not-two-hop-linear"}[].
 :::
 
 :::theorem "thm:linear-main" (uses := "thm:clique-spanner-seven-mul") (lean := "TemporalGraph.Subgraph.exists_isBigO_isSpannerOf_linear")

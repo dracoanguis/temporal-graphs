@@ -450,14 +450,14 @@ $`|K'| \le 10x + 2(|S| + |T|)`.
 a finite, nontrivial, simple, proper, symmetric clique that is not
 $`\{1,2\}`-hop dismountable. Then the restriction
 $`H.\mathrm{between}(V^-, V^+)` of $`H` to the edges between $`V^-` and $`V^+` is
-an extremally matched bi-clique with sources $`V^+` and targets $`V^-`. This is
-the paper's Theorem 20, quoted there from SAND 2025, Corollary 4.1.
+an extremally matched bi-clique with sources $`V^+` and targets $`V^-`. In the
+library this is SAND 2025, Corollary 4.1 with Lemma 3.5.
 :::
 
 :::proof "thm:extremally-matched-of-not-two-hop"
-The restriction is a bi-clique by {bpref "cor:biclique-of-not-two-hop"}[].
-The earliest edge $`va` of $`H` at $`v \in V^+` goes to $`a \in V^-`
-({bpref "lem:vminus-vplus-matchings"}[]), and by reciprocity
+The restriction is a bi-clique by {bpref "cor:biclique-of-not-two-hop"}[] (SAND 2025,
+Corollary 4.1). The earliest edge $`va` of $`H` at $`v \in V^+` goes to $`a \in V^-`
+({bpref "lem:vminus-vplus-matchings"}[], SAND 2025, Corollary 3.3), and by reciprocity
 ({bpref "lem:reciprocity"}[], SAND 2025, Lemma 3.5) the edges from $`a` to
 $`V^+` occur no earlier: it is the earliest edge at both ends in the
 bi-clique. Every vertex of $`V^-` ends such an edge, which gives $`E_{\min}`;

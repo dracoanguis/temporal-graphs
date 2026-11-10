@@ -107,7 +107,7 @@ besoin de le répéter ici.
 | Fichier | Rôle | Analogue Mathlib |
 |---|---|---|
 | `TemporalGraph/Init.lean` | Rule-set aesop `TemporalGraph`, utilisé par la macro `aesop_temporal_graph` | `SimpleGraph/Init.lean` |
-| `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsCliqueGraph`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, via `SimpleGraph.fromRel`, sans hypothèse), `adjAt`, `symmetrize`, `fromEdgeSet`, `neighborSet`, `incidenceSet`, `arcTime` (temps d'un arc, `Option ℕ`, `none` si pas d'arc), `arcSet`/`arcSize` (monde orienté), `edgeSet`/`size` (monde symétrique ; `mem_edgeSet` demande seulement `[IsSymm]`) ; `size`/`arcSize` sont des `def` calculables (pattern `SimpleGraph.degree` : `Fintype.card` sous une instance `[Fintype G.edgeSet]`/`[Fintype G.arcSet]`), avec la forme instance-free `Set.ncard` disponible via `size_eq_ncard`/`arcSize_eq_ncard` | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
+| `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsCliqueGraph`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, via `SimpleGraph.fromRel`, sans hypothèse), `adjAt`, `symmetrize`, `fromEdgeSet`, `neighborSet`, `incidenceSet`, `arcTime` (ensemble `Set ℕ` des temps des arcs de `u` vers `v`, `{n | G.Adj u v n}`), `arcSet`/`arcSize` (monde orienté), `edgeSet`/`size` (monde symétrique ; `mem_edgeSet` demande seulement `[IsSymm]`) ; `size`/`arcSize` sont des `def` calculables (pattern `SimpleGraph.degree` : `Fintype.card` sous une instance `[Fintype G.edgeSet]`/`[Fintype G.arcSet]`), avec la forme instance-free `Set.ncard` disponible via `size_eq_ncard`/`arcSize_eq_ncard` | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
 | `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Marches temporelles non strictes, à temps croissant ; prédicat `IsStrict` (temps strictement croissants, propagé de `NonemptyTemporalWalk` à `TemporalWalk`) et raccourcissement `NonemptyTemporalWalk.exists_isStrict` ; API `length`/`support`/`arcs`/`append`/`mapLe` (`length_append`, `arcs_append`, `*_mapLe`, `mapLe_append`, `mapLe_mapLe`, `start_mem_support`, `end_mem_support`, `adj_of_mem_arcs`) ; `TemporalWalk.edges` (arêtes traversées, `length_edges`, `ncard_setOf_mem_edges_le`) et `transfer` (déplace une marche vers un graphe contenant ses arcs, `adj_of_edges_subset`) | `SimpleGraph.Walk` |
 | `TemporalGraph/Subgraph.lean` | Agrégateur pur des trois modules `Subgraph/` ci-dessous (`import TemporalGraph.Subgraph` continue de fonctionner) | — |
 | `TemporalGraph/Subgraph/Basic.lean` | Sous-graphe temporel : `TemporalGraph.Subgraph` étend `TemporalGraph V`, ajoutant `verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `IsCliqueSubgraph` ; `edgeSet`, `neighborSet`, `size`, `incidenceSet` sont hérités de `TemporalGraph` ; treillis borné et union `⊔` (`SemilatticeSup`), `induce`/`deleteVerts`/`addVerts` ; `induce_le_of_subset`, `deleteVerts_induce_of_subset` ; monotonie `toTemporalGraph_le`/`toTemporalGraph_le_self` | `SimpleGraph.Subgraph` |
@@ -184,22 +184,24 @@ utilisaient vraiment).
   dans `Option V`, `none` signalant l'absence de voisin (une valeur par défaut dans `V` serait une
   réponse valide, donc indiscernable). `earliestNeighborFn_bijOn`/`latestNeighborFn_bijOn`
   énoncent `Set.BijOn` de `H.vplus` sur `some '' H.vminus` (et réciproquement), sans passer par le
-  sous-type. Même choix pour `arcTime : Option ℕ`. **Pas de décharge automatique de l'existence** (choix
-  validé) : on prouve d'abord l'existence, puis on déballe avec `Option.get`
-  (`(G.arcTime u v).get (arcTime_isSome_iff.2 h)`), ou l'on travaille avec `… = some n`. Jamais
-  `Option.get!`/`Option.getD` (valeur par défaut = valeur valide). Ne jamais comparer avec l'ordre
-  d'`Option` (`none` minimal, `none ≤ some τ`) : écrire `∃ n ∈ G.arcTime u v, n ≤ τ` (faux sur
-  `none`).
-- **Les énoncés lisent les temps sur `Adj`, pas sur `arcTime`** (choix du 2026-11-10). Une
-  comparaison de temps s'écrit `∃ k, G.Adj u v k ∧ k ≤ τ` (ou `∃ k, G.Adj x z k ∧ ∃ l, G.Adj x c l ∧
-  k ≤ l`) : exacte dans tout graphe, sans `choose` (dans un graphe non simple, `arcTime` choisit un
-  temps arbitraire), symétrique sous le seul `[IsSymm]` (`h.symm`, au lieu d'`arcTime_comm`, qui
-  demande `IsSimple`). L'unicité d'un temps vient de `IsSimple` (`h₀ hk hk' : k = k'`). Prix : les
+  sous-type. **Pas de décharge automatique de l'existence** (choix validé) : on prouve d'abord
+  l'existence, puis on déballe avec `Option.get`
+  (`(G.earliestNeighborFn x).get (earliestNeighborFn_isSome_iff.2 h)`), ou l'on travaille avec
+  `… = some y`. Jamais `Option.get!`/`Option.getD` (valeur par défaut = valeur valide). Ne jamais
+  comparer avec l'ordre d'`Option` (`none` minimal) : passer par la valeur,
+  `∃ u ∈ G.earliestNeighborFn v, …`.
+- **Temps des arcs : un ensemble, lu sur `Adj`** (choix du 2026-11-10). `arcTime G u v : Set ℕ :=
+  {n | G.Adj u v n}` (schéma de `SimpleGraph.neighborSet`), sans `choose` ni `Option` :
+  `mem_arcTime` (`@[simp]`, `Iff.rfl`) ramène l'appartenance à `G.Adj u v n`, qui est la forme
+  normale. Les énoncés ponctuels s'écrivent donc sur `Adj` : `∃ k, G.Adj u v k ∧ k ≤ τ` (ou
+  `∃ k, G.Adj x z k ∧ ∃ l, G.Adj x c l ∧ k ≤ l`), exacts dans tout graphe ; `arcTime` sert aux
+  énoncés sur l'ensemble lui-même (`arcTime_eq_empty_iff`, `IsSimple.arcTime_subsingleton`,
+  `arcTime_eq_singleton`, `arcTime_comm` sous le seul `[IsSymm]`, `arcTime_mono`). Retourner une
+  arête : `h.symm`. L'unicité d'un temps vient de `IsSimple` (`h₀ hk hk' : k = k'`) ; prix : les
   comptages « au plus une arête par sommet » (`ncard_eMin_le`, `ncard_incidentEdges_le`,
   `ncard_sourceExtendEdges_le`, `ncard_extStar_union_le`) demandent `IsSimple`. Les fonctions de
   voisins restent à valeurs dans `Option` : leurs bijections (`Set.BijOn`, `InjOn`, `ncard_image`)
-  demandent une vraie fonction. `arcTime` et son API restent dans `Basic.lean`, comme API de
-  bibliothèque.
+  demandent une vraie fonction.
 - **Renommage ultérieur (commit `acb993a`)** : le constructeur à une seule orientation, sans
   aucune hypothèse de symétrie, s'appelle maintenant `addArc` (l'ancien `addEdge` générique), et
   le constructeur à deux orientations qui demande `[G.IsSymm]` s'appelle maintenant `addEdge`
@@ -415,7 +417,7 @@ une version publiée paraît).
 
 | Baligács 2026 (arXiv v1) | Code | Fichier |
 |---|---|---|
-| §2.1, étiquettes λ | les temps `n` de `G.Adj u v n` dans les énoncés ; `arcTime` (`Option ℕ`) comme API | `Basic.lean` |
+| §2.1, étiquettes λ | les temps `n` de `G.Adj u v n` dans les énoncés ; `arcTime` (`Set ℕ`, singleton `{λ}` dans un graphe simple) | `Basic.lean` |
 | `N_min` / `N_max` | `earliestNeighborFn` / `latestNeighborFn` (`V → Option V`) | `Dismountability/Basic.lean` |
 | §2.3, source / cible dismountable | `SourceDismountable` / `OneSidedDismountable` ; étapes `sourceDismountability`, `oneSidedDismountability` ; `isSpannerFromTo_of_sourceDismount`, `isSpannerFromTo_of_targetDismount` | `Dismountability/OneSided.lean`, `OneSidedBound.lean` |
 | §2.3, bi-clique extremally matched | `IsExtremallyMatched` | `LinearSpanner/ExtremallyMatched.lean` |

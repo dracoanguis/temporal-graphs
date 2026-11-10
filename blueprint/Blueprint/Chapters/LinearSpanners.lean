@@ -72,14 +72,15 @@ Design choices that differ from the paper.
 
 # Preliminaries (Baligács §2.1)
 
-:::definition "def:arc-time" (uses := "def:is-simple-clique, def:temporal-graph") (lean := "TemporalGraph.arcTime, TemporalGraph.arcTime_eq_some, TemporalGraph.arcTime_comm")
+:::definition "def:arc-time" (uses := "def:is-simple-clique, def:temporal-graph") (lean := "TemporalGraph.arcTime, TemporalGraph.mem_arcTime, TemporalGraph.IsSimple.arcTime_subsingleton, TemporalGraph.arcTime_eq_singleton, TemporalGraph.arcTime_comm")
 *Arc times — Baligács §§1, 2.1.* Let $`G` be a temporal graph. $`\mathrm{arcTime}(u, v)` is the
-time of an arc from $`u` to $`v`, the paper's $`\lambda(\{u, v\})`, as an
-`Option ℕ`: `none` when $`u` and $`v` are not adjacent, and
-`some n` for the time $`n` of the arc when $`G` is simple. When $`G` is
-moreover symmetric, $`\mathrm{arcTime}(u, v) = \mathrm{arcTime}(v, u)`. The
-statements of this chapter do not go through `arcTime`: they read the times
-$`n` of the arcs, given by the adjacency `G.Adj u v n`, directly.
+set of the times $`n` of the arcs from $`u` to $`v`, those with `G.Adj u v n`:
+empty when $`u` and $`v` are not adjacent, with at most one element when
+$`G` is simple. When $`G` is symmetric,
+$`\mathrm{arcTime}(u, v) = \mathrm{arcTime}(v, u)`, so that in a symmetric simple
+graph the set of an edge is $`\{\lambda(\{u, v\})\}`, the paper's label. The
+statements of this chapter read the times on the adjacency `G.Adj u v n`, the
+form to which membership in $`\mathrm{arcTime}(u, v)` unfolds.
 :::
 
 :::definition "def:reachable-within" (uses := "def:reachable, def:temporal-walk") (lean := "TemporalGraph.ReachableWithin, TemporalGraph.ReachableBefore, TemporalGraph.ReachableWithin.step")

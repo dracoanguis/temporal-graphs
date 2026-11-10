@@ -254,7 +254,7 @@ theorem reachable_extStarSource (h : H.IsExtremallyMatched s t) (h₀ : H.IsSimp
   have hx : x ∈ t := h.mem_right_of_earliestNeighborFn_eq_some h₂ h₄
   have hz : z ∈ s := h.mem_left_of_latestNeighborFn_eq_some h₃ h₅
   -- the arcs `v x`, `u' z`, and `u c`, `u z` from the extend index
-  obtain ⟨a, -, ha, -⟩ := h.exists_earliestEdge_of_earliestNeighborFn_eq_some h₀ h₁ (.inl h₂) h₄
+  obtain ⟨a, ha, -⟩ := h.exists_earliestEdge_of_earliestNeighborFn_eq_some h₁ (.inl h₂) h₄
   obtain ⟨m, hm⟩ := h.exists_adj_right h₃ hz
   obtain ⟨a', ha', b', hb', hab'⟩ := h₆.2.1
   -- the arc `c u` has one time
@@ -295,7 +295,7 @@ theorem reachable_extStarTarget (h : H.IsExtremallyMatched s t) (h₀ : H.IsSimp
   have hx : x ∈ t := h.mem_right_of_earliestNeighborFn_eq_some h₂ h₄
   have hz : z ∈ s := h.mem_left_of_latestNeighborFn_eq_some h₃ h₅
   -- the arcs `v x`, `u' z`, and `u x`, `u c` from the extend index
-  obtain ⟨a, -, ha, -⟩ := h.exists_earliestEdge_of_earliestNeighborFn_eq_some h₀ h₁ (.inl h₂) h₄
+  obtain ⟨a, ha, -⟩ := h.exists_earliestEdge_of_earliestNeighborFn_eq_some h₁ (.inl h₂) h₄
   obtain ⟨m, hm⟩ := h.exists_adj_right h₃ hz
   obtain ⟨a', ha', b', hb', hab'⟩ := h₆.2.1
   -- the arc `c u` has one time
@@ -421,7 +421,7 @@ theorem isCutCrossing_or_reachable (h : H.IsExtremallyMatched s t) (h₀ : H.IsS
   -- Corollary 15 with `d = N_min(v)`
   obtain ⟨⟨a₁, ha₁, b₁, hb₁, hdz⟩, ⟨a₂, ha₂, b₂, hb₂, hzx⟩⟩ :=
     h.chain_of_not_reachable h₀ h₁ h₂ hw hx hy (Option.mem_def.1 hp) hz h₇
-  obtain ⟨n, -, hn, -⟩ := h.exists_earliestEdge_of_earliestNeighborFn_eq_some h₀ h₁ (.inl h₃) h₄
+  obtain ⟨n, hn, -⟩ := h.exists_earliestEdge_of_earliestNeighborFn_eq_some h₁ (.inl h₃) h₄
   -- the junction at `w` is temporal, since `{v, w}` is the earliest edge at `w`
   have hvw : n ≤ a₁ := h.le_of_earliestNeighborFn_eq_some h₀ h₁ (.inl h₃) h₄ hn.1 ha₁
   -- the 3-hop walk `(v, w, z, p)`, whose last edge `{z, p}` is at time `b₁`

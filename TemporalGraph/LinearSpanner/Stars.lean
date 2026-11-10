@@ -43,8 +43,8 @@ cut.
   `N_min`, before the edge of that `N_min` to `c` (see `IsCutCrossing`).
 
 **Times through `Adj`, neighbors through `Option`.** A time comparison is stated on the adjacency
-itself, `∃ k, G.Adj c u k ∧ k ≤ τ`, false when there is no arc, and exact in any graph (no
-arbitrary choice among several times of an arc, unlike `arcTime`). The earliest and latest
+itself, `∃ k, G.Adj c u k ∧ k ≤ τ`, false when there is no arc, and exact in any graph (the
+simp normal form of `k ∈ G.arcTime c u`). The earliest and latest
 neighbors are read on the `Option`-valued `earliestNeighborFn` and `latestNeighborFn`, through
 their values (`∃ u ∈ G.earliestNeighborFn v, …`), never through the order of `Option`. In an
 extremally matched bi-clique every arc and every such neighbor exists, and in a simple graph each
@@ -203,27 +203,27 @@ section Subset
 /-- `G.eMin A` consists of edges of `G`. -/
 theorem eMin_subset_edgeSet : G.eMin A ⊆ G.edgeSet := by
   rintro _ ⟨v, -, w, -, n, h₀, rfl⟩
-  exact ⟨_, _, rfl, h₀⟩
+  exact mem_edgeSet_of_adj h₀
 
 /-- `G.eMax A` consists of edges of `G`. -/
 theorem eMax_subset_edgeSet : G.eMax A ⊆ G.edgeSet := by
   rintro _ ⟨v, -, w, -, n, h₀, rfl⟩
-  exact ⟨_, _, rfl, h₀⟩
+  exact mem_edgeSet_of_adj h₀
 
 /-- `G.incidentEdges x A` consists of edges of `G`. -/
 theorem incidentEdges_subset_edgeSet {x : V} : G.incidentEdges x A ⊆ G.edgeSet := by
   rintro _ ⟨v, -, n, h₀, rfl⟩
-  exact ⟨_, _, rfl, h₀⟩
+  exact mem_edgeSet_of_adj h₀
 
 /-- The extend edges of `Ext(c)`, `c` a source, are edges of `G`. -/
 theorem sourceExtendEdges_subset_edgeSet {c : V} : G.sourceExtendEdges s t c ⊆ G.edgeSet := by
   rintro _ ⟨v, -, u, -, n, h₀, rfl⟩
-  exact ⟨_, _, rfl, h₀⟩
+  exact mem_edgeSet_of_adj h₀
 
 /-- The extend edges of `Ext(c)`, `c` a target, are edges of `G`. -/
 theorem targetExtendEdges_subset_edgeSet {c : V} : G.targetExtendEdges s t c ⊆ G.edgeSet := by
   rintro _ ⟨v, -, u, -, n, h₀, rfl⟩
-  exact ⟨_, _, rfl, h₀⟩
+  exact mem_edgeSet_of_adj h₀
 
 /-- The simple star consists of edges of `G`. -/
 theorem simpleStar_subset_edgeSet {c : V} : G.simpleStar s t c ⊆ G.edgeSet :=

@@ -48,23 +48,22 @@ theorem reachable_of_reachableBefore_earliestNeighborFn {H : Subgraph G} [H.IsSy
     (h : H.IsExtremallyMatched s t) (h₀ : H.IsSimple) {F : Set (Sym2 V × ℕ)} {k : ℕ}
     (h₁ : H.incidentEdges c t ⊆ F) (h₂ : w ∈ s) (h₃ : H.earliestNeighborFn w = some u)
     (h₄ : y ∈ t) (h₅ : (Subgraph.fromEdgeSet G F).ReachableBefore x u k)
-    (h₆ : ∃ a ∈ H.arcTime u c, k ≤ a)
-    (h₇ : ∃ a ∈ H.arcTime c u, ∃ b ∈ H.arcTime c y, a ≤ b) :
+    (h₆ : ∃ a, H.Adj u c a ∧ k ≤ a)
+    (h₇ : ∃ a, H.Adj c u a ∧ ∃ b, H.Adj c y b ∧ a ≤ b) :
     (Subgraph.fromEdgeSet G F).Reachable x y := by
   obtain ⟨a, ha, hka⟩ := h₆
   obtain ⟨a', ha', b, hb, hab⟩ := h₇
   have hut : u ∈ t := h.mem_right_of_earliestNeighborFn_eq_some h₂ h₃
-  rw [arcTime_comm h₀ u c] at ha
-  obtain rfl : a' = a := Option.some_inj.1 (ha'.symm.trans ha)
+  -- the edge `{u, c}` has one time
+  obtain rfl : a' = a := h₀ ha' ha.symm
   -- `u → c`, an edge at `c`, temporal since the walk to `u` ends no later than this edge
   have hmem : (s(u, c), a') ∈ F := by
     rw [Sym2.eq_swap]
-    exact h₁ (mem_incidentEdges hut ha)
-  have hreach := h₅.step
-    (Subgraph.adj_fromEdgeSet hmem <| H.adj_sub (adj_of_arcTime_eq_some ha).symm) hka
+    exact h₁ (mem_incidentEdges hut ha')
+  have hreach := h₅.step (Subgraph.adj_fromEdgeSet hmem <| H.adj_sub ha) hka
   -- `c → y`, an edge at `c`, temporal since `y` comes after `u`
   exact (hreach.step (Subgraph.adj_fromEdgeSet (h₁ (mem_incidentEdges h₄ hb))
-    (H.adj_sub (adj_of_arcTime_eq_some hb))) hab).reachable
+    (H.adj_sub hb)) hab).reachable
 
 /-- The edges at the center `c` are in the simple star, and in any set containing the star. -/
 private theorem incidentEdges_subset_union_simpleStar {H : Subgraph G} {E : Set (Sym2 V × ℕ)} :
@@ -120,18 +119,14 @@ theorem exists_reachable_simpleStar (h : H.IsExtremallyMatched s t) (h₀ : H.Is
     · -- `x → u₀`, an edge of `E_min`, then `u₀ → c → y`
       have hu₁ := Option.mem_def.1 hu₀
       obtain ⟨a, ha⟩ := earliestNeighbor_of_earliestNeighborFn_eq_some hu₁
-      have harc := ha.arcTime_eq_some h₀
-      have hkc : H.arcTime u₀ c = some k := by
-        rw [arcTime_comm h₀]
-        exact Option.mem_def.1 hk₀
       refine h.reachable_of_reachableBefore_earliestNeighborFn h₀
         incidentEdges_subset_union_simpleStar hx hu₁ hy
         ((ReachableWithin.refl x le_rfl).step (Subgraph.adj_fromEdgeSet
-          (eMin_subset_union_simpleStar (TemporalGraph.mem_eMin hx hu₁ harc))
+          (eMin_subset_union_simpleStar (TemporalGraph.mem_eMin hx hu₁ ha.1))
           (H.adj_sub ha.1)) (Nat.zero_le _))
-        ⟨k, hkc, ?_⟩ ⟨k, hk₀, k', hk', hkτ.trans hτk'⟩
+        ⟨k, hk₀.symm, ?_⟩ ⟨k, hk₀, k', hk', hkτ.trans hτk'⟩
       -- temporal at `u₀`, since `{x, u₀}` is the earliest edge at `u₀`
-      exact h.arcTime_le_of_earliestNeighborFn_eq_some h₀ h₁ (Or.inl hx) hu₁ harc hkc
+      exact h.le_of_earliestNeighborFn_eq_some h₀ h₁ (Or.inl hx) hu₁ ha.1 hk₀.symm
     · -- a crossing source follows its crossing walk to `u x`, then `u x → c → y`
       have hwalk : ∀ e ∈ (walk x hxc).edges, e ∈ (⋃ v ∈ hfin.toFinset, E v) ∪ H.simpleStar s t c :=
         fun e he ↦ Or.inl (Set.mem_iUnion₂.2 ⟨x, hfin.mem_toFinset.2 ⟨hx, hxc⟩, hE x hxc ▸ he⟩)

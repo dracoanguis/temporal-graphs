@@ -196,12 +196,11 @@ theorem TemporalWalk.reachableBefore_fromEdgeSet {H : Subgraph G} {x y : V} {n m
   exact Subgraph.adj_fromEdgeSet hE (H.adj_sub (p.adj_of_mem_arcs a ha).1)
 
 /-- Extend a window-bounded walk of `Subgraph.fromEdgeSet G E` by the arc `y → z` of a subgraph
-`H` of `G`, when the edge `{y, z}` of `E` is at the time of this arc. -/
+`H` of `G`, at time `k`, when the edge `{y, z}` of `E` is at this time. -/
 theorem ReachableWithin.step_fromEdgeSet {H : Subgraph G} {E : Set (Sym2 V × ℕ)}
     {x y z : V} {a b k : ℕ} (h₀ : (Subgraph.fromEdgeSet G E).ReachableWithin x y a b)
-    (h₁ : H.arcTime y z = some k) (h₂ : (s(y, z), k) ∈ E) (h₃ : b ≤ k) :
+    (h₁ : H.Adj y z k) (h₂ : (s(y, z), k) ∈ E) (h₃ : b ≤ k) :
     (Subgraph.fromEdgeSet G E).ReachableWithin x z a k :=
-  h₀.step ⟨⟨_, h₂⟩, Sym2.mem_mk_left _ _, Sym2.mem_mk_right _ _, rfl,
-    H.adj_sub (adj_of_arcTime_eq_some h₁)⟩ h₃
+  h₀.step ⟨⟨_, h₂⟩, Sym2.mem_mk_left _ _, Sym2.mem_mk_right _ _, rfl, H.adj_sub h₁⟩ h₃
 
 end TemporalGraph

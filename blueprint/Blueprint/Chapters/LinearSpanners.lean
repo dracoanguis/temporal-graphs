@@ -55,15 +55,16 @@ Design choices that differ from the paper.
   its neighbors, and numbers the vertices along the order induced by a center
   (the $`s^*`- and $`t^*`-ordered labelings, Definition 7). Here
   $`\mathrm{pos}_v(u) \le \mathrm{pos}_v(w)` is the comparison of arc times
-  $`\mathrm{arcTime}(v, u) \le \mathrm{arcTime}(v, w)`, and “$`j \le i`” in a
+  $`\lambda(\{v, u\}) \le \lambda(\{v, w\})`, and “$`j \le i`” in a
   labeling centered at $`s^*` is a comparison of the times of the edges at
   $`s^*`. A cut at index $`k` (Definition 8) is given by a threshold time $`\tau`.
-* Absence is explicit. Arc times are `arcTime : Option ℕ`, and $`N_{\min}`,
-  $`N_{\max}` are the functions `earliestNeighborFn`,
-  `latestNeighborFn` with values in `Option V`, `none`
-  standing for the absence of an edge (no junk value). A comparison is thus
-  stated as “some value of $`\mathrm{arcTime}(u, v)` is at most some value of
-  $`\mathrm{arcTime}(u, w)`”, false when one of the arcs is absent.
+* Absence is explicit. Times are read on the adjacency itself: a comparison
+  is stated as “some time $`k` of an arc from $`u` to $`v` is at most some
+  time $`l` of an arc from $`u` to $`w`”, false when one of the arcs is
+  absent, and exact in any graph; in a simple graph each arc has one time.
+  $`N_{\min}`, $`N_{\max}` are the functions `earliestNeighborFn`,
+  `latestNeighborFn` with values in `Option V`, `none` standing for the
+  absence of a neighbor (no junk value).
 * A spanner of a bi-clique is a subgraph $`\mathrm{fromEdgeSet}(E)` of an edge
   set $`E` ({bpref "def:from-arc-edge-set"}[]), and a bi-clique spanner
   is a one-sided spanner ({bpref "def:spanner-from-to"}[]): there is no
@@ -76,7 +77,9 @@ Design choices that differ from the paper.
 time of an arc from $`u` to $`v`, the paper's $`\lambda(\{u, v\})`, as an
 `Option ℕ`: `none` when $`u` and $`v` are not adjacent, and
 `some n` for the time $`n` of the arc when $`G` is simple. When $`G` is
-moreover symmetric, $`\mathrm{arcTime}(u, v) = \mathrm{arcTime}(v, u)`.
+moreover symmetric, $`\mathrm{arcTime}(u, v) = \mathrm{arcTime}(v, u)`. The
+statements of this chapter do not go through `arcTime`: they read the times
+$`n` of the arcs, given by the adjacency `G.Adj u v n`, directly.
 :::
 
 :::definition "def:reachable-within" (uses := "def:reachable, def:temporal-walk") (lean := "TemporalGraph.ReachableWithin, TemporalGraph.ReachableBefore, TemporalGraph.ReachableWithin.step")
@@ -225,9 +228,9 @@ for $`v \in S`, at their times.
   and of the edges at $`s^*` (`incidentEdges`).
 * (ii) In the $`s^*`-ordered labeling, where the targets
   $`t_0, \ldots, t_{n-1}` are sorted by the times of their edges to $`s^*` and
-  $`s_i = N_{\min}(t_i)`, the index of a target $`u` is read on
-  $`\mathrm{arcTime}(s^*, u)` and that of a source $`v` on
-  $`\mathrm{arcTime}(s^*, N_{\min}(v))`. For a cut given by a threshold
+  $`s_i = N_{\min}(t_i)`, the index of a target $`u` is read on the time
+  of the edge $`\{s^*, u\}` and that of a source $`v` on the time of
+  $`\{s^*, N_{\min}(v)\}`. For a cut given by a threshold
   $`\tau`, a source $`v` is _$`m`-hop-cut-crossing_ if its index is above
   the cut ($`\tau` is less than the time of $`s^*N_{\min}(v)`) and some
   temporal walk of length at most $`m` goes from $`v` to a target
@@ -243,7 +246,7 @@ $`m`-hop-cut-crossing sources. There is a set $`E` of at most
 $`m\,|S_{\mathrm{cross}}|` edges of $`H` such that, in
 $`\mathrm{fromEdgeSet}(E \cup \mathrm{Star}(s^*))`, every source that is
 early (the time of $`s^*N_{\min}(v)` is at most $`\tau`) or crossing reaches
-every target $`u` such that some value of $`\mathrm{arcTime}(s^*, u)` is at least
+every target $`u` such that the edge $`\{s^*, u\}` has a time at least
 $`\tau`.
 :::
 
@@ -275,8 +278,8 @@ $`t_j \to s^* \to t` using only edges of $`\mathrm{Star}(s^*)`.
   $`t^*`, and the edge from each target to its extend source.
 
 “Last” is read on arc times at the center: $`u'` is no later than $`u` when
-some value of $`\mathrm{arcTime}(s^*, u')` is at most some value of
-$`\mathrm{arcTime}(s^*, u)`; at the center $`t^*`, ordered by decreasing time, the
+some time of the edge $`\{s^*, u'\}` is at most some time of the edge
+$`\{s^*, u\}`; at the center $`t^*`, ordered by decreasing time, the
 comparison is reversed.
 :::
 
@@ -299,7 +302,7 @@ the index, the definition of the extend target orders the edges at $`u`, and
 $`zu'` is the latest edge at $`z`. Part (b) uses the dual walk through $`t^*`.
 :::
 
-:::lemma_ "lem:ext-star-not-reachable" (uses := "lem:ext-star-reachable") (lean := "TemporalGraph.IsExtremallyMatched.arcTime_le_of_not_reachable_extStarSource, TemporalGraph.IsExtremallyMatched.arcTime_le_of_not_reachable_extStarTarget")
+:::lemma_ "lem:ext-star-not-reachable" (uses := "lem:ext-star-reachable") (lean := "TemporalGraph.IsExtremallyMatched.le_of_not_reachable_extStarSource, TemporalGraph.IsExtremallyMatched.le_of_not_reachable_extStarTarget")
 *Pairs not reached by extended stars — Baligács Lemma 14.* Let $`v \in S`, $`u' \in T`,
 $`x = N_{\min}(v)` and $`z = N_{\max}(u')`.
 
@@ -317,7 +320,7 @@ labeling. {bpref "lem:ext-star-reachable"}[] (a) then gives a walk from $`v`
 to $`u'`, a contradiction. Part (b) is dual.
 :::
 
-:::corollary "cor:ext-star-chain" (uses := "lem:ext-star-not-reachable") (lean := "TemporalGraph.IsExtremallyMatched.arcTime_chain_of_not_reachable")
+:::corollary "cor:ext-star-chain" (uses := "lem:ext-star-not-reachable") (lean := "TemporalGraph.IsExtremallyMatched.chain_of_not_reachable")
 *Ordering of unreached pairs — Baligács Corollary 15.* If
 $`\mathrm{Ext}(s^*) \cup \mathrm{Ext}(t^*)` does not reach $`u'` from $`v`,
 then the walk $`(N_{\min}(t^*), t^*, N_{\max}(u'), N_{\min}(v), s^*)` is
@@ -381,7 +384,7 @@ subgraph, $`s^* \in S`, and $`\tau` an arbitrary threshold time cutting the
 $`s^*`-ordered labeling. Some set $`E` of at most $`6|S|` edges of $`H`,
 containing $`E_{\min} \cup E_{\max}`, is such that in
 $`\mathrm{fromEdgeSet}(E)` either every source reaches every target above the
-cut (some value of $`\mathrm{arcTime}(s^*, u)` is at least $`\tau`), or every
+cut (the edge $`\{s^*, u\}` has a time at least $`\tau`), or every
 source below the cut (the time of $`s^*N_{\min}(v)` is at most $`\tau`) reaches
 every target.
 :::

@@ -37,9 +37,10 @@ whose values are `Option`s (`none` for a vertex without edges); on the bi-clique
   `|s| = |t|`.
 * `TemporalGraph.IsExtremallyMatched.induce`, `TemporalGraph.isExtremallyMatched_induce_empty` :
   restricting to the parts keeps the extremal matching; the empty bi-clique is extremally matched.
-* `TemporalGraph.IsExtremallyMatched.arcTime_le_of_earliestNeighborFn_eq_some`,
-  `TemporalGraph.IsExtremallyMatched.arcTime_le_of_latestNeighborFn_eq_some` : the matched edges
-  are the earliest (resp. latest) at both of their endpoints, read on `arcTime`.
+* `TemporalGraph.IsExtremallyMatched.le_of_earliestNeighborFn_eq_some`,
+  `TemporalGraph.IsExtremallyMatched.le_of_latestNeighborFn_eq_some` : the matched edges are the
+  earliest (resp. latest) at both of their endpoints (with `arcTime` versions
+  `arcTime_le_of_earliestNeighborFn_eq_some`, `arcTime_le_of_latestNeighborFn_eq_some`).
 * `TemporalGraph.IsExtremallyMatched.temporallyConnected` : a subgraph that contains the
   matchings `E_min`, `E_max` and in which `s` reaches `t` is temporally connected on `s ∪ t`
   (through SAND 2025's `temporallyConnected_of_reachable_of_matchings`).
@@ -248,16 +249,25 @@ section Times
 
 variable {y : V} {a b : ℕ}
 
+/-- A source has an arc to each target. -/
+theorem exists_adj_left (h : G.IsExtremallyMatched s t) (h₀ : v ∈ s) (h₁ : y ∈ t) :
+    ∃ n, G.Adj v y n :=
+  h.isBicliqueWith.adj_of_mem h₀ h₁
+
+/-- In a symmetric graph, a target has an arc to each source. -/
+theorem exists_adj_right [G.IsSymm] (h : G.IsExtremallyMatched s t) (h₀ : v ∈ t) (h₁ : y ∈ s) :
+    ∃ n, G.Adj v y n :=
+  (h.exists_adj_left h₁ h₀).imp fun _ h₂ ↦ h₂.symm
+
 /-- In a simple graph, a source has an arc, with a defined time, to each target. -/
 theorem exists_arcTime_eq_some_left (h : G.IsExtremallyMatched s t) (h₀ : G.IsSimple)
     (h₁ : v ∈ s) (h₂ : y ∈ t) : ∃ n, G.arcTime v y = some n :=
-  let ⟨n, h₃⟩ := h.isBicliqueWith.adj_of_mem h₁ h₂
-  ⟨n, arcTime_eq_some h₀ h₃⟩
+  (h.exists_adj_left h₁ h₂).imp fun _ ↦ arcTime_eq_some h₀
 
 /-- In a symmetric simple graph, a target has an arc, with a defined time, to each source. -/
 theorem exists_arcTime_eq_some_right [G.IsSymm] (h : G.IsExtremallyMatched s t)
     (h₀ : G.IsSimple) (h₁ : v ∈ t) (h₂ : y ∈ s) : ∃ n, G.arcTime v y = some n :=
-  (arcTime_comm h₀ v y).symm ▸ h.exists_arcTime_eq_some_left h₀ h₂ h₁
+  (h.exists_adj_right h₁ h₂).imp fun _ ↦ arcTime_eq_some h₀
 
 /-- In a simple proper graph, the earliest edge at a vertex `v` of the bi-clique, to
 `N_min v = w`, is also the earliest edge at `w`, and happens at the `arcTime` of the arc. -/
@@ -279,21 +289,39 @@ theorem exists_latestEdge_of_latestNeighborFn_eq_some (h : G.IsExtremallyMatched
   obtain rfl : w' = w := Option.some_inj.1 ((h₄.latestNeighborFn_eq_some h₁).symm.trans h₃)
   exact ⟨n, h₄.arcTime_eq_some h₀, h₄, h₅⟩
 
+/-- In a simple proper graph, the edge `{v, N_min v}`, at time `a`, is the earliest edge at
+`N_min v`: no arc leaving `N_min v` is earlier. -/
+theorem le_of_earliestNeighborFn_eq_some (h : G.IsExtremallyMatched s t) (h₀ : G.IsSimple)
+    (h₁ : G.IsProper) (h₂ : v ∈ s ∪ t) (h₃ : G.earliestNeighborFn v = some w) (h₄ : G.Adj v w a)
+    (h₅ : G.Adj w y b) : a ≤ b := by
+  obtain ⟨n, -, h₆, h₇⟩ := h.exists_earliestEdge_of_earliestNeighborFn_eq_some h₀ h₁ h₂ h₃
+  -- the arc `v w` has one time, `a = n`
+  exact h₀ h₄ h₆.1 ▸ h₇.2 y b h₅
+
+/-- In a simple proper graph, the edge `{v, N_max v}`, at time `a`, is the latest edge at
+`N_max v`: no arc leaving `N_max v` is later. -/
+theorem le_of_latestNeighborFn_eq_some (h : G.IsExtremallyMatched s t) (h₀ : G.IsSimple)
+    (h₁ : G.IsProper) (h₂ : v ∈ s ∪ t) (h₃ : G.latestNeighborFn v = some w) (h₄ : G.Adj v w a)
+    (h₅ : G.Adj w y b) : b ≤ a := by
+  obtain ⟨n, -, h₆, h₇⟩ := h.exists_latestEdge_of_latestNeighborFn_eq_some h₀ h₁ h₂ h₃
+  -- the arc `v w` has one time, `a = n`
+  exact h₀ h₄ h₆.1 ▸ h₇.2 y b h₅
+
 /-- The edge `{v, N_min v}`, at time `a`, is the earliest edge at `N_min v`: no arc leaving
 `N_min v` is earlier. -/
 theorem arcTime_le_of_earliestNeighborFn_eq_some (h : G.IsExtremallyMatched s t)
     (h₀ : G.IsSimple) (h₁ : G.IsProper) (h₂ : v ∈ s ∪ t) (h₃ : G.earliestNeighborFn v = some w)
-    (h₄ : G.arcTime v w = some a) (h₅ : G.arcTime w y = some b) : a ≤ b := by
-  obtain ⟨n, h₆, -, h₇⟩ := h.exists_earliestEdge_of_earliestNeighborFn_eq_some h₀ h₁ h₂ h₃
-  exact Option.some_inj.1 (h₄.symm.trans h₆) ▸ h₇.2 y b (adj_of_arcTime_eq_some h₅)
+    (h₄ : G.arcTime v w = some a) (h₅ : G.arcTime w y = some b) : a ≤ b :=
+  h.le_of_earliestNeighborFn_eq_some h₀ h₁ h₂ h₃ (adj_of_arcTime_eq_some h₄)
+    (adj_of_arcTime_eq_some h₅)
 
 /-- The edge `{v, N_max v}`, at time `a`, is the latest edge at `N_max v`: no arc leaving
 `N_max v` is later. -/
 theorem arcTime_le_of_latestNeighborFn_eq_some (h : G.IsExtremallyMatched s t)
     (h₀ : G.IsSimple) (h₁ : G.IsProper) (h₂ : v ∈ s ∪ t) (h₃ : G.latestNeighborFn v = some w)
-    (h₄ : G.arcTime v w = some a) (h₅ : G.arcTime w y = some b) : b ≤ a := by
-  obtain ⟨n, h₆, -, h₇⟩ := h.exists_latestEdge_of_latestNeighborFn_eq_some h₀ h₁ h₂ h₃
-  exact Option.some_inj.1 (h₄.symm.trans h₆) ▸ h₇.2 y b (adj_of_arcTime_eq_some h₅)
+    (h₄ : G.arcTime v w = some a) (h₅ : G.arcTime w y = some b) : b ≤ a :=
+  h.le_of_latestNeighborFn_eq_some h₀ h₁ h₂ h₃ (adj_of_arcTime_eq_some h₄)
+    (adj_of_arcTime_eq_some h₅)
 
 end Times
 

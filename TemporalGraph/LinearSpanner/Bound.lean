@@ -84,7 +84,7 @@ theorem exists_reachable_of_threshold (h : H.IsExtremallyMatched s t) (h₀ : H.
           (Subgraph.fromEdgeSet G E).Reachable x y) ∨
         (∀ x ∈ H.earlySources s c τ, ∀ y ∈ t,
           (Subgraph.fromEdgeSet G E).Reachable x y)) := by
-  by_cases hcross : ∀ v ∈ s, (∃ u ∈ H.earliestNeighborFn v, ∃ k ∈ H.arcTime c u, τ < k) →
+  by_cases hcross : ∀ v ∈ s, (∃ u ∈ H.earliestNeighborFn v, ∃ k, H.Adj c u k ∧ τ < k) →
       H.IsCutCrossing s c τ 3 v
   · -- (i) every upper source is a 3-hop crossing: Observation 9, then `Star(c)` and `E_max`
     obtain ⟨E, hEH, hEcard, hEreach⟩ := h.exists_reachable_simpleStar h₀ h₁ c τ 3
@@ -95,9 +95,9 @@ theorem exists_reachable_of_threshold (h : H.IsExtremallyMatched s t) (h₀ : H.
       have h₃ : E.ncard ≤ 3 * s.ncard :=
         hEcard.trans (Nat.mul_le_mul_left 3 (Set.ncard_le_ncard (Set.sep_subset _ _) h.finite_left))
       have h₄ : (H.simpleStar s t c).ncard ≤ s.ncard + t.ncard :=
-        (Set.ncard_union_le _ _).trans
-          (Nat.add_le_add (ncard_eMin_le h.finite_left) (ncard_incidentEdges_le h.finite_right))
-      have h₅ := ncard_eMax_le (G := H.toTemporalGraph) (A := s) h.finite_left
+        (Set.ncard_union_le _ _).trans (Nat.add_le_add (ncard_eMin_le h₀ h.finite_left)
+          (ncard_incidentEdges_le h₀ h.finite_right))
+      have h₅ := ncard_eMax_le (A := s) h₀ h.finite_left
       have h₆ := h.ncard_eq h₁
       calc (E ∪ H.simpleStar s t c ∪ H.eMax s).ncard
           ≤ E.ncard + (H.simpleStar s t c).ncard + (H.eMax s).ncard :=
@@ -112,8 +112,7 @@ theorem exists_reachable_of_threshold (h : H.IsExtremallyMatched s t) (h₀ : H.
       refine Subgraph.reachable_mono (Subgraph.fromEdgeSet_mono Set.subset_union_left)
         (hEreach x ?_ y hy)
       obtain ⟨w, hw⟩ := h.exists_earliestNeighborFn_eq_some (Or.inl hx)
-      obtain ⟨k, hk⟩ := h.exists_arcTime_eq_some_left h₀ h₂
-        (h.mem_right_of_earliestNeighborFn_eq_some hx hw)
+      obtain ⟨k, hk⟩ := h.exists_adj_left h₂ (h.mem_right_of_earliestNeighborFn_eq_some hx hw)
       by_cases hτ : k ≤ τ
       · exact Or.inl ⟨hx, w, hw, k, hk, hτ⟩
       · exact Or.inr ⟨hx, hcross x hx ⟨w, hw, k, hk, Nat.lt_of_not_le hτ⟩⟩
@@ -123,7 +122,7 @@ theorem exists_reachable_of_threshold (h : H.IsExtremallyMatched s t) (h₀ : H.
     have hw' := Option.mem_def.1 hw
     have hreach := (h.isCutCrossing_or_reachable h₀ h₁ h₂ τ hv hw' hτ).resolve_left hncross
     refine ⟨_, Set.union_subset extStarSource_subset_edgeSet extStarTarget_subset_edgeSet,
-      h.ncard_extStar_union_le h₁, ?_, Or.inr hreach⟩
+      h.ncard_extStar_union_le h₀ h₁, ?_, Or.inr hreach⟩
     -- `E_min ∪ E_max ⊆ Ext(c)` by definition
     exact (Set.subset_union_left.trans Set.subset_union_left).trans Set.subset_union_left
 
@@ -225,15 +224,10 @@ theorem exists_isSpannerFromTo_eMin_union_eMax_subset (h : H.IsExtremallyMatched
     have hpos : 0 < n := hn ▸ (Set.ncard_pos h.finite_left).2 ⟨c, hc⟩
     have hst : t.ncard = n := hn ▸ (h.ncard_eq h₁).symm
     -- the times of the edges at `c` exist, for every target
-    choose! f hf using fun u (hu : u ∈ t) ↦ h.exists_arcTime_eq_some_left h₀ hc hu
-    -- a property of the time of the edge `{c, u}` is a property of `f u`
-    have hval : ∀ u ∈ t, ∀ P : ℕ → Prop, (∃ k ∈ H.arcTime c u, P k) ↔ P (f u) := by
-      intro u hu P
-      constructor
-      · rintro ⟨k, hk, hP⟩
-        rw [Option.mem_def, hf u hu, Option.some_inj] at hk
-        exact hk ▸ hP
-      · exact fun hP ↦ ⟨f u, Option.mem_def.2 (hf u hu), hP⟩
+    choose! f hf using fun u (hu : u ∈ t) ↦ h.exists_adj_left hc hu
+    -- a property of the time of the edge `{c, u}` is a property of `f u`, its only time
+    have hval : ∀ u ∈ t, ∀ P : ℕ → Prop, (∃ k, H.Adj c u k ∧ P k) ↔ P (f u) :=
+      fun u hu _ ↦ ⟨fun ⟨_, hk, hP⟩ ↦ h₀ hk (hf u hu) ▸ hP, fun hP ↦ ⟨f u, hf u hu, hP⟩⟩
     -- cut at a median threshold `τ`, and apply Lemma 17
     obtain ⟨τ, hlow, hhigh⟩ := Set.exists_median_threshold f h.finite_right
     obtain ⟨E, hEH, hEcard, hEM, hcov⟩ := h.exists_reachable_of_threshold h₀ h₁ hc τ
@@ -252,20 +246,19 @@ theorem exists_isSpannerFromTo_eMin_union_eMax_subset (h : H.IsExtremallyMatched
       · exact Or.inr ⟨hx, hy, Nat.lt_of_not_le hτ⟩
     · -- (ii) `fromEdgeSet E` reaches every target from the early sources: recurse on `(s₁, t)`,
       -- where `s₁` is the set of the upper sources, matched by `N_min` with the late targets
-      have ht₁ : {u ∈ t | ∃ k ∈ H.arcTime c u, τ < k} = {u ∈ t | τ < f u} :=
+      have ht₁ : {u ∈ t | ∃ k, H.Adj c u k ∧ τ < k} = {u ∈ t | τ < f u} :=
         Set.ext fun u ↦ and_congr_right fun hu ↦ hval u hu (τ < ·)
       -- `|s₁|` is the number of the targets above `τ`, which is at most `n / 2`
       have hs₁ : (H.upperSources s c τ).ncard =
           {u ∈ t | τ < f u}.ncard :=
-        ht₁ ▸ h.ncard_setOf_earliestNeighborFn h₁ (fun u ↦ ∃ k ∈ H.arcTime c u, τ < k)
+        ht₁ ▸ h.ncard_setOf_earliestNeighborFn h₁ (fun u ↦ ∃ k, H.Adj c u k ∧ τ < k)
       -- `hs₁` and `hhigh` : `|s₁| = |{u ∈ t | τ < f u}| ≤ |t| / 2`, and `|t| = n`
       refine hrecurse (H.upperSources s c τ) t
         (Set.sep_subset _ _) subset_rfl (Or.inl (by omega)) ?_
       intro x hx y hy
       -- a source is early, or upper
       obtain ⟨w, hw⟩ := h.exists_earliestNeighborFn_eq_some (Or.inl hx)
-      obtain ⟨k, hk⟩ := h.exists_arcTime_eq_some_left h₀ hc
-        (h.mem_right_of_earliestNeighborFn_eq_some hx hw)
+      obtain ⟨k, hk⟩ := h.exists_adj_left hc (h.mem_right_of_earliestNeighborFn_eq_some hx hw)
       by_cases hτ : k ≤ τ
       · exact Or.inl (hcov x ⟨hx, w, hw, k, hk, hτ⟩ y hy)
       · exact Or.inr ⟨⟨hx, w, hw, k, hk, Nat.lt_of_not_le hτ⟩, hy⟩
@@ -288,11 +281,11 @@ theorem exists_isSpannerFromTo_temporallyConnected (h : H.IsExtremallyMatched s 
     (fun v hv w n he ↦ ?_) fun x hx y hy ↦
       hspan.2 x hx y hy (Subgraph.reachable_of_isBicliqueWith h.isBicliqueWith hx hy), hcard⟩
   · -- the earliest edge at `v` is in `E_min`
-    exact K.mem_edgeSet.1 (hM (Or.inl (h.mem_eMin_of_mem_union h₀ h₁ hv
-      (he.earliestNeighborFn_eq_some h₁) (he.arcTime_eq_some h₀))))
+    exact K.mem_edgeSet.1 (hM (Or.inl (h.mem_eMin_of_mem_union h₁ hv
+      (he.earliestNeighborFn_eq_some h₁) he.1)))
   · -- the latest edge at `v` is in `E_max`
-    exact K.mem_edgeSet.1 (hM (Or.inr (h.mem_eMax_of_mem_union h₀ h₁ hv
-      (he.latestNeighborFn_eq_some h₁) (he.arcTime_eq_some h₀))))
+    exact K.mem_edgeSet.1 (hM (Or.inr (h.mem_eMax_of_mem_union h₁ hv
+      (he.latestNeighborFn_eq_some h₁) he.1)))
 
 @[deprecated (since := "2026-10-29")]
 alias exists_isSpannerFromTo := exists_isSpannerFromTo_temporallyConnected

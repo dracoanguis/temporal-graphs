@@ -190,6 +190,16 @@ utilisaient vraiment).
   `Option.get!`/`Option.getD` (valeur par défaut = valeur valide). Ne jamais comparer avec l'ordre
   d'`Option` (`none` minimal, `none ≤ some τ`) : écrire `∃ n ∈ G.arcTime u v, n ≤ τ` (faux sur
   `none`).
+- **Les énoncés lisent les temps sur `Adj`, pas sur `arcTime`** (choix du 2026-11-10). Une
+  comparaison de temps s'écrit `∃ k, G.Adj u v k ∧ k ≤ τ` (ou `∃ k, G.Adj x z k ∧ ∃ l, G.Adj x c l ∧
+  k ≤ l`) : exacte dans tout graphe, sans `choose` (dans un graphe non simple, `arcTime` choisit un
+  temps arbitraire), symétrique sous le seul `[IsSymm]` (`h.symm`, au lieu d'`arcTime_comm`, qui
+  demande `IsSimple`). L'unicité d'un temps vient de `IsSimple` (`h₀ hk hk' : k = k'`). Prix : les
+  comptages « au plus une arête par sommet » (`ncard_eMin_le`, `ncard_incidentEdges_le`,
+  `ncard_sourceExtendEdges_le`, `ncard_extStar_union_le`) demandent `IsSimple`. Les fonctions de
+  voisins restent à valeurs dans `Option` : leurs bijections (`Set.BijOn`, `InjOn`, `ncard_image`)
+  demandent une vraie fonction. `arcTime` et son API restent dans `Basic.lean`, comme API de
+  bibliothèque.
 - **Renommage ultérieur (commit `acb993a`)** : le constructeur à une seule orientation, sans
   aucune hypothèse de symétrie, s'appelle maintenant `addArc` (l'ancien `addEdge` générique), et
   le constructeur à deux orientations qui demande `[G.IsSymm]` s'appelle maintenant `addEdge`
@@ -405,7 +415,7 @@ une version publiée paraît).
 
 | Baligács 2026 (arXiv v1) | Code | Fichier |
 |---|---|---|
-| §2.1, étiquettes λ | `arcTime` (`Option ℕ`) | `Basic.lean` |
+| §2.1, étiquettes λ | les temps `n` de `G.Adj u v n` dans les énoncés ; `arcTime` (`Option ℕ`) comme API | `Basic.lean` |
 | `N_min` / `N_max` | `earliestNeighborFn` / `latestNeighborFn` (`V → Option V`) | `Dismountability/Basic.lean` |
 | §2.3, source / cible dismountable | `SourceDismountable` / `OneSidedDismountable` ; étapes `sourceDismountability`, `oneSidedDismountability` ; `isSpannerFromTo_of_sourceDismount`, `isSpannerFromTo_of_targetDismount` | `Dismountability/OneSided.lean`, `OneSidedBound.lean` |
 | §2.3, bi-clique extremally matched | `IsExtremallyMatched` | `LinearSpanner/ExtremallyMatched.lean` |
@@ -415,8 +425,8 @@ une version publiée paraît).
 | Observation 9 | `IsExtremallyMatched.exists_reachable_simpleStar` | `LinearSpanner/SimpleStar.lean` |
 | Définition 12 | `IsSourceExtendTarget`, `IsTargetExtendSource`, `extStarSource`, `extStarTarget` | `LinearSpanner/Stars.lean` |
 | Lemme 13 (a), (b) | `IsExtremallyMatched.reachable_extStarSource`, `reachable_extStarTarget` | `LinearSpanner/ExtendedStar.lean` |
-| Lemme 14 (a), (b) | `IsExtremallyMatched.arcTime_le_of_not_reachable_extStarSource`, `…Target` | `LinearSpanner/ExtendedStar.lean` |
-| Corollaire 15 | `IsExtremallyMatched.arcTime_chain_of_not_reachable` | `LinearSpanner/ExtendedStar.lean` |
+| Lemme 14 (a), (b) | `IsExtremallyMatched.le_of_not_reachable_extStarSource`, `…Target` | `LinearSpanner/ExtendedStar.lean` |
+| Corollaire 15 | `IsExtremallyMatched.chain_of_not_reachable` | `LinearSpanner/ExtendedStar.lean` |
 | Lemme 16 | `IsExtremallyMatched.isCutCrossing_or_reachable` | `LinearSpanner/ExtendedStar.lean` |
 | preuve du Lemme 17, `\|Ext ∪ Ext\| ≤ 6n` | `IsExtremallyMatched.ncard_extStar_union_le` | `LinearSpanner/ExtendedStar.lean` |
 | Lemme 17 (forme à seuil) | `IsExtremallyMatched.exists_reachable_of_threshold` | `LinearSpanner/Bound.lean` |

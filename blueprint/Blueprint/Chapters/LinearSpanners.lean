@@ -353,7 +353,7 @@ the edge $`\{t_j, s^*\}`, so $`v` is $`3`-hop-cut-crossing.
 :::
 
 :::lemma_ "lem:ext-star-ncard" (uses := "def:extended-star") (lean := "TemporalGraph.IsExtremallyMatched.ncard_extStar_union_le")
-*Size of two extended stars — Baligács, proof of Lemma 17.*
+*Size of two extended stars — Baligács, proof of Lemma 17.* In a simple graph,
 $`|\mathrm{Ext}(s^*) \cup \mathrm{Ext}(t^*)| \le 6n`, where $`n = |S|`.
 :::
 
@@ -361,7 +361,8 @@ $`|\mathrm{Ext}(s^*) \cup \mathrm{Ext}(t^*)| \le 6n`, where $`n = |S|`.
 The union consists of six groups of at most $`n` edges each: $`E_{\min}`,
 $`E_{\max}`, the edges at $`s^*`, the edges at $`t^*`, at most one extend edge
 per source and at most one per target (extend targets and sources are
-unique, by properness).
+unique, by properness). Simplicity gives each of these edges a single time,
+so that each pair of endpoints is counted once.
 :::
 
 :::lemma_ "lem:exists-threshold" (lean := "Set.exists_median_threshold")

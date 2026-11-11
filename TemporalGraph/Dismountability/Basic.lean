@@ -221,9 +221,6 @@ lemma vminus_subset_verts {H : Subgraph G} : H.vminus ⊆ H.verts := by
   intro x ⟨y, n, h, _⟩
   exact H.edge_vert' h
 
-@[deprecated (since := "2026-10-29")]
-alias vminus_sub_verts := vminus_subset_verts
-
 instance {H : Subgraph G} [h : Finite H.verts] : Finite H.vminus :=
   Set.Finite.subset (H.verts.finite_coe_iff.mp h) vminus_subset_verts
 
@@ -241,9 +238,6 @@ def vplus (H : Subgraph G) : Set V := {x : V | ∃ y : V, H.LatestNeighbor y x}
 lemma vplus_subset_verts {H : Subgraph G} : H.vplus ⊆ H.verts := by
   intro x ⟨y, n, h, _⟩
   exact H.edge_vert' h
-
-@[deprecated (since := "2026-10-29")]
-alias vplus_sub_verts := vplus_subset_verts
 
 instance {H : Subgraph G} [h : Finite H.verts] : Finite H.vplus :=
   Set.Finite.subset (H.verts.finite_coe_iff.mp h) vplus_subset_verts
@@ -263,9 +257,6 @@ lemma vzero_subset_verts {H : Subgraph G} : H.vzero ⊆ H.verts := by
   intro x ⟨h, _⟩
   exact h
 
-@[deprecated (since := "2026-10-29")]
-alias vzero_sub_verts := vzero_subset_verts
-
 instance {H : Subgraph G} [h : Finite H.verts] : Finite H.vzero :=
   Set.Finite.subset (H.verts.finite_coe_iff.mp h) vzero_subset_verts
 
@@ -279,16 +270,9 @@ lemma notMem_vminus_and_notMem_vplus_of_mem_vzero {H : Subgraph G} {x : V} (h₀
     x ∉ H.vminus ∧ x ∉ H.vplus := by
   simpa only [vzero, Set.mem_sdiff, Set.mem_union, not_or] using h₀.2
 
-@[deprecated notMem_vminus_and_notMem_vplus_of_mem_vzero (since := "2026-10-29")]
-lemma vzero_mem {H : Subgraph G} : ∀ x : V, x ∈ H.vzero → x ∉ H.vminus ∧ x ∉ H.vplus :=
-  fun _ h₀ ↦ notMem_vminus_and_notMem_vplus_of_mem_vzero h₀
-
 /-- `vminus`, `vplus` and `vzero` cover `H.verts`. -/
 lemma vminus_union_vplus_union_vzero {H : Subgraph G} : H.vminus ∪ H.vplus ∪ H.vzero = H.verts := by
   simp [vzero]
-
-@[deprecated (since := "2026-10-29")]
-alias vunion_eq_univ := vminus_union_vplus_union_vzero
 
 /-- `H` is a dismountable clique iff it is a clique and `H.vplus` and `H.vminus` intersect. -/
 lemma nonempty_vplus_inter_vminus_iff_dismountable (H : Subgraph G) :
@@ -402,10 +386,6 @@ lemma exists_earliestEdge_of_isCliqueSubgraph {H : Subgraph G}
   have his₁ : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ x
   exact exists_earliestEdge_of_incidenceSet his₀ his₁
 
-@[deprecated (since := "2026-10-29")]
-alias earliestEdge_exists_of_finite_nontrivial_simple_clique :=
-  exists_earliestEdge_of_isCliqueSubgraph
-
 /-- Every vertex of a finite, nontrivial, simple clique subgraph has a latest incident
 edge. -/
 lemma exists_latestEdge_of_isCliqueSubgraph {H : Subgraph G}
@@ -417,9 +397,6 @@ lemma exists_latestEdge_of_isCliqueSubgraph {H : Subgraph G}
     nonempty_incidenceSet_of_nontrivial_clique h₁ x hx
   have his₁ : (H.incidenceSet x).Finite := finite_incidenceSet_of_finite_simple h₀ x
   exact exists_latestEdge_of_incidenceSet his₀ his₁
-
-@[deprecated (since := "2026-10-29")]
-alias latestEdge_exists_of_finite_nontrivial_simple_clique := exists_latestEdge_of_isCliqueSubgraph
 
 /-- Every vertex of a finite, nontrivial, simple, proper clique subgraph has a unique earliest
 incident edge. -/
@@ -437,10 +414,6 @@ lemma existsUnique_earliestEdge_of_isCliqueSubgraph {H : Subgraph G}
     -- both are earliest edges at `x`, so `n = m`; properness then gives `z = y`
     grind only [= IsProper.eq_1, = EarliestEdge.eq_1]
 
-@[deprecated (since := "2026-10-29")]
-alias earliestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique :=
-  existsUnique_earliestEdge_of_isCliqueSubgraph
-
 /-- Every vertex of a finite, nontrivial, simple, proper clique subgraph has a unique latest
 incident edge. -/
 lemma existsUnique_latestEdge_of_isCliqueSubgraph {H : Subgraph G}
@@ -456,10 +429,6 @@ lemma existsUnique_latestEdge_of_isCliqueSubgraph {H : Subgraph G}
     simp only [Prod.mk.injEq]
     -- both are latest edges at `x`, so `n = m`; properness then gives `z = y`
     grind only [= IsProper.eq_1, = LatestEdge.eq_1]
-
-@[deprecated (since := "2026-10-29")]
-alias latestEdge_existsUnique_of_finite_nontrivial_simple_proper_clique :=
-  existsUnique_latestEdge_of_isCliqueSubgraph
 
 /-- Every vertex of `H.verts`, in a finite, nontrivial, simple, proper clique subgraph, has a
 unique earliest neighbor. -/
@@ -796,10 +765,6 @@ lemma temporallyConnectedSubgraph_between_of_not_twoHopDismountable {H : Subgrap
     have hKl : K.toTemporalGraph.LatestEdge a y n :=
       ⟨⟨hal.1, Or.inl ⟨ha, hyp⟩⟩, fun z j hz ↦ hal.2 z j hz.1⟩
     exact TemporalGraph.reachable_of_latestEdge hKl x (hdirect a x ha hxp).2
-
-@[deprecated (since := "2026-10-29")]
-alias between_TC_of_not_twoHopDismountable :=
-  temporallyConnectedSubgraph_between_of_not_twoHopDismountable
 
 end Biclique
 

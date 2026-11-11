@@ -296,9 +296,6 @@ lemma temporallyConnected_of_earliestEdge_matching {G : TemporalGraph V} [G.IsSy
   obtain ⟨v, hv, n, hvn⟩ := h₀ a ha
   exact reachable_of_earliestEdge hvn b (h₁ v hv b hb)
 
-@[deprecated (since := "2026-10-29")]
-alias reachable_of_earliestEdge_matching := temporallyConnected_of_earliestEdge_matching
-
 /-- If `s` reaches `t` and every vertex of `s` ends a latest edge from a vertex of `t`, any two
 vertices of `s` reach each other. -/
 lemma temporallyConnected_of_latestEdge_matching {G : TemporalGraph V} [G.IsSymm] {s t : Set V}
@@ -308,9 +305,6 @@ lemma temporallyConnected_of_latestEdge_matching {G : TemporalGraph V} [G.IsSymm
   intro x hx y hy
   obtain ⟨b, hb, n, hbn⟩ := h₀ y hy
   exact reachable_of_latestEdge hbn x (h₁ x hx b hb)
-
-@[deprecated (since := "2026-10-29")]
-alias reachable_of_latestEdge_matching := temporallyConnected_of_latestEdge_matching
 
 /-- SAND 2025, §4.1 (after Corollary 4.1): if every vertex of `t` (playing `V⁻`) is the endpoint
 of the earliest edge of a vertex of `s` (the matching `M⁻`), every vertex of `s` (playing `V⁺`) is

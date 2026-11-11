@@ -227,9 +227,6 @@ lemma isBicliqueWith_deleteVerts_target {H : Subgraph G} {s t : Set V} {x : V}
   have h := isBicliqueWith_deleteVerts (u := ({x} : Set V)) h₀
   rwa [Set.sdiff_singleton_eq_self h₁] at h
 
-@[deprecated (since := "2026-10-29")]
-alias isBicliqueWith_deleteVerts_singleton := isBicliqueWith_deleteVerts_target
-
 /-- Removing a source vertex `x` (not in the target) from a bi-clique on `s`/`t` leaves a
 bi-clique on `s \ {x}`/`t`. -/
 lemma isBicliqueWith_deleteVerts_source {H : Subgraph G} {s t : Set V} {x : V}
@@ -237,9 +234,6 @@ lemma isBicliqueWith_deleteVerts_source {H : Subgraph G} {s t : Set V} {x : V}
     (H.deleteVerts {x}).IsBicliqueWith (s \ {x}) t := by
   have h := isBicliqueWith_deleteVerts (u := ({x} : Set V)) h₀
   rwa [Set.sdiff_singleton_eq_self h₁] at h
-
-@[deprecated (since := "2026-10-29")]
-alias isBicliqueWith_deleteVerts_singleton_left := isBicliqueWith_deleteVerts_source
 
 /-- SAND 2025, §4.1 (dismount step): the subproblem left by dismounting `x` is still simple, a
 bi-clique on `s`/`t \ {x}`, and `t \ {x}` is one vertex smaller than `t`. -/
@@ -250,9 +244,6 @@ lemma deleteVerts_subproblem_target {H : Subgraph G} {s t : Set V} {x : V} (h₀
   ⟨h₀.mono (toTemporalGraph_le deleteVerts_le), isBicliqueWith_deleteVerts_target h₁ h₃,
     Set.ncard_sdiff_singleton_of_mem h₂⟩
 
-@[deprecated (since := "2026-10-29")]
-alias deleteVerts_subproblem := deleteVerts_subproblem_target
-
 /-- Baligács 2026, §2.3 (dismount step, source case): the subproblem left by dismounting the
 source `x` is still simple, a bi-clique on `s \ {x}`/`t`, and `s \ {x}` is one vertex smaller
 than `s`. -/
@@ -262,9 +253,6 @@ lemma deleteVerts_subproblem_source {H : Subgraph G} {s t : Set V} {x : V} (h₀
       (s \ {x}).ncard = s.ncard - 1 :=
   ⟨h₀.mono (toTemporalGraph_le deleteVerts_le), isBicliqueWith_deleteVerts_source h₁ h₃,
     Set.ncard_sdiff_singleton_of_mem h₂⟩
-
-@[deprecated (since := "2026-10-29")]
-alias deleteVerts_subproblem_left := deleteVerts_subproblem_source
 
 /-- SAND 2025, §4.1 (dismount step): if `x` is one-sided dismountable in the bi-clique on `s`/`t`
 and `H''` is a symmetric one-sided spanner of `H` without `x` from `s` to `t \ {x}`, then putting
@@ -287,9 +275,6 @@ lemma isSpannerFromTo_of_targetDismount {H H'' : Subgraph G} [G.IsSymm] [H.IsSym
   let M := H''.oneSidedMount hx'v hyv x (H.adj_sub hlatest.1).symm (H.adj_sub hadj)
   exact ⟨M, inferInstance, oneSidedDismountability h₀ hx hx' hne hlatest hadj hle h₂ hx'v hyv,
     ncard_edgeSet_oneSidedMount_le⟩
-
-@[deprecated (since := "2026-10-29")]
-alias isSpannerFromTo_of_dismount := isSpannerFromTo_of_targetDismount
 
 /-- Baligács 2026, §2.3 (dismount step, source case): if `x` is a dismountable source in the
 bi-clique on `s`/`t` and `H''` is a symmetric one-sided spanner of `H` without `x` from `s \ {x}`

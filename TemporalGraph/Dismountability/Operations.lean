@@ -631,10 +631,6 @@ theorem exists_isSpannerOf_ncard_le_of_forall_not_twoHopDismountable {H : Subgra
       have hbase := h₁ h₂ h₃ h₄ hd
       rwa [hn] at hbase
 
-@[deprecated (since := "2026-10-29")]
-alias exists_isSpannerOf_ncard_le_of_not_twoHopDismountable :=
-  exists_isSpannerOf_ncard_le_of_forall_not_twoHopDismountable
-
 end CliqueInduction
 
 end Subgraph

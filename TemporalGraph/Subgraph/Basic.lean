@@ -333,9 +333,6 @@ lemma exists_earliestEdge_of_incidenceSet {x : V} {H : Subgraph G}
   refine ⟨hin, fun z m hadj ↦ ?_⟩
   simpa using hmin ⟨⟨z, m⟩, hadj⟩
 
-@[deprecated (since := "2026-10-29")]
-alias earliestEdge_exists_of_nonempty_finite_incidenceSet := exists_earliestEdge_of_incidenceSet
-
 /-- A vertex with a nonempty, finite incidence set has a latest edge. -/
 lemma exists_latestEdge_of_incidenceSet {x : V} {H : Subgraph G}
     (h₀ : (H.incidenceSet x).Nonempty)
@@ -347,9 +344,6 @@ lemma exists_latestEdge_of_incidenceSet {x : V} {H : Subgraph G}
   -- the chosen pair is an adjacency, and minimal (resp. maximal) for the time among all of them
   refine ⟨hin, fun z m hadj ↦ ?_⟩
   simpa using hmax ⟨⟨z, m⟩, hadj⟩
-
-@[deprecated (since := "2026-10-29")]
-alias latestEdge_exists_of_nonempty_finite_incidenceSet := exists_latestEdge_of_incidenceSet
 
 end incidenceSet
 

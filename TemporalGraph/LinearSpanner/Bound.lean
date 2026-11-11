@@ -126,9 +126,6 @@ theorem exists_reachable_of_threshold (h : H.IsExtremallyMatched s t) (h₀ : H.
     -- `E_min ∪ E_max ⊆ Ext(c)` by definition
     exact (Set.subset_union_left.trans Set.subset_union_left).trans Set.subset_union_left
 
-@[deprecated (since := "2026-10-29")]
-alias exists_reachable_half := exists_reachable_of_threshold
-
 end Cut
 
 section Recursion
@@ -263,9 +260,6 @@ theorem exists_isSpannerFromTo_eMin_union_eMax_subset (h : H.IsExtremallyMatched
       · exact Or.inl (hcov x ⟨hx, w, hw, k, hk, hτ⟩ y hy)
       · exact Or.inr ⟨⟨hx, w, hw, k, hk, Nat.lt_of_not_le hτ⟩, hy⟩
 
-@[deprecated (since := "2026-10-29")]
-alias exists_isSpannerFromTo_aux := exists_isSpannerFromTo_eMin_union_eMax_subset
-
 /-- Baligács 2026, Theorem 18 (with Theorem 6): an extremally matched finite simple proper
 bi-clique `H` with `n = |s| = |t|` has a symmetric one-sided spanner from `s` to `t` with at most
 `14 n` edges, which is moreover temporally connected on `s ∪ t`. It contains `E_min ∪ E_max`
@@ -286,9 +280,6 @@ theorem exists_isSpannerFromTo_temporallyConnected (h : H.IsExtremallyMatched s 
   · -- the latest edge at `v` is in `E_max`
     exact K.mem_edgeSet.1 (hM (Or.inr (h.mem_eMax_of_mem_union h₁ hv
       (he.latestNeighborFn_eq_some h₁) he.1)))
-
-@[deprecated (since := "2026-10-29")]
-alias exists_isSpannerFromTo := exists_isSpannerFromTo_temporallyConnected
 
 end Recursion
 

@@ -433,15 +433,6 @@ theorem isCutCrossing_or_reachable (h : H.IsExtremallyMatched s t) (h₀ : H.IsS
   obtain rfl : a₂ = b₁ := h₀ ha₂ hb₁
   exact hzx
 
-@[deprecated (since := "2026-11-10")]
-alias arcTime_le_of_not_reachable_extStarSource := le_of_not_reachable_extStarSource
-
-@[deprecated (since := "2026-11-10")]
-alias arcTime_le_of_not_reachable_extStarTarget := le_of_not_reachable_extStarTarget
-
-@[deprecated (since := "2026-11-10")]
-alias arcTime_chain_of_not_reachable := chain_of_not_reachable
-
 end NotReachable
 
 end IsExtremallyMatched

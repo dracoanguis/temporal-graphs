@@ -121,20 +121,3 @@ lemma ncard_le_four {α : Type*} (a b c d : α) : ({a, b, c, d} : Set α).ncard 
   omega
 
 end Set
-
-/-! ### Deprecated aliases -/
-
-@[deprecated (since := "2026-10-29")]
-alias TemporalGraph.exists_threshold := Set.exists_median_threshold
-
-@[deprecated (since := "2026-10-29")]
-alias TemporalGraph.finite_and_ncard_le_of_functional := Set.finite_and_ncard_le_of_functional
-
-@[deprecated (since := "2026-10-29")]
-alias TemporalGraph.Subgraph.exists_ncard_halves := Set.exists_subset_ncard_halves
-
-@[deprecated (since := "2026-10-29")]
-alias TemporalGraph.Subgraph.ncard_pair_le := Set.ncard_pair_le
-
-@[deprecated (since := "2026-10-29")]
-alias TemporalGraph.Subgraph.ncard_le_four := Set.ncard_le_four

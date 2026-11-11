@@ -221,9 +221,6 @@ lemma earliestEdge_of_le {H H' : Subgraph G} (h₀ : H ≤ H') (h₁ : H'.Earlie
     H.EarliestEdge x y n :=
   ⟨h₂, fun _ _ h ↦ h₁.right _ _ (h₀.right h)⟩
 
-@[deprecated (since := "2026-10-29")]
-alias earliestEdge_of_ge := earliestEdge_of_le
-
 /-- A latest edge of `H` is a latest edge of its subtype view `H.coe`. -/
 lemma coe_latestEdge {H : Subgraph G} {x y : H.verts} {n : ℕ}
     (h₀ : H.LatestEdge x y n) :
@@ -249,9 +246,6 @@ lemma latestEdge_of_le {H H' : Subgraph G} (h₀ : H ≤ H') (h₁ : H'.LatestEd
     (h₂ : H.Adj x y n) :
     H.LatestEdge x y n :=
   ⟨h₂, fun _ _ h ↦ h₁.right _ _ (h₀.right h)⟩
-
-@[deprecated (since := "2026-10-29")]
-alias latestEdge_of_ge := latestEdge_of_le
 
 end EdgeProps
 

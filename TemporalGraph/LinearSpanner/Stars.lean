@@ -292,9 +292,6 @@ theorem IsExtremallyMatched.mem_eMin_of_mem_union (h : G.IsExtremallyMatched s t
     exact mem_eMin (h.mem_left_of_earliestNeighborFn_eq_some h₁ h₂)
       (h.earliestNeighborFn_eq_some_symm h₀ (Or.inr h₁) h₂) h₃.symm
 
-@[deprecated (since := "2026-10-29")]
-alias IsExtremallyMatched.mem_eMin := IsExtremallyMatched.mem_eMin_of_mem_union
-
 /-- `E_max` also contains the latest edges at the targets. -/
 theorem IsExtremallyMatched.mem_eMax_of_mem_union (h : G.IsExtremallyMatched s t)
     (h₀ : G.IsProper) (h₁ : v ∈ s ∪ t) (h₂ : G.latestNeighborFn v = some w) (h₃ : G.Adj v w n) :
@@ -305,9 +302,6 @@ theorem IsExtremallyMatched.mem_eMax_of_mem_union (h : G.IsExtremallyMatched s t
     rw [Sym2.eq_swap]
     exact mem_eMax (h.mem_left_of_latestNeighborFn_eq_some h₁ h₂)
       (h.latestNeighborFn_eq_some_symm h₀ (Or.inr h₁) h₂) h₃.symm
-
-@[deprecated (since := "2026-10-29")]
-alias IsExtremallyMatched.mem_eMax := IsExtremallyMatched.mem_eMax_of_mem_union
 
 end ExtremallyMatched
 

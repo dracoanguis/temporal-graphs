@@ -116,9 +116,6 @@ lemma reachable_mono {H H' : Subgraph G} (h : H ≤ H') {x y : V} :
     H.Reachable x y → H'.Reachable x y :=
   Reachable.mono (toTemporalGraph_le h)
 
-@[deprecated (since := "2026-10-29")]
-alias reachable_of_le_reachable := reachable_mono
-
 /-- If `H` is spanning and temporally connected on its own vertices, then `H`'s own adjacency
 (`H.toTemporalGraph`) is temporally connected on all of `V`: spanning turns the quantification
 over `H.verts` into one over `Set.univ`. -/

@@ -2,10 +2,9 @@
 
 A Lean 4 + [Mathlib](https://github.com/leanprover-community/mathlib4) library on **temporal
 graphs** — graphs whose edges are labelled by the (natural-number) times at which they are
-available. It was started as part of the master's thesis *Temporal Graphs in Lean: A
+available. It is developed as part of the master's thesis *Temporal Graphs in Lean: A
 beginner's journey to assisted formal proof* (Ethan Bargaud-Arm, Université de Genève,
-supervised by Pr. Karine Altisen and Pr. Arnaud Casteigts), and later extended to the full
-`O(n log n)` result.
+supervised by Pr. Karine Altisen and Pr. Arnaud Casteigts).
 
 Unlike in static graphs, reachability in a temporal graph is defined by the existence of a
 *walk* whose edge times are non-decreasing, which makes classical connectivity results fail to
@@ -20,6 +19,13 @@ excluding 1- and 2-hop dismountability reduces temporal cliques to bi-cliques, w
 one-sided argument concludes. This library follows the SAND 2025 proof, its main reference, and
 formalizes it in full: the clique-side reduction (SAND §§2–3) and the one-sided conclusion
 (SAND §4.1), up to the `O(n log n)` spanner bound.
+
+The library also formalizes the sharper result of Júlia Baligács (*Temporal Cliques Admit Linear
+Spanners*, arXiv:2606.05156, 2026): every finite simple proper temporal clique on `n` vertices has
+a spanner with at most `7n` edges, hence of size `O(n)`. Its proof reuses the SAND 2025
+dismountability machinery to reduce to *extremally matched* bi-cliques, then bounds those with
+simple and extended stars. The `O(n log n)` result is now an instance of the same generic clique
+induction, with a different bound for the non-dismountable case.
 
 Since Mathlib does not (yet) support temporal graphs, this library builds the required theory
 from scratch, following Mathlib's `SimpleGraph` conventions so that it can, in principle, later
@@ -39,19 +45,42 @@ they don't need the same cross-cutting instance resolution.
 | File | Contents |
 |---|---|
 | `TemporalGraph/Init.lean` | The `TemporalGraph` aesop rule-set used by the `aesop_temporal_graph` macro |
-| `TemporalGraph/Basic.lean` | `TemporalGraph V`; the `IsSymm`/`IsLoopless` classes; `IsSimple`/`IsProper`/`IsHappy`; `adjAt`, `symmetrize`, `fromEdgeSet`; `IsClique` (takes a vertex set `S : Set V`, Mathlib-style) and its shorthand `IsCliqueGraph` (`IsClique Set.univ`); `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, through `SimpleGraph.fromRel`, no hypothesis); earliest/latest edges and neighbors; `IsSubgraphOf`/`IsSpanningSubgraph`; `neighborSet`; `incidenceSet`; `arcSet`/`arcSize` (oriented world); `edgeSet`/`size` (symmetric world; `mem_edgeSet` needs only `[IsSymm]`) |
-| `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Non-strict, time-non-decreasing temporal walks (journeys), split into nonempty/empty variants; the `IsStrict` predicate (strictly increasing times) with the shortening `exists_isStrict`; walk mappers `NonemptyTemporalWalk.mapLe`/`TemporalWalk.mapLe` |
-| `TemporalGraph/Subgraph.lean` | The `Subgraph` type, which extends `TemporalGraph V`, adding a field `verts`/proofs `adj_sub`/`edge_vert`/`edge_vert'`; its coercion `coe` to `TemporalGraph H.verts`; inherited predicates `IsSymm`/`IsSimple`/`IsProper`/`IsHappy` and earliest/latest edge/neighbor definitions; inherited `edgeSet`, `neighborSet`, `size`, and `incidenceSet` (not redefined); `IsCliqueSubgraph` (the shorthand for `IsClique H.verts`); monotonicity lemmas `toTemporalGraph_le`/`toTemporalGraph_le_self`; and the `induce`/`deleteVerts`/`addVerts`/`addArc`/`addEdge`/`toSubgraph`/`fromEdgeSet` constructions (`addArc` adds a single oriented edge with no hypothesis, `addEdge` adds both orientations and needs `[G.IsSymm]`) |
-| `TemporalGraph/Bipartite.lean` | Bipartite temporal graphs: `IsBipartiteWith` and `IsBipartite` (mirroring Mathlib's `SimpleGraph.IsBipartiteWith`), with a bridge `isBipartiteWith_iff_simpleFootprint` to Mathlib's bipartiteness via simple footprint; the `between` construction restricting edges to a cut; temporal bi-cliques `IsBicliqueWith`/`IsBiclique` (SAND 2025 §1.1, taking a vertex set `S : Set V`) and the `completeBipartite` constructor; analogous predicates and operations at the subgraph level (`Subgraph.between`) |
-| `TemporalGraph/Connectivity/Basic.lean`, `TemporalGraph/Connectivity/Subgraph.lean` | `Reachable` and its monotonicity `Reachable.mono`; `StrictReachable` and the equivalence `reachable_iff_strictReachable` (needs `IsSymm` and `IsProper`); `TemporallyConnected` (takes a vertex set `S : Set V`), with shorthands `TemporallyConnectedGraph` (= `Set.univ`) and `Subgraph.TemporallyConnectedSubgraph` (= `H.verts`); the spanner notions `Subgraph.IsSpanner`, `Subgraph.IsSpannerOf`, `Subgraph.IsTCSpanner` |
-| `TemporalGraph/Dismountability/Basic.lean` | The `Dismountable` property (SAND §2, the hypothesis of Theorem 2.1) and `TwoHopDismountable` (SAND §2.1, unnumbered) and the vertex sets `vminus`/`vplus`/`vzero` (SAND §3.1, unnumbered), characterized by `partition_of_not_dismountable` (SAND Lemma 3.1), `vplus_ne_neighbor_of_not_twoHopDismountable`/`vminus_ne_neighbor_of_not_twoHopDismountable` (SAND Lemma 3.2), the `earliestNeighborFn`/`latestNeighborFn` bijections together with `existsUnique_vplus_earliestEdge`/`existsUnique_vminus_latestEdge`/`vminus_card_eq_vplus_card` (SAND Corollary 3.3), and `vzero_empty_of_not_twoHopDismountable` (SAND Lemma 3.4), the reciprocity lemmas `earliestEdge_reciprocity`/`latestEdge_reciprocity` (SAND Lemma 3.5), `biclique_of_not_twoHopDismountable` (SAND Corollary 4.1), `between_TC_of_not_twoHopDismountable` (the remark after it) and `temporallyConnected_of_reachable_of_matchings` (SAND §4.1) |
-| `TemporalGraph/Dismountability/Operations.lean` | The `dismount`/`mount`/`twoHopMount` operations and their correctness theorems: `dismountability` (SAND Theorem 2.1, 1-hop dismountability) and `twoHopDismountability` (its 2-hop analogue); the temporal-connectivity lemmas `mount_temporallyConnected`/`twoHopMount_temporallyConnected`; and `exists_isSpannerOf_of_twoHopDismountable` (SAND Theorem 2.1 and §2.1: a spanner of the dismounted graph extends to one of `H` with at most 4 more edges) |
-| `TemporalGraph/Dismountability/OneSided.lean` | One-sided dismountability (SAND §4.1): the one-sided spanner `IsSpannerFromTo` (from `s` to `t`), `OneSidedDismountable`, `oneSidedMount`, the splitting lemmas `IsSpannerFromTo.sup`/`isSpannerFromTo_sup_of_induce`, the step `oneSidedDismountability`, the pigeonhole `exists_oneSidedDismountable_of_ncard_lt` and the assembly `temporallyConnected_of_isSpannerFromTo` |
-| `TemporalGraph/Dismountability/OneSidedBound.lean` | The `O(n log n)` bound (SAND §4.1): the recurrence `spannerBound` (`spannerBound_isBigO`), `IsOneSidedSpannerBound`/`exists_isBigO_isOneSidedSpannerBound` (bi-cliques), `exists_isSpannerFromTo_ncard_le`, `exists_isSpannerOf_of_not_twoHopDismountable`, then `exists_isSpannerOf_ncard_le` (explicit bound `2n⌈log₂ n⌉ + 4n`) and `exists_isBigO_isSpannerOf` (cliques) |
-| `TemporalGraph.lean` (root) | Import aggregator for the library (every module except `Examples`) |
-| `TemporalGraph/Examples.lean` | Worked examples: the `square` temporal clique (four vertices, edges at times 1–4) and the bi-clique `biSquare`; built by `lake build` but not imported by the root |
+| `TemporalGraph/Basic.lean` | `TemporalGraph V`; the `IsSymm`/`IsLoopless` classes; `IsSimple`/`IsProper`/`IsHappy`; `adjAt`, `symmetrize`, `fromEdgeSet`; `IsClique` (takes a vertex set `S : Set V`, Mathlib-style) and its shorthand `IsCliqueGraph` (`IsClique Set.univ`); `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, through `SimpleGraph.fromRel`, no hypothesis); earliest/latest edges and neighbors; `arcTime` (the set `Set ℕ` of the times of the arcs from `u` to `v`, a singleton in a simple graph); `IsSubgraphOf`/`IsSpanningSubgraph`; `neighborSet`; `incidenceSet`; `arcSet`/`arcSize` (oriented world); `edgeSet`/`size` (symmetric world; `mem_edgeSet` needs only `[IsSymm]`) |
+| `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Non-strict, time-non-decreasing temporal walks (journeys), split into nonempty/empty variants; the `IsStrict` predicate (strictly increasing times) with the shortening `exists_isStrict`; walk mappers `NonemptyTemporalWalk.mapLe`/`TemporalWalk.mapLe`; `TemporalWalk.edges` (the traversed edges, with `ncard_setOf_mem_edges_le`) and `transfer` (move a walk to a graph containing its arcs, `adj_of_edges_subset`) |
+| `TemporalGraph/Subgraph.lean` | Aggregator of the three `Subgraph/` modules below (keeps `import TemporalGraph.Subgraph` working) |
+| `TemporalGraph/Subgraph/Basic.lean` | The `Subgraph` type, which extends `TemporalGraph V`, adding a field `verts`/proofs `adj_sub`/`edge_vert`/`edge_vert'`; its coercion `coe` to `TemporalGraph H.verts`; inherited predicates `IsSymm`/`IsSimple`/`IsProper`/`IsHappy` and earliest/latest edge/neighbor definitions; inherited `edgeSet`, `neighborSet`, `size`, and `incidenceSet` (not redefined); `IsCliqueSubgraph` (the shorthand for `IsClique H.verts`); the bounded order and monotonicity lemmas `toTemporalGraph_le`/`toTemporalGraph_le_self`; and the `induce`/`deleteVerts`/`addVerts` constructions (with `induce_le_of_subset`, `deleteVerts_induce_of_subset`) |
+| `TemporalGraph/Subgraph/Operations.lean` | The `addArc`/`addEdge` constructions (`addArc` adds a single oriented edge with no hypothesis, `addEdge` adds both orientations and needs `[G.IsSymm]`), the transfer lemmas for earliest/latest edges and neighbors between a subgraph and its ambient graph, and `neighborSet` lemmas |
+| `TemporalGraph/Subgraph/EdgeSet.lean` | `edgeSet` lemmas (`edgeSet_subset`, `sup_edgeSet`, `addEdge_edgeSet`, footprint edge sets), `size`/`order` and their `ncard` forms, and the `toSubgraph`/`fromEdgeSet` constructions (with `adj_fromEdgeSet`, `exists_matchingEdges`) |
+| `TemporalGraph/Helpers/SetCard.lean` | Generic `Set.ncard` helper lemmas with no graph content: `Set.exists_median_threshold`, `Set.exists_subset_ncard_halves`, `Set.finite_and_ncard_le_of_functional`, `Set.ncard_pair_le`, `Set.ncard_le_four` |
+| `TemporalGraph/Bipartite.lean` | Bipartite temporal graphs: `IsBipartiteWith` and `IsBipartite` (mirroring Mathlib's `SimpleGraph.IsBipartiteWith`), with a bridge `isBipartiteWith_iff_simpleFootprint` to Mathlib's bipartiteness via simple footprint; the `between` construction restricting edges to a cut; temporal bi-cliques `IsBicliqueWith`/`IsBiclique` (SAND 2025 §1.1, taking a vertex set `S : Set V`) and the `completeBipartite` constructor; `isBicliqueWith_induce` (restricts both parts of a bi-clique); analogous predicates and operations at the subgraph level (`Subgraph.between`) |
+| `TemporalGraph/Connectivity/Basic.lean`, `TemporalGraph/Connectivity/Subgraph.lean` | `Reachable` and its monotonicity `Reachable.mono`; the time-window reachability `ReachableWithin` and its one-sided abbreviations `ReachableBefore`/`ReachableAfter`; `StrictReachable` and the equivalence `reachable_iff_strictReachable` (needs `IsSymm` and `IsProper`); `TemporallyConnected` (takes a vertex set `S : Set V`), with shorthands `TemporallyConnectedGraph` (= `Set.univ`) and `Subgraph.TemporallyConnectedSubgraph` (= `H.verts`); the spanner notions `Subgraph.IsSpanner`, `Subgraph.IsSpannerOf`, `Subgraph.IsTCSpanner`, with `isSpannerOf_of_le_of_temporallyConnected` and `reachableBefore_fromEdgeSet`; `temporallyConnected_of_earliestEdge_matching`, `temporallyConnected_of_latestEdge_matching` and `temporallyConnected_of_reachable_of_matchings` (SAND §4.1) |
+| `TemporalGraph/Dismountability/Basic.lean` | The `Dismountable` property (SAND §2, the hypothesis of Theorem 2.1) and `TwoHopDismountable` (SAND §2.1, unnumbered) and the vertex sets `vminus`/`vplus`/`vzero` (SAND §3.1, unnumbered), characterized by `partition_of_not_dismountable` (SAND Lemma 3.1), `vplus_ne_neighbor_of_not_twoHopDismountable`/`vminus_ne_neighbor_of_not_twoHopDismountable` (SAND Lemma 3.2), the `earliestNeighborFn`/`latestNeighborFn` (defined on any `TemporalGraph`, `Option`-valued: `none` when there is no earliest/latest neighbor) bijections together with `existsUnique_vplus_earliestEdge`/`existsUnique_vminus_latestEdge`/`vminus_card_eq_vplus_card` (SAND Corollary 3.3), and `vzero_empty_of_not_twoHopDismountable` (SAND Lemma 3.4), the reciprocity lemmas `earliestEdge_reciprocity`/`latestEdge_reciprocity` (SAND Lemma 3.5), `biclique_of_not_twoHopDismountable` (SAND Corollary 4.1), `temporallyConnectedSubgraph_between_of_not_twoHopDismountable` (the remark after it) |
+| `TemporalGraph/Dismountability/Operations.lean` | The `dismount`/`mount`/`twoHopMount` operations and their correctness theorems: `dismountability` (SAND Theorem 2.1, 1-hop dismountability) and `twoHopDismountability` (its 2-hop analogue); the temporal-connectivity lemmas `mount_temporallyConnected`/`twoHopMount_temporallyConnected`; and `exists_isSpannerOf_of_twoHopDismountable` (SAND Theorem 2.1 and §2.1: a spanner of the dismounted graph extends to one of `H` with at most 4 more edges); the generic clique induction `exists_isSpannerOf_ncard_le_of_forall_not_twoHopDismountable` (if every non-{1,2}-hop-dismountable clique has a spanner with at most `f n` edges and `f n + 4 ≤ f (n + 1)`, every finite simple proper clique does) |
+| `TemporalGraph/Dismountability/OneSided.lean` | One-sided dismountability (SAND §4.1): the one-sided spanner `IsSpannerFromTo` (from `s` to `t`), `OneSidedDismountable` (target side, defined on `TemporalGraph`) and its mirror `SourceDismountable`, `oneSidedMount`, the splitting lemmas `IsSpannerFromTo.sup`/`isSpannerFromTo_sup_of_induce`, the steps `oneSidedDismountability`/`sourceDismountability`, `isSpannerFromTo_iff_of_isBicliqueWith`, the pigeonhole `exists_oneSidedDismountable_of_ncard_lt` and the assembly `temporallyConnected_of_isSpannerFromTo` |
+| `TemporalGraph/Dismountability/OneSidedBound.lean` | The `O(n log n)` bound (SAND §4.1): the recurrence `spannerBound` (`spannerBound_isBigO`), `IsOneSidedSpannerBound`/`exists_isBigO_isOneSidedSpannerBound` (bi-cliques), `exists_isSpannerFromTo_ncard_le`, `exists_isSpannerOf_of_not_twoHopDismountable`, then `exists_isSpannerOf_ncard_le` (explicit bound `2n⌈log₂ n⌉ + 4n`) and `exists_isBigO_isSpannerOf` (cliques; now an instance of the generic clique induction), plus `isSpannerFromTo_of_targetDismount`/`isSpannerFromTo_of_sourceDismount` (a dismountable target/source costs at most two more edges) |
+| `TemporalGraph/LinearSpanner/ExtremallyMatched.lean` | Extremally matched bi-cliques `IsExtremallyMatched` (Baligács 2026, §2.3: earliest and latest edges form perfect matchings), defined on `TemporalGraph` with its API in the namespace `TemporalGraph.IsExtremallyMatched` (`N_min`/`N_max` as `earliestNeighborFn`/`latestNeighborFn`, `temporallyConnected`) |
+| `TemporalGraph/LinearSpanner/Reduction.lean` | Reduction to extremally matched bi-cliques: `Subgraph.isExtremallyMatched_of_not_dismountable` (§2.3) and `Subgraph.exists_isExtremallyMatched_reduction` (Baligács 2026, Lemma 5) |
+| `TemporalGraph/LinearSpanner/Stars.lean` | The definitions of the stars: `eMin`/`eMax`, `simpleStar`, `IsCutCrossing` (Definition 8), the extend edges and the extended stars `extStarSource`/`extStarTarget` (Definition 12), with their membership, inclusion and counting API |
+| `TemporalGraph/LinearSpanner/SimpleStar.lean` | Baligács 2026, Observation 9: `IsExtremallyMatched.exists_reachable_simpleStar` |
+| `TemporalGraph/LinearSpanner/ExtendedStar.lean` | Baligács 2026, Lemmas 13, 14 and 16 and Corollary 15 on the extended stars, and the count `ncard_extStar_union_le` (at most `6n` edges) |
+| `TemporalGraph/LinearSpanner/Bound.lean` | Baligács 2026, §4: `exists_reachable_of_threshold` (Lemma 17, threshold form), `IsExtremallyMatched.exists_isSpannerFromTo_temporallyConnected` (Theorem 18) and `Subgraph.exists_isSpannerFromTo_ncard_le_linear` (Theorem 3, bi-cliques) |
+| `TemporalGraph/LinearSpanner/Clique.lean` | Baligács 2026, §5: `isExtremallyMatched_between_of_not_twoHopDismountable` (Theorem 20), `exists_isSpannerOf_ncard_le_seven_mul` (Theorem 2, at most `7n` edges) and `exists_isBigO_isSpannerOf_linear` (the `O(n)` form) |
+| `TemporalGraph.lean` (root) | Import aggregator for the whole library — no longer carries demo content |
+| `TemporalGraph/Examples.lean` | Worked example: the `square` temporal clique (four vertices, edges at times 1–4) |
 
 ## Main formalized results
+
+Baligács 2026 (arXiv:2606.05156 v1, numbering of that version), §5:
+
+- `Subgraph.exists_isSpannerOf_ncard_le_seven_mul` (Theorem 2): every finite simple proper temporal
+  clique `H` on `n` vertices (with `H` and the ambient graph `G` symmetric, and `G` loopless) has a
+  symmetric spanner with at most `7n` edges.
+- `Subgraph.exists_isBigO_isSpannerOf_linear`: the `O(n)` form of the same statement.
+- Underneath: `IsExtremallyMatched.exists_isSpannerFromTo_temporallyConnected` (Theorems 18 and 6) bounds the
+  extremally matched bi-clique with at most `14n` edges (`n` the size of one side), and
+  `Subgraph.exists_isSpannerFromTo_ncard_le_linear` (Theorem 3) the general bi-clique. Not
+  formalized: Lemma 4, Lemma 10, Proposition 11, the polynomial-time aspect, and the reductions
+  to simple and proper graphs of §2.1 (kept as hypotheses `IsSimple`/`IsProper`, as for SAND).
 
 SAND 2025, §4.1 (following Angrick et al., ESA 2024, for the one-sided part):
 
@@ -68,12 +97,20 @@ give the V⁻/V⁺ perfect-matching structure that reduces cliques to bi-cliques
 
 ## Palomar submission
 
-The result is prepared for the [Palomar](https://palomar-registry.org) registry of Lean-verified
-mathematics. The statement of record, [`Challenge.lean`](Challenge.lean), imports Mathlib only and
-describes a temporal clique in the usual way: a labelling `lab : Sym2 V → ℕ` of the edges of the
-complete graph on a finite type `V`, locally injective (two edges sharing an endpoint have
-distinct labels), with journeys of non-decreasing labels and spanners given as finite sets of
-edges. On these simple, locally injective cliques, non-strict and strict journeys give the same
+This branch, `nlogn-spanner-dismountability-submission`, is the source of the
+[Palomar](https://palomar-registry.org) entry
+[`PALOMAR-2026-10-23-000009`](https://palomar-registry.org/entry?id=PALOMAR-2026-10-23-000009),
+*Temporal cliques admit spanners of size O(n log n)*. Version 1 was registered from commit
+`79214ea`. Version 2 of the same identifier was, by mistake, the `7n` result (Baligács 2026),
+submitted from this repository with the same Comparator configuration path; that result now has
+its own repository and entry. This version brings the entry back to its `O(n log n)` statement,
+unchanged, proved by the library at release `alpha-0.2.0`.
+
+The statement of record, [`Challenge.lean`](Challenge.lean), imports Mathlib only and describes a
+temporal clique in the usual way: a labelling `lab : Sym2 V → ℕ` of the edges of the complete
+graph on a finite type `V`, locally injective (two edges sharing an endpoint have distinct
+labels), with journeys of non-decreasing labels and spanners given as finite sets of edges. On
+these simple, locally injective cliques, non-strict and strict journeys give the same
 reachability. It states two theorems, with deliberate `sorry` holes:
 
 - `TemporalCliqueSpanners.exists_isTemporalSpanner_card_le`: every temporal clique on `n`
@@ -93,7 +130,11 @@ The comparison is run with
 
 which checks that each Solution theorem proves the Challenge statement with the permitted axioms
 only, through Lean's kernel and the external checkers bundled with Lean (`lean4lean`, `nanoda`,
-`con-leche`, `con-ron`). It needs `bwrap` (Linux).
+`con-leche`, `con-ron`). It needs `bwrap` (Linux); on macOS, add `--inadvisably-no-sandbox`.
+
+Palomar requires every `.lean` file of the submitted repository to be a module, the root
+`TemporalGraph.lean` included. The Verso blueprint, whose chapters are Lean files outside the
+module system, is therefore not part of this branch.
 
 ## References
 
@@ -103,41 +144,17 @@ only, through Lean's kernel and the external checkers bundled with Lean (`lean4l
 2. Arnaud Casteigts, Joseph G. Peters & Jason Schoeters, *Temporal Cliques Admit Sparse
    Spanners*, ICALP 2019 / JCSS 2021. Original source of the dismountability technique and the
    `O(n log n)` spanner bound.
-3. Sebastian Angrick, Ben Bals, Tobias Friedrich, Hans Gawendowicz, Niko Hastrich, Nicolas Klodt,
-   Pascal Lenzner, Jonas Schmidt, George Skretas & Armin Wells, *How to Reduce Temporal Cliques to
-   Find Sparse Spanners*, ESA 2024, LIPIcs 308, 11. doi:10.4230/LIPIcs.ESA.2024.11. Source of the
-   one-sided dismountability that concludes the SAND 2025 proof.
+3. Júlia Baligács, *Temporal Cliques Admit Linear Spanners*, arXiv:2606.05156v1, 2026 (preprint;
+   the theorem numbers cited in the code are those of arXiv v1). The `7n` spanner bound.
+4. Angrick et al., ESA 2024 — cited above (introduction) for the observation the SAND 2025 proof
+   builds on.
 
 ## Blueprint
 
-A [blueprint](blueprint/) documents the mathematical content and its Lean formalization
-status (definitions, theorems, dependency graph). Its Python environment is a
-[uv](https://docs.astral.sh/uv/) project ([`blueprint/pyproject.toml`](blueprint/pyproject.toml),
-locked by `blueprint/uv.lock`): `uv run` creates `blueprint/.venv` on first use, so there is no
-manual venv step. Nothing TeX-related is installed outside that environment:
-
-- the HTML version is rendered by plasTeX alone. The only TeX program plasTeX needs,
-  `kpsewhich` (to resolve `\input{macros/...}`), is a small script of the uv project
-  ([`blueprint/blueprint_tools/`](blueprint/blueprint_tools/), installed into `blueprint/.venv/bin`);
-- the PDF version uses xelatex from a pinned [TinyTeX](https://yihui.org/tinytex/) that
-  `uv run --project blueprint install-tinytex` downloads once into `blueprint/.venv/tinytex`
-  (about 250 MB, plus the few LaTeX packages `print.tex` needs). The environment's `latexmk`
-  script runs it, so deleting `blueprint/.venv` removes TeX too.
-
-The one system requirement is `graphviz` (`brew install graphviz`), which `pygraphviz` links
-against for the dependency graph. From the repository root:
-
-    uv run --project blueprint leanblueprint web          # HTML → blueprint/web/index.html
-    uv run --project blueprint install-tinytex            # once, before the first PDF build
-    uv run --project blueprint leanblueprint pdf          # PDF  → blueprint/print/print.pdf
-    lake env lean --run scripts/CheckDecls.lean blueprint/lean_decls   # declarations exist
-    uv run --project blueprint leanblueprint serve        # preview the HTML version locally
-
-Do not use `leanblueprint checkdecls`: it imports every library of the package together,
-including the Palomar files `Challenge` and `Solution`, which define the same names (as
-Comparator requires), and fails on the duplicates. `scripts/CheckDecls.lean` checks against the
-`TemporalGraph` library alone. If a PDF build fails, delete `blueprint/print/` before retrying:
-latexmk otherwise refuses to rerun after an error.
+The [verso-blueprint](https://github.com/leanprover/verso-blueprint) blueprint, which documents
+the mathematical content and its formalization status, lives on the `main` branch, in
+`blueprint/`. It is left out of this submission branch: its chapters are Lean files outside the
+module system, which Palomar does not accept in a submitted repository.
 
 ## API documentation
 
@@ -152,10 +169,16 @@ doc-gen4. The project mirrors the one `docgen-action` generates in CI. It shares
 `DOCGEN_SRC=file` makes source links point to local files. The default (`github`) derives them
 from the `origin` remote and fails, because this repository's remote is on GitLab.
 
-The first run is long, but no Lean code is recompiled. doc-gen4 extracts the documentation data
-(`:docInfo`) of every imported module, nearly all of Mathlib, into one SQLite database, and it
-has no option to skip dependencies. On the author's machine this took about three hours. Later
-runs are incremental: only this library's modules are redone, in a few minutes. Changing
+No Lean code is recompiled, but the first run extracts the documentation data (`:docInfo`) of
+every imported module, about 4,700 modules including Mathlib, into one SQLite database: doc-gen4
+has no option to skip dependencies. Measured on Lean 4.36.0-rc2: 15 minutes on 12 cores, at most
+~1.9 GB per doc-gen4 process, a 521 MB site. Later runs are incremental: only this library's
+modules are redone.
+
+In CI (`.github/workflows/lean_action_ci.yml`) the same project builds the documentation on every
+push, with its `:docInfo` data cached until the toolchain or a manifest changes, and `main`
+deploys it to GitHub Pages under `docs/`, next to the blueprint under `blueprint/`. The Pages
+source of the repository must be set to "GitHub Actions". Changing
 `DOCGEN_SRC` does not invalidate the dependencies' data. When `lean-toolchain` changes, update the doc-gen4 `rev` in
 `docbuild/lakefile.toml` to the same tag and run `lake update doc-gen4` in `docbuild/`.
 
@@ -165,24 +188,24 @@ The toolchain (`lean`, `lake`, `elan`) is pinned by [`lean-toolchain`](lean-tool
 it with [elan](https://github.com/leanprover/elan) if needed.
 
 ```sh
-lake build                                  # the library, Challenge and Solution
+lake build                                  # every module of the library, Challenge and Solution
 lake build TemporalGraph.Dismountability.Operations   # one module, with its dependencies
 lake env lean TemporalGraph/<File>.lean     # typecheck a single file in isolation
 ```
 
 The library target declares `globs = ["TemporalGraph.*"]`, so `lake build` covers every module,
 including the root `TemporalGraph` itself (`.+` would match only its strict submodules and skip the
-root, which `checkdecls` imports).
+root).
 Without it, lake would build only the root module `TemporalGraph.lean` and what it imports, which
-stops at `Subgraph` and silently skips `Connectivity/` and `Dismountability/`.
+stops at `Subgraph` and silently skips `Connectivity/`, `Dismountability/` and `LinearSpanner/`.
 
-**Module system.** Every Lean file of the repository is a module (`module`, `public import`, and
-`@[expose] public section` so that definitions unfold across files), as Palomar requires. Each
-file imports only the Mathlib modules it uses.
+**Module system.** Every Lean file of this branch is a module (`module`, `public import`, and
+`@[expose] public section` so that definitions unfold across files), the root
+`TemporalGraph.lean` included, as Palomar requires.
 
 ## Status
 
-This library is under active development. `TemporalGraph` and `Subgraph`
+This library is under active development alongside the thesis. `TemporalGraph` and `Subgraph`
 follow an unbundled design: both types carry only data (`Adj`, and `verts` for a subgraph).
 Symmetry and irreflexivity are expressed as type classes (`IsSymm`/`IsLoopless`), passed via
 instance resolution rather than explicit hypotheses — results that need them take `[G.IsSymm]`

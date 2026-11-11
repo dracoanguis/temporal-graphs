@@ -41,6 +41,11 @@ and its clean characterization `mem_edgeSet` needs `[G.IsSymm]` (the uncondition
   Carnevale–Casteigts–Corsini (see References).
 * `TemporalGraph.EarliestEdge`, `TemporalGraph.LatestEdge`, `TemporalGraph.EarliestNeighbor`,
   `TemporalGraph.LatestNeighbor` : the earliest/latest edge and neighbor of a vertex.
+* `TemporalGraph.IsSpanningSubgraph`, `TemporalGraph.IsSubgraphOf` : inclusion of temporal graphs
+  on the same vertices (it is the order `≤`, with bottom element `⊥` the graph without arcs), resp.
+  on two vertex subtypes.
+* `TemporalGraph.arcTime` : the set of the times of the arcs from `u` to `v` (empty when there
+  is no arc, a singleton in a simple graph with an arc, `arcTime_eq_singleton`).
 * `TemporalGraph.arcSet`, `TemporalGraph.edgeSet` : the oriented and symmetric edge sets.
 * `TemporalGraph.arcSize`, `TemporalGraph.size` : their `Fintype.card` counts, computable under a
   `Fintype` instance, with `Set.ncard`/`Finset.card` bridge lemmas (`arcSize_eq_ncard`,
@@ -49,14 +54,22 @@ and its clean characterization `mem_edgeSet` needs `[G.IsSymm]` (the uncondition
   inherited by `Subgraph` (see `TemporalGraph.Subgraph` in `Subgraph.lean`).
 * `TemporalGraph.symmetrize`, `TemporalGraph.fromArcSet`, `TemporalGraph.fromEdgeSet` : graph
   builders.
+* `aesop_temporal_graph` : the `aesop` call using the `TemporalGraph` rule set of `Init.lean`.
 
 ## Main results
 
 * `TemporalGraph.IsSimple.mono`, `IsProper.mono`, `IsHappy.mono` : these predicates pass to
   spanning subgraphs (`G ≤ H`).
+* `TemporalGraph.symmetrize_le`, `TemporalGraph.le_symmetrize`, `TemporalGraph.symmetrize_eq_self` :
+  `G.symmetrize` is the least symmetric graph above `G`, and `G` itself when it is symmetric.
+* `TemporalGraph.mem_arcTime`, `TemporalGraph.arcTime_comm`,
+  `TemporalGraph.IsSimple.arcTime_subsingleton` : `n ∈ arcTime u v` exactly when `G.Adj u v n`;
+  the times do not depend on the orientation in a symmetric graph, and an arc has at most one time
+  in a simple graph.
 * `TemporalGraph.mem_edgeSet_iff_or` : unconditional characterization of `edgeSet` membership, as
   a disjunction of the two orientations.
 * `TemporalGraph.mem_edgeSet` : under `[G.IsSymm]`, `(s(x, y), n) ∈ G.edgeSet ↔ G.Adj x y n`.
+* `TemporalGraph.mem_edgeSet_of_adj` : with no hypothesis, an arc gives an edge of the graph.
 * `TemporalGraph.size_eq_ncard`, `TemporalGraph.arcSize_eq_ncard` : the counts `size`/`arcSize`
   equal `Set.ncard` of `edgeSet`/`arcSet`.
 
@@ -80,8 +93,6 @@ macro (name := aesop_temporal_graph) "aesop_temporal_graph" c:Aesop.tactic_claus
       (config := { introsTransparency? := some .default, terminal := true })
       (rule_sets := [$(Lean.mkIdent `TemporalGraph):ident]))
 
-
-
 universe u
 
 /-- A temporal graph: edges are labeled by the time (ℕ) at which they exist.
@@ -90,7 +101,6 @@ No symmetry or irreflexivity is required — see `IsSymm` and `IsLoopless`. -/
 structure TemporalGraph (V : Type u) where
   /-- The adjacency labeled by a natural qualifying the time of existence -/
   Adj : V → V → ℕ → Prop
-
 
 
 namespace TemporalGraph
@@ -103,7 +113,7 @@ API on relations apply: time comes last in `G.Adj x y n`, so the relation is not
 adjacency and lemmas with an implicit relation (`Std.Symm.iff`, `comm`, …) cannot infer it. Name
 it instead: `comm_of (G.adjAt n)`, `Std.Symm.iff (r := G.adjAt n) x y`, or state the goal with
 `adjAt`. -/
-abbrev adjAt (G : TemporalGraph V) (n : ℕ) : V → V → Prop := fun x y => G.Adj x y n
+abbrev adjAt (G : TemporalGraph V) (n : ℕ) : V → V → Prop := fun x y ↦ G.Adj x y n
 
 /-- Symmetry is a class rather than a plain predicate, so that it is carried by instance
 resolution instead of being threaded by hand: constructions that preserve it declare an instance
@@ -130,8 +140,8 @@ instance IsLoopless.stdIrrefl {G : TemporalGraph V} [hl : G.IsLoopless] (n : ℕ
     Std.Irrefl (G.adjAt n) :=
   hl.loopless n
 
-/-- Build `IsSymm` from the unfolded statement, without nested anonymous constructors. The
-binder order `n ⦃x y⦄` is that of the former `Symmetric` field. -/
+/-- Build `IsSymm` from the unfolded statement `∀ n ⦃x y⦄, G.Adj x y n → G.Adj y x n`, without
+nested anonymous constructors. -/
 theorem IsSymm.of_adj {G : TemporalGraph V} (h : ∀ n ⦃x y⦄, G.Adj x y n → G.Adj y x n) :
     G.IsSymm :=
   ⟨fun n ↦ ⟨fun _ _ hxy ↦ h n hxy⟩⟩
@@ -180,10 +190,10 @@ end Adjacency
 
 section Definitions
 
-/-- The footprint of a TemporalGraph is a Digraph representing the underlying
-directed edges unlabelled by time. -/
+/-- The footprint of a temporal graph `G` is the `Digraph` of its underlying directed edges,
+unlabeled by time. -/
 def footprint (G : TemporalGraph V) : Digraph V :=
-  { Adj := fun x y => ∃ n, G.Adj x y n }
+  { Adj := fun x y ↦ ∃ n, G.Adj x y n }
 
 /-- The footprint of `G` as a genuine `SimpleGraph`: distinct vertices `x` and `y` are adjacent
 when an arc joins them, in either direction, at some time. This is Mathlib's
@@ -222,21 +232,23 @@ def IsProper (G : TemporalGraph V) : Prop :=
 def IsHappy (G : TemporalGraph V) : Prop :=
   G.IsSimple ∧ G.IsProper
 
-/-- The *earliest edge* of *x*, with *y* destination at *n* -/
+/-- `G.EarliestEdge x y n`: the arc from `x` to `y` at time `n` is an earliest arc leaving `x`,
+i.e. `G.Adj x y n` and no arc leaves `x` before time `n`. -/
 @[grind =]
 def EarliestEdge (G : TemporalGraph V) (x y : V) (n : ℕ) : Prop :=
   G.Adj x y n ∧ ∀ z : V, ∀ j : ℕ, G.Adj x z j → n ≤ j
 
-/-- The *latest edge* of *x*, with *y* destination at *n* -/
+/-- `G.LatestEdge x y n`: the arc from `x` to `y` at time `n` is a latest arc leaving `x`,
+i.e. `G.Adj x y n` and no arc leaves `x` after time `n`. -/
 @[grind =]
 def LatestEdge (G : TemporalGraph V) (x y : V) (n : ℕ) : Prop :=
   G.Adj x y n ∧ ∀ z : V, ∀ j : ℕ, G.Adj x z j → j ≤ n
 
-/-- *y* is an *earliest neighbor* of *x* -/
+/-- `y` is an earliest neighbor of `x`: some earliest arc leaving `x` ends at `y`. -/
 @[grind =]
 def EarliestNeighbor (G : TemporalGraph V) (x y : V) : Prop := ∃ n : ℕ, G.EarliestEdge x y n
 
-/-- *y* is a *latest neighbor* of *x* -/
+/-- `y` is a latest neighbor of `x`: some latest arc leaving `x` ends at `y`. -/
 @[grind =]
 def LatestNeighbor (G : TemporalGraph V) (x y : V) : Prop := ∃ n : ℕ, G.LatestEdge x y n
 
@@ -244,7 +256,7 @@ end Definitions
 
 section Inclusion
 
-variable {X Y : Type u}
+variable {Y : Type u}
 
 /-- `G`, carried by the vertices satisfying `P`, is a subgraph of `H`, carried by those
 satisfying `P'`: the vertices included, and the adjacencies with them. This is the most general
@@ -281,7 +293,7 @@ lemma le_iff_adj {G H : TemporalGraph V} :
 /-- `IsSpanningSubgraph` is definitionally the `≤` order on `TemporalGraph`. -/
 @[simp]
 theorem isSpanningSubgraph_eq_le :
-    (IsSpanningSubgraph : TemporalGraph V -> TemporalGraph V -> Prop) =
+    (IsSpanningSubgraph : TemporalGraph V → TemporalGraph V → Prop) =
     (· ≤ ·) :=
   rfl
 
@@ -306,7 +318,64 @@ theorem IsHappy.mono {G H : TemporalGraph V} (h₀ : H.IsHappy) (h₁ : G ≤ H)
 
 end Monotonicity
 
-section neighborSet
+section ArcTime
+
+/-- The times of the arcs from `u` to `v`: the set of the `n` with `G.Adj u v n`, empty when there
+is no arc (`arcTime_eq_empty_iff`), and with at most one element in a simple graph
+(`IsSimple.arcTime_subsingleton`). In a symmetric graph it does not depend on the orientation
+(`arcTime_comm`): in a symmetric simple graph with an edge `{u, v}`, it is `{λ({u, v})}`, the label
+of the edge (`arcTime_eq_singleton`).
+
+Pointwise statements read the times on the adjacency itself, `∃ k, G.Adj u v k ∧ k ≤ τ`, which is
+the simp normal form (`mem_arcTime`); `arcTime` is for statements about the set of times. -/
+def arcTime (G : TemporalGraph V) (u v : V) : Set ℕ :=
+  {n | G.Adj u v n}
+
+variable {G : TemporalGraph V} {u v : V} {n : ℕ}
+
+/-- `n` is a time of the arcs from `u` to `v` exactly when there is an arc at time `n`. -/
+@[simp, grind =]
+theorem mem_arcTime : n ∈ G.arcTime u v ↔ G.Adj u v n :=
+  Iff.rfl
+
+/-- The set of times is nonempty exactly when there is an arc. -/
+theorem arcTime_nonempty_iff : (G.arcTime u v).Nonempty ↔ ∃ n, G.Adj u v n :=
+  Iff.rfl
+
+/-- The set of times is empty exactly when there is no arc. -/
+theorem arcTime_eq_empty_iff : G.arcTime u v = ∅ ↔ ∀ n, ¬G.Adj u v n :=
+  Set.eq_empty_iff_forall_notMem
+
+/-- In a simple graph, an arc has at most one time. -/
+theorem IsSimple.arcTime_subsingleton (h₀ : G.IsSimple) (u v : V) :
+    (G.arcTime u v).Subsingleton :=
+  fun _ h₁ _ h₂ ↦ h₀ h₁ h₂
+
+/-- In a simple graph, the set of times of an arc at time `n` is `{n}`. -/
+theorem arcTime_eq_singleton (h₀ : G.IsSimple) (h₁ : G.Adj u v n) : G.arcTime u v = {n} :=
+  (h₀.arcTime_subsingleton u v).eq_singleton_of_mem h₁
+
+/-- In a symmetric graph, the times do not depend on the orientation. -/
+theorem arcTime_comm [G.IsSymm] (u v : V) : G.arcTime u v = G.arcTime v u :=
+  Set.ext fun n ↦ adj_comm u v n
+
+/-- Passing to a supergraph keeps the times of the arcs. -/
+theorem arcTime_mono {G' : TemporalGraph V} (h₀ : G ≤ G') : G.arcTime u v ⊆ G'.arcTime u v :=
+  fun _ h₁ ↦ h₀ h₁
+
+/-- In a simple graph, the times of the arc of an earliest edge are its time. -/
+theorem EarliestEdge.arcTime_eq_singleton (h₀ : G.IsSimple) (h₁ : G.EarliestEdge u v n) :
+    G.arcTime u v = {n} :=
+  TemporalGraph.arcTime_eq_singleton h₀ h₁.1
+
+/-- In a simple graph, the times of the arc of a latest edge are its time. -/
+theorem LatestEdge.arcTime_eq_singleton (h₀ : G.IsSimple) (h₁ : G.LatestEdge u v n) :
+    G.arcTime u v = {n} :=
+  TemporalGraph.arcTime_eq_singleton h₀ h₁.1
+
+end ArcTime
+
+section NeighborSet
 
 /-- The set of out-neighbors of `x` in `G`, forgetting time. -/
 def neighborSet (G : TemporalGraph V) (x : V) := {y | ∃ n : ℕ, G.Adj x y n}
@@ -317,21 +386,22 @@ theorem mem_neighborSet (G : TemporalGraph V) (x y : V) :
     y ∈ G.neighborSet x ↔ ∃ n : ℕ, G.Adj x y n :=
   Iff.rfl
 
-end neighborSet
+end NeighborSet
 
-section incidenceSet
+section IncidenceSet
 
 /-- The edges incident to `x`: pairs `(y, n)` such that `x` is adjacent to `y` at time `n`. -/
 def incidenceSet (G : TemporalGraph V) (x : V) : Set (V × ℕ) :=
   { (y, n) : V × ℕ | G.Adj x y n }
 
-end incidenceSet
+end IncidenceSet
 
-section arcSet
+section ArcSet
 
 /-- The *arcs* of `G`: oriented edges, as an ordered pair of endpoints with their time. This is
 the oriented world's notion, and it characterizes adjacency with no hypothesis at all — unlike
-`edgeSet`, which lives on `Sym2 V` and therefore only does so for a symmetric, loopless graph. -/
+`edgeSet`, which lives on `Sym2 V` and therefore only does so for a symmetric graph
+(`mem_edgeSet`). -/
 def arcSet (G : TemporalGraph V) : Set (V × V × ℕ) :=
   {a | G.Adj a.1 a.2.1 a.2.2}
 
@@ -358,25 +428,25 @@ theorem arcSet_fromArcSet (s : Set (V × V × ℕ)) : (fromArcSet (V := V) s).ar
   ext ⟨x, y, n⟩
   rfl
 
-end arcSet
+end ArcSet
 
-section edgeSet
+section EdgeSet
 
 /-- The unordered edges of `G`, with their time: a pair `(p, n)` belongs when `p` is the
 unordered pair of the endpoints of an arc at time `n`. Note that this asks `p` to *be* such a
-pair, not merely to have its endpoints among them — quantifying over the members of `p` would
-also admit `s(x, y)` whenever `G` has a loop at `x`, which is why a looplessness hypothesis used
-to be needed to use this set at all. -/
-def edgeSet (G : TemporalGraph V) : Set ((Sym2 V) × ℕ) :=
-  {(p, n) | ∃ x y, p = s(x,y) ∧ G.Adj x y n}
+pair, not merely to have its endpoints among them: quantifying over the members of `p` would
+also admit `s(x, y)` whenever `G` has a loop at `x`. -/
+def edgeSet (G : TemporalGraph V) : Set (Sym2 V × ℕ) :=
+  {(p, n) | ∃ x y, p = s(x, y) ∧ G.Adj x y n}
 
 /-- Membership in `edgeSet`, with no hypothesis: an unordered pair carries an edge exactly when
 one of its two orientations is an arc. For a symmetric graph the two disjuncts collapse — see
 `mem_edgeSet`. -/
 theorem mem_edgeSet_iff_or (G : TemporalGraph V) {x y : V} {n : ℕ} :
-    (s(x,y), n) ∈ G.edgeSet ↔ G.Adj x y n ∨ G.Adj y x n := by
+    (s(x, y), n) ∈ G.edgeSet ↔ G.Adj x y n ∨ G.Adj y x n := by
   constructor
   · rintro ⟨a, b, hp, hadj⟩
+    -- `s(x, y) = s(a, b)` leaves the two orientations of the pair
     rcases Sym2.eq_iff.mp hp with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
     · exact Or.inl hadj
     · exact Or.inr hadj
@@ -387,11 +457,16 @@ theorem mem_edgeSet_iff_or (G : TemporalGraph V) {x y : V} {n : ℕ} :
 /-- For a symmetric graph, `(s(x, y), n) ∈ G.edgeSet` iff `G.Adj x y n`. -/
 @[simp, grind =]
 theorem mem_edgeSet (G : TemporalGraph V) [G.IsSymm] {x y : V} {n : ℕ} :
-    (s(x,y), n) ∈ G.edgeSet ↔ G.Adj x y n := by
+    (s(x, y), n) ∈ G.edgeSet ↔ G.Adj x y n := by
   rw [mem_edgeSet_iff_or]
   exact or_iff_left_iff_imp.mpr fun h ↦ h.symm
 
-end edgeSet
+/-- With no hypothesis, an arc gives an edge of the graph. -/
+theorem mem_edgeSet_of_adj {G : TemporalGraph V} {u v : V} {n : ℕ} (h₀ : G.Adj u v n) :
+    (s(u, v), n) ∈ G.edgeSet :=
+  ⟨u, v, rfl, h₀⟩
+
+end EdgeSet
 
 section Size
 
@@ -468,22 +543,22 @@ section FromEdgeSet
 
 /-- Build a temporal graph from a set of unordered edges. Symmetric by construction: an
 unordered pair is read in both directions. -/
-def fromEdgeSet (s : Set ((Sym2 V) × ℕ)) : TemporalGraph V where
-  Adj x y n := (s(x,y), n) ∈ s
+def fromEdgeSet (s : Set (Sym2 V × ℕ)) : TemporalGraph V where
+  Adj x y n := (s(x, y), n) ∈ s
 
 /-- `(fromEdgeSet s).Adj x y n` iff `(s(x, y), n) ∈ s`. -/
 @[simp]
-theorem fromEdgeSet_adj {s : Set ((Sym2 V) × ℕ)} {x y : V} {n : ℕ} :
-    (fromEdgeSet s).Adj x y n ↔ (s(x,y), n) ∈ s :=
+theorem fromEdgeSet_adj {s : Set (Sym2 V × ℕ)} {x y : V} {n : ℕ} :
+    (fromEdgeSet s).Adj x y n ↔ (s(x, y), n) ∈ s :=
   Iff.rfl
 
 /-- A graph built from a set of unordered edges is symmetric. -/
-instance fromEdgeSet_isSymm (s : Set ((Sym2 V) × ℕ)) : (fromEdgeSet (V := V) s).IsSymm :=
+instance fromEdgeSet_isSymm (s : Set (Sym2 V × ℕ)) : (fromEdgeSet (V := V) s).IsSymm :=
   .of_adj fun _ _ _ h ↦ by simpa [Sym2.eq_swap] using h
 
 /-- `fromEdgeSet` and `edgeSet` are mutually inverse: `(fromEdgeSet s).edgeSet = s`. -/
 @[simp]
-theorem edgeSet_fromEdgeSet (s : Set ((Sym2 V) × ℕ)) : (fromEdgeSet (V := V) s).edgeSet = s := by
+theorem edgeSet_fromEdgeSet (s : Set (Sym2 V × ℕ)) : (fromEdgeSet (V := V) s).edgeSet = s := by
   ext ⟨p, n⟩
   induction p using Sym2.ind with
   | _ x y => simp

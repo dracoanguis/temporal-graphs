@@ -15,7 +15,11 @@ project:
     reduces cliques to bi-cliques and concludes with the one-sided dismountability of Angrick et
     al. (ESA 2024). The compared statements give an explicit bound of 2n⌈log₂ n⌉ + 4n edges and
     the asymptotic O(n log n) form with a bound function chosen uniformly for all cliques. The
-    work is supervised by Arnaud Casteigts and Karine Altisen.
+    work is supervised by Arnaud Casteigts and Karine Altisen. Version 3 restores this statement,
+    unchanged since version 1: version 2 registered by mistake another result of the same
+    repository, the 7n bound of Baligács (2026), which now has its own entry. The proof is that of
+    the library release alpha-0.2.0, in which the O(n log n) bound is an instance of a generic
+    induction on cliques shared with the 7n bound.
   authors:
     - "Ethan Bargaud-Arm"
   responsible_maintainers:
@@ -91,8 +95,9 @@ status:
   scope: >-
     Compared: exists_isTemporalSpanner_card_le (explicit bound 2n⌈log₂ n⌉ + 4n) and
     exists_isBigO_isTemporalSpanner (O(n log n), one bound function for all cliques). The
-    library (TemporalGraph/) also proves the intermediate results of SAND 2025 (Theorem 2.1,
-    Lemmas 3.1–3.5, Corollaries 3.3 and 4.1), which are not compared.
+    library (TemporalGraph/, release alpha-0.2.0) also proves the intermediate results of SAND
+    2025 (Theorem 2.1, Lemmas 3.1–3.5, Corollaries 3.3 and 4.1) and the 7n bound of Baligács
+    (2026), which are not compared here.
   sorry_count: 0
   sorry_in_definitions: 0
   axioms: ["propext", "Quot.sound", "Classical.choice"]
@@ -116,7 +121,11 @@ automation:
         documentation and blueprint). The rest of the development dates from this part, carried
         out with Claude's assistance under his direction: bipartite graphs and bi-cliques, SAND
         2025 Lemma 3.5 and Corollary 4.1, the one-sided dismountability and the O(n log n) bound of
-        §4.1, and the Palomar Challenge statement and Solution bridge.
+        §4.1, and the Palomar Challenge statement and Solution bridge. Version 3 (November 2026)
+        updates the library to release alpha-0.2.0 under his direction, with Claude's
+        assistance: Lean 4.36.0-rc2, the O(n log n) bound rederived as an instance of a generic
+        induction on cliques, and the formalization of Baligács (2026) in the same library; the
+        Challenge and Solution files are unchanged.
   notes: >-
     Every statement, definition and design decision was made or approved by the author; AI
     contributions were reviewed through the Lean kernel (all proofs are machine-checked) and
@@ -139,7 +148,8 @@ review:
     The statements and the formalization were reviewed and approved by the author. Automated
     checks made before submission: lake comparator --paranoid accepts the Solution (Lean's
     kernel and the bundled lean4lean, nanoda, con-leche and con-ron checkers), and agent-run
-    audits compared the statements with the published LIPIcs text.
+    audits compared the statements with the published LIPIcs text. The statements are those of
+    version 1, byte for byte.
 
 alignment:
   namespace: "TemporalCliqueSpanners"

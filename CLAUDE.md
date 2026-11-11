@@ -12,7 +12,15 @@ cliques aux bi-cliques (Corollaire 4.1), puis la dismountability *one-sided* d'A
 (ESA 2024, rappelée en §4.1) conclut. Le code formalise aujourd'hui **toute la preuve** (voir
 « Repères papier ↔ code ») : §§2–3 (dismountability, réduction aux bi-cliques, Lemmes 3.1–3.5,
 Corollaires 3.3/4.1) et §4.1 (dismountability *one-sided* et borne `O(n log n)` :
-`exists_isSpannerOf_ncard_le`, borne explicite `2n⌈log₂ n⌉ + 4n`, et `exists_isBigO_isSpannerOf`). La technique est originellement due à
+`exists_isSpannerOf_ncard_le`, borne explicite `2n⌈log₂ n⌉ + 4n`, et `exists_isBigO_isSpannerOf`).
+Une **seconde référence** est formalisée en entier : **Júlia Baligács, *Temporal Cliques Admit
+Linear Spanners*, arXiv:2606.05156v1 (2026)** (preprint, pas de version publiée ; numérotation de
+l'arXiv v1). Elle réutilise la dismountability de SAND pour se ramener aux bi-cliques
+*extremally matched*, puis les borne par des étoiles : toute clique temporelle finie simple et
+propre sur `n` sommets admet un spanner à au plus `7n` arêtes (`exists_isSpannerOf_ncard_le_seven_mul`,
+`exists_isBigO_isSpannerOf_linear`), dans `TemporalGraph/LinearSpanner/` (voir « Repères Baligács
+2026 ↔ code »). La borne `O(n log n)` de SAND n'est plus qu'une instance de la même induction
+générique sur les cliques (`exists_isSpannerOf_ncard_le_of_forall_not_twoHopDismountable`). La technique est originellement due à
 **Casteigts, Peters & Schoeters, *Temporal Cliques Admit Sparse Spanners*, ICALP 2019 / JCSS
 2021**, cité par SAND pour son Théorème 2.1 — cet article reste une référence secondaire. Le scope
 peut s'élargir à d'autres résultats récents au fil du travail.
@@ -20,6 +28,34 @@ peut s'élargir à d'autres résultats récents au fil du travail.
 Ce fichier est spécifique à ce projet. Le workflow Lean générique (lean-lsp, lean4-skills,
 discipline anti-`sorry`, commits atomiques) est déjà couvert par le `CLAUDE.md` global — pas
 besoin de le répéter ici.
+
+## Branche de soumission Palomar `nlogn-spanner-dismountability-submission`
+
+Ce fichier est celui de `alpha-0.2.0`, complété pour cette branche, qui est la source de l'entrée
+Palomar `PALOMAR-2026-10-23-000009` (`O(n log n)`).
+
+- **Historique de l'entrée** : v1 = commit `79214ea` (`O(n log n)`) ; v2 = par erreur le résultat
+  `7n`, soumis depuis ce même dépôt avec le même chemin de `comparator.json` (Palomar identifie une
+  entrée par dépôt + dossier de projet + chemin de configuration Comparator, et un enregistrement
+  ne se retire pas) ; v3 = retour à l'énoncé `O(n log n)`, inchangé, prouvé par la bibliothèque
+  `alpha-0.2.0` (fusion de `alpha-0.2.0` dans cette branche). Le `7n` a désormais son propre dépôt
+  (`tgl/soumission-linear-spanners`, miroir GitHub) et sa propre entrée.
+- **Fichiers Palomar** : `Challenge.lean` (énoncé, imports Mathlib seuls, `sorry` volontaires),
+  `Solution.lean` (mêmes définitions recopiées à l'identique, pont vers la bibliothèque),
+  `comparator.json`, `formalization.yaml`, `LICENSE` (texte brut d'Apache 2.0). Toute modification
+  d'une définition se reporte dans les deux fichiers et dans le dépôt de la soumission `7n`.
+- **Tout fichier `.lean` du dépôt doit être un module** (politique Palomar, sauf `lakefile.lean`),
+  la racine `TemporalGraph.lean` comprise : elle est donc ici un module, contrairement à `main`.
+  Pour la même raison, **le blueprint Verso (`blueprint/`) est absent de cette branche** (ses
+  chapitres ne sont pas des modules) : les commandes blueprint ci-dessous ne s'appliquent qu'à
+  `main`. La CI de cette branche se limite au build (pas de blueprint ni de doc API).
+- **Pour Palomar** : dépôt GitHub `dracoanguis/temporal-graphs`, SHA complet du commit, chemin de
+  configuration `comparator.json` et `existing_id = PALOMAR-2026-10-23-000009` (sinon un nouvel
+  identifiant serait créé). Vérification : `lake build`, puis `lake comparator --paranoid`
+  (sous macOS, avec `--inadvisably-no-sandbox`), et `formalization.yaml` validé contre le schéma
+  v0.4 (`uvx check-jsonschema`).
+- Une montée de version de la bibliothèque se fait en fusionnant le nouveau tag dans cette branche,
+  jamais l'inverse : rien de cette branche ne remonte vers `main`.
 
 ## Convention de travail Claude Code (worktree, branches)
 
@@ -53,7 +89,8 @@ besoin de le répéter ici.
   - **Jamais de `lake update`, de `lake exe cache get!` ni de changement de `lake-manifest.json` /
     `lean-toolchain` depuis un worktree** : cela modifierait les paquets du dépôt principal. Une
     montée de version de Mathlib se fait dans le dépôt principal, hors session parallèle.
-  - **Procédure de montée de version** (rodée le 2026-09-25, `v4.29.0-rc6` → `v4.35.0-rc3`) :
+  - **Procédure de montée de version** (rodée le 2026-09-25, `v4.29.0-rc6` → `v4.35.0-rc3` ; rejouée
+    telle quelle le 2026-11-06, `v4.35.0` → `v4.36.0-rc2`, sans aucune rupture d'API) :
     1. prendre comme cible la toolchain de Mathlib `master` (`curl -sL
        https://raw.githubusercontent.com/leanprover-community/mathlib4/master/lean-toolchain`) ;
     2. **arrêter d'abord tous les serveurs Lean de l'ancienne toolchain** sur le dépôt (VS Code,
@@ -70,7 +107,7 @@ besoin de le répéter ici.
        l'ancien Mathlib, et un `lake build` dans `docbuild` le remettrait en place pour tout le
        monde. Supprimer ensuite le `docbuild/lean-toolchain` que `lake update` recrée. Les
        `:docInfo` de Mathlib dans `docbuild/.lake` deviennent obsolètes : le prochain build de la
-       documentation reprend les ~3 h.
+       documentation refait l'extraction complète (~15 min mesurées en rc2, voir « Doc API »).
   - Avant de supprimer un worktree : arrêter les serveurs Lean qui y tournent (`lake serve`,
     `lean --server` dont le cwd est le worktree) et retirer le lien (`rm .lake/packages`) par
     précaution, puis `git worktree remove`.
@@ -98,15 +135,26 @@ besoin de le répéter ici.
 | Fichier | Rôle | Analogue Mathlib |
 |---|---|---|
 | `TemporalGraph/Init.lean` | Rule-set aesop `TemporalGraph`, utilisé par la macro `aesop_temporal_graph` | `SimpleGraph/Init.lean` |
-| `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsCliqueGraph`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, via `SimpleGraph.fromRel`, sans hypothèse), `adjAt`, `symmetrize`, `fromEdgeSet`, `neighborSet`, `incidenceSet`, `arcSet`/`arcSize` (monde orienté), `edgeSet`/`size` (monde symétrique ; `mem_edgeSet` demande seulement `[IsSymm]`) ; `size`/`arcSize` sont des `def` calculables (pattern `SimpleGraph.degree` : `Fintype.card` sous une instance `[Fintype G.edgeSet]`/`[Fintype G.arcSet]`), avec la forme instance-free `Set.ncard` disponible via `size_eq_ncard`/`arcSize_eq_ncard` | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
-| `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Marches temporelles non strictes, à temps croissant ; prédicat `IsStrict` (temps strictement croissants, propagé de `NonemptyTemporalWalk` à `TemporalWalk`) et raccourcissement `NonemptyTemporalWalk.exists_isStrict` ; API `length`/`support`/`arcs`/`append`/`mapLe` (`length_append`, `arcs_append`, `*_mapLe`, `mapLe_append`, `mapLe_mapLe`, `start_mem_support`, `end_mem_support`, `adj_of_mem_arcs`) | `SimpleGraph.Walk` |
-| `TemporalGraph/Subgraph.lean` | Sous-graphe temporel : `TemporalGraph.Subgraph` étend `TemporalGraph V`, ajoutant `verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `IsCliqueSubgraph` ; `edgeSet`, `neighborSet`, `size`, `incidenceSet` sont hérités de `TemporalGraph` ; treillis borné et union `⊔` (`SemilatticeSup`), `induce`/`deleteVerts`/`addVerts`/`addArc`/`addEdge` ; monotonie `toTemporalGraph_le`/`toTemporalGraph_le_self` | `SimpleGraph.Subgraph` |
-| `TemporalGraph/Bipartite.lean` | Bipartition temporelle `IsBipartiteWith`/`IsBipartite` (ensembles explicites, sans hypothèse de symétrie, non classe), pont `isBipartiteWith_iff_simpleFootprint` vers Mathlib, restriction `between` aux arcs entre deux ensembles, bi-cliques temporelles `IsBicliqueWith`/`IsBiclique` (SAND 2025 §1.1 ; prennent un ensemble de sommets), constructeur `completeBipartite` sur `α ⊕ β`, et au niveau `Subgraph` : `Subgraph.between` | `SimpleGraph/Bipartite.lean` |
-| `TemporalGraph/Connectivity/Basic.lean`, `Connectivity/Subgraph.lean` | `Reachable` (avec monotonie `Reachable.mono`), `StrictReachable` et l'équivalence `reachable_iff_strictReachable` (graphe symétrique et propre ; `IsSymm` nécessaire), `TemporallyConnected` (prend un ensemble `S : Set V` ; shorthands `TemporallyConnectedGraph` pour `Set.univ` et `Subgraph.TemporallyConnectedSubgraph` pour `H.verts`) ; spanners au niveau sous-graphe sur `V` (`Subgraph.IsSpanner`, `Subgraph.IsSpannerOf`, `Subgraph.IsTCSpanner`) | `SimpleGraph.Connectivity` |
-| `TemporalGraph/Dismountability/Basic.lean` | `Dismountable`, `TwoHopDismountable`, partition `vminus`/`vplus`/`vzero`, bijections earliest/latest-neighbor — correspond aux Lemmes 3.1, 3.2, 3.4 et au Corollaire 3.3 de SAND 2025 ; réciprocité `earliestEdge_reciprocity`/`latestEdge_reciprocity` (Lemme 3.5), `biclique_of_not_twoHopDismountable` (Corollaire 4.1), `between_TC_of_not_twoHopDismountable` (remarque après le Corollaire 4.1), `temporallyConnected_of_reachable_of_matchings` (§4.1) | — |
-| `TemporalGraph/Dismountability/Operations.lean` | Opérations `dismount`/`mount`/`twoHopMount` et leurs théorèmes de correction (`dismountability`, `twoHopDismountability`), `mount_temporallyConnected`/`twoHopMount_temporallyConnected`, et `exists_isSpannerOf_of_twoHopDismountable` (SAND 2025, Théorème 2.1 et §2.1) | — |
-| `TemporalGraph/Dismountability/OneSided.lean` | Dismountability *one-sided* (SAND 2025, §4.1) : spanner unilatéral `IsSpannerFromTo` (de `s` vers `t`), `OneSidedDismountable`, `oneSidedMount` (+ API, `oneSidedMount_size`), découpage `IsSpannerFromTo.sup` / `isSpannerFromTo_sup_of_induce`, étape `oneSidedDismountability`, pigeonnier `exists_oneSidedDismountable_of_ncard_lt`, assemblage `temporallyConnected_of_isSpannerFromTo` | — |
-| `TemporalGraph/Dismountability/OneSidedBound.lean` | Borne `O(n log n)` (SAND 2025, §4.1) : récurrence `spannerBound` et `spannerBound_isBigO`, `IsOneSidedSpannerBound` / `exists_isBigO_isOneSidedSpannerBound` (bi-cliques), `exists_isSpannerFromTo_ncard_le` et `exists_isSpannerOf_of_not_twoHopDismountable`, puis `exists_isSpannerOf_ncard_le` (borne explicite `2n⌈log₂ n⌉ + 4n`) et `exists_isBigO_isSpannerOf` (cliques) | — |
+| `TemporalGraph/Basic.lean` | Type central `TemporalGraph V` (juste `Adj : V → V → ℕ → Prop`), classes `IsSymm`/`IsLoopless`, prédicats `IsSimple`/`IsClique`/`IsCliqueGraph`/`IsProper`/`IsHappy`, `EarliestEdge`/`LatestEdge`/`EarliestNeighbor`/`LatestNeighbor`, ordre `≤`/`⊥`, `footprint` (→ `Digraph`), `simpleFootprint` (→ `SimpleGraph`, via `SimpleGraph.fromRel`, sans hypothèse), `adjAt`, `symmetrize`, `fromEdgeSet`, `neighborSet`, `incidenceSet`, `arcTime` (ensemble `Set ℕ` des temps des arcs de `u` vers `v`, `{n | G.Adj u v n}`), `arcSet`/`arcSize` (monde orienté), `edgeSet`/`size` (monde symétrique ; `mem_edgeSet` demande seulement `[IsSymm]`) ; `size`/`arcSize` sont des `def` calculables (pattern `SimpleGraph.degree` : `Fintype.card` sous une instance `[Fintype G.edgeSet]`/`[Fintype G.arcSet]`), avec la forme instance-free `Set.ncard` disponible via `size_eq_ncard`/`arcSize_eq_ncard` | `SimpleGraph`, mais sans `symm`/`loopless` bundlés |
+| `TemporalGraph/NonemptyTemporalWalk.lean`, `TemporalGraph/TemporalWalk.lean` | Marches temporelles non strictes, à temps croissant ; prédicat `IsStrict` (temps strictement croissants, propagé de `NonemptyTemporalWalk` à `TemporalWalk`) et raccourcissement `NonemptyTemporalWalk.exists_isStrict` ; API `length`/`support`/`arcs`/`append`/`mapLe` (`length_append`, `arcs_append`, `*_mapLe`, `mapLe_append`, `mapLe_mapLe`, `start_mem_support`, `end_mem_support`, `adj_of_mem_arcs`) ; `TemporalWalk.edges` (arêtes traversées, `length_edges`, `ncard_setOf_mem_edges_le`) et `transfer` (déplace une marche vers un graphe contenant ses arcs, `adj_of_edges_subset`) | `SimpleGraph.Walk` |
+| `TemporalGraph/Subgraph.lean` | Agrégateur pur des trois modules `Subgraph/` ci-dessous (`import TemporalGraph.Subgraph` continue de fonctionner) | — |
+| `TemporalGraph/Subgraph/Basic.lean` | Sous-graphe temporel : `TemporalGraph.Subgraph` étend `TemporalGraph V`, ajoutant `verts`+preuves `adj_sub`/`edge_vert`/`edge_vert'` ; coercions (`coe`, `toTemporalGraph`), prédicats hérités `IsSymm`/`IsSimple`/`IsProper`/`IsHappy`, spécifiques au sous-graphe `IsCliqueSubgraph` ; `edgeSet`, `neighborSet`, `size`, `incidenceSet` sont hérités de `TemporalGraph` ; treillis borné et union `⊔` (`SemilatticeSup`), `induce`/`deleteVerts`/`addVerts` ; `induce_le_of_subset`, `deleteVerts_induce_of_subset` ; monotonie `toTemporalGraph_le`/`toTemporalGraph_le_self` | `SimpleGraph.Subgraph` |
+| `TemporalGraph/Subgraph/Operations.lean` | `addArc`/`addEdge`, lemmes de transfert earliest/latest (`top_earliestEdge`, `earliestEdge_of_le`, `coe_earliestEdge`, …), `neighborSet` | — |
+| `TemporalGraph/Subgraph/EdgeSet.lean` | `edgeSet` (`edgeSet_subset`, `sup_edgeSet`, `addEdge_edgeSet`, `footprintEdgeSet`), `size`/`order` et leurs formes `ncard`, constructions `toSubgraph`/`fromEdgeSet` (`adj_fromEdgeSet`, `exists_matchingEdges`) | — |
+| `TemporalGraph/Helpers/SetCard.lean` | Lemmes génériques sur `Set.ncard`, sans contenu de graphe (simples aides, pas destinées à Mathlib), dans le namespace `Set` : `Set.exists_median_threshold`, `Set.exists_subset_ncard_halves`, `Set.finite_and_ncard_le_of_functional`, `Set.ncard_pair_le`, `Set.ncard_le_four` | — |
+| `TemporalGraph/Bipartite.lean` | Bipartition temporelle `IsBipartiteWith`/`IsBipartite` (ensembles explicites, sans hypothèse de symétrie, non classe), pont `isBipartiteWith_iff_simpleFootprint` vers Mathlib, restriction `between` aux arcs entre deux ensembles, bi-cliques temporelles `IsBicliqueWith`/`IsBiclique` (SAND 2025 §1.1 ; prennent un ensemble de sommets), constructeur `completeBipartite` sur `α ⊕ β`, `isBicliqueWith_induce` (restreint les deux parties `s' ⊆ s`, `t' ⊆ t`), et au niveau `Subgraph` : `Subgraph.between` | `SimpleGraph/Bipartite.lean` |
+| `TemporalGraph/Connectivity/Basic.lean`, `Connectivity/Subgraph.lean` | `Reachable` (avec monotonie `Reachable.mono`), `ReachableWithin` (marche partant à un temps `≥ a` et arrivant à un temps `≤ b`) et ses abréviations `ReachableBefore`/`ReachableAfter`, `StrictReachable` et l'équivalence `reachable_iff_strictReachable` (graphe symétrique et propre ; `IsSymm` nécessaire), `TemporallyConnected` (prend un ensemble `S : Set V` ; shorthands `TemporallyConnectedGraph` pour `Set.univ` et `Subgraph.TemporallyConnectedSubgraph` pour `H.verts`) ; spanners au niveau sous-graphe sur `V` (`Subgraph.IsSpanner`, `Subgraph.IsSpannerOf`, `Subgraph.IsTCSpanner`, `isSpannerOf_of_le_of_temporallyConnected`, `TemporalWalk.reachableBefore_fromEdgeSet`) | `SimpleGraph.Connectivity` ; `temporallyConnected_of_earliestEdge_matching`, `temporallyConnected_of_latestEdge_matching`, `temporallyConnected_of_reachable_of_matchings` (§4.1) |
+| `TemporalGraph/Dismountability/Basic.lean` | `Dismountable`, `TwoHopDismountable`, partition `vminus`/`vplus`/`vzero`, fonctions `earliestNeighborFn`/`latestNeighborFn` (définies sur `TemporalGraph`, à valeurs dans `Option V`, héritées par les sous-graphes) et leurs bijections — correspond aux Lemmes 3.1, 3.2, 3.4 et au Corollaire 3.3 de SAND 2025 ; réciprocité `earliestEdge_reciprocity`/`latestEdge_reciprocity` (Lemme 3.5), `biclique_of_not_twoHopDismountable` (Corollaire 4.1), `temporallyConnectedSubgraph_between_of_not_twoHopDismountable` (remarque après le Corollaire 4.1) | — |
+| `TemporalGraph/Dismountability/Operations.lean` | Opérations `dismount`/`mount`/`twoHopMount` et leurs théorèmes de correction (`dismountability`, `twoHopDismountability`), `exists_edgeSet_of_earliest`/`exists_edgeSet_of_latest` (les deux côtés de la {1,2}-hop dismountability), `mount_temporallyConnected`/`twoHopMount_temporallyConnected`, et `exists_isSpannerOf_of_twoHopDismountable` (SAND 2025, Théorème 2.1 et §2.1) ; induction générique sur les cliques `exists_isSpannerOf_ncard_le_of_forall_not_twoHopDismountable` (si toute clique non {1,2}-hop dismountable a un spanner à au plus `f n` arêtes et `f n + 4 ≤ f (n + 1)`, toute clique finie simple propre en a un) | — |
+| `TemporalGraph/Dismountability/OneSided.lean` | Dismountability *one-sided* (SAND 2025, §4.1) : spanner unilatéral `IsSpannerFromTo` (de `s` vers `t`), `OneSidedDismountable` (côté cible, défini sur `TemporalGraph`, hérité par les sous-graphes) et son miroir `SourceDismountable`, `oneSidedMount` (+ API, `oneSidedMount_size`), découpage `IsSpannerFromTo.sup` / `isSpannerFromTo_sup_of_induce`, étapes `oneSidedDismountability`/`sourceDismountability`, `isSpannerFromTo_iff_of_isBicliqueWith` (dans une bi-clique la prémisse d'atteignabilité est automatique), `exists_earliestEdge_of_isBicliqueWith`, pigeonnier `exists_oneSidedDismountable_of_ncard_lt`, assemblage `temporallyConnected_of_isSpannerFromTo` | — |
+| `TemporalGraph/Dismountability/OneSidedBound.lean` | Borne `O(n log n)` (SAND 2025, §4.1) : récurrence `spannerBound` et `spannerBound_isBigO`, `IsOneSidedSpannerBound` / `exists_isBigO_isOneSidedSpannerBound` (bi-cliques), `exists_isSpannerFromTo_ncard_le` et `exists_isSpannerOf_of_not_twoHopDismountable`, puis `exists_isSpannerOf_ncard_le` (borne explicite `2n⌈log₂ n⌉ + 4n`) et `exists_isBigO_isSpannerOf` (cliques ; instance de l'induction générique), `isSpannerFromTo_of_targetDismount`/`isSpannerFromTo_of_sourceDismount` (une cible/source dismountable coûte au plus deux arêtes) | — |
+| `TemporalGraph/LinearSpanner/ExtremallyMatched.lean` | `IsExtremallyMatched G s t` (Baligács 2026, §2.3 : bi-clique dont les arêtes earliest et latest forment des couplages parfaits), défini sur `TemporalGraph` (les sous-graphes l'héritent) ; API dans le namespace `TemporalGraph.IsExtremallyMatched` (`N_min`/`N_max` = `earliestNeighborFn`/`latestNeighborFn`, involutions, `ncard_eq`, `temporallyConnected`) | — |
+| `TemporalGraph/LinearSpanner/Reduction.lean` | Réduction aux bi-cliques extremally matched : `Subgraph.isExtremallyMatched_of_not_dismountable` (§2.3) et `Subgraph.exists_isExtremallyMatched_reduction` (Lemme 5) ; aides `IsExtremallyMatched.induce`, `isExtremallyMatched_induce_empty` | — |
+| `TemporalGraph/LinearSpanner/Stars.lean` | Définitions des étoiles : `earlySources`/`upperSources`/`lateTargets` (ensembles d'une coupure), `eMin`/`eMax`, `incidentEdges`, `simpleStar`, `IsCutCrossing` (Définition 8), arêtes d'extension et étoiles étendues `extStarSource`/`extStarTarget` (Définition 12), avec API d'appartenance, d'inclusion dans `edgeSet` et de comptage (`Set.finite_and_ncard_le_of_functional`) | — |
+| `TemporalGraph/LinearSpanner/SimpleStar.lean` | Observation 9 : `IsExtremallyMatched.exists_reachable_simpleStar` | — |
+| `TemporalGraph/LinearSpanner/ExtendedStar.lean` | Lemmes 13, 14, 16 et Corollaire 15 sur les étoiles étendues, et le comptage `ncard_extStar_union_le` (au plus `6n` arêtes) | — |
+| `TemporalGraph/LinearSpanner/Bound.lean` | `Set.exists_median_threshold` (seuil médian), `exists_reachable_of_threshold` (Lemme 17, forme à seuil), `IsExtremallyMatched.exists_isSpannerFromTo_temporallyConnected` (Théorèmes 18 et 6, au plus `14n` arêtes) et `Subgraph.exists_isSpannerFromTo_ncard_le_linear` (Théorème 3, bi-cliques) | — |
+| `TemporalGraph/LinearSpanner/Clique.lean` | `Subgraph.isExtremallyMatched_between_of_not_twoHopDismountable` (Théorème 20), `exists_isSpannerOf_ncard_le_seven_mul_of_not_twoHopDismountable`, `exists_isSpannerOf_ncard_le_seven_mul` (Théorème 2, au plus `7n` arêtes) et `exists_isBigO_isSpannerOf_linear` (forme `O(n)`) | — |
 | `TemporalGraph/Examples.lean` | Graphe de démo `square` (carré à 4 sommets), avec ses propriétés portées comme instances (`square_isSymm`, `square_isLoopless`, …) | — |
 | `TemporalGraph.lean` (racine) | Pur agrégateur d'imports, aucun code | — |
 
@@ -159,10 +207,29 @@ utilisaient vraiment).
   `H.incidenceSet x` sont les notions héritées. Une notion qui porte sur des sommets donnés les
   prend dans `V` (avec des hypothèses d'appartenance) ; une notion qui quantifie sur les sommets
   prend un `Set V`. `H.coe : TemporalGraph H.verts` reste une petite API optionnelle (ponts
-  `is*_iff_coe`, `coe_earliestEdge`…). Les bijections `earliestNeighborFn`/`latestNeighborFn`
-  suivent aussi cette règle : ce sont des fonctions totales `V → V` (`earliestNeighborFn_bijOn`,
-  `latestNeighborFn_bijOn` énoncent `Set.BijOn` entre `H.vplus` et `H.vminus`), sans passer par le
-  sous-type.
+  `is*_iff_coe`, `coe_earliestEdge`…). Les fonctions `earliestNeighborFn`/`latestNeighborFn`
+  suivent aussi cette règle : définies sur `TemporalGraph` (héritées par `H`), elles vont de `V`
+  dans `Option V`, `none` signalant l'absence de voisin (une valeur par défaut dans `V` serait une
+  réponse valide, donc indiscernable). `earliestNeighborFn_bijOn`/`latestNeighborFn_bijOn`
+  énoncent `Set.BijOn` de `H.vplus` sur `some '' H.vminus` (et réciproquement), sans passer par le
+  sous-type. **Pas de décharge automatique de l'existence** (choix validé) : on prouve d'abord
+  l'existence, puis on déballe avec `Option.get`
+  (`(G.earliestNeighborFn x).get (earliestNeighborFn_isSome_iff.2 h)`), ou l'on travaille avec
+  `… = some y`. Jamais `Option.get!`/`Option.getD` (valeur par défaut = valeur valide). Ne jamais
+  comparer avec l'ordre d'`Option` (`none` minimal) : passer par la valeur,
+  `∃ u ∈ G.earliestNeighborFn v, …`.
+- **Temps des arcs : un ensemble, lu sur `Adj`** (choix du 2026-11-10). `arcTime G u v : Set ℕ :=
+  {n | G.Adj u v n}` (schéma de `SimpleGraph.neighborSet`), sans `choose` ni `Option` :
+  `mem_arcTime` (`@[simp]`, `Iff.rfl`) ramène l'appartenance à `G.Adj u v n`, qui est la forme
+  normale. Les énoncés ponctuels s'écrivent donc sur `Adj` : `∃ k, G.Adj u v k ∧ k ≤ τ` (ou
+  `∃ k, G.Adj x z k ∧ ∃ l, G.Adj x c l ∧ k ≤ l`), exacts dans tout graphe ; `arcTime` sert aux
+  énoncés sur l'ensemble lui-même (`arcTime_eq_empty_iff`, `IsSimple.arcTime_subsingleton`,
+  `arcTime_eq_singleton`, `arcTime_comm` sous le seul `[IsSymm]`, `arcTime_mono`). Retourner une
+  arête : `h.symm`. L'unicité d'un temps vient de `IsSimple` (`h₀ hk hk' : k = k'`) ; prix : les
+  comptages « au plus une arête par sommet » (`ncard_eMin_le`, `ncard_incidentEdges_le`,
+  `ncard_sourceExtendEdges_le`, `ncard_extStar_union_le`) demandent `IsSimple`. Les fonctions de
+  voisins restent à valeurs dans `Option` : leurs bijections (`Set.BijOn`, `InjOn`, `ncard_image`)
+  demandent une vraie fonction.
 - **Renommage ultérieur (commit `acb993a`)** : le constructeur à une seule orientation, sans
   aucune hypothèse de symétrie, s'appelle maintenant `addArc` (l'ancien `addEdge` générique), et
   le constructeur à deux orientations qui demande `[G.IsSymm]` s'appelle maintenant `addEdge`
@@ -185,7 +252,7 @@ le `lean_lib` n'avait pas de `globs`, si bien que `lake build` ne compilait que 
 ses imports — ce qui s'arrête à `Subgraph`. `Connectivity/*` et `Dismountability/*`
 n'étaient donc jamais construits, ni en local ni en CI. Le `lakefile.toml` déclare désormais
 `globs = ["TemporalGraph.*"]` : un `lake build` nu couvre tout, racine comprise (`.+` ne prend
-que les sous-modules stricts et saute la racine `TemporalGraph`, que `checkdecls` importe). Si un doute subsiste sur un module
+que les sous-modules stricts et saute la racine `TemporalGraph`, qu'importe le blueprint). Si un doute subsiste sur un module
 précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Operations`).
 
 ## Conventions de nommage/style observées
@@ -267,9 +334,11 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
 - **Imports Mathlib précis, jamais `import Mathlib`** : `Basic` importe `Combinatorics.Digraph.Basic`,
   `Combinatorics.SimpleGraph.Basic` et `Data.Set.Card` ; chaque fichier ajoute ce qu'il utilise
   (`import` simple si seules les preuves en ont besoin). Le build est passé de 8977 à 2095 tâches.
-- **Fichiers en modules** : tous sauf `Examples` et la racine `TemporalGraph.lean`, c'est-à-dire
-  `Init`, `Basic`, `NonemptyTemporalWalk`, `TemporalWalk`, `Connectivity/*`, `Subgraph`,
-  `Bipartite` et `Dismountability/*`. Un module n'importe que des
+- **Fichiers en modules** : tous sauf la racine `TemporalGraph.lean`, c'est-à-dire `Init`,
+  `Basic`, `NonemptyTemporalWalk`, `TemporalWalk`, `Connectivity/*`, `Subgraph`, `Bipartite`,
+  `Dismountability/*`, `LinearSpanner/*`, `Helpers/*` et `Examples`. `Examples` est devenu un module
+  lors du passage en `v4.36.0-rc2`, où un non-module qui importe Mathlib déclenche un avertissement
+  (« designed for use with the module system »). Un module n'importe que des
   modules, mais un non-module peut importer un module : on porte donc de bas en haut.
 - **Motif (celui de Mathlib)** : copyright, `module`, imports en `public import` (en `import`
   simple s'ils ne servent qu'aux preuves), docstring de module, puis `@[expose] public section`
@@ -306,6 +375,17 @@ précis, le nommer explicitement (`lake build TemporalGraph.Dismountability.Oper
   `Subgraph.loopless`). C'est le revers de la médaille : le lemme corpus du parent s'applique à
   `H.Adj` gratuitement précisément parce que le type n'en distingue plus l'adjacence du
   sous-graphe de celle d'un graphe.
+- **Résultats Baligács sur `TemporalGraph`** : les notions du papier (`IsExtremallyMatched`,
+  `eMin`, `simpleStar`, …) sont définies sur `TemporalGraph` (les sous-graphes les héritent) ; les
+  résultats sur les bi-cliques extremally matched vivent dans le namespace
+  `TemporalGraph.IsExtremallyMatched` et s'utilisent en `h.foo`.
+- **Spanners construits à partir d'ensembles d'arêtes** : `Subgraph.fromEdgeSet G E`. Les
+  variantes sur les bi-cliques extremally matched portent un suffixe distinct
+  (`IsExtremallyMatched.mem_eMin_of_mem_union`) pour ne pas masquer le lemme général
+  `TemporalGraph.mem_eMin` à l'intérieur du namespace `IsExtremallyMatched`.
+- **Linter `unusedArguments`** (Batteries) : `#lint only unusedArguments in TemporalGraph` passe sur
+  toute la bibliothèque et doit continuer à passer ; il a trouvé et fait retirer plusieurs
+  hypothèses inutiles (par ex. `[G.IsLoopless]` dans `dismountability`).
 - Automatisation via la macro `aesop_temporal_graph`, qui utilise le rule-set aesop
   `TemporalGraph` déclaré dans `Init.lean`.
 
@@ -339,7 +419,7 @@ bi-clique entre `V⁻` et `V⁺` est une remarque en prose juste après le Corol
 | `exists_isSpannerOf_ncard_le` (`Dismountability/OneSidedBound.lean`) | §4.1, borne explicite `2n⌈log₂ n⌉ + 4n` |
 | `earliestEdge_reciprocity`, `latestEdge_reciprocity` | Lemme 3.5 (Reciprocity), énoncés (1) et (2) |
 | `biclique_of_not_twoHopDismountable` | Corollaire 4.1 (bi-clique entre `V⁻` et `V⁺`) |
-| `between_TC_of_not_twoHopDismountable` | remarque en prose après le Corollaire 4.1 |
+| `temporallyConnectedSubgraph_between_of_not_twoHopDismountable` | remarque en prose après le Corollaire 4.1 |
 | `oneSidedDismountability`, `exists_oneSidedDismountable_of_ncard_lt` (`Dismountability/OneSided.lean`) | §4.1, dismountability *one-sided* d'Angrick et al. (non numéroté) |
 | `exists_isBigO_isOneSidedSpannerBound`, `exists_isBigO_isSpannerOf` (`Dismountability/OneSidedBound.lean`) | §4.1, spanners `O(n log n)` des bi-cliques puis des cliques (non numéroté) |
 
@@ -357,6 +437,42 @@ dismountable, V⁰ = ∅. -/`. Toujours écrire la forme complète `SAND 2025, L
 - binders courts regroupés sur une ligne (dans la limite de 100 caractères), binder long seul sur
   sa ligne.
 
+## Repères Baligács 2026 ↔ code
+
+Seconde référence : **Júlia Baligács, *Temporal Cliques Admit Linear Spanners*, arXiv:2606.05156v1
+(2026)**. Il n'existe qu'un preprint : la numérotation est **celle de l'arXiv v1** (à revérifier si
+une version publiée paraît).
+
+| Baligács 2026 (arXiv v1) | Code | Fichier |
+|---|---|---|
+| §2.1, étiquettes λ | les temps `n` de `G.Adj u v n` dans les énoncés ; `arcTime` (`Set ℕ`, singleton `{λ}` dans un graphe simple) | `Basic.lean` |
+| `N_min` / `N_max` | `earliestNeighborFn` / `latestNeighborFn` (`V → Option V`) | `Dismountability/Basic.lean` |
+| §2.3, source / cible dismountable | `SourceDismountable` / `OneSidedDismountable` ; étapes `sourceDismountability`, `oneSidedDismountability` ; `isSpannerFromTo_of_sourceDismount`, `isSpannerFromTo_of_targetDismount` | `Dismountability/OneSided.lean`, `OneSidedBound.lean` |
+| §2.3, bi-clique extremally matched | `IsExtremallyMatched` | `LinearSpanner/ExtremallyMatched.lean` |
+| §2.3, aucun sommet dismountable ⇒ extremally matched | `Subgraph.isExtremallyMatched_of_not_dismountable` | `LinearSpanner/Reduction.lean` |
+| Lemme 5 | `Subgraph.exists_isExtremallyMatched_reduction` | `LinearSpanner/Reduction.lean` |
+| Définition 8 (i), (ii) | `simpleStar`, `IsCutCrossing` | `LinearSpanner/Stars.lean` |
+| Observation 9 | `IsExtremallyMatched.exists_reachable_simpleStar` | `LinearSpanner/SimpleStar.lean` |
+| Définition 12 | `IsSourceExtendTarget`, `IsTargetExtendSource`, `extStarSource`, `extStarTarget` | `LinearSpanner/Stars.lean` |
+| Lemme 13 (a), (b) | `IsExtremallyMatched.reachable_extStarSource`, `reachable_extStarTarget` | `LinearSpanner/ExtendedStar.lean` |
+| Lemme 14 (a), (b) | `IsExtremallyMatched.le_of_not_reachable_extStarSource`, `…Target` | `LinearSpanner/ExtendedStar.lean` |
+| Corollaire 15 | `IsExtremallyMatched.chain_of_not_reachable` | `LinearSpanner/ExtendedStar.lean` |
+| Lemme 16 | `IsExtremallyMatched.isCutCrossing_or_reachable` | `LinearSpanner/ExtendedStar.lean` |
+| preuve du Lemme 17, `\|Ext ∪ Ext\| ≤ 6n` | `IsExtremallyMatched.ncard_extStar_union_le` | `LinearSpanner/ExtendedStar.lean` |
+| Lemme 17 (forme à seuil) | `IsExtremallyMatched.exists_reachable_of_threshold` | `LinearSpanner/Bound.lean` |
+| Théorème 18 (avec le Théorème 6) | `IsExtremallyMatched.exists_isSpannerFromTo_temporallyConnected` | `LinearSpanner/Bound.lean` |
+| Théorème 3 | `Subgraph.exists_isSpannerFromTo_ncard_le_linear` | `LinearSpanner/Bound.lean` |
+| Observation 19 | `exists_isSpannerOf_of_twoHopDismountable` de SAND, dans l'induction générique `exists_isSpannerOf_ncard_le_of_forall_not_twoHopDismountable` | `Dismountability/Operations.lean` |
+| Théorème 20 | `Subgraph.isExtremallyMatched_between_of_not_twoHopDismountable` (= SAND 2025 Corollaire 4.1 + Lemme 3.5) | `LinearSpanner/Clique.lean` |
+| Théorème 2 | `Subgraph.exists_isSpannerOf_ncard_le_seven_mul`, `Subgraph.exists_isBigO_isSpannerOf_linear` | `LinearSpanner/Clique.lean` |
+
+Docstrings : même convention que pour SAND, forme complète en tête (`/-- Baligács 2026, Lemma 17:
+… -/`), jamais `Lemma 17` seul (les numéros se confondraient avec ceux de SAND ou de CPS).
+
+**Non formalisés** : Lemme 4, Lemme 10, Proposition 11, l'aspect temps polynomial, et les
+réductions de §2.1 aux graphes simples et propres (gardées comme hypothèses `IsSimple`/`IsProper`,
+comme pour SAND).
+
 ## Commandes utiles
 
 - Le toolchain Lean (`lean`, `lake`, `elan`) est dans `~/.elan/bin`, pas forcément sur le `PATH`
@@ -364,37 +480,67 @@ dismountable, V⁰ = ∅. -/`. Toujours écrire la forme complète `SAND 2025, L
 - `lake build` : build complet, vert, et il couvre bien tous les modules depuis l'ajout des
   `globs` au `lakefile.toml`.
 - `lake build TemporalGraph.Dismountability.Operations` : un module précis, avec ses dépendances.
+- Linter `unusedArguments` : fichier temporaire (scratchpad) contenant `import TemporalGraph`,
+  `import Batteries.Tactic.Lint` et `#lint only unusedArguments in TemporalGraph`, lancé avec
+  `lake env lean <fichier>` ; la sortie doit être vide de tout avertissement.
 - `lake env lean TemporalGraph/<Fichier>.lean` : typechecker un fichier isolé (demande que les
   `.olean` de ses dépendances existent déjà).
-- Blueprint : projet uv dans `blueprint/` (`pyproject.toml` + `uv.lock`, pas de
-  `requirements.txt`). Depuis la racine : `uv run --project blueprint leanblueprint web`, puis
-  `lake env lean --run scripts/CheckDecls.lean blueprint/lean_decls` pour vérifier que les
-  déclarations citées existent. **Ne plus utiliser `leanblueprint checkdecls`** : `lake exe
-  checkdecls` importe toutes les bibliothèques du paquet, dont `Challenge` et `Solution`, qui
-  définissent les mêmes noms (exigence de Comparator) ; l'import commun échoue sur ces doublons.
-  Le script n'importe que `TemporalGraph`.
-- Soumission Palomar (dépôt unique) : `Challenge.lean` (énoncé, imports Mathlib seuls, `sorry`
-  volontaires), `Solution.lean` (mêmes énoncés, prouvés), `comparator.json`, `formalization.yaml`
-  (complet : relecture humaine de l'auteur faite, `review.status: self-assessed`). La licence est
-  `LICENSE` (texte brut officiel d'Apache 2.0). `Solution.lean` recopie à l'identique les
-  définitions de `Challenge.lean` et contient tout le pont avec la bibliothèque (aucun fichier
-  propre à la soumission dans `TemporalGraph/`) ; toute modification d'une définition doit être
-  reportée dans les deux fichiers. Tout fichier `.lean` du dépôt doit rester un module
-  (`Examples` et la racine compris).
-  plasTeX seul, **aucune distribution TeX** : le `kpsewhich` dont plasTeX a besoin est fourni par
-  le projet uv (`blueprint/blueprint_tools/`, script installé dans `blueprint/.venv/bin`). Sans
-  lui, plasTeX ne trouve pas `macros/common` et plante avec `TypeError: unhashable type:
-  'definition'`. PDF : `uv run --project blueprint install-tinytex` (une fois ; TinyTeX épinglé,
-  xelatex, dans `blueprint/.venv/tinytex`), puis `leanblueprint pdf`. Le script `latexmk` du venv
-  met TinyTeX en tête du PATH. pytinytex n'est pas utilisable : il cherche un `.tgz` macOS alors
-  que TinyTeX ≥ v2026.09 publie des `.tar.xz`.
-- Doc API : projet Lake séparé `docbuild/` (miroir de celui de `docgen-action`, `packagesDir`
-  partagé avec la racine) : `cd docbuild && DOCGEN_SRC=file lake build TemporalGraph:docs`.
-  `DOCGEN_SRC=file` est obligatoire en local : le défaut `github` échoue sur le remote GitLab.
-  Premier lancement : environ 3 h, sans aucune compilation. doc-gen4 extrait les `:docInfo` de
-  tout Mathlib dans un SQLite, et aucune option ne l'évite. Les lancements suivants sont
-  incrémentaux, en quelques minutes. Ne pas supprimer `docbuild/.lake`. Garder le `rev` de doc-gen4
-  égal au tag de `lean-toolchain`.
+- **Blueprint : verso-blueprint** (migré depuis leanblueprint/plasTeX le 2026-11-06). Projet Lake
+  séparé `blueprint/` (comme `docbuild/`, `packagesDir` partagé, la bibliothèque ne dépend pas de
+  Verso). Un chapitre = un fichier `blueprint/Blueprint/Chapters/*.lean`, assemblés par
+  `blueprint/Blueprint.lean` ; macros TeX dans `Blueprint/TeXPrelude.lean`, qui importe aussi
+  `TemporalGraph` (indispensable : `(lean := "…")` ne résout que les noms importés). Depuis
+  `blueprint/` : `./scripts/setup-verso-blueprint.sh` (une fois), `lake build` (vérifie chaque nom
+  Lean, `strictResolve` : remplace `checkdecls`, retiré du dépôt), `lake exe vbp build [--pdf]`
+  (`_out/site/html-multi/`, `_out/site/pdf/main.pdf` via le `lualatex` système), `lake exe vbp
+  query status <label>`. La progression (`\leanok`) est calculée côté Lean. Conventions de
+  portage : `:::definition|lemma_|theorem|corollary "label" (uses := "a, b") (lean := "X, Y")`,
+  titre d'énoncé en tête de corps `*Titre.*` (pas d'option `title`), `_…_` = italique
+  (`*…*` = gras), `{bpref "label"}[]` pour `Lemma~\ref{…}`, `{ref "chap:…"}[Titre]` pour un
+  chapitre/une section.
+  - **Correctif temporaire** : verso-blueprint n'a pas de ligne 4.36. `vendor/verso-blueprint`
+    (non versionné) = tag `v4.35.0` + `blueprint/patches/verso-blueprint-v4.35.0-lean-4.36.patch`
+    (port vers `Lean.Html` et les vues `Lean.Doc` de Lean 4.36 : `.tag`→`.element`,
+    `TSyntax \`block`→`Lean.Doc.VersoBlock`, expandeurs sur `InlineView`/`BlockView`,
+    `StrLit`→`VersoCodeBlock`). Le `lakefile.lean` le prend par chemin et force Verso, SubVerso,
+    verso-slides et lean-vir (#275) en rc2. Dès qu'une branche `v4.36` amont existe : revenir à
+    `require VersoBlueprint from git … @ "v4.36…"`, supprimer `vendor/`, `patches/`, le script.
+    Le patch contient aussi un correctif de mise en page PDF **hors portage**, à reporter en
+    amont (sinon perdu au retour au git) : `allowVerbBreaks` dans `TeX/Cleanup.lean` ajoute
+    `\fvset{breakafter={/.\_}}` (le code en ligne `\LeanVerb` ne se coupait qu'aux espaces) et
+    `\emergencystretch` au préambule. Mesuré : 52 boîtes trop larges → 2.
+  - **Piège mesuré** : sans épinglage explicite de ProofWidgets, Cli et plausible sur les
+    révisions du manifeste racine, `lake update` dans `blueprint/` remet les révisions de
+    verso-blueprint **dans le `.lake/packages` partagé** (mettre la bibliothèque en premier
+    `require` ne suffit pas). Mettre ces épinglages à jour avec chaque montée de version, et
+    vérifier les checkouts partagés après tout `lake update` dans `blueprint/`.
+  - **Piège** : la sortie TeX de Verso n'échappe que `\`, `{`, `}`, `^` : un `&`, `%`, `#` ou `_`
+    dans la prose casse le PDF (lualatex « Misplaced alignment tab »). Les garder hors du texte.
+  - Ouvrir un fichier de `vendor/` dans VS Code lance un serveur Lean sur ce sous-projet : son
+    `lean-toolchain` est donc aligné sur la toolchain racine.
+- Doc API : projet Lake séparé `docbuild/` (`packagesDir` partagé avec la racine) :
+  `cd docbuild && DOCGEN_SRC=file lake build TemporalGraph:docs`. `DOCGEN_SRC=file` est
+  obligatoire en local : le défaut `github` échoue sur le remote GitLab. Premier lancement, sans
+  aucune compilation : doc-gen4 extrait les `:docInfo` des ~4 700 modules importés (Mathlib
+  compris) dans un SQLite, et aucune option ne l'évite. **Mesuré le 2026-11-06 en rc2 : 15 min sur
+  12 cœurs, 12 processus en parallèle, au plus ~1,9 Go par processus (pic total ~10 Go), site de
+  521 Mo, `docbuild/.lake` de 1,3 Go.** L'ancien « ~3 h » venait de la pression mémoire de
+  l'époque, pas de doc-gen4. Les lancements suivants sont incrémentaux. Ne pas supprimer
+  `docbuild/.lake`. Garder le `rev` de doc-gen4 égal au tag de `lean-toolchain`.
+- **CI GitHub (phase 4, 2026-11-06)** : `lean_action_ci.yml` n'utilise plus `docgen-action`
+  (elle réécrivait `docbuild/lakefile.toml` et ne connaît que leanblueprint). Un job `build` :
+  lean-action, puis le blueprint (`blueprint/`, à chaque push et PR, vérifie les noms Lean), puis
+  la doc API depuis `docbuild/` (sur push), chacun avec son cache de paquets/`.lake` ; sur `main`,
+  assemblage `_site/` (`.github/pages/index.html`, `docs/`, `blueprint/`) et job `deploy` avec
+  `environment: github-pages` (son absence faisait échouer le déploiement du 2026-10-16). La
+  source Pages du dépôt GitHub doit être « GitHub Actions ». Le blueprint en CI est en HTML seul
+  (le PDF demanderait une TeX Live complète sur le runner). **Aucun build précompilé à
+  télécharger** (vérifié le 2026-11-06) : `lake cache get` (Reservoir) ne trouve rien pour Verso,
+  SubVerso ni doc-gen4, ni même pour Batteries en `v4.35.0`, sous macOS comme sous Linux ; doc-gen4
+  ne sait ni lier la doc Mathlib hébergée ni en télécharger les données. Seul levier : nos caches
+  Actions, avec `restore-keys` (un cache manqué restaure le plus récent, et les traces de Lake ne
+  refont que ce qui a changé). `setup-verso-blueprint.sh` estampille `vendor/` avec le SHA-256 du
+  patch et le recrée si le patch a changé.
 - `lake build` n'accepte pas `-j` (vérifié en `v4.29.0-rc6`).
 - **Comptage d'arêtes : pattern `SimpleGraph.degree`, pas de `noncomputable` exposé.** `size`/
   `arcSize` sont des `def` calculables, `Fintype.card G.edgeSet`/`G.arcSet` sous une instance
@@ -407,6 +553,6 @@ dismountable, V⁰ = ∅. -/`. Toujours écrire la forme complète `SAND 2025, L
   avec une égalité d'ensembles (par exemple `addEdge_edgeSet`, `mount_edgeSet`) passe directement
   sous `.ncard` sans détour par `Nat.card` ; la version `size` en est un corollaire sous
   `[Fintype …]`, via `size_eq_ncard`.
-- CI GitHub Actions existante (ne pas modifier sans raison) : `lean_action_ci.yml` (build +
-  docgen), `create-release.yml` (tag de release sur changement de `lean-toolchain`),
+- CI GitHub Actions existante (ne pas modifier sans raison) : `lean_action_ci.yml` (build,
+  blueprint, doc API, déploiement Pages ; voir « CI GitHub » ci-dessus), `create-release.yml` (tag de release sur changement de `lean-toolchain`),
   `update.yml` (PR/issue automatique sur mise à jour Mathlib).

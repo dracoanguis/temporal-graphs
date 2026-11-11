@@ -26,17 +26,23 @@ to the edges crossing a disjoint partition (`between`) is exactly a bi-clique on
 bridge to Mathlib's static bipartite graphs (`isBipartite_iff_simpleFootprint`), and a labelled
 complete bipartite graph constructor (`completeBipartite`); the reduction itself (SAND 2025,
 Corollary 4.1) is carried out in `Dismountability/Basic.lean`
-(`Subgraph.biclique_of_not_twoHopDismountable` and `Subgraph.between_TC_of_not_twoHopDismountable`).
+(`Subgraph.biclique_of_not_twoHopDismountable` and
+`Subgraph.temporallyConnectedSubgraph_between_of_not_twoHopDismountable`).
 
 ## Main definitions
 
 * `TemporalGraph.IsBipartiteWith`, `TemporalGraph.IsBipartite` : a temporal graph bipartite with
   given parts, resp. admitting some bipartition.
 * `TemporalGraph.between` : the restriction of a temporal graph to the arcs crossing a partition.
+  `TemporalGraph.IsSimple.between` and `TemporalGraph.IsProper.between` say that it keeps
+  simplicity and properness.
 * `TemporalGraph.IsBicliqueWith`, `TemporalGraph.IsBiclique` : temporal bi-cliques (SAND 2025,
   §1.1).
-* `TemporalGraph.completeBipartite` : the labelled complete bipartite graph on `α ⊕ β`.
-* `TemporalGraph.Subgraph.between` : the subgraph-level counterpart of `between`.
+* `TemporalGraph.completeBipartite` : the labelled complete bipartite graph on `α ⊕ β`; the
+  `completeBipartite_*` lemmas give its adjacency, symmetry, looplessness, simplicity,
+  properness (for `f` injective in each argument) and bi-clique structure.
+* `TemporalGraph.Subgraph.between` : the subgraph-level counterpart of `between`, with
+  `Subgraph.between_le` (it is a subgraph of `H`).
 
 `IsBiclique`, like `IsClique`, takes the vertex set `S` it quantifies over as an explicit
 argument (Mathlib's convention), so it needs no `Subgraph`-level duplicate: `H.IsBiclique
@@ -51,14 +57,16 @@ does.
 * `TemporalGraph.IsClique.between_isBicliqueWith` : restricting a clique to the arcs between two
   disjoint parts gives a temporal bi-clique on those parts (the one-step link used by SAND 2025,
   Corollary 4.1).
+* `TemporalGraph.completeBipartite_isBicliqueWith`, `TemporalGraph.completeBipartite_isBiclique` :
+  the complete bipartite graph is a bi-clique on its two summands.
 * `TemporalGraph.Subgraph.reachable_of_isBicliqueWith` : in a bi-clique on `s`/`t`, every vertex of
   `s` reaches every vertex of `t`.
 * `TemporalGraph.Subgraph.isBicliqueWith_subset_verts` : with both parts nonempty, `s ∪ t` is
   among `H`'s vertices.
 * `TemporalGraph.Subgraph.isBicliqueWith_induce`,
-  `TemporalGraph.Subgraph.isBicliqueWith_deleteVerts` : restricting a bi-clique to `s' ∪ t` (for
+  `TemporalGraph.Subgraph.isBicliqueWith_deleteVerts` : restricting a bi-clique to `s' ∪ t'` (for
   `s' ⊆ s`), resp. deleting vertices from it, keeps a bi-clique on the corresponding parts
-  (SAND 2025, §4.1, feeding into one-sided dismountability).
+  (SAND 2025, §4.1, feeding into one-sided dismountability, and Baligács 2026, Lemma 5).
 
 ## References
 
@@ -67,6 +75,8 @@ does.
 * Mathlib's `SimpleGraph.IsBipartiteWith`, `SimpleGraph.between` and
   `SimpleGraph.completeBipartiteGraph` (`Mathlib/Combinatorics/SimpleGraph/Bipartite.lean`) — the
   static model this file mirrors.
+* Baligács, *Temporal Cliques Admit Linear Spanners*, arXiv:2606.05156v1 (2026), Lemma 5 — the
+  reduction to extremally matched bi-cliques, which uses `Subgraph.isBicliqueWith_induce`.
 -/
 
 @[expose] public section
@@ -108,6 +118,7 @@ theorem IsBipartiteWith.mem_of_mem_adj (h : G.IsBipartiteWith s t) (hv : v ∈ s
     (hadj : G.Adj v w n) : w ∈ t := by
   have hor := h.mem_of_adj hadj
   have hnv : v ∉ t := Set.disjoint_left.mp h.disjoint hv
+  -- the second disjunct would put `v` in `t`
   tauto
 
 /-- If `v ∈ t` and `v` is adjacent to `w`, then `w ∈ s`. -/
@@ -115,6 +126,7 @@ theorem IsBipartiteWith.mem_of_mem_adj' (h : G.IsBipartiteWith s t) (hv : v ∈ 
     (hadj : G.Adj v w n) : w ∈ s := by
   have hor := h.mem_of_adj hadj
   have hnv : v ∉ s := Set.disjoint_right.mp h.disjoint hv
+  -- the first disjunct would put `v` in `s`
   tauto
 
 /-- A bipartition is inherited by any spanning subgraph: fewer adjacencies can only make the
@@ -126,11 +138,12 @@ theorem IsBipartiteWith.mono (h : H.IsBipartiteWith s t) (hle : G ≤ H) :
 
 /-- A bipartition rules out loops: a loop at `v` would put `v` in both parts, contradicting their
 disjointness. -/
-theorem IsBipartiteWith.isLoopless (h : G.IsBipartiteWith s t) : G.IsLoopless :=
-  ⟨fun _ ↦ ⟨fun v hv ↦ by
-    rcases h.mem_of_adj hv with ⟨hs, ht⟩ | ⟨hs, ht⟩
-    · exact Set.disjoint_left.mp h.disjoint hs ht
-    · exact Set.disjoint_left.mp h.disjoint ht hs⟩⟩
+theorem IsBipartiteWith.isLoopless (h : G.IsBipartiteWith s t) : G.IsLoopless := by
+  refine ⟨fun _ ↦ ⟨fun v hv ↦ ?_⟩⟩
+  -- a loop at `v` would put `v` in both parts
+  rcases h.mem_of_adj hv with ⟨hs, ht⟩ | ⟨hs, ht⟩
+  · exact Set.disjoint_left.mp h.disjoint hs ht
+  · exact Set.disjoint_left.mp h.disjoint ht hs
 
 /-- `⊥` is bipartite with any pair of disjoint parts: there is no arc to check. -/
 theorem isBipartiteWith_bot : (⊥ : TemporalGraph V).IsBipartiteWith s t ↔ Disjoint s t :=
@@ -151,11 +164,16 @@ underlying adjacency. Looplessness is needed only for the backward direction: a 
 not an edge of the footprint, but would put its vertex in both parts. -/
 theorem isBipartiteWith_iff_simpleFootprint [G.IsLoopless] :
     G.IsBipartiteWith s t ↔ G.simpleFootprint.IsBipartiteWith s t := by
-  refine ⟨fun h ↦ ⟨h.disjoint, ?_⟩,
-    fun h ↦ ⟨h.disjoint, fun _ _ n hadj ↦ h.mem_of_adj ⟨hadj.ne, .inl ⟨n, hadj⟩⟩⟩⟩
-  rintro v w ⟨-, ⟨n, hadj⟩ | ⟨n, hadj⟩⟩
-  · exact h.mem_of_adj hadj
-  · exact (h.mem_of_adj hadj).symm.imp And.symm And.symm
+  constructor
+  · -- an edge of the footprint comes from an arc in one of the two directions
+    intro h
+    refine ⟨h.disjoint, ?_⟩
+    rintro v w ⟨-, ⟨n, hadj⟩ | ⟨n, hadj⟩⟩
+    · exact h.mem_of_adj hadj
+    · exact (h.mem_of_adj hadj).symm.imp And.symm And.symm
+  · -- an arc of `G` is not a loop, hence is an edge of the footprint
+    intro h
+    exact ⟨h.disjoint, fun _ _ n hadj ↦ h.mem_of_adj ⟨hadj.ne, .inl ⟨n, hadj⟩⟩⟩
 
 /-- The bridge to Mathlib's `IsBipartite = Colorable 2`, through
 `isBipartiteWith_iff_simpleFootprint` and Mathlib's
@@ -199,6 +217,7 @@ theorem between_isBipartiteWith (h : Disjoint s t) : (G.between s t).IsBipartite
 instance between_isSymm [G.IsSymm] : (G.between s t).IsSymm :=
   IsSymm.of_adj fun _ _ _ h ↦ by
     obtain ⟨hadj, hor⟩ := h
+    -- the crossing condition is symmetric
     exact ⟨hadj.symm, by tauto⟩
 
 /-- Restricting to the arcs between two parts preserves looplessness. -/
@@ -234,8 +253,8 @@ must still see the other part). `G.IsBiclique Set.univ` is a bi-clique graph. -/
 def IsBiclique (G : TemporalGraph V) (S : Set V) : Prop :=
   ∃ s t : Set V, s ∪ t = S ∧ G.IsBicliqueWith s t
 
-/-- The reverse-oriented arc from `w ∈ t` to `v ∈ s`, using symmetry directly rather than
-rebuilding the whole swapped bi-clique (compare `IsBicliqueWith.symm`). -/
+/-- In a symmetric bi-clique on `s`/`t`, every `w ∈ t` has an arc to every `v ∈ s`; used to prove
+`IsBicliqueWith.symm`. -/
 theorem IsBicliqueWith.adj_of_mem' [G.IsSymm] (h : G.IsBicliqueWith s t) (hv : v ∈ s)
     (hw : w ∈ t) : ∃ n, G.Adj w v n := by
   obtain ⟨n, hadj⟩ := h.adj_of_mem hv hw
@@ -307,6 +326,7 @@ instance completeBipartite_isSymm (f : α → β → ℕ) : (completeBipartite f
 /-- A complete bipartite graph is loopless. -/
 instance completeBipartite_isLoopless (f : α → β → ℕ) : (completeBipartite f).IsLoopless :=
   ⟨fun _ ↦ ⟨fun x h ↦ by
+    -- a loop would join two vertices of the same summand
     match x with
     | .inl _ => exact h.elim
     | .inr _ => exact h.elim⟩⟩
@@ -319,7 +339,7 @@ theorem completeBipartite_isBicliqueWith (f : α → β → ℕ) :
     { disjoint := by
         rw [Set.disjoint_left]
         rintro x ⟨a, rfl⟩ ⟨b, hb⟩
-        exact absurd hb (by simp)
+        exact Sum.inr_ne_inl hb
       mem_of_adj := by
         intro x y n h
         match x, y with
@@ -334,10 +354,11 @@ theorem completeBipartite_isBicliqueWith (f : α → β → ℕ) :
 
 /-- `completeBipartite f` is a temporal bi-clique, covering the whole vertex type. -/
 theorem completeBipartite_isBiclique (f : α → β → ℕ) :
-    (completeBipartite f).IsBiclique Set.univ :=
-  ⟨_, _, by
-    ext x
-    cases x <;> simp, completeBipartite_isBicliqueWith f⟩
+    (completeBipartite f).IsBiclique Set.univ := by
+  refine ⟨_, _, ?_, completeBipartite_isBicliqueWith f⟩
+  -- every vertex of `α ⊕ β` is in the range of `Sum.inl` or of `Sum.inr`
+  ext x
+  cases x <;> simp
 
 /-- `completeBipartite f` is simple: at most one time per ordered pair. -/
 theorem completeBipartite_isSimple (f : α → β → ℕ) : (completeBipartite f).IsSimple := by
@@ -348,20 +369,19 @@ theorem completeBipartite_isSimple (f : α → β → ℕ) : (completeBipartite 
 /-- `completeBipartite f` is proper when `f` is injective in each argument separately. -/
 theorem completeBipartite_isProper {f : α → β → ℕ} (h₁ : ∀ a, (f a).Injective)
     (h₂ : ∀ b, (f · b).Injective) : (completeBipartite f).IsProper := by
-  intro x y z n h1 h2
-  match x, y, z, h1, h2 with
-  | .inl a, .inr b, .inr b', h1, h2 =>
-    have h1' : f a b = n := h1
-    have h2' : f a b' = n := h2
-    exact congrArg Sum.inr (h₁ a (h1'.trans h2'.symm))
-  | .inr b, .inl a, .inl a', h1, h2 =>
-    have h1' : f a b = n := h1
-    have h2' : f a' b = n := h2
-    exact congrArg Sum.inl (h₂ b (h1'.trans h2'.symm))
-  | .inl _, .inl _, _, h1, _ => exact h1.elim
-  | .inr _, .inr _, _, h1, _ => exact h1.elim
-  | .inl _, .inr _, .inl _, _, h2 => exact h2.elim
-  | .inr _, .inl _, .inr _, _, h2 => exact h2.elim
+  intro x y z n hxy hxz
+  -- arcs leave a summand only towards the other one, at the time given by `f`
+  match x, y, z, hxy, hxz with
+  | .inl a, .inr b, .inr b', hxy, hxz =>
+    rw [completeBipartite_adj_inl_inr] at hxy hxz
+    exact congrArg Sum.inr (h₁ a (hxy.trans hxz.symm))
+  | .inr b, .inl a, .inl a', hxy, hxz =>
+    rw [completeBipartite_adj_inr_inl] at hxy hxz
+    exact congrArg Sum.inl (h₂ b (hxy.trans hxz.symm))
+  | .inl _, .inl _, _, hxy, _ => exact hxy.elim
+  | .inr _, .inr _, _, hxy, _ => exact hxy.elim
+  | .inl _, .inr _, .inl _, _, hxz => exact hxz.elim
+  | .inr _, .inl _, .inr _, _, hxz => exact hxz.elim
 
 end CompleteBipartite
 
@@ -405,11 +425,12 @@ theorem Subgraph.toTemporalGraph_between :
 instance Subgraph.between_isSymm [H.IsSymm] : (H.between s t).IsSymm :=
   IsSymm.of_adj fun _ _ _ h ↦ by
     obtain ⟨hadj, hor⟩ := h
+    -- the crossing condition is symmetric
     exact ⟨TemporalGraph.adj_symm hadj, by tauto⟩
 
 /-- In a bi-clique on `s` and `t`, every vertex of `s` reaches every vertex of `t`, by the edge
 joining them. -/
-lemma Subgraph.reachable_of_isBicliqueWith {s t : Set V} {x y : V}
+theorem Subgraph.reachable_of_isBicliqueWith {s t : Set V} {x y : V}
     (h₀ : H.IsBicliqueWith s t) (h₁ : x ∈ s) (h₂ : y ∈ t) :
     H.Reachable x y := by
   obtain ⟨n, hn⟩ := h₀.adj_of_mem h₁ h₂
@@ -417,7 +438,7 @@ lemma Subgraph.reachable_of_isBicliqueWith {s t : Set V} {x y : V}
 
 /-- In a bi-clique on `s` and `t`, with both parts nonempty, every vertex of either part is a
 vertex of `H`: each has an edge to a witness of the other part. -/
-lemma Subgraph.isBicliqueWith_subset_verts {s t : Set V}
+theorem Subgraph.isBicliqueWith_subset_verts {s t : Set V}
     (h₀ : H.IsBicliqueWith s t) (h₁ : s.Nonempty) (h₂ : t.Nonempty) :
     s ∪ t ⊆ H.verts := by
   rintro v (hv | hv)
@@ -428,27 +449,31 @@ lemma Subgraph.isBicliqueWith_subset_verts {s t : Set V}
     obtain ⟨n, hadj⟩ := h₀.adj_of_mem hw hv
     exact H.edge_vert' hadj
 
-/-- Restricting a bi-clique on `s` and `t` to `s' ∪ t`, for `s' ⊆ s`, gives a bi-clique on `s'` and
-`t`: the subproblem arising in the one-sided dismountability of SAND 2025, §4.1. -/
-lemma Subgraph.isBicliqueWith_induce {s t s' : Set V}
-    (h₀ : H.IsBicliqueWith s t) (h₁ : s' ⊆ s) :
-    (H.induce (s' ∪ t)).IsBicliqueWith s' t where
+/-- Restricting a bi-clique on `s`/`t` to `s' ∪ t'`, for `s' ⊆ s` and `t' ⊆ t`, gives a bi-clique
+on `s'`/`t'` (used in SAND 2025, §4.1, and Baligács 2026, Lemma 5). -/
+theorem Subgraph.isBicliqueWith_induce {s t s' t' : Set V}
+    (h₀ : H.IsBicliqueWith s t) (h₁ : s' ⊆ s) (h₂ : t' ⊆ t) :
+    (H.induce (s' ∪ t')).IsBicliqueWith s' t' where
   isBipartiteWith :=
-    { disjoint := h₀.isBipartiteWith.disjoint.mono_left h₁
+    { disjoint := h₀.isBipartiteWith.disjoint.mono h₁ h₂
       mem_of_adj := by
         rintro v w n ⟨hv, hw, hadj⟩
         have hdis := h₀.isBipartiteWith.disjoint
+        -- `s` and `t` are disjoint, so a vertex of `s' ∪ t'` lying in `s` is in `s'`: this is
+        -- what the `resolve_right`/`resolve_left` steps below use
         rcases h₀.isBipartiteWith.mem_of_adj hadj with ⟨hvs, hwt⟩ | ⟨hvt, hws⟩
-        · exact Or.inl ⟨hv.resolve_right (Set.disjoint_left.mp hdis hvs), hwt⟩
-        · exact Or.inr ⟨hvt, hw.resolve_right (Set.disjoint_left.mp hdis hws)⟩ }
+        · exact Or.inl ⟨hv.resolve_right fun h ↦ Set.disjoint_left.mp hdis hvs (h₂ h),
+            hw.resolve_left fun h ↦ Set.disjoint_left.mp hdis (h₁ h) hwt⟩
+        · exact Or.inr ⟨hv.resolve_left fun h ↦ Set.disjoint_left.mp hdis (h₁ h) hvt,
+            hw.resolve_right fun h ↦ Set.disjoint_left.mp hdis hws (h₂ h)⟩ }
   adj_of_mem v w hv hw := by
-    obtain ⟨n, hn⟩ := h₀.adj_of_mem (h₁ hv) hw
+    obtain ⟨n, hn⟩ := h₀.adj_of_mem (h₁ hv) (h₂ hw)
     exact ⟨n, Or.inl hv, Or.inr hw, hn⟩
 
 /-- Deleting vertices from a temporal bi-clique keeps a bi-clique, on the two parts with those
 vertices removed (the `deleteVerts` counterpart of `isBicliqueWith_induce`, used in SAND 2025,
 §4.1). -/
-lemma Subgraph.isBicliqueWith_deleteVerts {s t u : Set V} (h₀ : H.IsBicliqueWith s t) :
+theorem Subgraph.isBicliqueWith_deleteVerts {s t u : Set V} (h₀ : H.IsBicliqueWith s t) :
     (H.deleteVerts u).IsBicliqueWith (s \ u) (t \ u) where
   isBipartiteWith :=
     { disjoint := Disjoint.mono Set.sdiff_subset Set.sdiff_subset h₀.isBipartiteWith.disjoint
